@@ -11,7 +11,6 @@ import java.time.OffsetDateTime
 import cats.Id
 import cats.effect.{Async, IO}
 import com.iheart.abtest.model.{Abtest, Feature}
-import com.typesafe.config.{Config, ConfigFactory}
 import lihua.mongo.Entity
 import play.api.libs.json.{JsPath, JsValue, JsonValidationError}
 import cats.implicits._
