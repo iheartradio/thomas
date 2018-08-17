@@ -28,7 +28,7 @@ lazy val root = project.in(file("."))
 lazy val example = project.enablePlugins(PlayScala, SwaggerPlugin)
   .dependsOn(core, playLib)
   .aggregate(core, playLib)
-  .settings(rootSettings)
+  .settings(rootSettings, noPublishing)
   .settings(
     name := "thomas-http",
     libraryDependencies ++= Seq(
@@ -63,7 +63,6 @@ lazy val client = project
     name := "thomas-client",
     rootSettings,
     Defaults.itSettings,
-    crossReleaseSettings,
     unmanagedResourceDirectories in Compile ++=  (example / Compile / unmanagedResourceDirectories).value,
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-slf4j" % "2.5.6",
@@ -85,7 +84,6 @@ lazy val core = project
   .settings(rootSettings)
   .settings(mainecoonSettings)
   .settings(
-    crossReleaseSettings,
     resolvers += Resolver.bintrayRepo("jmcardon", "tsec"),
     libraryDependencies ++= Seq(
       "com.kailuowang" %% "henkan-convert" % "0.6.2",
@@ -116,15 +114,11 @@ lazy val stress = project
 lazy val noPublishing = Seq(skip in publish := true)
 
 
-lazy val crossReleaseSettings = Seq(
-  crossScalaVersions := Seq(scala2_11Ver, scalaVersion.value)
-)
-
 lazy val commonSettings = addCompilerPlugins(vAll, "kind-projector") ++ sharedCommonSettings ++ scalacAllSettings ++ mainecoonSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := vAll.vers("scalac_2.12"),
   parallelExecution in Test := false,
-  releaseCrossBuild := false,
+  releaseCrossBuild := true,
   crossScalaVersions := Seq(scala2_11Ver, scalaVersion.value),
   developers := List(Developer("Kailuo Wang", "@kailuowang", "kailuo.wang@gmail.com", new java.net.URL("http://kailuowang.com"))),
   scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)}
