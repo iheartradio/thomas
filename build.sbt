@@ -30,14 +30,14 @@ lazy val example = project.enablePlugins(PlayScala, SwaggerPlugin)
   .aggregate(core, playLib)
   .settings(rootSettings)
   .settings(
-    name := "abtest-http",
+    name := "thomas-http",
     libraryDependencies ++= Seq(
       guice,
       ws,
       filters,
       "org.webjars" % "swagger-ui" % "3.9.2"),
     dockerExposedPorts in Docker := Seq(9000),
-    swaggerDomainNameSpaces := Seq("com.iheart.abtest"),
+    swaggerDomainNameSpaces := Seq("com.iheart.thomas"),
     (stage in Docker) := (stage in Docker).dependsOn(swagger).value
   )
 
@@ -47,7 +47,7 @@ lazy val playLib = project
   .configs(IntegrationTest)
   .settings(rootSettings)
   .settings(
-    name := "abtest-play-lib",
+    name := "thomas-play-lib",
     Defaults.itSettings,
     libraryDependencies ++= Seq(
       "com.typesafe.play" %% "play" % "2.6.10",
@@ -60,7 +60,7 @@ lazy val client = project
   .aggregate(core)
   .configs(IntegrationTest)
   .settings(
-    name := "abtest-client",
+    name := "thomas-client",
     rootSettings,
     Defaults.itSettings,
     crossReleaseSettings,
@@ -81,7 +81,7 @@ lazy val client = project
   )
 
 lazy val core = project
-  .settings(name := "abtest-core")
+  .settings(name := "thomas-core")
   .settings(rootSettings)
   .settings(mainecoonSettings)
   .settings(
@@ -102,7 +102,7 @@ lazy val stress = project
   .aggregate(example)
   .dependsOn(example)
   .enablePlugins(GatlingPlugin)
-  .settings(name := "abtest-stress")
+  .settings(name := "thomas-stress")
   .settings(noPublishing)
   .settings(rootSettings)
   .settings(

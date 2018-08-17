@@ -9,7 +9,7 @@ import javax.inject._
 import play.api.mvc._
 
 import concurrent._
-import com.iheart.abtest.http.lib._
+import com.iheart.thomas.http.lib._
 
 @Singleton
 class HttpController @Inject() (
