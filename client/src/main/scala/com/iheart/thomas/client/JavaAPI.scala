@@ -35,6 +35,5 @@ class JavaAPI(serviceUrl: String, asOf: Option[Long]) {
 
 object JavaAPI {
   def create(serviceUrl: String): JavaAPI = new JavaAPI(serviceUrl, None)
-  def create(serviceUrl: String): JavaAPI = new JavaAPI(serviceUrl, None)
   def create(serviceUrl: String, asOf: Long): JavaAPI = new JavaAPI(serviceUrl, Some(asOf))
 }
