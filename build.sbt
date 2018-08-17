@@ -14,7 +14,7 @@ val lihuaVer = "0.11.2"
 
 lazy val scala2_11Ver = vAll.vers("scalac_2.11")
 
-addCommandAlias("validateClient", s";++$scala2_11Ver;client/test")
+addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias("validate", s";root/test;playLib/IntegrationTest/test")
 addCommandAlias("releaseAll", s";project toRelease;release")
 
@@ -24,7 +24,7 @@ lazy val root = project.in(file("."))
     rootSettings,
     noPublishing)
 
-lazy val toRelease = project.in(file("."))
+lazy val toRelease = project
   .aggregate(core, client, playLib)
   .settings(
     rootSettings,
