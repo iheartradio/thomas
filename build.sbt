@@ -120,13 +120,14 @@ lazy val crossReleaseSettings = Seq(
   crossScalaVersions := Seq(scala2_11Ver, scalaVersion.value)
 )
 
-lazy val commonSettings = Seq(
+lazy val commonSettings = addCompilerPlugins(vAll, "kind-projector") ++ sharedCommonSettings ++ scalacAllSettings ++ mainecoonSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := vAll.vers("scalac_2.12"),
   parallelExecution in Test := false,
+  releaseCrossBuild := false,
   developers := List(Developer("Kailuo Wang", "@kailuowang", "kailuo.wang@gmail.com", new java.net.URL("http://kailuowang.com"))),
   scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)}
-) ++  addCompilerPlugins(vAll, "kind-projector") ++ sharedCommonSettings ++ scalacAllSettings ++ mainecoonSettings
+) 
 
 lazy val mainecoonSettings = Seq(
   addCompilerPlugin(
