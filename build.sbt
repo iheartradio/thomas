@@ -1,0 +1,145 @@
+import sbt.Keys.resolvers
+
+val monocleVer = "1.5.0-cats"
+
+val catsVer = "1.1.0"
+
+val lihuaVer = "0.11.2"
+
+val scala2_11Ver = "2.11.12"
+
+addCommandAlias("validateClient", s";++$scala2_11Ver;client/test")
+addCommandAlias("validateAll", s";root/test;playLib/IntegrationTest/test")
+addCommandAlias("releaseAll", s";release;++$scala2_11Ver;project client;release")
+
+lazy val root = project.in(file("."))
+  .aggregate(example, core, client)
+  .settings(
+    commonSettings,
+    noPublishing)
+
+
+lazy val example = project.enablePlugins(PlayScala, SwaggerPlugin)
+  .dependsOn(core, playLib)
+  .aggregate(core, playLib)
+  .settings(commonSettings)
+  .settings(
+    name := "abtest-http",
+    libraryDependencies ++= Seq(
+      guice,
+      ws,
+      filters,
+      "org.webjars" % "swagger-ui" % "3.9.2"),
+    dockerExposedPorts in Docker := Seq(9000),
+    swaggerDomainNameSpaces := Seq("com.iheart.abtest"),
+    (stage in Docker) := (stage in Docker).dependsOn(swagger).value
+  )
+
+lazy val playLib = project
+  .dependsOn(core)
+  .aggregate(core)
+  .configs(IntegrationTest)
+  .settings(commonSettings)
+  .settings(
+    name := "abtest-play-lib",
+    Defaults.itSettings,
+    libraryDependencies ++= Seq(
+      "com.typesafe.play" %% "play" % "2.6.10",
+      "org.scalatest" %% "scalatest" % "3.0.1" % IntegrationTest,
+      "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % IntegrationTest )
+  )
+
+lazy val client = project
+  .dependsOn(core)
+  .aggregate(core)
+  .configs(IntegrationTest)
+  .settings(
+    name := "abtest-client",
+    commonSettings,
+    Defaults.itSettings,
+    crossReleaseSettings,
+    unmanagedResourceDirectories in Compile ++=  (example / Compile / unmanagedResourceDirectories).value,
+    libraryDependencies ++= Seq(
+      "com.typesafe.akka" %% "akka-slf4j" % "2.5.6",
+      "com.typesafe.play" %% "play-ahc-ws-standalone" % "1.1.9",
+      "com.typesafe.play" %% "play-ws-standalone-json" % "1.1.9",
+      "org.scalatest" %% "scalatest" % "3.0.1" % "it, test",
+      "com.monovore" %% "decline" % "0.4.0"),
+
+    assemblyMergeStrategy in assembly := {
+      case "reference.conf" | "reference-overrides.conf"    => MergeStrategy.concat
+      case x =>
+        val oldStrategy = (assemblyMergeStrategy in assembly).value
+        oldStrategy(x)
+      }
+  )
+
+lazy val core = project
+  .settings(name := "abtest-core")
+  .settings(commonSettings)
+  .settings(unusedImport)
+  .settings(mainecoonSettings)
+  .settings(
+    crossReleaseSettings,
+    resolvers += Resolver.bintrayRepo("jmcardon", "tsec"),
+    libraryDependencies ++= Seq(
+      "com.kailuowang" %% "henkan-convert" % "0.6.2",
+      "com.iheart" %% "lihua-mongo" % lihuaVer,
+      "com.iheart" %% "lihua-crypt" % lihuaVer,
+      "org.typelevel" %% "cats-core" % catsVer ,
+      "org.typelevel" %% "cats-mtl-core" % "0.2.2",
+      "org.typelevel" %% "mouse" % "0.16",
+      "com.github.julien-truffaut" %%  "monocle-core"  % monocleVer,
+      "com.github.julien-truffaut" %%  "monocle-macro" % monocleVer,
+      "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.1" % Test),
+
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
+  )
+
+lazy val stress = project
+  .aggregate(example)
+  .dependsOn(example)
+  .enablePlugins(GatlingPlugin)
+  .settings(name := "abtest-stress")
+  .settings(noPublishing)
+  .settings(commonSettings)
+  .settings(
+    resolvers += Resolver.sonatypeRepo("snapshots"),
+    libraryDependencies ++= Seq(
+      "io.gatling.highcharts" % "gatling-charts-highcharts" % "2.3.1" % Test,
+      "io.gatling"            % "gatling-test-framework"    % "2.3.1" % Test
+    )
+  )
+
+lazy val noPublishing = Seq(skip in publish := true)
+
+
+lazy val crossReleaseSettings = Seq(
+  crossScalaVersions := Seq(scala2_11Ver, scalaVersion.value)
+)
+
+lazy val commonSettings = Seq(
+  organization := "com.iheart",
+  scalaVersion := "2.12.4",
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3"),
+  scalacOptions ++= Seq(
+    "-language:higherKinds",
+    "-language:implicitConversions",
+    "-unchecked",
+    "-Xfatal-warnings",
+    "-Ypartial-unification"
+  ),
+  scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)}
+)
+
+lazy val mainecoonSettings = Seq(
+  addCompilerPlugin(
+    ("org.scalameta" % "paradise" % "3.0.0-M10").cross(CrossVersion.full)
+  ),
+  libraryDependencies ++= Seq(
+    "com.kailuowang" %% "mainecoon-macros" % "0.6.0"
+  )
+)
+
+lazy val unusedImport = scalacOptions += "-Ywarn-unused-import"

@@ -1,0 +1,28 @@
+---
+  swagger: "2.0"
+  info:
+    title: "A/B Test service"
+    description: ""
+  consumes:
+    - application/json
+  produces:
+    - application/json
+  definitions:
+    com.iheart.abtest.model.UserGroupQuery:
+      properties:
+        userId:
+          description: Profile Id of the user. This field can be missing if the user doesn't have a profileId, but has some meta (see the meta below)
+        at:
+          description: ISO offset string of the date time as of the query. If it's missing, system will query the assignment as of now.
+          type: string
+        meta:
+          description: extra meta data of the user. For example, the device id of the client can be passed here under the key deviceId
+          type: Map[string, string]
+    com.iheart.abtest.model.UserGroupQueryResult:
+      properties:
+        groups:
+          description: pairs of feature -> group assignment
+          type: Map[string, string]
+        metas:
+          description: The keys of this object are the feature names, under each key is the arbitrary config object corresponding the group assigment
+          type: Map[string, object]
