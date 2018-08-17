@@ -7,7 +7,7 @@ val gh = GitHubSettings(org = "iheartradio", proj = "thomas", publishOrg = "com.
 
 val vAll = Versions(versions, libraries, scalacPlugins)
 
-lazy val rootSettings = buildSettings ++ commonSettings ++ publishSettings
+lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
 
 val lihuaVer = "0.11.2"
@@ -125,6 +125,7 @@ lazy val commonSettings = addCompilerPlugins(vAll, "kind-projector") ++ sharedCo
   scalaVersion := vAll.vers("scalac_2.12"),
   parallelExecution in Test := false,
   releaseCrossBuild := false,
+  crossScalaVersions := Seq(scala2_11Ver, scalaVersion.value),
   developers := List(Developer("Kailuo Wang", "@kailuowang", "kailuo.wang@gmail.com", new java.net.URL("http://kailuowang.com"))),
   scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)}
 ) 
