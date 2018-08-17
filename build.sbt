@@ -36,7 +36,7 @@ lazy val example = project.enablePlugins(PlayScala, SwaggerPlugin)
   .aggregate(core, playLib)
   .settings(rootSettings, noPublishing)
   .settings(
-    name := "thomas-http",
+    name := "thomas-example",
     libraryDependencies ++= Seq(
       guice,
       ws,
