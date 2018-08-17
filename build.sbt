@@ -1,28 +1,34 @@
-import sbt.Keys.resolvers
+import com.typesafe.sbt.SbtGit.git
+import org.typelevel.Dependencies._
 
-val monocleVer = "1.5.0-cats"
+val apache2 = "Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")
 
-val catsVer = "1.1.0"
+val gh = GitHubSettings(org = "iheartradio", proj = "thomas", publishOrg = "com.iheart", license = apache2)
+
+val vAll = Versions(versions, libraries, scalacPlugins)
+
+lazy val rootSettings = buildSettings ++ commonSettings ++ publishSettings
+
 
 val lihuaVer = "0.11.2"
 
-val scala2_11Ver = "2.11.12"
+lazy val scala2_11Ver = vAll.vers("scalac_2.11")
 
 addCommandAlias("validateClient", s";++$scala2_11Ver;client/test")
-addCommandAlias("validateAll", s";root/test;playLib/IntegrationTest/test")
+addCommandAlias("validate", s";root/test;playLib/IntegrationTest/test")
 addCommandAlias("releaseAll", s";release;++$scala2_11Ver;project client;release")
 
 lazy val root = project.in(file("."))
   .aggregate(example, core, client)
   .settings(
-    commonSettings,
+    rootSettings,
     noPublishing)
 
 
 lazy val example = project.enablePlugins(PlayScala, SwaggerPlugin)
   .dependsOn(core, playLib)
   .aggregate(core, playLib)
-  .settings(commonSettings)
+  .settings(rootSettings)
   .settings(
     name := "abtest-http",
     libraryDependencies ++= Seq(
@@ -39,7 +45,7 @@ lazy val playLib = project
   .dependsOn(core)
   .aggregate(core)
   .configs(IntegrationTest)
-  .settings(commonSettings)
+  .settings(rootSettings)
   .settings(
     name := "abtest-play-lib",
     Defaults.itSettings,
@@ -55,7 +61,7 @@ lazy val client = project
   .configs(IntegrationTest)
   .settings(
     name := "abtest-client",
-    commonSettings,
+    rootSettings,
     Defaults.itSettings,
     crossReleaseSettings,
     unmanagedResourceDirectories in Compile ++=  (example / Compile / unmanagedResourceDirectories).value,
@@ -76,8 +82,7 @@ lazy val client = project
 
 lazy val core = project
   .settings(name := "abtest-core")
-  .settings(commonSettings)
-  .settings(unusedImport)
+  .settings(rootSettings)
   .settings(mainecoonSettings)
   .settings(
     crossReleaseSettings,
@@ -86,14 +91,10 @@ lazy val core = project
       "com.kailuowang" %% "henkan-convert" % "0.6.2",
       "com.iheart" %% "lihua-mongo" % lihuaVer,
       "com.iheart" %% "lihua-crypt" % lihuaVer,
-      "org.typelevel" %% "cats-core" % catsVer ,
-      "org.typelevel" %% "cats-mtl-core" % "0.2.2",
       "org.typelevel" %% "mouse" % "0.16",
-      "com.github.julien-truffaut" %%  "monocle-core"  % monocleVer,
-      "com.github.julien-truffaut" %%  "monocle-macro" % monocleVer,
       "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
       "org.scalatest" %% "scalatest" % "3.0.1" % Test),
-
+    addJVMLibs(vAll, "cats-core", "cats-mtl-core", "monocle-macro", "monocle-core"),
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
   )
 
@@ -103,7 +104,7 @@ lazy val stress = project
   .enablePlugins(GatlingPlugin)
   .settings(name := "abtest-stress")
   .settings(noPublishing)
-  .settings(commonSettings)
+  .settings(rootSettings)
   .settings(
     resolvers += Resolver.sonatypeRepo("snapshots"),
     libraryDependencies ++= Seq(
@@ -121,25 +122,24 @@ lazy val crossReleaseSettings = Seq(
 
 lazy val commonSettings = Seq(
   organization := "com.iheart",
-  scalaVersion := "2.12.4",
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3"),
-  scalacOptions ++= Seq(
-    "-language:higherKinds",
-    "-language:implicitConversions",
-    "-unchecked",
-    "-Xfatal-warnings",
-    "-Ypartial-unification"
-  ),
+  scalaVersion := vAll.vers("scalac_2.12"),
+  parallelExecution in Test := false,
+  developers := List(Developer("Kailuo Wang", "@kailuowang", "kailuo.wang@gmail.com", new java.net.URL("http://kailuowang.com"))),
   scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)}
-)
+) ++  addCompilerPlugins(vAll, "kind-projector") ++ sharedCommonSettings ++ scalacAllSettings ++ mainecoonSettings
 
 lazy val mainecoonSettings = Seq(
   addCompilerPlugin(
-    ("org.scalameta" % "paradise" % "3.0.0-M10").cross(CrossVersion.full)
+    ("org.scalameta" % "paradise" % "3.0.0-M11").cross(CrossVersion.full)
   ),
   libraryDependencies ++= Seq(
-    "com.kailuowang" %% "mainecoon-macros" % "0.6.0"
+    "com.kailuowang" %% "mainecoon-macros" % "0.6.4"
   )
 )
 
-lazy val unusedImport = scalacOptions += "-Ywarn-unused-import"
+lazy val buildSettings = sharedBuildSettings(gh, vAll)
+
+lazy val publishSettings = sharedPublishSettings(gh) ++ credentialSettings ++ sharedReleaseProcess
+
+lazy val disciplineDependencies = addLibs(vAll, "discipline", "scalacheck")
+

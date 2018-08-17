@@ -6,11 +6,10 @@ import cats.data.EitherT
 import cats.effect.IO
 import com.iheart.abtest.DefaultAPI
 import com.iheart.abtest.model._
-import lihua.mongo.{Entity, EntityDAO, ObjectId, ShutdownHook}
+import lihua.mongo.{Entity, EntityDAO, ObjectId}
 import org.scalatest.BeforeAndAfter
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.inject.ApplicationLifecycle
 import play.api.mvc.{Action, ControllerComponents, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.status
@@ -182,7 +181,7 @@ class AbtestIntegrationSuite extends PlaySpec with GuiceOneAppPerSuite with Befo
       status(controller.get(conflict2._id)(FakeRequest())) mustBe NOT_FOUND
     }
 
-    def verifyCount(fn: FeatureName, count: Int): Unit = {
+    def verifyCount(fn: FeatureName, count: Int) = {
       val r = toServer(controller.getByFeature(fn))
       contentAsJson(r).as[Vector[Entity[Abtest]]].size mustBe count
     }
@@ -895,8 +894,8 @@ class AbtestIntegrationSuite extends PlaySpec with GuiceOneAppPerSuite with Befo
     name = "test",
     author = "kai",
     feature = feature,
-    start = OffsetDateTime.now.plusDays(start),
-    end = Some(OffsetDateTime.now.plusDays(end)),
+    start = OffsetDateTime.now.plusDays(start.toLong),
+    end = Some(OffsetDateTime.now.plusDays(end.toLong)),
     groups = groups,
     alternativeIdName = alternativeIdName,
     matchingUserMeta = matchingUserMeta,

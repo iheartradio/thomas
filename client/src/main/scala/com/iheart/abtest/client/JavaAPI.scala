@@ -6,7 +6,6 @@
 package com.iheart.abtest
 package client
 
-import cats.Id
 import cats.effect.IO
 import com.iheart.abtest.model.UserGroupQuery
 
