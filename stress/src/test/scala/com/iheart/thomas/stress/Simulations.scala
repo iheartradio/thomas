@@ -19,16 +19,13 @@ class GetGroupsSimulation extends Simulation {
   val userId = 4331241
   val testName = "getGroups"
 
-  // val host = "http://localhost:9000"
-  // val host = "http://stg-abtest.ihrcloud.net"
-  // val host = "http://abtest.ihrprod.net"
-  val host = "https://qa-ampinternal.ihrcloud.net"
+  val host = "http://localhost:9000"
 
   setUp(
     scenario(testName).during(500.seconds) {
       exec(
         http(testName)
-          .get(s"$host/internal/api/v3/abtest/users/$userId/tests/groups")
+          .get(s"$host/internal/users/$userId/tests/groups")
           .check(status.is(200))
       )
     }.inject(rampUsers(10) over (60.seconds))
