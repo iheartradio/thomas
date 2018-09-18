@@ -159,6 +159,16 @@ GET       /tests/:testId/groups/metas    controllers.HttpController.getGroupMeta
 PUT       /features/:feature/groups/:groupName/overrides/:userId    controllers.HttpController.addOverride(feature: String, userId: String, groupName: String)
 
 
+######
+#  summary: toggle whether override overrides eligibility control
+#  responses:
+#    200:
+#      schema:
+#        $ref: '#/definitions/com.iheart.abtest.model.Feature'
+###
+PUT       /features/:feature/overridesEligibility    controllers.HttpController.setOverrideEligibilityIn(feature: String, overrideEligibility: Boolean)
+
+
 ###
 #  summary: delete an override
 #  responses:

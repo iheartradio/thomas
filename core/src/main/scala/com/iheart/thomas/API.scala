@@ -62,6 +62,9 @@ trait API[F[_]] {
    */
   def getAllTests(time: Option[OffsetDateTime]): F[Vector[Entity[Abtest]]]
 
+
+  def setOverrideEligibilityIn(feature: FeatureName, overrideEligibility: Boolean): F[Feature]
+
   /**
    * Get all the tests that end after a certain time
    * @param time optional time constraint, if set, this will only return tests as of that time.
@@ -172,6 +175,12 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
     updated <- featureDao.update(feature.lens(_.data.overrides).modify(_ ++ overrides))
   } yield updated.data
 
+  def setOverrideEligibilityIn(featureName: FeatureName, overrideEligibility: Boolean): F[Feature] =
+    for {
+      feature <- ensureFeature(featureName)
+      updated <- featureDao.update(feature.lens(_.data.overrideEligibility).set(overrideEligibility))
+    } yield updated.data
+
   def removeOverrides(featureName: FeatureName, userId: UserId): F[Feature] = for {
     feature <- featureDao.byName(featureName)
     updated <- featureDao.update(feature.lens(_.data.overrides).modify(_ - userId))
@@ -194,6 +203,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
           F.pure(Some(test))
       }
     }
+
 
   def addGroupMetas(testId: TestId, metas: Map[GroupName, GroupMeta]): F[Entity[AbtestExtras]] =
     for {
@@ -224,6 +234,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
     } yield UserGroupQueryResult(at, toGroups(groupAssignments), metas.toMap)
 
   }
+
 
   /**
    * bypassing the eligibility control

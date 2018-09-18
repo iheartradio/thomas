@@ -54,17 +54,22 @@ object AssignGroups {
 
       (ofTime, testsRetriever(ofTime).flatMap(_.traverseFilter { test ⇒
         eligibilityControl.eligible(query, test.data).flatMap { eligible =>
-          if (eligible) {
-            featureRetriever(test.data.feature).map { feature =>
-              {
-                val idToUse = test.data.idToUse(query)
-                val overriddenGroup = (feature, idToUse).mapN((f, uid) => f.overrides.get(uid)).flatten
+          featureRetriever(test.data.feature).map { feature =>
+            val idToUse = test.data.idToUse(query)
+            def overriddenGroup = {
+              (feature, idToUse).mapN((f, uid) => f.overrides.get(uid)).flatten
+            }
+            {
+              if (eligible)
                 overriddenGroup orElse {
                   idToUse.flatMap(uid => Bucketing.getGroup(uid, test.data))
                 }
-              }.map(gn => (test.data.feature, (gn, test)))
-            }
-          } else none[(FeatureName, (GroupName, Entity[Abtest]))].pure[F]
+              else if (feature.fold(false)(_.overrideEligibility))
+                overriddenGroup
+              else
+                None
+            }.map(gn => (test.data.feature, (gn, test)))
+          }
         }
       }.map(_.toMap)))
     }

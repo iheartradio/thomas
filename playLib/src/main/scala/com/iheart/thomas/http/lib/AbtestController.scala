@@ -87,6 +87,10 @@ class AbtestController[F[_]](
     api.addOverrides(feature, Map(userId -> groupName))
   }
 
+  def setOverrideEligibilityIn(feature: FeatureName, overrideEligibility: Boolean) = Action.async {
+    api.setOverrideEligibilityIn(feature, overrideEligibility)
+  }
+
   def addOverrides(feature: FeatureName) = withJsonReq { (overrides: Map[UserId, GroupName]) =>
     api.addOverrides(feature, overrides)
   }

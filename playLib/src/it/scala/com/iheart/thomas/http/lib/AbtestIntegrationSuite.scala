@@ -750,6 +750,31 @@ class AbtestIntegrationSuite extends PlaySpec with GuiceOneAppPerSuite with Befo
       }
     }
 
+    "override honor eligibility control" in {
+
+      val ab = createAbtestOnServer(fakeAb(groups = List(Group("A", 0)), requiredTags = List("tag1")))
+
+      val userId = "1"
+      toServer(controller.addOverride(ab.data.feature, userId, "A"))
+
+      val groups = controller.getGroups(userId, tomorrow)(FakeRequest())
+      val retrieved = contentAsJson(groups).as[Map[FeatureName, GroupName]]
+      retrieved.get(ab.data.feature) mustBe empty
+    }
+
+    "override overrides eligibility control when set so" in {
+
+      val ab = createAbtestOnServer(fakeAb(groups = List(Group("A", 0)), requiredTags = List("tag1")))
+
+      val userId = "1"
+      toServer(controller.addOverride(ab.data.feature, userId, "A"))
+      toServer(controller.setOverrideEligibilityIn(ab.data.feature, true))
+
+      val groups = controller.getGroups(userId, tomorrow)(FakeRequest())
+      val retrieved = contentAsJson(groups).as[Map[FeatureName, GroupName]]
+      retrieved.get(ab.data.feature) mustBe Some("A")
+    }
+
     "retrieve meta according to overrides" in {
 
       val overrideGroup = "B"
@@ -889,7 +914,8 @@ class AbtestIntegrationSuite extends PlaySpec with GuiceOneAppPerSuite with Befo
               alternativeIdName: Option[MetaFieldName] = None,
               groups:            List[Group]           = List(Group("A", 0.5), Group("B", 0.5)),
               matchingUserMeta:  UserMeta              = Map(),
-              segRanges:         List[GroupRange]      = Nil
+              segRanges:         List[GroupRange]      = Nil,
+              requiredTags:      List[Tag]             = Nil
             ): AbtestSpec = AbtestSpec(
     name = "test",
     author = "kai",
@@ -899,7 +925,8 @@ class AbtestIntegrationSuite extends PlaySpec with GuiceOneAppPerSuite with Befo
     groups = groups,
     alternativeIdName = alternativeIdName,
     matchingUserMeta = matchingUserMeta,
-    segmentRanges = segRanges
+    segmentRanges = segRanges,
+    requiredTags = requiredTags
   )
 
   after {
