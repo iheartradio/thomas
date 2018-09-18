@@ -98,10 +98,11 @@ package model {
   }
 
   case class Feature(
-    name:        FeatureName,
-    description: Option[String],
-    overrides:   Overrides,
-    locked:      Boolean        = false
+    name:                FeatureName,
+    description:         Option[String],
+    overrides:           Overrides,
+    overrideEligibility: Boolean        = false,
+    locked:              Boolean        = false
   )
 
   case class AbtestExtras(
