@@ -11,7 +11,6 @@ import cats.Monad
 import com.iheart.thomas.model._
 import lihua.mongo.{Entity, EntityDAO}
 import cats.implicits._
-import cats.mtl.implicits._
 import com.iheart.thomas.model.Abtest.Status.InProgress
 import com.iheart.thomas.persistence.AbtestQuery.byTime
 

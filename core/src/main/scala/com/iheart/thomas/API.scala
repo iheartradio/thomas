@@ -20,7 +20,6 @@ import cats.data.EitherT
 import cats.effect.IO
 import com.iheart.thomas.persistence._
 import com.typesafe.config.Config
-import mtl.implicits._
 import monocle.macros.syntax.lens._
 import play.api.libs.json.{JsArray, JsString, Json}
 import henkan.convert.Syntax._

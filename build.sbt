@@ -5,12 +5,25 @@ val apache2 = "Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.h
 
 val gh = GitHubSettings(org = "iheartradio", proj = "thomas", publishOrg = "com.iheart", license = apache2)
 
-val vAll = Versions(versions, libraries, scalacPlugins)
+val vAll = Versions(versions ++ myVersions, libraries ++ myLibraries, scalacPlugins)
 
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
+lazy val myLibraries = multiModuleLib("rainier", "com.stripe", "rainier-core", "rainier-cats") ++
+  multiModuleLib("lihua", "com.iheart", "lihua-mongo", "lihua-crypt") ++
+  multiModuleLib("breeze", "org.scalanlp", "breeze", "breeze-viz")++ Map(
+  singleModuleLib("henkan-convert", "com.kailuowang"),
+  singleModuleLib("mainecoon-macros", "com.kailuowang"),
+  singleModuleLib("newtype", "io.estatico")
+)
 
-val lihuaVer = "0.11.2"
+lazy val myVersions = Map(
+  "newtype" -> "0.4.2",
+  "rainier" -> "0.1.3",
+  "henkan-convert" -> "0.6.2",
+  "lihua" -> "0.11.2",
+  "breeze" -> "0.13.2"
+)
 
 lazy val scala2_11Ver = vAll.vers("scalac_2.11")
 
@@ -25,7 +38,7 @@ lazy val root = project.in(file("."))
     noPublishing)
 
 lazy val toRelease = project
-  .aggregate(core, client, playLib)
+  .aggregate(core, client, playLib, analysis)
   .settings(
     rootSettings,
     noPublishing)
@@ -55,6 +68,7 @@ lazy val playLib = project
   .settings(
     name := "thomas-play-lib",
     Defaults.itSettings,
+    mainecoonSettings,
     libraryDependencies ++= Seq(
       "com.typesafe.play" %% "play" % "2.6.10",
       "org.scalatest" %% "scalatest" % "3.0.1" % IntegrationTest,
@@ -68,6 +82,7 @@ lazy val client = project
   .settings(
     name := "thomas-client",
     rootSettings,
+    mainecoonSettings,
     Defaults.itSettings,
     unmanagedResourceDirectories in Compile ++=  (example / Compile / unmanagedResourceDirectories).value,
     libraryDependencies ++= Seq(
@@ -90,16 +105,28 @@ lazy val core = project
   .settings(rootSettings)
   .settings(mainecoonSettings)
   .settings(
-    resolvers += Resolver.bintrayRepo("jmcardon", "tsec"),
-    libraryDependencies ++= Seq(
-      "com.kailuowang" %% "henkan-convert" % "0.6.2",
-      "com.iheart" %% "lihua-mongo" % lihuaVer,
-      "com.iheart" %% "lihua-crypt" % lihuaVer,
-      "org.typelevel" %% "mouse" % "0.16",
-      "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.1" % Test),
-    addJVMLibs(vAll, "cats-core", "cats-mtl-core", "monocle-macro", "monocle-core"),
+    addJVMTestLibs(vAll, "scalacheck", "scalatest"),
+    addJVMLibs(vAll, "cats-core", "monocle-macro", "monocle-core", "lihua-mongo", "lihua-crypt", "mouse", "henkan-convert"),
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
+  )
+
+lazy val analysis = project
+  .dependsOn(core)
+  .settings(name := "thomas-analysis")
+  .settings(rootSettings)
+//  .settings(mainecoonSettings)
+  .settings(simulacrumSettings(vAll))
+  .settings(
+    scalaMacroDependencies(vAll),
+    addJVMTestLibs(vAll, "scalacheck", "scalatest"),
+    addJVMLibs(vAll, "rainier-core", "rainier-cats", "newtype", "breeze"),
+    initialCommands in console :=
+    """
+      |import com.iheart.thomas.analysis._
+      |import com.stripe.rainier.repl._
+      |import com.stripe.rainier.core._
+      |
+    """.stripMargin,
   )
 
 lazy val stress = project
@@ -117,17 +144,21 @@ lazy val stress = project
     )
   )
 
+
+
 lazy val noPublishing = Seq(skip in publish := true)
 
 
-lazy val commonSettings = addCompilerPlugins(vAll, "kind-projector") ++ sharedCommonSettings ++ scalacAllSettings ++ mainecoonSettings ++ Seq(
+lazy val commonSettings = addCompilerPlugins(vAll, "kind-projector") ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := vAll.vers("scalac_2.12"),
   parallelExecution in Test := false,
   releaseCrossBuild := true,
   crossScalaVersions := Seq(scala2_11Ver, scalaVersion.value),
   developers := List(Developer("Kailuo Wang", "@kailuowang", "kailuo.wang@gmail.com", new java.net.URL("http://kailuowang.com"))),
-  scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)}
+  scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
+  scalacOptions in (Test, console) ~= (_.filterNot(Set("-Ywarn-unused-import", "-Ywarn-dead-code"))),
+  scalacOptions += s"-Xlint:-package-object-classes"
 ) 
 
 lazy val mainecoonSettings = Seq(
@@ -144,4 +175,5 @@ lazy val buildSettings = sharedBuildSettings(gh, vAll)
 lazy val publishSettings = sharedPublishSettings(gh) ++ credentialSettings ++ sharedReleaseProcess
 
 lazy val disciplineDependencies = addLibs(vAll, "discipline", "scalacheck")
+
 
