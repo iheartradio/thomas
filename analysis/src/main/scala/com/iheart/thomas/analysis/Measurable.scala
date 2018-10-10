@@ -6,15 +6,27 @@ import com.stripe.rainier.compute.Real
 import com.stripe.rainier.core.{Gamma, RandomVariable, Sampleable}
 import com.stripe.rainier.sampler.{RNG, Sampler, Walkers}
 import simulacrum._
+import cats.implicits._
+import com.iheart.thomas.analysis.Measurable.ControlGroupMeasurementMissing
+
+import scala.util.control.NoStackTrace
+
 
 @typeclass
 trait Measurable[K] {
   def assess(k: K,
              groupMeasurements: Map[GroupName, Measurements],
              control: Measurements): Map[GroupName, GroupResult]
+
+  def assess(k: K, allMeasurements: Map[GroupName, Measurements],
+             controlGroupName: GroupName): Either[ControlGroupMeasurementMissing.type, Map[GroupName, GroupResult]]
+    = allMeasurements.get(controlGroupName).
+        toRight(ControlGroupMeasurementMissing).
+        map(assess(k, allMeasurements.filterKeys(_ === controlGroupName), _))
 }
 
 object Measurable {
+  case object ControlGroupMeasurementMissing extends RuntimeException with NoStackTrace
 
   abstract class BayesianMeasurable[K](implicit
                                        samplerSettings: SamplerSettings,
@@ -68,6 +80,6 @@ object Measurable {
                             )
 
   object SamplerSettings {
-    val default = SamplerSettings(Walkers(100), 5000, 10000)
+    val default = SamplerSettings(Walkers(100), 5000, 30000)
   }
 }
