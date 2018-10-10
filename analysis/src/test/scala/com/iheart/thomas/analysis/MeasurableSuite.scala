@@ -14,7 +14,7 @@ class MeasurableSuite extends FunSuite with Matchers {
   implicit val rng = RNG.default
 
   test("Measure one group against control generates result") {
-    val n = 5000
+    val n = 1000
     val groupData = Random.shuffle(Gamma(0.55, 3).param.sample()).take(n)
     val controlData = Random.shuffle(Gamma(0.5, 3).param.sample()).take(n)
     val result = GammaKPI(KPIName("test"),
@@ -27,9 +27,9 @@ class MeasurableSuite extends FunSuite with Matchers {
     result.keys should contain("A")
     plot1D(result("A").indicatorSample.coerce[List[Double]])
     println(result("A").copy(indicatorSample = Nil))
-    result("A").expectedEffect.d shouldBe (0.15 +- 0.1)
-    result("A").probabilityOfImprovement.p shouldBe (0.9 +- 0.1)
-    result("A").risk.d shouldBe (0.1 +- 0.1)
+    result("A").expectedEffect.d shouldBe (0.15 +- 0.2)
+    result("A").probabilityOfImprovement.p shouldBe (0.9 +- 0.2)
+    result("A").risk.d shouldBe (0.1 +- 0.2)
 
   }
 }
