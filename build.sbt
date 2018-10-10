@@ -89,8 +89,7 @@ lazy val client = project
       "com.typesafe.akka" %% "akka-slf4j" % "2.5.6",
       "com.typesafe.play" %% "play-ahc-ws-standalone" % "1.1.9",
       "com.typesafe.play" %% "play-ws-standalone-json" % "1.1.9",
-      "org.scalatest" %% "scalatest" % "3.0.1" % "it, test",
-      "com.monovore" %% "decline" % "0.4.0"),
+      "org.scalatest" %% "scalatest" % "3.0.1" % "it, test"),
 
     assemblyMergeStrategy in assembly := {
       case "reference.conf" | "reference-overrides.conf"    => MergeStrategy.concat
