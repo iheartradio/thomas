@@ -9,13 +9,14 @@ package client
 import java.time.OffsetDateTime
 
 import cats.Id
-import cats.effect.{Async, IO}
+import cats.effect.{Async, IO, Resource}
 import com.iheart.thomas.model.{Abtest, Feature}
 import lihua.mongo.Entity
 import play.api.libs.json.{JsPath, JsValue, JsonValidationError}
 import cats.implicits._
 import com.iheart.thomas.persistence.Formats._
 import cats.effect.implicits._
+
 import scala.util.control.NoStackTrace
 
 trait Client[F[_]] {
@@ -52,6 +53,9 @@ object Client {
     def close(): F[Unit] =
       F.delay(ws.close()) *> IO.fromFuture(IO(system.terminate())).to[F].void
   })
+
+  def create[F[_]: Async](serviceUrl: String): Resource[F, Client[F]] =
+    Resource.make(http(serviceUrl))(_.close())
 
   case class ErrorParseJson(errs: Seq[(JsPath, Seq[JsonValidationError])]) extends RuntimeException with NoStackTrace
 
