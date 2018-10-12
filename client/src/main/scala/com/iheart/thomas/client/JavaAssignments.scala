@@ -12,7 +12,7 @@ import com.iheart.thomas.model.UserGroupQuery
 import collection.JavaConverters._
 
 
-class JavaAPI(serviceUrl: String, asOf: Option[Long]) {
+class JavaAssignments(serviceUrl: String, asOf: Option[Long]) {
   private val time = asOf.map(TimeUtil.toDateTime)
 
   val assignGroups = Client.assignGroups[IO](serviceUrl, time).unsafeRunSync()
@@ -33,7 +33,7 @@ class JavaAPI(serviceUrl: String, asOf: Option[Long]) {
     assignments(userId, new java.util.ArrayList[String](), new java.util.HashMap[String, String]())
 }
 
-object JavaAPI {
-  def create(serviceUrl: String): JavaAPI = new JavaAPI(serviceUrl, None)
-  def create(serviceUrl: String, asOf: Long): JavaAPI = new JavaAPI(serviceUrl, Some(asOf))
+object JavaAssignments {
+  def create(serviceUrl: String): JavaAssignments = new JavaAssignments(serviceUrl, None)
+  def create(serviceUrl: String, asOf: Long): JavaAssignments = new JavaAssignments(serviceUrl, Some(asOf))
 }

@@ -31,7 +31,7 @@ addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias("validate", s";root/test;playLib/IntegrationTest/test")
 addCommandAlias("releaseAll", s";project toRelease;release")
 
-lazy val root = project.in(file("."))
+lazy val thomas = project.in(file("."))
   .aggregate(example, toRelease)
   .settings(
     rootSettings,
