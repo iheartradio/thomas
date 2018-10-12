@@ -28,10 +28,10 @@ lazy val myVersions = Map(
 lazy val scala2_11Ver = vAll.vers("scalac_2.11")
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
-addCommandAlias("validate", s";root/test;playLib/IntegrationTest/test")
+addCommandAlias("validate", s";thomas/test;playLib/IntegrationTest/test")
 addCommandAlias("releaseAll", s";project toRelease;release")
 
-lazy val root = project.in(file("."))
+lazy val thomas = project.in(file("."))
   .aggregate(example, toRelease)
   .settings(
     rootSettings,

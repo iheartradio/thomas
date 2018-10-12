@@ -10,17 +10,18 @@ import java.time.OffsetDateTime
 
 import cats.Id
 import cats.effect.{Async, IO, Resource}
-import com.iheart.thomas.model.{Abtest, Feature}
+import com.iheart.thomas.model.{Abtest, Feature, FeatureName}
 import lihua.mongo.Entity
-import play.api.libs.json.{JsPath, JsValue, JsonValidationError}
+import play.api.libs.json.{JsPath, JsValue, JsonValidationError, Reads}
 import cats.implicits._
 import com.iheart.thomas.persistence.Formats._
-import cats.effect.implicits._
+import play.api.libs.ws.StandaloneWSRequest
 
 import scala.util.control.NoStackTrace
 
 trait Client[F[_]] {
   def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]]
+  def test(feature: FeatureName): F[Option[Entity[Abtest]]]
   def close(): F[Unit]
 }
 
@@ -32,37 +33,57 @@ object Client {
 
   import play.api.libs.ws.JsonBodyReadables._
 
-  def http[F[_]](serviceUrl: String)(implicit F: Async[F]): F[Client[F]] = F.delay(new Client[F] {
+  def http[F[_]](urls: HttpServiceUrls)(implicit F: Async[F]): F[Client[F]] = F.delay(new Client[F] {
     implicit val system = ActorSystem()
 
     implicit val materializer = ActorMaterializer()
 
     val ws = StandaloneAhcWSClient(AhcWSClientConfigFactory.forConfig())
 
-    def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]] = {
-      val request = ws.url(serviceUrl)
-
+    private def req[A: Reads](request: StandaloneWSRequest): F[A] = {
       IO.fromFuture(IO(request.addHttpHeaders("Accept" -> "application/json").get())).to[F].flatMap { resp =>
-        resp.body[JsValue].validate[Vector[(Entity[Abtest], Feature)]].fold(
+        resp.body[JsValue].validate[A].fold(
           errs => F.raiseError(ErrorParseJson(errs)),
           F.pure(_)
         )
       }
     }
 
+    def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]] = {
+      val baseUrl = ws.url(urls.tests)
+
+      req(asOf.fold(baseUrl){ ao =>
+        baseUrl.addQueryStringParameters(("at", (ao.toInstant.toEpochMilli / 1000).toString))
+      })
+    }
+
+    def test(feature: FeatureName): F[Option[Entity[Abtest]]] =
+      req[Vector[Entity[Abtest]]](ws.url(urls.test(feature))).map(_.headOption)
+
     def close(): F[Unit] =
       F.delay(ws.close()) *> IO.fromFuture(IO(system.terminate())).to[F].void
   })
 
-  def create[F[_]: Async](serviceUrl: String): Resource[F, Client[F]] =
+
+  trait HttpServiceUrls {
+    //it takes an optional  `at` parameter for as of time
+    def tests: String
+    def test(featureName: FeatureName): String
+  }
+
+  def create[F[_]: Async](serviceUrl: HttpServiceUrls): Resource[F, Client[F]] =
     Resource.make(http(serviceUrl))(_.close())
 
   case class ErrorParseJson(errs: Seq[(JsPath, Seq[JsonValidationError])]) extends RuntimeException with NoStackTrace
 
-
+  /**
+   * Shortcuts for getting the assigned group only.
+   * @param serviceUrl for getting all running tests as of `time`
+   */
   def assignGroups[F[_]: Async](serviceUrl: String, time: Option[OffsetDateTime]): F[AssignGroups[Id]] =
-    Client.http[F](serviceUrl).bracket(
-      _.tests(time).map(t => AssignGroups.fromTestsFeatures[Id](t))
-    )(_.close())
+    Client.create[F](new HttpServiceUrls {
+      def tests: String = serviceUrl
+      def test(featureName: FeatureName): String = ???
+    }).use(_.tests(time).map(t => AssignGroups.fromTestsFeatures[Id](t)))
 }
 
