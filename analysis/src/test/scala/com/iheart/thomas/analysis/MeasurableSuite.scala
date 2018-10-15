@@ -32,4 +32,24 @@ class MeasurableSuite extends FunSuite with Matchers {
     result("A").risk.d shouldBe (0.1 +- 0.2)
 
   }
+
+  test("Measure A/B/C") {
+    val n = 100
+    val groupData = Random.shuffle(Gamma(0.55, 3).param.sample()).take(n)
+    val group2Data = Random.shuffle(Gamma(0.55, 3).param.sample()).take(n)
+    val controlData = Random.shuffle(Gamma(0.5, 3).param.sample()).take(n)
+    val resultEither = GammaKPI(KPIName("test"),
+      Normal(0.5, 0.1),
+      Normal(3, 0.1)
+    ).assess(Map("A" -> controlData, "B" -> groupData, "C" -> group2Data), "A")
+
+    resultEither.isRight shouldBe true
+
+    val result = resultEither.right.get
+
+    result.keys should contain("B")
+    result.keys should contain("C")
+    result.keys shouldNot contain("A")
+
+  }
 }
