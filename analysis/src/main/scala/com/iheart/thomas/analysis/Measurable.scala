@@ -22,7 +22,7 @@ trait Measurable[K] {
              controlGroupName: GroupName): Either[ControlGroupMeasurementMissing.type, Map[GroupName, GroupResult]]
     = allMeasurements.get(controlGroupName).
         toRight(ControlGroupMeasurementMissing).
-        map(assess(k, allMeasurements.filterKeys(_ === controlGroupName), _))
+        map(assess(k, allMeasurements.filterKeys(_ =!= controlGroupName), _))
 }
 
 object Measurable {
