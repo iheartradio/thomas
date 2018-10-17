@@ -29,10 +29,10 @@ class MeasurableSuite extends FunSuite with Matchers {
 
     result.keys should contain("A")
     plot1D(result("A").indicatorSample.coerce[List[Double]])
-    println(result("A").copy(indicatorSample = Nil))
+
     result("A").expectedEffect.d shouldBe (0.15 +- 0.2)
     result("A").probabilityOfImprovement.p shouldBe (0.9 +- 0.2)
-    result("A").risk.d shouldBe (0.1 +- 0.2)
+    result("A").riskOfUsing.d shouldBe (0.1 +- 0.2)
 
   }
 

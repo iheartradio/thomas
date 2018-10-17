@@ -7,7 +7,6 @@ import com.stripe.rainier.core.{Gamma, RandomVariable, Sampleable}
 import com.stripe.rainier.sampler.{RNG, Sampler, Walkers}
 import simulacrum._
 import cats.implicits._
-import com.iheart.thomas.analysis.Measurable.ControlGroupMeasurementMissing
 
 import scala.util.control.NoStackTrace
 
@@ -19,9 +18,9 @@ trait Measurable[K] {
              control: Measurements): Map[GroupName, GroupResult]
 
   def assess(k: K, allMeasurements: Map[GroupName, Measurements],
-             controlGroupName: GroupName): Either[ControlGroupMeasurementMissing.type, Map[GroupName, GroupResult]]
+             controlGroupName: GroupName): Either[Measurable.ControlGroupMeasurementMissing.type, Map[GroupName, GroupResult]]
     = allMeasurements.get(controlGroupName).
-        toRight(ControlGroupMeasurementMissing).
+        toRight(Measurable.ControlGroupMeasurementMissing).
         map(assess(k, allMeasurements.filterKeys(_ =!= controlGroupName), _))
 }
 
@@ -38,8 +37,6 @@ object Measurable {
                groupMeasurements: Map[GroupName, Measurements],
                control: Measurements): Map[GroupName, GroupResult] = {
 
-      def findMinimum(data: List[Double], threshold: Double): Double =
-        data.sorted.take((data.size.toDouble * (1.0 - threshold)).toInt).last
 
 
       groupMeasurements.map {
@@ -50,10 +47,7 @@ object Measurable {
             controlIndicator <- measure(k, control)
           } yield treatmentIndicator - controlIndicator).sample(sampler, warmupIterations, iterations, keepEvery)
 
-          val possibility = Probability(improvement.count(_ > 0).toDouble / improvement.length)
-          val cost = findMinimum(improvement, 0.95)
-          val expected = improvement.sum / improvement.size
-          (gn, GroupResult(possibility, KPIDouble(cost), KPIDouble(expected), improvement.map(KPIDouble(_))))
+          (gn, GroupResult(improvement))
       }
     }
   }
@@ -80,6 +74,6 @@ object Measurable {
                             )
 
   object SamplerSettings {
-    val default = SamplerSettings(Walkers(100), 5000, 10000)
+    val default = SamplerSettings(Walkers(100), 10000, 20000)
   }
 }
