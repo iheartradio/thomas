@@ -80,6 +80,6 @@ object Measurable {
                             )
 
   object SamplerSettings {
-    val default = SamplerSettings(Walkers(100), 5000, 30000)
+    val default = SamplerSettings(Walkers(100), 5000, 10000)
   }
 }
