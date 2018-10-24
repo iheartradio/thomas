@@ -84,7 +84,6 @@ lazy val client = project
     rootSettings,
     mainecoonSettings,
     Defaults.itSettings,
-    unmanagedResourceDirectories in Compile ++=  (example / Compile / unmanagedResourceDirectories).value,
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-slf4j" % "2.5.6",
       "com.typesafe.play" %% "play-ahc-ws-standalone" % "1.1.9",
