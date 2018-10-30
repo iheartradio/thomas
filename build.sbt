@@ -21,7 +21,7 @@ lazy val myVersions = Map(
   "newtype" -> "0.4.2",
   "rainier" -> "0.1.3",
   "henkan-convert" -> "0.6.2",
-  "lihua" -> "0.11.2",
+  "lihua" -> "0.11.4",
   "breeze" -> "0.13.2"
 )
 
