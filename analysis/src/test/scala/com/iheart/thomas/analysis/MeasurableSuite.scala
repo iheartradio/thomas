@@ -76,6 +76,7 @@ class MeasurableSuite extends FunSuite with Matchers {
     val path = "plots/diagnosticTraceTest.png"
     new File(path).delete()
 
+    new File("plots").mkdir()
     result("A").trace[IO](path).unsafeRunSync()
 
     new File(path).exists() shouldBe true
