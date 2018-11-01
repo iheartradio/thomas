@@ -1,6 +1,9 @@
 package com.iheart.thomas
 package analysis
 
+import java.io.File
+
+import cats.effect.IO
 import io.estatico.newtype.ops._
 import implicits._
 import com.iheart.thomas.analysis.DistributionSpec.Normal
@@ -11,6 +14,7 @@ import org.scalatest.{FunSuite, Matchers}
 import com.stripe.rainier.repl.plot1D
 
 import scala.util.Random
+
 class MeasurableSuite extends FunSuite with Matchers {
   implicit val rng = RNG.default
 
@@ -58,23 +62,22 @@ class MeasurableSuite extends FunSuite with Matchers {
 
   }
 
+  test("Diagnostic trace") {
+    implicit val sampleSettings = SamplerSettings.default
 
-  test("Diagnostic") {
-//
-//    import com.stripe.rainier.core
-//
-//    val data = Gamma(0.55, 3).param.sample(Sampler.Default.sampler, 3000, 30000)
-//    def fit(a: Any): Unit = {
-//      val shapeSample = (for {
-//        shape <- core.Normal(0.5, 0.1).param
-//        scale <- core.Normal(3, 0.1).param
-//        _ <- Gamma(shape, scale).fit(data)
-//      } yield shape).sample(Walkers(100), 5000, 10000)
-//      plot1D(shapeSample)
-//      println(shapeSample.sum / shapeSample.size.toDouble)
-//    }
-//
-//    (1 to 10).foreach(fit)
+    val n = 1000
+    val groupData = Random.shuffle(Gamma(0.55, 3).param.sample()).take(n)
+    val controlData = Random.shuffle(Gamma(0.5, 3).param.sample()).take(n)
+    val result = GammaKPI(KPIName("test"),
+      Normal(0.5, 0.1),
+      Normal(3, 0.1)
+    ).assess(Map("A" -> groupData), controlData)
 
+    val path = "plots/diagnosticTraceTest.png"
+    new File(path).delete()
+
+    result("A").trace[IO](path).unsafeRunSync()
+
+    new File(path).exists() shouldBe true
   }
 }

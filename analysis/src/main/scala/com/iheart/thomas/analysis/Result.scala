@@ -1,4 +1,5 @@
 package com.iheart.thomas.analysis
+import cats.effect.Sync
 import io.estatico.newtype.ops._
 
 
@@ -14,5 +15,16 @@ case class GroupResult(rawSample: List[Double]) {
   lazy val expectedEffect = KPIDouble(rawSample.sum / rawSample.size)
   lazy val medianEffect = findMinimum(0.5)
   lazy val riskOfNotUsing = KPIDouble(-findMinimum(0.05).d)
+
+  def trace[F[_]](filePath: String)(implicit F: Sync[F]): F[Unit] = {
+    import com.cibo.evilplot.geometry.Extent
+    import com.stripe.rainier.plot.EvilTracePlot._
+    F.delay {
+      // now some EvilPlots
+      render(traces(rawSample.map(d => Map("diff from control" -> d))),
+        filePath,
+        Extent(1800, 600))
+    }
+  }
 }
 
