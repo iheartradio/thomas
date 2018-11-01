@@ -9,7 +9,7 @@ val vAll = Versions(versions ++ myVersions, libraries ++ myLibraries, scalacPlug
 
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
-lazy val myLibraries = multiModuleLib("rainier", "com.stripe", "rainier-core", "rainier-cats") ++
+lazy val myLibraries = multiModuleLib("rainier", "com.stripe", "rainier-core", "rainier-cats", "rainier-plot") ++
   multiModuleLib("lihua", "com.iheart", "lihua-mongo", "lihua-crypt") ++
   multiModuleLib("breeze", "org.scalanlp", "breeze", "breeze-viz")++ Map(
   singleModuleLib("henkan-convert", "com.kailuowang"),
@@ -115,9 +115,10 @@ lazy val analysis = project
 //  .settings(mainecoonSettings)
   .settings(simulacrumSettings(vAll))
   .settings(
+    resolvers += Resolver.bintrayRepo("cibotech", "public"),
     scalaMacroDependencies(vAll),
     addJVMTestLibs(vAll, "scalacheck", "scalatest"),
-    addJVMLibs(vAll, "rainier-core", "rainier-cats", "newtype", "breeze"),
+    addJVMLibs(vAll, "rainier-core", "rainier-cats", "newtype", "breeze", "rainier-plot"),
     initialCommands in console :=
     """
       |import com.iheart.thomas.analysis._
@@ -154,10 +155,13 @@ lazy val commonSettings = addCompilerPlugins(vAll, "kind-projector") ++ sharedCo
   releaseCrossBuild := true,
   crossScalaVersions := Seq(scala2_11Ver, scalaVersion.value),
   developers := List(Developer("Kailuo Wang", "@kailuowang", "kailuo.wang@gmail.com", new java.net.URL("http://kailuowang.com"))),
-  scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
-  scalacOptions in (Test, console) ~= (_.filterNot(Set("-Ywarn-unused-import", "-Ywarn-dead-code"))),
+  scalacOptions in (Compile, console) ~= lessStrictScalaChecks,
+  scalacOptions in (Test, compile) ~= lessStrictScalaChecks,
   scalacOptions += s"-Xlint:-package-object-classes"
-) 
+)
+
+lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =
+  _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports",  "-Ywarn-dead-code"))
 
 lazy val mainecoonSettings = Seq(
   addCompilerPlugin(
