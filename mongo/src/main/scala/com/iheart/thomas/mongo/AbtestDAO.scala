@@ -7,23 +7,18 @@ package com.iheart
 package thomas
 package mongo
 
-import java.time.OffsetDateTime
-
-import cats.effect.IO
+import cats.effect.{IO, Async}
 import cats.implicits._
 import com.iheart.thomas.model._
-import lihua.mongo.IOEitherTDAOFactory
-import play.api.libs.json.{JsObject, Json}
+import lihua.mongo.EitherTDAOFactory
 import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.play.json._
 import reactivemongo.play.json.collection.JSONCollection
 import Formats._
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.FiniteDuration
 
-class AbtestDAOFactory(implicit ec: ExecutionContext) extends IOEitherTDAOFactory[Abtest]("abtest", "tests") {
-  def ensure(collection: JSONCollection): IO[Unit] =
+class AbtestDAOFactory[F[_]: Async](implicit ec: ExecutionContext) extends EitherTDAOFactory[Abtest, F]("abtest", "tests") {
+  def ensure(collection: JSONCollection): F[Unit] =
     IO.fromFuture(IO(collection.indexesManager.ensure(
       Index(Seq(
         ("start", IndexType.Descending),
@@ -33,26 +28,11 @@ class AbtestDAOFactory(implicit ec: ExecutionContext) extends IOEitherTDAOFactor
         Index(Seq(
           ("feature", IndexType.Ascending)
         ))
-      ).void))
+      ).void)).to[F]
 
 }
 
-object AbtestQuery {
-  def byTime(time: OffsetDateTime): JsObject =
-    Json.obj(
-      "start" → Json.obj("$lte" → time)
-    ) ++ endTimeAfter(time)
 
-  def endTimeAfter(time: OffsetDateTime): JsObject =
-    Json.obj(
-      "$or" -> Json.arr(
-        Json.obj("end" → Json.obj("$gt" → time)),
-        Json.obj("end" → Json.obj("$exists" → false))
-      )
-    )
-
-}
-
-class AbtestExtrasDAOFactory extends IOEitherTDAOFactory[AbtestExtras]("abtest", "testsExtras") {
-  protected def ensure(collection: JSONCollection): IO[Unit] = IO.unit
+class AbtestExtrasDAOFactory[F[_]: Async] extends EitherTDAOFactory[AbtestExtras, F]("abtest", "testsExtras") {
+  protected def ensure(collection: JSONCollection): F[Unit] = Async[F].unit
 }

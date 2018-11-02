@@ -9,7 +9,7 @@ import java.time.OffsetDateTime
 
 import cats.data.NonEmptyList
 import com.iheart.thomas.model.{Abtest, FeatureName, GroupName, GroupSize}
-import lihua.mongo.Entity
+import lihua.Entity
 
 import scala.util.control.NoStackTrace
 

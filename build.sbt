@@ -10,7 +10,7 @@ val vAll = Versions(versions ++ myVersions, libraries ++ myLibraries, scalacPlug
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
 lazy val myLibraries = multiModuleLib("rainier", "com.stripe", "rainier-core", "rainier-cats", "rainier-plot") ++
-  multiModuleLib("lihua", "com.iheart", "lihua-mongo", "lihua-crypt") ++
+  multiModuleLib("lihua", "com.iheart", "lihua-mongo", "lihua-crypt", "lihua-core") ++
   multiModuleLib("breeze", "org.scalanlp", "breeze", "breeze-viz")++ Map(
   singleModuleLib("henkan-convert", "com.kailuowang"),
   singleModuleLib("mainecoon-macros", "com.kailuowang"),
@@ -45,8 +45,8 @@ lazy val toRelease = project
 
 
 lazy val example = project.enablePlugins(PlayScala, SwaggerPlugin)
-  .dependsOn(core, playLib)
-  .aggregate(core, playLib)
+  .dependsOn(playLib)
+  .aggregate(playLib)
   .settings(rootSettings, noPublishing)
   .settings(
     name := "thomas-example",
@@ -104,7 +104,12 @@ lazy val core = project
   .settings(taglessSettings)
   .settings(
     addJVMTestLibs(vAll, "scalacheck", "scalatest"),
-    addJVMLibs(vAll, "cats-core", "monocle-macro", "monocle-core", "lihua-mongo", "lihua-crypt", "mouse", "henkan-convert"),
+    addJVMLibs(vAll, "cats-core", "monocle-macro", "monocle-core", "lihua-core", "mouse", "henkan-convert"),
+    libraryDependencies ++=  Seq(
+      "com.typesafe.play" %% "play-json" % "2.6.2",
+      "com.typesafe" % "config" % "1.3.2",
+      "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.0"
+    ),
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
   )
 
@@ -113,7 +118,7 @@ lazy val mongo = project
   .settings(name := "thomas-mongo")
   .settings(rootSettings)
   .settings(
-    addJVMLibs("lihua-mongo", "lihua-crypt"),
+    addJVMLibs(vAll, "lihua-mongo", "lihua-crypt"),
   )
 
 lazy val analysis = project

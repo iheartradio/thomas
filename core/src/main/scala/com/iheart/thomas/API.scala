@@ -10,25 +10,20 @@ import java.time.OffsetDateTime
 
 import Error._
 import model._
-import lihua.mongo._
-import EntityDAO.Query
-import reactivemongo.api.commands.GetLastError
+import lihua._
 import cats.implicits._
 import mouse.all._
 import cats._
-import cats.data.EitherT
-import cats.effect.IO
-import com.iheart.thomas.persistence._
-import com.typesafe.config.Config
 import monocle.macros.syntax.lens._
-import play.api.libs.json.{JsArray, JsString, Json}
+import play.api.libs.json._
 import henkan.convert.Syntax._
-import lihua.crypt.CryptTsec
-import mainecoon.{autoFunctorK, finalAlg}
+import cats.tagless.{autoFunctorK, finalAlg}
 
 import concurrent.duration._
-import scala.concurrent.ExecutionContext
-import scala.util.Random
+import scala.util.{Random, Try}
+import com.typesafe.config.Config
+
+
 /**
  * Algebra for ABT API
  * Final Tagless encoding
@@ -102,18 +97,19 @@ trait API[F[_]] {
 
 object API
 
-import persistence.FeatureDAOEnhancement._
+
 final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
   implicit
-  val abTestDao:       EntityDAO[F, Abtest],
-  val abTestExtrasDao: EntityDAO[F, AbtestExtras],
-  val featureDao:      EntityDAO[F, Feature],
+  daos : (EntityDAO[APIResult[F, ?], Abtest, JsObject],
+          EntityDAO[APIResult[F, ?], AbtestExtras, JsObject],
+          EntityDAO[APIResult[F, ?], Feature, JsObject]),
   F:                   MonadError[F, Error],
   eligibilityControl:  EligibilityControl[F]
 ) extends API[F] {
-  implicit val wc = GetLastError.Default
+//  implicit val wc = GetLastError.Default
+  import QueryHelpers._
+  private[thomas] val (abTestDao, abTestExtrasDao, featureDao) = daos
 
-  import com.iheart.thomas.persistence.AbtestQuery._
 
   def create(testSpec: AbtestSpec, auto: Boolean): F[Entity[Abtest]] =
     addTestWithLock(testSpec.feature)(createWithoutLock(testSpec, auto))
@@ -129,7 +125,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
   def getAllTestsCached(time: Option[OffsetDateTime]): F[Vector[(Entity[Abtest], Feature)]] = {
     val ofTime = time.getOrElse(TimeUtil.currentMinute)
     for {
-      tests <- abTestDao.findCached(byTime(ofTime), cacheTtl)
+      tests <- abTestDao.findCached(abtests.byTime(ofTime), cacheTtl)
       features <- featureDao.findCached(
         Json.obj("name" ->
           Json.obj("$in" ->
@@ -151,10 +147,10 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
   def getTest(id: TestId): F[Entity[Abtest]] = abTestDao.get(id)
 
   def getAllTests(time: Option[OffsetDateTime]): F[Vector[Entity[Abtest]]] =
-    abTestDao.find(byTime(time.getOrElse(OffsetDateTime.now)))
+    abTestDao.find(abtests.byTime(time.getOrElse(OffsetDateTime.now)))
 
   def getAllTestsEndAfter(time: OffsetDateTime): F[Vector[Entity[Abtest]]] =
-    abTestDao.find(endTimeAfter(time))
+    abTestDao.find(abtests.endTimeAfter(time))
 
   def getTestsByFeature(feature: FeatureName): F[Vector[Entity[Abtest]]] =
     abTestDao.find(Json.obj("feature" -> JsString(feature)))
@@ -166,7 +162,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
       .map(_.head)
 
   def getTestByFeature(feature: FeatureName, at: OffsetDateTime): F[Entity[Abtest]] =
-    abTestDao.findOne(Json.obj("feature" -> JsString(feature)) ++ byTime(at))
+    abTestDao.findOne(Json.obj("feature" -> JsString(feature)) ++ abtests.byTime(at))
 
   def addOverrides(featureName: FeatureName, overrides: Overrides): F[Feature] = for {
     feature <- ensureFeature(featureName)
@@ -216,7 +212,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
     } yield r
 
   def getTestExtras(testId: TestId): F[Option[Entity[AbtestExtras]]] = {
-    abTestExtrasDao.findOneOption(Query.idSelector(testId))
+    abTestExtrasDao.findOneOption(testId)
   }
 
   def getGroupsWithMeta(query: UserGroupQuery): F[UserGroupQueryResult] = {
@@ -225,7 +221,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
       groupAssignments <- groupAssignmentsF
       metas <- groupAssignments.toList.traverseFilter {
         case (feature, (groupName, test)) =>
-          abTestExtrasDao.findCached(Query.idSelector(test._id), cacheTtl).map { f =>
+          abTestExtrasDao.findCached(test._id, cacheTtl).map { f =>
             f.headOption.flatMap(_.data.groupMetas.get(groupName).map((feature, _)))
           }
       }
@@ -253,7 +249,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
       upsert = false
     )
   } yield ()).adaptError {
-    case Error.FailedToPersist(_) | Error.DBException(_: reactivemongo.api.commands.LastError) => Error.ConflictCreation(fn)
+    case Error.FailedToPersist(_) | Error.DBException(_) => Error.ConflictCreation(fn)
   }
 
   private def createWithoutLock(testSpec: AbtestSpec, auto: Boolean): F[Entity[Abtest]] =
@@ -362,35 +358,9 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
 }
 
 object DefaultAPI {
-  type ET[A] = EitherT[IO, Error, A]
+  import scala.compat.java8.DurationConverters._
+  def ttlFrom[F[_]: ApplicativeError[?[_], Throwable]](config: Config): F[Duration] =
+    Try(config.getDuration("iheart.abtest.get-groups.ttl").toScala).liftTo[F].widen
 
-  implicit def instance(
-    implicit
-    shutdownHook: ShutdownHook,
-    config:       Config,
-    ex:           ExecutionContext
-  ): IO[API[ET]] = {
-    import net.ceedubs.ficus.Ficus._
-    implicit val fk = com.iheart.thomas.persistence.toApiResult[IO]
-    import lihua.mongo.EntityDAO.autoDerive._
-
-    MongoDB[IO](
-      config,
-      config.as[Option[String]]("mongoDB.secret").map(new CryptTsec[IO](_))
-    ).flatMap { m =>
-        implicit val mongo = m
-        for {
-          at <- (new AbtestDAOFactory).create
-          atex <- (new AbtestExtrasDAOFactory).create
-          f <- (new FeatureDAOFactory).create
-        } yield {
-          implicit val atd = at
-          implicit val atexd = atex
-          implicit val fd = f
-          val ttl = config.as[FiniteDuration]("iheart.abtest.get-groups.ttl")
-          new DefaultAPI[ET](ttl)
-        }
-      }
-  }
 
 }
