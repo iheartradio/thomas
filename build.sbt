@@ -21,7 +21,7 @@ lazy val myVersions = Map(
   "newtype" -> "0.4.2",
   "rainier" -> "0.1.3",
   "henkan-convert" -> "0.6.2",
-  "lihua" -> "0.11.4",
+  "lihua" -> "0.12-SNAPSHOT",
   "breeze" -> "0.13.2"
 )
 
@@ -61,14 +61,14 @@ lazy val example = project.enablePlugins(PlayScala, SwaggerPlugin)
   )
 
 lazy val playLib = project
-  .dependsOn(core)
-  .aggregate(core)
+  .dependsOn(mongo)
+  .aggregate(mongo, core)
   .configs(IntegrationTest)
   .settings(rootSettings)
   .settings(
     name := "thomas-play-lib",
     Defaults.itSettings,
-    mainecoonSettings,
+    taglessSettings,
     libraryDependencies ++= Seq(
       "com.typesafe.play" %% "play" % "2.6.10",
       "org.scalatest" %% "scalatest" % "3.0.1" % IntegrationTest,
@@ -82,7 +82,7 @@ lazy val client = project
   .settings(
     name := "thomas-client",
     rootSettings,
-    mainecoonSettings,
+    taglessSettings,
     Defaults.itSettings,
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-slf4j" % "2.5.6",
@@ -101,11 +101,19 @@ lazy val client = project
 lazy val core = project
   .settings(name := "thomas-core")
   .settings(rootSettings)
-  .settings(mainecoonSettings)
+  .settings(taglessSettings)
   .settings(
     addJVMTestLibs(vAll, "scalacheck", "scalatest"),
     addJVMLibs(vAll, "cats-core", "monocle-macro", "monocle-core", "lihua-mongo", "lihua-crypt", "mouse", "henkan-convert"),
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
+  )
+
+lazy val mongo = project
+  .dependsOn(core)
+  .settings(name := "thomas-mongo")
+  .settings(rootSettings)
+  .settings(
+    addJVMLibs("lihua-mongo", "lihua-crypt"),
   )
 
 lazy val analysis = project
@@ -144,7 +152,6 @@ lazy val stress = project
   )
 
 
-
 lazy val noPublishing = Seq(skip in publish := true)
 
 
@@ -163,12 +170,12 @@ lazy val commonSettings = addCompilerPlugins(vAll, "kind-projector") ++ sharedCo
 lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =
   _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports",  "-Ywarn-dead-code"))
 
-lazy val mainecoonSettings = Seq(
+lazy val taglessSettings = Seq(
   addCompilerPlugin(
     ("org.scalameta" % "paradise" % "3.0.0-M11").cross(CrossVersion.full)
   ),
   libraryDependencies ++= Seq(
-    "com.kailuowang" %% "mainecoon-macros" % "0.6.4"
+    "org.typelevel" %% "cats-tagless-macros" % "0.1.0"
   )
 )
 

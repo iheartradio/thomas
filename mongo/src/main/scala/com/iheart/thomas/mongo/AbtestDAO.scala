@@ -5,7 +5,7 @@
 
 package com.iheart
 package thomas
-package persistence
+package mongo
 
 import java.time.OffsetDateTime
 

@@ -95,7 +95,6 @@ trait API[F[_]] {
   def getTestExtras(test: TestId): F[Option[Entity[AbtestExtras]]]
 
   /**
-   *
    * Get the assignments for a list of ids bypassing the eligibility control
    */
   def getGroupAssignments(ids: List[String], feature: FeatureName, at: OffsetDateTime): F[List[(String, GroupName)]]
@@ -158,7 +157,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
     abTestDao.find(endTimeAfter(time))
 
   def getTestsByFeature(feature: FeatureName): F[Vector[Entity[Abtest]]] =
-    abTestDao.find(Query(Json.obj("feature" -> JsString(feature))))
+    abTestDao.find(Json.obj("feature" -> JsString(feature)))
       .map(_.sortBy(t => (t.data.start, t.data.end.getOrElse(OffsetDateTime.MAX))).reverse)
 
   def getTestByFeature(feature: FeatureName): F[Entity[Abtest]] =
@@ -167,7 +166,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
       .map(_.head)
 
   def getTestByFeature(feature: FeatureName, at: OffsetDateTime): F[Entity[Abtest]] =
-    abTestDao.findOne(Query(Json.obj("feature" -> JsString(feature)) ++ byTime(at)))
+    abTestDao.findOne(Json.obj("feature" -> JsString(feature)) ++ byTime(at))
 
   def addOverrides(featureName: FeatureName, overrides: Overrides): F[Feature] = for {
     feature <- ensureFeature(featureName)
