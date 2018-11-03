@@ -17,8 +17,8 @@ import cats.effect.implicits._
 import com.iheart.thomas.model._
 
 import scala.concurrent.{Future}
-import com.iheart.thomas.persistence.Formats._
-
+import com.iheart.thomas.mongo.Formats._
+import lihua.mongo.JsonFormats._
 class AbtestController[F[_]](
   api:        API[EitherT[F, Error, ?]],
   components: ControllerComponents,
@@ -116,8 +116,7 @@ class HttpResults[F[_]](alerter: Option[Alerter[F]])(implicit F: Async[F]) {
   def errorJson(msgs: Seq[String]): JsObject =
     Json.obj("errors" -> JsArray(msgs.map(JsString)))
 
-  def errorJson(msg: String): JsObject =
-    Json.obj("errors" -> Json.arr(msg))
+  def errorJson(msg: String): JsObject = errorJson(List(msg))
 
   import play.api.Logger
 
@@ -147,8 +146,9 @@ class HttpResults[F[_]](alerter: Option[Alerter[F]])(implicit F: Async[F]) {
     error match {
       case ValidationErrors(detail)      => BadRequest(errorJson(detail.toList.map(validationErrorMsg))).pure[F]
       case APINotFound                   => F.pure(NotFound)
-      case FailedToPersist(msg)          => serverError(msg)
+      case FailedToPersist(msg)          => serverError("Failed to save to DB: " + msg)
       case DBException(t)                => serverError("DB Error" + t.getMessage)
+      case DBLastError(t)                => serverError("DB Operation Rejected" + t)
       case CannotToChangePastTest(start) => BadRequest(errorJson(s"Cannot change a test that already started at $start")).pure[F]
       case ConflictCreation(fn)          => Conflict(errorJson(s"There is another test being created right now, could this one be a duplicate?")).pure[F]
       case ConflictTest(existing) => Conflict(

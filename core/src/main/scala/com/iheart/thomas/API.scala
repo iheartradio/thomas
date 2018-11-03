@@ -20,8 +20,7 @@ import henkan.convert.Syntax._
 import cats.tagless.{autoFunctorK, finalAlg}
 
 import concurrent.duration._
-import scala.util.{Random, Try}
-import com.typesafe.config.Config
+import scala.util.Random
 
 
 /**
@@ -100,15 +99,15 @@ object API
 
 final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
   implicit
-  daos : (EntityDAO[APIResult[F, ?], Abtest, JsObject],
-          EntityDAO[APIResult[F, ?], AbtestExtras, JsObject],
-          EntityDAO[APIResult[F, ?], Feature, JsObject]),
+  daos : (EntityDAO[F, Abtest, JsObject],
+          EntityDAO[F, AbtestExtras, JsObject],
+          EntityDAO[F, Feature, JsObject]),
   F:                   MonadError[F, Error],
   eligibilityControl:  EligibilityControl[F]
 ) extends API[F] {
 //  implicit val wc = GetLastError.Default
   import QueryHelpers._
-  private[thomas] val (abTestDao, abTestExtrasDao, featureDao) = daos
+  private[thomas] implicit val (abTestDao, abTestExtrasDao, featureDao) = daos
 
 
   def create(testSpec: AbtestSpec, auto: Boolean): F[Entity[Abtest]] =
@@ -249,7 +248,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
       upsert = false
     )
   } yield ()).adaptError {
-    case Error.FailedToPersist(_) | Error.DBException(_) => Error.ConflictCreation(fn)
+    case Error.FailedToPersist(_) | Error.DBLastError(_) => Error.ConflictCreation(fn)
   }
 
   private def createWithoutLock(testSpec: AbtestSpec, auto: Boolean): F[Entity[Abtest]] =
@@ -354,13 +353,5 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
     getTestByFeature(testSpec.feature)
       .map(Option.apply)
       .recover { case NotFound => None }
-
-}
-
-object DefaultAPI {
-  import scala.compat.java8.DurationConverters._
-  def ttlFrom[F[_]: ApplicativeError[?[_], Throwable]](config: Config): F[Duration] =
-    Try(config.getDuration("iheart.abtest.get-groups.ttl").toScala).liftTo[F].widen
-
 
 }

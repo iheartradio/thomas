@@ -17,12 +17,15 @@ sealed abstract class Error extends RuntimeException with NoStackTrace with Prod
 
 object Error {
 
-  case class FailedToPersist(msg: String) extends Error
+  case class FailedToPersist(msg: String) extends Error {
+    override def getMessage: FeatureName = msg
+  }
 
   case class ValidationErrors(detail: NonEmptyList[ValidationError]) extends Error
   case object NotFound extends Error
 
   case class DBException(e: Throwable) extends Error
+  case class DBLastError(override val getMessage: String) extends Error
 
   case class CannotToChangePastTest(start: OffsetDateTime) extends Error
 

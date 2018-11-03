@@ -71,6 +71,7 @@ lazy val playLib = project
     taglessSettings,
     libraryDependencies ++= Seq(
       "com.typesafe.play" %% "play" % "2.6.10",
+      "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.0",
       "org.scalatest" %% "scalatest" % "3.0.1" % IntegrationTest,
       "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % IntegrationTest )
   )
@@ -106,9 +107,7 @@ lazy val core = project
     addJVMTestLibs(vAll, "scalacheck", "scalatest"),
     addJVMLibs(vAll, "cats-core", "monocle-macro", "monocle-core", "lihua-core", "mouse", "henkan-convert"),
     libraryDependencies ++=  Seq(
-      "com.typesafe.play" %% "play-json" % "2.6.2",
-      "com.typesafe" % "config" % "1.3.2",
-      "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.0"
+      "com.typesafe.play" %% "play-json" % "2.6.2"
     ),
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
   )
@@ -169,6 +168,7 @@ lazy val commonSettings = addCompilerPlugins(vAll, "kind-projector") ++ sharedCo
   developers := List(Developer("Kailuo Wang", "@kailuowang", "kailuo.wang@gmail.com", new java.net.URL("http://kailuowang.com"))),
   scalacOptions in (Compile, console) ~= lessStrictScalaChecks,
   scalacOptions in (Test, compile) ~= lessStrictScalaChecks,
+  scalacOptions in (IntegrationTest, compile) ~= lessStrictScalaChecks,
   scalacOptions += s"-Xlint:-package-object-classes"
 )
 

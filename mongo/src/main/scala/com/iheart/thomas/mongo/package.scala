@@ -7,7 +7,6 @@ package com.iheart.thomas
 
 import cats.Functor
 import cats.arrow.FunctionK
-import cats.data.EitherT
 import cats.effect.Async
 import com.typesafe.config.Config
 import lihua.EntityDAO
@@ -17,18 +16,20 @@ import lihua.mongo.{AsyncEntityDAO, DBError, MongoDB, Query, ShutdownHook}
 import scala.concurrent.ExecutionContext
 import cats.implicits._
 import com.iheart.thomas.model.{Abtest, AbtestExtras, Feature}
+import lihua.mongo.DBError.UpdatedCountErrorDetail
 import play.api.libs.json.JsObject
 
 
 
 package object mongo {
-  type APIResult[F[_], T] = EitherT[F, Error, T]
 
   def toApiResult[F[_]: Functor]: FunctionK[AsyncEntityDAO.Result[F, ?], APIResult[F, ?]] = new FunctionK[AsyncEntityDAO.Result[F, ?], APIResult[F, ?]] {
     override def apply[A](fa: AsyncEntityDAO.Result[F, A]): APIResult[F, A] = {
       fa.leftMap {
         case DBError.NotFound            => Error.NotFound
+        case DBError.DBLastError(msg)    => Error.DBLastError(msg)
         case DBError.DBException(e, _)   => Error.DBException(e)
+        case e @ UpdatedCountErrorDetail(_)  => Error.FailedToPersist(e.getMessage())
         case DBError.WriteError(details) => Error.FailedToPersist(details.map(d => s"code: ${d.code}, msg: ${d.msg}").toList.mkString("\n"))
       }
     }
