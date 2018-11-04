@@ -26,6 +26,7 @@ class APIProvider @Inject() (config: Configuration, lifecycle: ApplicationLifecy
   }
 
   implicit val cfg = config.underlying
+  import mongo.idSelector
 
   implicit val api: API[F] = mongo.daos[IO].map { implicit daos =>
     import scala.compat.java8.DurationConverters._

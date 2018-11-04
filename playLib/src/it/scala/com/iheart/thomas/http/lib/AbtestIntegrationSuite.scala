@@ -22,37 +22,11 @@ import lihua.mongo.JsonFormats._
 import scala.concurrent.Future
 import scala.util.Random
 
-class DebugSuite extends AbtestIntegrationSuiteBase {
-  "DEbug" should {
-    "create a test when it's valid" in {
-
-      val ab = fakeAb()
-      val creation = create(ab)
-
-      status(creation) mustBe OK
-      contentType(creation) mustBe Some("application/json")
-      val created = contentAsJson(creation).as[Entity[Abtest]]
-
-      created.data.name mustBe ab.name
-
-      val retrieve = controller.get(created._id)(FakeRequest())
-
-      status(retrieve) mustBe OK
-      val retrieved = contentAsJson(retrieve).as[Entity[Abtest]]
-      retrieved.data.name mustBe ab.name
-
-    }
-
-  }
-
-
-}
-
 class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
   "GET test" should {
     "get test by id should return 404 if not in DB" in {
-      val retrieve = controller.get(ObjectId("blahblahblah"))(FakeRequest())
+      val retrieve = controller.get(lihua.mongo.generateId)(FakeRequest())
       status(retrieve) mustBe NOT_FOUND
     }
   }
@@ -964,8 +938,6 @@ class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with 
     List[EntityDAO[F, _, JsObject]](dapi.abTestDao, dapi.abTestExtrasDao, dapi.featureDao).foreach(_.removeAll(Json.obj()).value.unsafeRunSync().left.foreach { e =>
        println("Failed to clean up DB after: " + e.getMessage)
     })
-
-
   }
 
   def randomUserId = Random.alphanumeric.take(10).mkString

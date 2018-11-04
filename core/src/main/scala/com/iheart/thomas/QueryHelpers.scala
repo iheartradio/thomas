@@ -3,15 +3,10 @@ package com.iheart.thomas
 import java.time.OffsetDateTime
 
 import com.iheart.thomas.model.{Feature, FeatureName}
-import lihua.{Entity, EntityDAO, ObjectId}
+import lihua.{Entity, EntityDAO}
 import play.api.libs.json.{JsObject, Json, Writes}
 
 object QueryHelpers {
-
-  val idFieldName = "_id"
-
-  implicit def idSelector(id: ObjectId): JsObject = Json.obj(idFieldName -> id.value)
-  implicit def stringIdSelector(id: String): JsObject = Json.obj(idFieldName -> id)
 
   object abtests {
     def byTime(time: OffsetDateTime): JsObject =

@@ -9,7 +9,7 @@ import cats.Functor
 import cats.arrow.FunctionK
 import cats.effect.Async
 import com.typesafe.config.Config
-import lihua.EntityDAO
+import lihua.{EntityDAO, ObjectId}
 import lihua.crypt.CryptTsec
 import lihua.mongo.{AsyncEntityDAO, DBError, MongoDB, Query, ShutdownHook}
 
@@ -34,6 +34,8 @@ package object mongo {
       }
     }
   }
+
+  implicit val idSelector: ObjectId => JsObject = lihua.mongo.Query.idSelector
 
   def daos[F[_]: Async](
     implicit
