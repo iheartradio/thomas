@@ -247,7 +247,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
       Json.obj("name" -> fn, "locked" -> Json.obj("$ne" -> obtain)),
       feature.lens(_.data.locked).set(obtain),
       upsert = false
-    )
+    ).ensure(Error.ConflictCreation(fn))(identity)
   } yield ()).adaptError {
     case Error.FailedToPersist(_) | Error.DBLastError(_) => Error.ConflictCreation(fn)
   }

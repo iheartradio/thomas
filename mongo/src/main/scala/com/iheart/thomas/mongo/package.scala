@@ -29,7 +29,7 @@ package object mongo {
         case DBError.NotFound            => Error.NotFound
         case DBError.DBLastError(msg)    => Error.DBLastError(msg)
         case DBError.DBException(e, _)   => Error.DBException(e)
-        case e @ UpdatedCountErrorDetail(_)  => Error.FailedToPersist(e.getMessage())
+        case e @ UpdatedCountErrorDetail(_, _)  => Error.FailedToPersist(e.getMessage())
         case DBError.WriteError(details) => Error.FailedToPersist(details.map(d => s"code: ${d.code}, msg: ${d.msg}").toList.mkString("\n"))
       }
     }
