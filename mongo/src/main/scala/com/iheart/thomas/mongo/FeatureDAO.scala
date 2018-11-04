@@ -10,7 +10,7 @@ package mongo
 import cats.effect.{IO, Async}
 import cats.implicits._
 import com.iheart.thomas.model._
-import com.iheart.thomas.mongo.Formats._
+import Formats._
 import lihua.mongo.EitherTDAOFactory
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.play.json.collection.JSONCollection

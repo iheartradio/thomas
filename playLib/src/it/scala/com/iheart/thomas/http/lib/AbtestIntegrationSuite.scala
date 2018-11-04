@@ -5,8 +5,8 @@ import java.time.OffsetDateTime
 
 import cats.data.EitherT
 import cats.effect.IO
-import com.iheart.thomas.model._
-import lihua.{Entity, EntityDAO, ObjectId}
+import model._
+import lihua.{Entity, EntityDAO, EntityId}
 import org.scalatest.BeforeAndAfter
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -14,7 +14,7 @@ import play.api.mvc.{Action, ControllerComponents, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.status
 import org.scalatestplus.play._
-import com.iheart.thomas.mongo.Formats._
+import Formats._
 import play.api.libs.json.{JsObject, Json, Writes}
 import play.api.test.Helpers._
 import lihua.mongo.JsonFormats._
@@ -969,7 +969,7 @@ class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with 
     r
   }
 
-  def getTestFromServer(id: ObjectId): Entity[Abtest] =
+  def getTestFromServer(id: EntityId): Entity[Abtest] =
     contentAsJson(controller.get(id)(FakeRequest())).as[Entity[Abtest]]
 
   def getGroups(

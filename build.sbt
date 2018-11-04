@@ -21,7 +21,7 @@ lazy val myVersions = Map(
   "newtype" -> "0.4.2",
   "rainier" -> "0.1.3",
   "henkan-convert" -> "0.6.2",
-  "lihua" -> "0.12-SNAPSHOT",
+  "lihua" -> "0.12",
   "breeze" -> "0.13.2"
 )
 
@@ -90,7 +90,7 @@ lazy val client = project
       "com.typesafe.play" %% "play-ahc-ws-standalone" % "1.1.9",
       "com.typesafe.play" %% "play-ws-standalone-json" % "1.1.9",
       "org.scalatest" %% "scalatest" % "3.0.1" % "it, test"),
-
+    addJVMLibs(vAll, "cats-effect"),
     assemblyMergeStrategy in assembly := {
       case "reference.conf" | "reference-overrides.conf"    => MergeStrategy.concat
       case x =>
@@ -130,7 +130,7 @@ lazy val analysis = project
     resolvers += Resolver.bintrayRepo("cibotech", "public"),
     scalaMacroDependencies(vAll),
     addJVMTestLibs(vAll, "scalacheck", "scalatest"),
-    addJVMLibs(vAll, "rainier-core", "rainier-cats", "newtype", "breeze", "rainier-plot"),
+    addJVMLibs(vAll, "rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "rainier-plot"),
     initialCommands in console :=
     """
       |import com.iheart.thomas.analysis._

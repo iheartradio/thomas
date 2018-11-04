@@ -104,7 +104,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
           EntityDAO[F, Feature, JsObject]),
   F:                   MonadError[F, Error],
   eligibilityControl:  EligibilityControl[F],
-  idSelector :         ObjectId => JsObject
+  idSelector :         EntityId => JsObject
 ) extends API[F] {
 //  implicit val wc = GetLastError.Default
   import QueryHelpers._
@@ -212,7 +212,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
     } yield r
 
   def getTestExtras(testId: TestId): F[Option[Entity[AbtestExtras]]] = {
-    abTestExtrasDao.findOneOption(ObjectId(testId))
+    abTestExtrasDao.findOneOption(EntityId(testId))
   }
 
   def getGroupsWithMeta(query: UserGroupQuery): F[UserGroupQueryResult] = {
@@ -303,7 +303,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
 
   private def canChange(testId: TestId): F[Entity[Abtest]] =
     for {
-      test <- abTestDao.get(ObjectId(testId))
+      test <- abTestDao.get(EntityId(testId))
       _ <- test.data.start.isBefore(OffsetDateTime.now.plusMinutes(1)).option(CannotToChangePastTest(test.data.start)).fold(F.pure(()))(F.raiseError)
     } yield test
 

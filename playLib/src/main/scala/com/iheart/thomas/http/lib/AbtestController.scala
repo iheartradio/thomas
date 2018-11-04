@@ -8,8 +8,8 @@ package http.lib
 
 import cats.data.EitherT
 import cats.effect._
-import com.iheart.thomas.Error.{NotFound => APINotFound, _}
-import com.iheart.thomas.http.lib.AbtestController.Alerter
+import Error.{NotFound => APINotFound, _}
+import AbtestController.Alerter
 import play.api.libs.json._
 import play.api.mvc._
 import cats.implicits._
@@ -17,7 +17,7 @@ import cats.effect.implicits._
 import com.iheart.thomas.model._
 
 import scala.concurrent.{Future}
-import com.iheart.thomas.mongo.Formats._
+import Formats._
 import lihua.mongo.JsonFormats._
 class AbtestController[F[_]](
   api:        API[EitherT[F, Error, ?]],
