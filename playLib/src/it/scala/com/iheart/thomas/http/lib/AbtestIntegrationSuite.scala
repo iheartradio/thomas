@@ -1,12 +1,12 @@
-package com.iheart.thomas.http.lib
+package com.iheart.thomas
+package http.lib
 
 import java.time.OffsetDateTime
 
 import cats.data.EitherT
 import cats.effect.IO
-import com.iheart.thomas.DefaultAPI
-import com.iheart.thomas.model._
-import lihua.mongo.{Entity, EntityDAO, ObjectId}
+import model._
+import lihua.{Entity, EntityDAO, EntityId}
 import org.scalatest.BeforeAndAfter
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -14,18 +14,19 @@ import play.api.mvc.{Action, ControllerComponents, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.status
 import org.scalatestplus.play._
-import com.iheart.thomas.persistence.Formats._
-import play.api.libs.json.{Json, Writes}
+import Formats._
+import play.api.libs.json.{JsObject, Json, Writes}
 import play.api.test.Helpers._
+import lihua.mongo.JsonFormats._
 
 import scala.concurrent.Future
 import scala.util.Random
 
-class AbtestIntegrationSuite extends PlaySpec with GuiceOneAppPerSuite with BeforeAndAfter {
+class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
   "GET test" should {
     "get test by id should return 404 if not in DB" in {
-      val retrieve = controller.get(ObjectId.generate)(FakeRequest())
+      val retrieve = controller.get(lihua.mongo.generateId)(FakeRequest())
       status(retrieve) mustBe NOT_FOUND
     }
   }
@@ -897,6 +898,9 @@ class AbtestIntegrationSuite extends PlaySpec with GuiceOneAppPerSuite with Befo
       contentAsJson(toServer(controller.getGroups("1234", Some(spec.start.plusMinutes(1).toEpochSecond)))).as[Map[String, String]] must be(empty)
     }
   }
+}
+
+class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with BeforeAndAfter {
 
   type F[A] = EitherT[IO, Error, A]
 
@@ -930,12 +934,10 @@ class AbtestIntegrationSuite extends PlaySpec with GuiceOneAppPerSuite with Befo
   )
 
   after {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    import cats.implicits._
-
     val dapi = api.asInstanceOf[DefaultAPI[F]]
-    List[EntityDAO[F, _]](dapi.abTestDao, dapi.abTestExtrasDao, dapi.featureDao).traverse(_.removeAll(Json.obj())).value.unsafeRunSync()
-
+    List[EntityDAO[F, _, JsObject]](dapi.abTestDao, dapi.abTestExtrasDao, dapi.featureDao).foreach(_.removeAll(Json.obj()).value.unsafeRunSync().left.foreach { e =>
+       println("Failed to clean up DB after: " + e.getMessage)
+    })
   }
 
   def randomUserId = Random.alphanumeric.take(10).mkString
@@ -967,7 +969,7 @@ class AbtestIntegrationSuite extends PlaySpec with GuiceOneAppPerSuite with Befo
     r
   }
 
-  def getTestFromServer(id: ObjectId): Entity[Abtest] =
+  def getTestFromServer(id: EntityId): Entity[Abtest] =
     contentAsJson(controller.get(id)(FakeRequest())).as[Entity[Abtest]]
 
   def getGroups(

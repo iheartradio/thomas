@@ -9,10 +9,10 @@ import java.time.OffsetDateTime
 
 import cats.Monad
 import com.iheart.thomas.model._
-import lihua.mongo.{Entity, EntityDAO}
+import lihua.{Entity, EntityDAO}
 import cats.implicits._
 import com.iheart.thomas.model.Abtest.Status.InProgress
-import com.iheart.thomas.persistence.AbtestQuery.byTime
+import play.api.libs.json.JsObject
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -21,13 +21,14 @@ trait AssignGroups[F[_]] {
 }
 
 object AssignGroups {
+  import QueryHelpers._
   def fromDB[F[_]: Monad](cacheTtl: FiniteDuration)(
     implicit
-    abTestDao:          EntityDAO[F, Abtest],
-    featureDao:         EntityDAO[F, Feature],
+    abTestDao:          EntityDAO[F, Abtest, JsObject],
+    featureDao:         EntityDAO[F, Feature, JsObject],
     eligibilityControl: EligibilityControl[F]
   ): AssignGroups[F] = new DefaultAssignGroups[F](
-    ofTime => abTestDao.findCached(byTime(ofTime), cacheTtl),
+    ofTime => abTestDao.findCached(abtests.byTime(ofTime), cacheTtl),
     fn => featureDao.findCached('name -> fn, cacheTtl).map(_.headOption.map(_.data))
   )
 

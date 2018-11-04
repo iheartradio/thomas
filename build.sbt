@@ -10,7 +10,7 @@ val vAll = Versions(versions ++ myVersions, libraries ++ myLibraries, scalacPlug
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
 lazy val myLibraries = multiModuleLib("rainier", "com.stripe", "rainier-core", "rainier-cats", "rainier-plot") ++
-  multiModuleLib("lihua", "com.iheart", "lihua-mongo", "lihua-crypt") ++
+  multiModuleLib("lihua", "com.iheart", "lihua-mongo", "lihua-crypt", "lihua-core") ++
   multiModuleLib("breeze", "org.scalanlp", "breeze", "breeze-viz")++ Map(
   singleModuleLib("henkan-convert", "com.kailuowang"),
   singleModuleLib("mainecoon-macros", "com.kailuowang"),
@@ -21,7 +21,7 @@ lazy val myVersions = Map(
   "newtype" -> "0.4.2",
   "rainier" -> "0.1.3",
   "henkan-convert" -> "0.6.2",
-  "lihua" -> "0.11.4",
+  "lihua" -> "0.12",
   "breeze" -> "0.13.2"
 )
 
@@ -45,8 +45,8 @@ lazy val toRelease = project
 
 
 lazy val example = project.enablePlugins(PlayScala, SwaggerPlugin)
-  .dependsOn(core, playLib)
-  .aggregate(core, playLib)
+  .dependsOn(playLib)
+  .aggregate(playLib)
   .settings(rootSettings, noPublishing)
   .settings(
     name := "thomas-example",
@@ -61,16 +61,17 @@ lazy val example = project.enablePlugins(PlayScala, SwaggerPlugin)
   )
 
 lazy val playLib = project
-  .dependsOn(core)
-  .aggregate(core)
+  .dependsOn(mongo)
+  .aggregate(mongo, core)
   .configs(IntegrationTest)
   .settings(rootSettings)
   .settings(
     name := "thomas-play-lib",
     Defaults.itSettings,
-    mainecoonSettings,
+    taglessSettings,
     libraryDependencies ++= Seq(
       "com.typesafe.play" %% "play" % "2.6.10",
+      "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.0",
       "org.scalatest" %% "scalatest" % "3.0.1" % IntegrationTest,
       "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % IntegrationTest )
   )
@@ -82,14 +83,14 @@ lazy val client = project
   .settings(
     name := "thomas-client",
     rootSettings,
-    mainecoonSettings,
+    taglessSettings,
     Defaults.itSettings,
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-slf4j" % "2.5.6",
       "com.typesafe.play" %% "play-ahc-ws-standalone" % "1.1.9",
       "com.typesafe.play" %% "play-ws-standalone-json" % "1.1.9",
       "org.scalatest" %% "scalatest" % "3.0.1" % "it, test"),
-
+    addJVMLibs(vAll, "cats-effect"),
     assemblyMergeStrategy in assembly := {
       case "reference.conf" | "reference-overrides.conf"    => MergeStrategy.concat
       case x =>
@@ -101,11 +102,22 @@ lazy val client = project
 lazy val core = project
   .settings(name := "thomas-core")
   .settings(rootSettings)
-  .settings(mainecoonSettings)
+  .settings(taglessSettings)
   .settings(
     addJVMTestLibs(vAll, "scalacheck", "scalatest"),
-    addJVMLibs(vAll, "cats-core", "monocle-macro", "monocle-core", "lihua-mongo", "lihua-crypt", "mouse", "henkan-convert"),
+    addJVMLibs(vAll, "cats-core", "monocle-macro", "monocle-core", "lihua-core", "mouse", "henkan-convert"),
+    libraryDependencies ++=  Seq(
+      "com.typesafe.play" %% "play-json" % "2.6.2"
+    ),
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
+  )
+
+lazy val mongo = project
+  .dependsOn(core)
+  .settings(name := "thomas-mongo")
+  .settings(rootSettings)
+  .settings(
+    addJVMLibs(vAll, "lihua-mongo", "lihua-crypt"),
   )
 
 lazy val analysis = project
@@ -118,7 +130,7 @@ lazy val analysis = project
     resolvers += Resolver.bintrayRepo("cibotech", "public"),
     scalaMacroDependencies(vAll),
     addJVMTestLibs(vAll, "scalacheck", "scalatest"),
-    addJVMLibs(vAll, "rainier-core", "rainier-cats", "newtype", "breeze", "rainier-plot"),
+    addJVMLibs(vAll, "rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "rainier-plot"),
     initialCommands in console :=
     """
       |import com.iheart.thomas.analysis._
@@ -144,7 +156,6 @@ lazy val stress = project
   )
 
 
-
 lazy val noPublishing = Seq(skip in publish := true)
 
 
@@ -157,18 +168,19 @@ lazy val commonSettings = addCompilerPlugins(vAll, "kind-projector") ++ sharedCo
   developers := List(Developer("Kailuo Wang", "@kailuowang", "kailuo.wang@gmail.com", new java.net.URL("http://kailuowang.com"))),
   scalacOptions in (Compile, console) ~= lessStrictScalaChecks,
   scalacOptions in (Test, compile) ~= lessStrictScalaChecks,
+  scalacOptions in (IntegrationTest, compile) ~= lessStrictScalaChecks,
   scalacOptions += s"-Xlint:-package-object-classes"
 )
 
 lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =
   _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports",  "-Ywarn-dead-code"))
 
-lazy val mainecoonSettings = Seq(
+lazy val taglessSettings = Seq(
   addCompilerPlugin(
     ("org.scalameta" % "paradise" % "3.0.0-M11").cross(CrossVersion.full)
   ),
   libraryDependencies ++= Seq(
-    "com.kailuowang" %% "mainecoon-macros" % "0.6.4"
+    "org.typelevel" %% "cats-tagless-macros" % "0.1.0"
   )
 )
 

@@ -11,10 +11,11 @@ import java.time.OffsetDateTime
 import cats.Id
 import cats.effect.{Async, IO, Resource}
 import com.iheart.thomas.model.{Abtest, Feature, FeatureName}
-import lihua.mongo.Entity
-import play.api.libs.json.{JsPath, JsValue, JsonValidationError, Reads}
+import lihua.Entity
+import play.api.libs.json._
 import cats.implicits._
-import com.iheart.thomas.persistence.Formats._
+import Formats._
+import lihua.EntityId.toEntityId
 import play.api.libs.ws.StandaloneWSRequest
 
 import scala.util.control.NoStackTrace
@@ -25,7 +26,7 @@ trait Client[F[_]] {
   def close(): F[Unit]
 }
 
-object Client {
+object Client extends EntityReads {
 
   import akka.actor.ActorSystem
   import akka.stream.ActorMaterializer
@@ -87,3 +88,13 @@ object Client {
     }).use(_.tests(time).map(t => AssignGroups.fromTestsFeatures[Id](t)))
 }
 
+trait EntityReads {
+
+  implicit def entityFormat[T: Reads]: Reads[Entity[T]] = new Reads[Entity[T]] {
+    def reads(json: JsValue): JsResult[Entity[T]] = for {
+      id <- (json \ "_id" \ "$oid").validate[String]
+      t <- json.validate[T]
+    } yield Entity(id, t)
+  }
+
+}
