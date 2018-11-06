@@ -15,10 +15,10 @@ import scala.util.control.NoStackTrace
 trait Measurable[K] {
   def assess(k: K,
              groupMeasurements: Map[GroupName, Measurements],
-             control: Measurements): Map[GroupName, GroupResult]
+             control: Measurements): Map[GroupName, NumericGroupResult]
 
   def assess(k: K, allMeasurements: Map[GroupName, Measurements],
-             controlGroupName: GroupName): Either[Measurable.ControlGroupMeasurementMissing.type, Map[GroupName, GroupResult]]
+             controlGroupName: GroupName): Either[Measurable.ControlGroupMeasurementMissing.type, Map[GroupName, NumericGroupResult]]
     = allMeasurements.get(controlGroupName).
         toRight(Measurable.ControlGroupMeasurementMissing).
         map(assess(k, allMeasurements.filterKeys(_ =!= controlGroupName), _))
@@ -35,7 +35,7 @@ object Measurable {
 
     def assess(k: K,
                groupMeasurements: Map[GroupName, Measurements],
-               control: Measurements): Map[GroupName, GroupResult] = {
+               control: Measurements): Map[GroupName, NumericGroupResult] = {
 
 
 
@@ -47,7 +47,7 @@ object Measurable {
             controlIndicator <- measure(k, control)
           } yield treatmentIndicator - controlIndicator).sample(sampler, warmupIterations, iterations, keepEvery)
 
-          (gn, GroupResult(improvement))
+          (gn, NumericGroupResult(improvement))
       }
     }
   }
