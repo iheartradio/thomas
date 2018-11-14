@@ -1,3 +1,6 @@
-package com.iheart.thomas.analysis
+package com.iheart.thomas
+package analysis
 
-object implicits extends Measurable.ToMeasurableOps
+import syntax.AllSyntax
+
+object implicits extends Measurable.ToMeasurableOps with AllSyntax

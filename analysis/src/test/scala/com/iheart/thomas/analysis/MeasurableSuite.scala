@@ -7,7 +7,6 @@ import cats.effect.IO
 import io.estatico.newtype.ops._
 import implicits._
 import com.iheart.thomas.analysis.DistributionSpec.Normal
-import com.iheart.thomas.analysis.Measurable.SamplerSettings
 import com.stripe.rainier.core.Gamma
 import com.stripe.rainier.sampler._
 import org.scalatest.{FunSuite, Matchers}
@@ -17,9 +16,9 @@ import scala.util.Random
 
 class MeasurableSuite extends FunSuite with Matchers {
   implicit val rng = RNG.default
+  implicit val sampleSettings = SampleSettings.default
 
   test("Measure one group against control generates result") {
-    implicit val sampleSettings = SamplerSettings.default
 
     val n = 1000
     val groupData = Random.shuffle(Gamma(0.55, 3).param.sample()).take(n)
@@ -41,7 +40,6 @@ class MeasurableSuite extends FunSuite with Matchers {
   }
 
   test("Measure A/B/C") {
-    implicit val sampleSettings = SamplerSettings.default
 
     val n = 100
     val groupData = Random.shuffle(Gamma(0.55, 3).param.sample()).take(n)
@@ -63,7 +61,6 @@ class MeasurableSuite extends FunSuite with Matchers {
   }
 
   test("Diagnostic trace") {
-    implicit val sampleSettings = SamplerSettings.default
 
     val n = 1000
     val groupData = Random.shuffle(Gamma(0.55, 3).param.sample()).take(n)
@@ -80,5 +77,17 @@ class MeasurableSuite extends FunSuite with Matchers {
     result("A").trace[IO](path).unsafeRunSync()
 
     new File(path).exists() shouldBe true
+
+    new File(path).delete()
+  }
+
+  test("ksTest") {
+
+    val testData = Random.shuffle(Gamma(0.55, 3).param.sample(100000))
+    val kpi = GammaKPI(KPIName("test"),
+      Normal(0.55, 0.1),
+      Normal(3, 0.1)
+    )
+    kpi.kSTest(testData) shouldBe <(0.01)
   }
 }
