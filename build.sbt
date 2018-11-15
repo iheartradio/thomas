@@ -124,7 +124,7 @@ lazy val analysis = project
     resolvers += Resolver.bintrayRepo("cibotech", "public"),
     scalaMacroDependencies(libs),
     libs.testDependencies("scalacheck", "scalatest"),
-    libs.dependencies("rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "rainier-plot", "commons-math3"),
+    libs.dependencies("rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "rainier-plot", "commons-math3", "play-json-derived-codecs"),
     initialCommands in console :=
     """
       |import com.iheart.thomas.analysis._
