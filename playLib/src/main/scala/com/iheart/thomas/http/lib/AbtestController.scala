@@ -16,11 +16,14 @@ import cats.implicits._
 import cats.effect.implicits._
 import com.iheart.thomas.model._
 
-import scala.concurrent.{Future}
+import scala.concurrent.Future
 import Formats._
+import com.iheart.thomas.analysis.KPIDistribution
+import lihua.EntityDAO
 import lihua.mongo.JsonFormats._
 class AbtestController[F[_]](
   api:        API[EitherT[F, Error, ?]],
+  kpiDAO:     EntityDAO[EitherT[F, Error, ?], KPIDistribution, JsObject],
   components: ControllerComponents,
   alerter:    Option[Alerter[F]]
 )(
@@ -41,6 +44,18 @@ class AbtestController[F[_]](
       errs => badRequest(errs.map(_.toString): _*).toIO.unsafeToFuture(),
       f
     )
+  }
+
+  import QueryHelpers._
+
+  def getKPIDistribution(name: String) = Action.async(
+    kpiDAO.findOne('name -> name)
+  )
+
+  def updateKPIDistribution = withJsonReq { (kpi: KPIDistribution) =>
+    kpiDAO.findOne('name -> kpi.name.n)
+      .flatMap(e => kpiDAO.update(e.copy(data = kpi)))
+      .recoverWith { case Error.NotFound => kpiDAO.insert(kpi) }
   }
 
   def get(id: TestId) = Action.async(api.getTest(id))

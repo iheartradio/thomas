@@ -900,13 +900,24 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
   }
 }
 
+
+class AbtestKPIIntegrationSuite extends AbtestIntegrationSuiteBase {
+  "Get KPI" should {
+    "return 404 when there is no distribtuion" in {
+      val r = controller.getKPIDistribution("non-exist")(FakeRequest())
+      status(r) mustBe NOT_FOUND
+    }
+  }
+}
+
 class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with BeforeAndAfter {
 
   type F[A] = EitherT[IO, Error, A]
 
-  lazy val api = app.injector.instanceOf[APIProvider].api
+  lazy val provider = app.injector.instanceOf[APIProvider]
+  lazy val api = provider.api
 
-  lazy val controller = new AbtestController(api, app.injector.instanceOf[ControllerComponents], None)
+  lazy val controller = new AbtestController(api, provider.kpiDAO, app.injector.instanceOf[ControllerComponents], None)
 
 
   def fakeAb: AbtestSpec = fakeAb()
@@ -935,7 +946,7 @@ class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with 
 
   after {
     val dapi = api.asInstanceOf[DefaultAPI[F]]
-    List[EntityDAO[F, _, JsObject]](dapi.abTestDao, dapi.abTestExtrasDao, dapi.featureDao).foreach(_.removeAll(Json.obj()).value.unsafeRunSync().left.foreach { e =>
+    List[EntityDAO[F, _, JsObject]](dapi.abTestDao, dapi.abTestExtrasDao, dapi.featureDao, provider.kpiDAO).foreach(_.removeAll(Json.obj()).value.unsafeRunSync().left.foreach { e =>
        println("Failed to clean up DB after: " + e.getMessage)
     })
   }
