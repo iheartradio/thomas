@@ -15,6 +15,7 @@ import lihua.mongo.{AsyncEntityDAO, DBError, MongoDB, Query, ShutdownHook}
 
 import scala.concurrent.ExecutionContext
 import cats.implicits._
+import com.iheart.thomas.analysis.KPIDistribution
 import com.iheart.thomas.model.{Abtest, AbtestExtras, Feature}
 import lihua.mongo.DBError.UpdatedCountErrorDetail
 import play.api.libs.json.JsObject
@@ -44,10 +45,10 @@ package object mongo {
     ex:           ExecutionContext
   ): F[(EntityDAO[APIResult[F, ?], Abtest, JsObject],
          EntityDAO[APIResult[F, ?], AbtestExtras, JsObject],
-         EntityDAO[APIResult[F, ?], Feature, JsObject])] = {
+         EntityDAO[APIResult[F, ?], Feature, JsObject],
+         EntityDAO[APIResult[F, ?], KPIDistribution, JsObject])] = {
     import net.ceedubs.ficus.Ficus._
 
-    cats.tagless.FunctorK[EntityDAO[?[_], Abtest, Query]]
     def convert[A](e: F[EntityDAO[AsyncEntityDAO.Result[F, ?], A, Query]]): F[EntityDAO[APIResult[F, ?], A, JsObject]] =
       e.map(od => EntityDAO.mapK(od.contramap(Query.fromSelector))(toApiResult[F]))
 
@@ -58,7 +59,8 @@ package object mongo {
     ).flatMap { implicit m =>
       (convert((new AbtestDAOFactory[F]).create),
       convert((new AbtestExtrasDAOFactory[F]).create),
-      convert((new FeatureDAOFactory[F]).create)).tupled
+      convert((new FeatureDAOFactory[F]).create),
+      convert((new KPIDistributionDAOFactory[F]).create)).tupled
     }
   }
 }
