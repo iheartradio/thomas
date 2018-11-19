@@ -21,6 +21,7 @@ import Formats._
 import com.iheart.thomas.analysis.KPIDistribution
 import lihua.EntityDAO
 import lihua.mongo.JsonFormats._
+
 class AbtestController[F[_]](
   api:        API[EitherT[F, Error, ?]],
   kpiDAO:     EntityDAO[EitherT[F, Error, ?], KPIDistribution, JsObject],

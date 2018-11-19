@@ -15,6 +15,8 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.status
 import org.scalatestplus.play._
 import Formats._
+import com.iheart.thomas.analysis.DistributionSpec.Normal
+import com.iheart.thomas.analysis._
 import play.api.libs.json.{JsObject, Json, Writes}
 import play.api.test.Helpers._
 import lihua.mongo.JsonFormats._
@@ -903,9 +905,16 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
 class AbtestKPIIntegrationSuite extends AbtestIntegrationSuiteBase {
   "Get KPI" should {
-    "return 404 when there is no distribtuion" in {
+    "return 404 when there is no distribution" in {
       val r = controller.getKPIDistribution("non-exist")(FakeRequest())
       status(r) mustBe NOT_FOUND
+    }
+
+    "create one when there isn't one already" in {
+      val kpi = GammaKPIDistribution(KPIName("new KPI"), Normal(1d, 0.1d), Normal(3d, 0.3d))
+      val r = controller.updateKPIDistribution(jsonRequest(kpi))
+      status(r) mustBe OK
+      contentAsJson(r).as[KPIDistribution] mustBe kpi
     }
   }
 }

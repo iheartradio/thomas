@@ -10,6 +10,11 @@ object `package` {
   @newsubtype case class KPIDouble(d: Double)
   @newsubtype case class KPIName(n: String)
 
+  object KPIName {
+    implicit def fromString(n: String): KPIName = KPIName(n)
+  }
+
+
   type Indicator = RandomVariable[Real]
   type Measurements = List[Double]
 
