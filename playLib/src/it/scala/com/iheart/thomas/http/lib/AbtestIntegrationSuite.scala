@@ -916,6 +916,18 @@ class AbtestKPIIntegrationSuite extends AbtestIntegrationSuiteBase {
       status(r) mustBe OK
       contentAsJson(r).as[KPIDistribution] mustBe kpi
     }
+
+    "update one when there isn't one already" in {
+      val kpi = GammaKPIDistribution(KPIName("new KPI"), Normal(1d, 0.1d), Normal(3d, 0.3d))
+      toServer(controller.updateKPIDistribution, jsonRequest(kpi))
+
+      val kpiUpdated = kpi.copy(shapePrior = Normal(1.3, 0.13d))
+      toServer(controller.updateKPIDistribution, jsonRequest(kpiUpdated))
+
+      val r = controller.getKPIDistribution("new KPI")(FakeRequest())
+      contentAsJson(r).as[KPIDistribution] mustBe kpiUpdated
+
+    }
   }
 }
 

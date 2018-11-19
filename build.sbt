@@ -71,8 +71,8 @@ lazy val playLib = project
   )
 
 lazy val client = project
-  .dependsOn(core)
-  .aggregate(core)
+  .dependsOn(analysis)
+  .aggregate(analysis)
   .configs(IntegrationTest)
   .settings(
     name := "thomas-client",

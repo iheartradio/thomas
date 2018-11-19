@@ -217,4 +217,17 @@ GET      /utils/epoch                                               controllers.
 #    200:
 #      description: KPI Distribution found
 ###
-GET /KPIs/:name   controllers.HttpController.getKPIDistribution(name: String)
+GET   /KPIs/:name   controllers.HttpController.getKPIDistribution(name: String)
+
+###
+#  summary: get a KPI Distribution by name
+#  parameters:
+#    - name: body
+#      required: true
+#      description: >
+#        json representation of the KPI distribution
+#  responses:
+#    200:
+#      description: KPI Distribution added
+###
+POST   /KPIs/   updateKPIDistribution

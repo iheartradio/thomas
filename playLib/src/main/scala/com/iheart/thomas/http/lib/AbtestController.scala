@@ -53,7 +53,7 @@ class AbtestController[F[_]](
     kpiDAO.findOne('name -> name)
   )
 
-  def updateKPIDistribution = withJsonReq { (kpi: KPIDistribution) =>
+  val updateKPIDistribution = withJsonReq { (kpi: KPIDistribution) =>
     kpiDAO.findOne('name -> kpi.name.n)
       .flatMap(e => kpiDAO.update(e.copy(data = kpi)))
       .recoverWith { case Error.NotFound => kpiDAO.insert(kpi) }
