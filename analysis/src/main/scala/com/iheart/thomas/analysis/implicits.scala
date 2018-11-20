@@ -3,4 +3,4 @@ package analysis
 
 import syntax.AllSyntax
 
-object implicits extends KPISyntax with AllSyntax
+object implicits extends AllSyntax

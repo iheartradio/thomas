@@ -14,34 +14,33 @@ lazy val libs =
   .addJVM(name = "lihua",                 version = "0.12",   org ="com.iheart", "lihua-mongo", "lihua-crypt", "lihua-core")
   .addJVM(name = "breeze",                version = "0.13.2", org ="org.scalanlp", "breeze", "breeze-viz")
   .addJVM(name = "henkan-convert",        version = "0.6.2",  org ="com.kailuowang")
-  .addJava(name = "commons-math3",        version = "3.6.1",  org ="org.apache.commons")
+  .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
   .addJVM(name = "play-json-derived-codecs", version = "4.0.0", org = "org.julienrf")
   .addJVM(name = "newtype",               version = "0.4.2",  org = "io.estatico")
+  .addJVM(name = "decline",               version = "0.5.0",  org = "com.monovore")
+  .addJVM(name = "log4cats",              version = "0.1.0",  org = "io.chrisdavenport", "log4cats-slf4j")
+  .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
 
-
-lazy val scala2_11Ver = libs.vers("scalac_2.11")
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias("validate", s";thomas/test;playLib/IntegrationTest/test")
-addCommandAlias("releaseAll", s";project toRelease;release")
 
 lazy val thomas = project.in(file("."))
-  .aggregate(example, toRelease)
+  .aggregate(example, playLib, client)
   .settings(
     rootSettings,
-    noPublishing)
-
-lazy val toRelease = project
-  .aggregate(core, client, playLib, analysis)
-  .settings(
-    rootSettings,
+    crossScalaVersions := Nil,
     noPublishing)
 
 
 lazy val example = project.enablePlugins(PlayScala, SwaggerPlugin)
   .dependsOn(playLib)
   .aggregate(playLib)
-  .settings(rootSettings, noPublishing)
+  .settings(
+    rootSettings,
+    noPublishing,
+    crossScalaVersions := Seq(scalaVersion.value)
+  )
   .settings(
     name := "thomas-example",
     libraryDependencies ++= Seq(
@@ -84,13 +83,8 @@ lazy val client = project
       "com.typesafe.play" %% "play-ahc-ws-standalone" % "1.1.9",
       "com.typesafe.play" %% "play-ws-standalone-json" % "1.1.9",
       "org.scalatest" %% "scalatest" % "3.0.1" % "it, test"),
-    libs.dependencies("cats-effect"),
-    assemblyMergeStrategy in assembly := {
-      case "reference.conf" | "reference-overrides.conf"    => MergeStrategy.concat
-      case x =>
-        val oldStrategy = (assemblyMergeStrategy in assembly).value
-        oldStrategy(x)
-      }
+    libs.dependencies("cats-effect", "decline", "log4cats-slf4j", "logback-classic")
+
   )
 
 lazy val core = project
@@ -158,7 +152,7 @@ lazy val commonSettings = addCompilerPlugins(libs, "kind-projector") ++ sharedCo
   scalaVersion := libs.vers("scalac_2.12"),
   parallelExecution in Test := false,
   releaseCrossBuild := true,
-  crossScalaVersions := Seq(scala2_11Ver, scalaVersion.value),
+  crossScalaVersions := Seq( libs.vers("scalac_2.11"), scalaVersion.value),
   developers := List(Developer("Kailuo Wang", "@kailuowang", "kailuo.wang@gmail.com", new java.net.URL("http://kailuowang.com"))),
   scalacOptions in (Compile, console) ~= lessStrictScalaChecks,
   scalacOptions in (Test, compile) ~= lessStrictScalaChecks,

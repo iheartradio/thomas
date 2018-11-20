@@ -11,7 +11,6 @@ import com.iheart.thomas.model.UserGroupQuery
 
 import collection.JavaConverters._
 
-
 class JavaAssignments(serviceUrl: String, asOf: Option[Long]) {
   private val time = asOf.map(TimeUtil.toDateTime)
 

@@ -16,7 +16,7 @@ trait AbtestKPI[F[_], K] {
   def assess(k: K, abtest: Abtest, baselineGroup: GroupName): F[Map[GroupName, NumericGroupResult]]
 }
 
-trait AbtestMeasurable[F[_], K] {
+trait Measurable[F[_], K] {
   def measureAbtest(k: K, abtest: Abtest): F[Map[GroupName, Measurements]]
   def measureHistory(k: K, start: OffsetDateTime, end: OffsetDateTime): F[Measurements]
 }
@@ -31,8 +31,13 @@ trait UpdatableKPI[F[_], K] {
 
 }
 
+object UpdatableKPI {
+
+  def apply[F[_], K](implicit ev: UpdatableKPI[F, K]): UpdatableKPI[F, K] = ev
+}
 
 trait KPISyntax {
+
   implicit class abtestKPIOps[F[_], K](k: K)(implicit K: AbtestKPI[F, K]) {
     def assess(abtest: Abtest, baselineGroup: GroupName): F[Map[GroupName, NumericGroupResult]] = K.assess(k, abtest, baselineGroup)
   }
@@ -52,9 +57,9 @@ object AbtestKPI {
   abstract class BayesianAbtestKPI[F[_], K](implicit
                                             samplerSettings: SampleSettings,
                                             rng: RNG,
-                                            K:  AbtestMeasurable[F, K],
+                                            K:  Measurable[F, K],
                                             F: MonadError[F, Throwable]
-                                      ) extends AbtestKPI[F, K]{
+                                      ) extends AbtestKPI[F, K] {
     protected def fitToData(k: K, data: Measurements): Indicator
 
     def assess(k: K,

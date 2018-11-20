@@ -2,7 +2,7 @@ package com.iheart.thomas.analysis
 
 import java.time.OffsetDateTime
 
-import cats.MonadError
+import cats.{Functor, MonadError}
 import com.iheart.thomas.Formats.j
 import com.iheart.thomas.analysis.AbtestKPI.BayesianAbtestKPI
 import com.iheart.thomas.analysis.DistributionSpec.Normal
@@ -15,6 +15,7 @@ import org.apache.commons.math3.distribution.GammaDistribution
 import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
 import play.api.libs.json._
 import cats.implicits._
+import com.iheart.thomas.model.{Abtest, GroupName}
 import implicits._
 
 sealed trait KPIDistribution extends Serializable with Product {
@@ -31,6 +32,29 @@ object KPIDistribution  {
 
   implicit val mdFormat: Format[KPIDistribution] =
   derived.flat.oformat[KPIDistribution](( __ \ "type").format[String])
+
+  implicit def abtestKPIGeneric[F[_]](
+    implicit G: AbtestKPI[F, GammaKPIDistribution]
+  ) : AbtestKPI[F, KPIDistribution] = new AbtestKPI[F, KPIDistribution] {
+    def assess(k: KPIDistribution, abtest: Abtest, baselineGroup: GroupName): F[Map[GroupName, NumericGroupResult]] =
+      k match {
+        case g: GammaKPIDistribution => G.assess(g, abtest, baselineGroup)
+      }
+  }
+
+  implicit def updatableKPIGeneric[F[_]: Functor](
+                                 implicit G: UpdatableKPI[F, GammaKPIDistribution]
+                                 ) : UpdatableKPI[F, KPIDistribution] = new UpdatableKPI[F, KPIDistribution] {
+    def scalePrior(k: KPIDistribution, scale: Double): KPIDistribution = k match {
+      case g: GammaKPIDistribution => G.scalePrior(g, scale)
+    }
+
+    def updateFromData(kpi: KPIDistribution, start: OffsetDateTime, end: OffsetDateTime): F[(KPIDistribution, Double)] =
+      kpi match {
+        case g: GammaKPIDistribution => G.updateFromData(g, start, end).widen
+      }
+  }
+
 }
 
 
@@ -48,7 +72,7 @@ object GammaKPIDistribution {
   implicit def gammaKPIMeasurable[F[_]](implicit
                                         sampleSettings: SampleSettings,
                                         rng: RNG,
-                                        K:  AbtestMeasurable[F, GammaKPIDistribution],
+                                        K:  Measurable[F, GammaKPIDistribution],
                                         F: MonadError[F, Throwable]) : AbtestKPI[F, GammaKPIDistribution] with UpdatableKPI[F, GammaKPIDistribution] =
     new BayesianAbtestKPI[F, GammaKPIDistribution] with UpdatableKPI[F, GammaKPIDistribution] {
 
