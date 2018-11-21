@@ -25,13 +25,13 @@ sealed trait KPIDistribution extends Serializable with Product {
 object KPIDistribution  {
   import julienrf.json.derived
 
-  implicit val normalDistFormat: Format[Normal] = j.format[Normal]
+  implicit private val normalDistFormat: Format[Normal] = j.format[Normal]
 
-  implicit def coercibleFormat[A, B](implicit ev: Coercible[Format[A], Format[B]],
+  implicit private def coercibleFormat[A, B](implicit ev: Coercible[Format[A], Format[B]],
   A: Format[A]): Format[B] = ev(A)
 
   implicit val mdFormat: Format[KPIDistribution] =
-  derived.flat.oformat[KPIDistribution](( __ \ "type").format[String])
+    derived.flat.oformat[KPIDistribution](( __ \ "type").format[String])
 
   implicit def abtestKPIGeneric[F[_]](
     implicit G: AbtestKPI[F, GammaKPIDistribution]
