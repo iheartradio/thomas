@@ -3,12 +3,13 @@ package client
 
 import java.time.OffsetDateTime
 
-import cats.MonadError
+import cats.{Monad, MonadError}
 import com.iheart.thomas.analysis._
 import com.iheart.thomas.model.{FeatureName, GroupName}
 import analysis.implicits._
 import com.stripe.rainier.sampler.RNG
 import cats.implicits._
+import com.iheart.thomas.Error.NotFound
 
 import scala.util.control.NoStackTrace
 
@@ -22,6 +23,14 @@ trait AnalysisAPI[F[_]] {
   def assess(feature: FeatureName,
              kpi: KPIName,
              baseline: GroupName): F[Map[GroupName, NumericGroupResult]]
+
+  def updateOrInitKpi(name: KPIName, start: OffsetDateTime, end: OffsetDateTime, init: => KPIDistribution)
+                     (implicit F: MonadError[F, Throwable])
+    : F[(KPIDistribution, Double)] = {
+    updateKPI(name, start, end).recoverWith {
+      case NotFound => initKPI(init).flatMap(k => updateKPI(k.name, start, end))
+    }
+  }
 }
 
 

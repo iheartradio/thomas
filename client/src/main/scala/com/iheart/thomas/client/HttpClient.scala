@@ -15,6 +15,7 @@ import lihua.Entity
 import play.api.libs.json._
 import cats.implicits._
 import Formats._
+import com.iheart.thomas.Error.NotFound
 import com.iheart.thomas.analysis.KPIDistribution
 import lihua.EntityId.toEntityId
 import play.api.libs.ws.{StandaloneWSRequest, StandaloneWSResponse}
@@ -36,6 +37,7 @@ trait Client[F[_]] {
 
 object Client extends EntityReads {
 
+
   import akka.actor.ActorSystem
   import akka.stream.ActorMaterializer
   import play.api.libs.ws.ahc._
@@ -55,10 +57,12 @@ object Client extends EntityReads {
 
     private def parse[A: Reads](resp: => Future[StandaloneWSResponse] ): F[A] = {
       IO.fromFuture(IO(resp)).to[F].flatMap { resp =>
-        resp.body[JsValue].validate[A].fold(
-          errs => F.raiseError(ErrorParseJson(errs)),
-          F.pure(_)
-        )
+        if(resp.status == 404) F.raiseError[A](NotFound)
+        else
+          resp.body[JsValue].validate[A].fold(
+            errs => F.raiseError(ErrorParseJson(errs)),
+            F.pure(_)
+          )
       }
     }
 
