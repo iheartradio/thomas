@@ -11,14 +11,8 @@ import cats.implicits._
 import scala.util.control.NoStackTrace
 import cats.MonadError
 
-
 trait AbtestKPI[F[_], K] {
   def assess(k: K, abtest: Abtest, baselineGroup: GroupName): F[Map[GroupName, NumericGroupResult]]
-}
-
-trait Measurable[F[_], K] {
-  def measureAbtest(k: K, abtest: Abtest): F[Map[GroupName, Measurements]]
-  def measureHistory(k: K, start: OffsetDateTime, end: OffsetDateTime): F[Measurements]
 }
 
 
@@ -28,11 +22,9 @@ trait UpdatableKPI[F[_], K] {
   def updateFromData(kpi: K,
                      start: OffsetDateTime,
                      end: OffsetDateTime): F[(K, Double)]
-
 }
 
 object UpdatableKPI {
-
   def apply[F[_], K](implicit ev: UpdatableKPI[F, K]): UpdatableKPI[F, K] = ev
 }
 

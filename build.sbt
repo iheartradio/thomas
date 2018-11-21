@@ -112,11 +112,9 @@ lazy val analysis = project
   .dependsOn(core)
   .settings(name := "thomas-analysis")
   .settings(rootSettings)
-//  .settings(mainecoonSettings)
-  .settings(simulacrumSettings(libs))
+  .settings(taglessSettings)
   .settings(
     resolvers += Resolver.bintrayRepo("cibotech", "public"),
-    scalaMacroDependencies(libs),
     libs.testDependencies("scalacheck", "scalatest"),
     libs.dependencies("rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "rainier-plot", "commons-math3", "play-json-derived-codecs"),
     initialCommands in console :=
@@ -168,7 +166,7 @@ lazy val taglessSettings = Seq(
     ("org.scalameta" % "paradise" % "3.0.0-M11").cross(CrossVersion.full)
   ),
   libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-tagless-macros" % "0.1.0"
+    "org.typelevel" %% "cats-tagless-macros" % "0.2.0"
   )
 )
 

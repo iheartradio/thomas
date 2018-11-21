@@ -230,4 +230,4 @@ GET   /KPIs/:name   controllers.HttpController.getKPIDistribution(name: String)
 #    200:
 #      description: KPI Distribution added
 ###
-POST   /KPIs/   updateKPIDistribution
+POST   /KPIs/    controllers.HttpController.updateKPIDistribution
