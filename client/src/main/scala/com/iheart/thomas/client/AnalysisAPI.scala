@@ -24,7 +24,10 @@ trait AnalysisAPI[F[_]] {
              kpi: KPIName,
              baseline: GroupName): F[Map[GroupName, NumericGroupResult]]
 
-  def updateOrInitKpi(name: KPIName, start: OffsetDateTime, end: OffsetDateTime, init: => KPIDistribution)
+  def updateOrInitKPI(name: KPIName,
+                      start: OffsetDateTime,
+                      end: OffsetDateTime,
+                      init: => KPIDistribution)
                      (implicit F: MonadError[F, Throwable])
     : F[(KPIDistribution, Double)] = {
     updateKPI(name, start, end).recoverWith {
