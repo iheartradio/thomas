@@ -9,7 +9,7 @@ import scala.reflect.ClassTag
 object Formats extends JavaEnumFormats {
 
 
-  private val j = Json.using[WithDefaultValues]
+  val j = Json.using[WithDefaultValues]
 
   implicit val groupFormat = j.format[Group]
 

@@ -17,7 +17,7 @@ import Formats._
 
 import scala.concurrent.ExecutionContext
 
-class AbtestDAOFactory[F[_]: Async](implicit ec: ExecutionContext) extends EitherTDAOFactory[Abtest, F]("abtest", "tests") {
+  class AbtestDAOFactory[F[_]: Async](implicit ec: ExecutionContext) extends EitherTDAOFactory[Abtest, F]("abtest", "tests") {
   def ensure(collection: JSONCollection): F[Unit] =
     IO.fromFuture(IO(collection.indexesManager.ensure(
       Index(Seq(

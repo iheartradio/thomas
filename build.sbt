@@ -1,53 +1,46 @@
 import com.typesafe.sbt.SbtGit.git
-import org.typelevel.Dependencies._
+
 
 val apache2 = "Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")
 
 val gh = GitHubSettings(org = "iheartradio", proj = "thomas", publishOrg = "com.iheart", license = apache2)
 
-val vAll = Versions(versions ++ myVersions, libraries ++ myLibraries, scalacPlugins)
 
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
-lazy val myLibraries = multiModuleLib("rainier", "com.stripe", "rainier-core", "rainier-cats", "rainier-plot") ++
-  multiModuleLib("lihua", "com.iheart", "lihua-mongo", "lihua-crypt", "lihua-core") ++
-  multiModuleLib("breeze", "org.scalanlp", "breeze", "breeze-viz")++ Map(
-  singleModuleLib("henkan-convert", "com.kailuowang"),
-  singleModuleLib("mainecoon-macros", "com.kailuowang"),
-  singleModuleLib("newtype", "io.estatico")
-)
+lazy val libs =
+  org.typelevel.libraries
+  .addJVM(name = "rainier",               version = "0.1.3",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
+  .addJVM(name = "lihua",                 version = "0.12",   org ="com.iheart", "lihua-mongo", "lihua-crypt", "lihua-core")
+  .addJVM(name = "breeze",                version = "0.13.2", org ="org.scalanlp", "breeze", "breeze-viz")
+  .addJVM(name = "henkan-convert",        version = "0.6.2",  org ="com.kailuowang")
+  .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
+  .addJVM(name = "play-json-derived-codecs", version = "4.0.0", org = "org.julienrf")
+  .addJVM(name = "newtype",               version = "0.4.2",  org = "io.estatico")
+  .addJVM(name = "decline",               version = "0.5.0",  org = "com.monovore")
+  .addJVM(name = "log4cats",              version = "0.1.0",  org = "io.chrisdavenport", "log4cats-slf4j")
+  .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
 
-lazy val myVersions = Map(
-  "newtype" -> "0.4.2",
-  "rainier" -> "0.1.3",
-  "henkan-convert" -> "0.6.2",
-  "lihua" -> "0.12",
-  "breeze" -> "0.13.2"
-)
-
-lazy val scala2_11Ver = vAll.vers("scalac_2.11")
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias("validate", s";thomas/test;playLib/IntegrationTest/test")
-addCommandAlias("releaseAll", s";project toRelease;release")
 
 lazy val thomas = project.in(file("."))
-  .aggregate(example, toRelease)
+  .aggregate(example, playLib, client)
   .settings(
     rootSettings,
-    noPublishing)
-
-lazy val toRelease = project
-  .aggregate(core, client, playLib, analysis)
-  .settings(
-    rootSettings,
+    crossScalaVersions := Nil,
     noPublishing)
 
 
 lazy val example = project.enablePlugins(PlayScala, SwaggerPlugin)
   .dependsOn(playLib)
   .aggregate(playLib)
-  .settings(rootSettings, noPublishing)
+  .settings(
+    rootSettings,
+    noPublishing,
+    crossScalaVersions := Seq(scalaVersion.value)
+  )
   .settings(
     name := "thomas-example",
     libraryDependencies ++= Seq(
@@ -68,6 +61,7 @@ lazy val playLib = project
   .settings(
     name := "thomas-play-lib",
     Defaults.itSettings,
+    parallelExecution in IntegrationTest := false,
     taglessSettings,
     libraryDependencies ++= Seq(
       "com.typesafe.play" %% "play" % "2.6.10",
@@ -77,8 +71,8 @@ lazy val playLib = project
   )
 
 lazy val client = project
-  .dependsOn(core)
-  .aggregate(core)
+  .dependsOn(analysis)
+  .aggregate(analysis)
   .configs(IntegrationTest)
   .settings(
     name := "thomas-client",
@@ -90,13 +84,8 @@ lazy val client = project
       "com.typesafe.play" %% "play-ahc-ws-standalone" % "1.1.9",
       "com.typesafe.play" %% "play-ws-standalone-json" % "1.1.9",
       "org.scalatest" %% "scalatest" % "3.0.1" % "it, test"),
-    addJVMLibs(vAll, "cats-effect"),
-    assemblyMergeStrategy in assembly := {
-      case "reference.conf" | "reference-overrides.conf"    => MergeStrategy.concat
-      case x =>
-        val oldStrategy = (assemblyMergeStrategy in assembly).value
-        oldStrategy(x)
-      }
+    libs.dependencies("cats-effect", "decline", "log4cats-slf4j", "logback-classic")
+
   )
 
 lazy val core = project
@@ -104,8 +93,8 @@ lazy val core = project
   .settings(rootSettings)
   .settings(taglessSettings)
   .settings(
-    addJVMTestLibs(vAll, "scalacheck", "scalatest"),
-    addJVMLibs(vAll, "cats-core", "monocle-macro", "monocle-core", "lihua-core", "mouse", "henkan-convert"),
+    libs.testDependencies("scalacheck", "scalatest"),
+    libs.dependencies("cats-core", "monocle-macro", "monocle-core", "lihua-core", "mouse", "henkan-convert"),
     libraryDependencies ++=  Seq(
       "com.typesafe.play" %% "play-json" % "2.6.2"
     ),
@@ -113,24 +102,23 @@ lazy val core = project
   )
 
 lazy val mongo = project
-  .dependsOn(core)
+  .dependsOn(core, analysis)
   .settings(name := "thomas-mongo")
   .settings(rootSettings)
   .settings(
-    addJVMLibs(vAll, "lihua-mongo", "lihua-crypt"),
+    libs.dependencies("lihua-mongo", "lihua-crypt")
   )
 
 lazy val analysis = project
   .dependsOn(core)
   .settings(name := "thomas-analysis")
   .settings(rootSettings)
-//  .settings(mainecoonSettings)
-  .settings(simulacrumSettings(vAll))
+  .settings(taglessSettings)
   .settings(
+    sources in (Compile, doc) := Nil, //disable scaladoc due to scalameta not working in scaladoc 
     resolvers += Resolver.bintrayRepo("cibotech", "public"),
-    scalaMacroDependencies(vAll),
-    addJVMTestLibs(vAll, "scalacheck", "scalatest"),
-    addJVMLibs(vAll, "rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "rainier-plot"),
+    libs.testDependencies("scalacheck", "scalatest"),
+    libs.dependencies("rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "rainier-plot", "commons-math3", "play-json-derived-codecs"),
     initialCommands in console :=
     """
       |import com.iheart.thomas.analysis._
@@ -159,12 +147,12 @@ lazy val stress = project
 lazy val noPublishing = Seq(skip in publish := true)
 
 
-lazy val commonSettings = addCompilerPlugins(vAll, "kind-projector") ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
+lazy val commonSettings = addCompilerPlugins(libs, "kind-projector") ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
   organization := "com.iheart",
-  scalaVersion := vAll.vers("scalac_2.12"),
+  scalaVersion := libs.vers("scalac_2.12"),
   parallelExecution in Test := false,
-  releaseCrossBuild := true,
-  crossScalaVersions := Seq(scala2_11Ver, scalaVersion.value),
+  releaseCrossBuild := false,
+  crossScalaVersions := Seq( libs.vers("scalac_2.11"), scalaVersion.value),
   developers := List(Developer("Kailuo Wang", "@kailuowang", "kailuo.wang@gmail.com", new java.net.URL("http://kailuowang.com"))),
   scalacOptions in (Compile, console) ~= lessStrictScalaChecks,
   scalacOptions in (Test, compile) ~= lessStrictScalaChecks,
@@ -180,14 +168,14 @@ lazy val taglessSettings = Seq(
     ("org.scalameta" % "paradise" % "3.0.0-M11").cross(CrossVersion.full)
   ),
   libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-tagless-macros" % "0.1.0"
+    "org.typelevel" %% "cats-tagless-macros" % "0.2.0"
   )
 )
 
-lazy val buildSettings = sharedBuildSettings(gh, vAll)
+lazy val buildSettings = sharedBuildSettings(gh, libs)
 
 lazy val publishSettings = sharedPublishSettings(gh) ++ credentialSettings ++ sharedReleaseProcess
 
-lazy val disciplineDependencies = addLibs(vAll, "discipline", "scalacheck")
+lazy val disciplineDependencies = libs.dependencies("discipline", "scalacheck")
 
 

@@ -10,11 +10,11 @@ GET   /assets/*file                 controllers.Assets.versioned(path="/public",
 #  parameters:
 #    - name: body
 #      schema:
-#        $ref: '#/definitions/com.iheart.abtest.model.AbtestSpec'
+#        $ref: '#/definitions/com.iheart.thomas.model.AbtestSpec'
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.abtest.model.Abtest'
+#        $ref: '#/definitions/com.iheart.thomas.model.Abtest'
 ###
 POST      /tests                                                controllers.HttpController.create()
 
@@ -23,11 +23,11 @@ POST      /tests                                                controllers.Http
 #  parameters:
 #    - name: body
 #      schema:
-#        $ref: '#/definitions/com.iheart.abtest.model.AbtestSpec'
+#        $ref: '#/definitions/com.iheart.thomas.model.AbtestSpec'
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.abtest.model.Abtest'
+#        $ref: '#/definitions/com.iheart.thomas.model.Abtest'
 ###
 POST      /tests/auto                                                controllers.HttpController.createAuto()
 
@@ -36,11 +36,11 @@ POST      /tests/auto                                                controllers
 #  parameters:
 #    - name: body
 #      schema:
-#        $ref: '#/definitions/com.iheart.abtest.model.AbtestSpec'
+#        $ref: '#/definitions/com.iheart.thomas.model.AbtestSpec'
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.abtest.model.Abtest'
+#        $ref: '#/definitions/com.iheart.thomas.model.Abtest'
 ###
 PUT      /tests                                                controllers.HttpController.continue()
 
@@ -110,7 +110,7 @@ GET       /users/:userId/tests/groups            controllers.HttpController.getG
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.abtest.model.Abtest'
+#        $ref: '#/definitions/com.iheart.thomas.model.Abtest'
 ###
 GET       /tests/:testId                                        controllers.HttpController.get(testId)
 
@@ -120,7 +120,7 @@ GET       /tests/:testId                                        controllers.Http
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.abtest.model.Abtest'
+#        $ref: '#/definitions/com.iheart.thomas.model.Abtest'
 ###
 DELETE       /tests/:testId                                        controllers.HttpController.terminate(testId)
 
@@ -136,7 +136,7 @@ DELETE       /tests/:testId                                        controllers.H
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.abtest.model.AbtestExtras'
+#        $ref: '#/definitions/com.iheart.thomas.model.AbtestExtras'
 ###
 PUT       /tests/:testId/groups/metas    controllers.HttpController.addGroupMetas(testId)
 
@@ -145,7 +145,7 @@ PUT       /tests/:testId/groups/metas    controllers.HttpController.addGroupMeta
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.abtest.model.AbtestExtras'
+#        $ref: '#/definitions/com.iheart.thomas.model.AbtestExtras'
 ###
 GET       /tests/:testId/groups/metas    controllers.HttpController.getGroupMetas(testId)
 
@@ -154,7 +154,7 @@ GET       /tests/:testId/groups/metas    controllers.HttpController.getGroupMeta
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.abtest.model.Feature'
+#        $ref: '#/definitions/com.iheart.thomas.model.Feature'
 ###
 PUT       /features/:feature/groups/:groupName/overrides/:userId    controllers.HttpController.addOverride(feature: String, userId: String, groupName: String)
 
@@ -164,7 +164,7 @@ PUT       /features/:feature/groups/:groupName/overrides/:userId    controllers.
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.abtest.model.Feature'
+#        $ref: '#/definitions/com.iheart.thomas.model.Feature'
 ###
 PUT       /features/:feature/overridesEligibility    controllers.HttpController.setOverrideEligibilityIn(feature: String, overrideEligibility: Boolean)
 
@@ -174,7 +174,7 @@ PUT       /features/:feature/overridesEligibility    controllers.HttpController.
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.abtest.model.Feature'
+#        $ref: '#/definitions/com.iheart.thomas.model.Feature'
 ###
 DELETE    /features/:feature/overrides/:userId                      controllers.HttpController.removeOverride(feature: String, userId: String)
 
@@ -183,7 +183,7 @@ DELETE    /features/:feature/overrides/:userId                      controllers.
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.abtest.model.Feature'
+#        $ref: '#/definitions/com.iheart.thomas.model.Feature'
 ###
 GET    /features/:feature/overrides                      controllers.HttpController.getOverrides(feature: String)
 
@@ -200,7 +200,7 @@ GET    /features/:feature/overrides                      controllers.HttpControl
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.abtest.model.Feature'
+#        $ref: '#/definitions/com.iheart.thomas.model.Feature'
 ###
 POST    /features/:feature/overrides                      controllers.HttpController.addOverrides(feature: String)
 
@@ -210,3 +210,24 @@ POST    /features/:feature/overrides                      controllers.HttpContro
 ###
 GET      /utils/epoch                                               controllers.HttpController.parseEpoch(dateTime: String)
 
+
+###
+#  summary: get a KPI Distribution by name
+#  responses:
+#    200:
+#      description: KPI Distribution found
+###
+GET   /KPIs/:name   controllers.HttpController.getKPIDistribution(name: String)
+
+###
+#  summary: get a KPI Distribution by name
+#  parameters:
+#    - name: body
+#      required: true
+#      description: >
+#        json representation of the KPI distribution
+#  responses:
+#    200:
+#      description: KPI Distribution added
+###
+POST   /KPIs/    controllers.HttpController.updateKPIDistribution

@@ -99,17 +99,14 @@ object API
 
 final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
   implicit
-  daos : (EntityDAO[F, Abtest, JsObject],
-          EntityDAO[F, AbtestExtras, JsObject],
-          EntityDAO[F, Feature, JsObject]),
+  private[thomas] val abTestDao : EntityDAO[F, Abtest, JsObject],
+  private[thomas] val abTestExtrasDao :       EntityDAO[F, AbtestExtras, JsObject],
+  private[thomas] val featureDao  : EntityDAO[F, Feature, JsObject],
   F:                   MonadError[F, Error],
   eligibilityControl:  EligibilityControl[F],
   idSelector :         EntityId => JsObject
 ) extends API[F] {
-//  implicit val wc = GetLastError.Default
   import QueryHelpers._
-  private[thomas] implicit val (abTestDao, abTestExtrasDao, featureDao) = daos
-
 
   def create(testSpec: AbtestSpec, auto: Boolean): F[Entity[Abtest]] =
     addTestWithLock(testSpec.feature)(createWithoutLock(testSpec, auto))
@@ -229,7 +226,6 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
 
   }
 
-
   /**
    * bypassing the eligibility control
    */
@@ -247,7 +243,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
       Json.obj("name" -> fn, "locked" -> Json.obj("$ne" -> obtain)),
       feature.lens(_.data.locked).set(obtain),
       upsert = false
-    ).ensure(Error.ConflictCreation(fn))(identity)
+    ).ensure(Error.ConflictCreation(fn + s" Locked: ${!obtain}"))(identity)
   } yield ()).adaptError {
     case Error.FailedToPersist(_) | Error.DBLastError(_) => Error.ConflictCreation(fn)
   }
