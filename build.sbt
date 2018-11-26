@@ -61,6 +61,7 @@ lazy val playLib = project
   .settings(
     name := "thomas-play-lib",
     Defaults.itSettings,
+    parallelExecution in IntegrationTest := false,
     taglessSettings,
     libraryDependencies ++= Seq(
       "com.typesafe.play" %% "play" % "2.6.10",
