@@ -45,8 +45,8 @@ object KPIDistribution  {
   implicit def updatableKPIGeneric[F[_]: Functor](
                                  implicit G: UpdatableKPI[F, GammaKPIDistribution]
                                  ) : UpdatableKPI[F, KPIDistribution] = new UpdatableKPI[F, KPIDistribution] {
-    def scalePrior(k: KPIDistribution, scale: Double): KPIDistribution = k match {
-      case g: GammaKPIDistribution => G.scalePrior(g, scale)
+    def rescalePrior(k: KPIDistribution, scale: Double): KPIDistribution = k match {
+      case g: GammaKPIDistribution => G.rescalePrior(g, scale)
     }
 
     def updateFromData(kpi: KPIDistribution, start: OffsetDateTime, end: OffsetDateTime): F[(KPIDistribution, Double)] =
@@ -107,7 +107,7 @@ object GammaKPIDistribution {
         }
 
 
-      def scalePrior(k: GammaKPIDistribution, scale: Double): GammaKPIDistribution =
+      def rescalePrior(k: GammaKPIDistribution, scale: Double): GammaKPIDistribution =
         k.scalePriors(scale)
     }
 }

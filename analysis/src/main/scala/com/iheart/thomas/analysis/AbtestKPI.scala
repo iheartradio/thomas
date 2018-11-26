@@ -17,7 +17,7 @@ trait AbtestKPI[F[_], K] {
 
 
 trait UpdatableKPI[F[_], K] {
-  def scalePrior(k: K, scale: Double): K
+  def rescalePrior(k: K, scale: Double): K
 
   def updateFromData(kpi: K,
                      start: OffsetDateTime,
@@ -34,10 +34,13 @@ trait KPISyntax {
     def assess(abtest: Abtest, baselineGroup: GroupName): F[Map[GroupName, NumericGroupResult]] = K.assess(k, abtest, baselineGroup)
   }
 
-  implicit class updatableKPIOps[F[_], K](k: K)(implicit K: UpdatableKPI[F, K]) {
-    def updateFromData(start: OffsetDateTime,
-                       end: OffsetDateTime): F[(K, Double)] =
+  implicit class updatableKPIOps(k: KPIDistribution) {
+    def updateFromData[F[_]](start: OffsetDateTime,
+                       end: OffsetDateTime)(implicit K: UpdatableKPI[F, KPIDistribution]): F[(KPIDistribution, Double)] =
       K.updateFromData(k, start, end)
+
+    def rescalePrior[F[_]](scale: Double)(implicit K: UpdatableKPI[F, KPIDistribution]): KPIDistribution =
+      K.rescalePrior(k, scale)
   }
 }
 

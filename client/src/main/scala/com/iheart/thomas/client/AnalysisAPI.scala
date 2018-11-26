@@ -3,7 +3,7 @@ package client
 
 import java.time.OffsetDateTime
 
-import cats.{Monad, MonadError}
+import cats.MonadError
 import com.iheart.thomas.analysis._
 import com.iheart.thomas.model.{FeatureName, GroupName}
 import analysis.implicits._
@@ -16,7 +16,7 @@ import scala.util.control.NoStackTrace
 trait AnalysisAPI[F[_]] {
   def updateKPI(name: KPIName,
                 start: OffsetDateTime,
-                end: OffsetDateTime): F[(KPIDistribution, Double)]
+                end: OffsetDateTime, priorExtraScale: Double): F[(KPIDistribution, Double)]
 
   def initKPI(kpi: KPIDistribution): F[KPIDistribution]
 
@@ -27,11 +27,12 @@ trait AnalysisAPI[F[_]] {
   def updateOrInitKPI(name: KPIName,
                       start: OffsetDateTime,
                       end: OffsetDateTime,
+                      priorExtraScale: Double,
                       init: => KPIDistribution)
                      (implicit F: MonadError[F, Throwable])
     : F[(KPIDistribution, Double)] = {
-    updateKPI(name, start, end).recoverWith {
-      case NotFound => initKPI(init).flatMap(k => updateKPI(k.name, start, end))
+    updateKPI(name, start, end, priorExtraScale).recoverWith {
+      case NotFound => initKPI(init).flatMap(k => updateKPI(k.name, start, end, priorExtraScale))
     }
   }
 }
@@ -49,14 +50,17 @@ object AnalysisAPI {
     implicit val rng: RNG = RNG.default
 
 
-    def updateKPI(name: KPIName, start: OffsetDateTime, end: OffsetDateTime): F[(KPIDistribution, Double)] =
+    def updateKPI(name: KPIName,
+                  start: OffsetDateTime,
+                  end: OffsetDateTime,
+                  priorExtraScale: Double): F[(KPIDistribution, Double)] = {
       for {
-        kpi  <- client.getKPI(name.n)
-        p    <- UpdatableKPI[F, KPIDistribution].updateFromData(kpi, start, end)
+        kpi <- client.getKPI(name.n)
+        p <- kpi.updateFromData[F](start, end)
         (updated, score) = p
-        stored   <- client.updateKPI(updated)
+        stored <- client.updateKPI(updated.rescalePrior[F](priorExtraScale))
       } yield (stored, score)
-
+    }
 
     def assess(feature: FeatureName, kpi: KPIName, baseline: GroupName): F[Map[GroupName, NumericGroupResult]] =
       for {
