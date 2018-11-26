@@ -34,12 +34,12 @@ trait KPISyntax {
     def assess(abtest: Abtest, baselineGroup: GroupName): F[Map[GroupName, NumericGroupResult]] = K.assess(k, abtest, baselineGroup)
   }
 
-  implicit class updatableKPIOps(k: KPIDistribution) {
+  implicit class updatableKPIOps[K](k: K) {
     def updateFromData[F[_]](start: OffsetDateTime,
-                       end: OffsetDateTime)(implicit K: UpdatableKPI[F, KPIDistribution]): F[(KPIDistribution, Double)] =
+                       end: OffsetDateTime)(implicit K: UpdatableKPI[F, K]): F[(K, Double)] =
       K.updateFromData(k, start, end)
 
-    def rescalePrior[F[_]](scale: Double)(implicit K: UpdatableKPI[F, KPIDistribution]): KPIDistribution =
+    def rescalePrior[F[_]](scale: Double)(implicit K: UpdatableKPI[F, K]): K =
       K.rescalePrior(k, scale)
   }
 }

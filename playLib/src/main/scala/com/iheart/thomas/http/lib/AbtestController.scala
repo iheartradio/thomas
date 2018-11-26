@@ -166,7 +166,7 @@ class HttpResults[F[_]](alerter: Option[Alerter[F]])(implicit F: Async[F]) {
       case DBException(t)                => serverError("DB Error" + t.getMessage)
       case DBLastError(t)                => serverError("DB Operation Rejected" + t)
       case CannotToChangePastTest(start) => BadRequest(errorJson(s"Cannot change a test that already started at $start")).pure[F]
-      case ConflictCreation(fn)          => Conflict(errorJson(s"There is another test being created right now, could this one be a duplicate?")).pure[F]
+      case ConflictCreation(fn)          => Conflict(errorJson(s"There is another test being created right now, could this one be a duplicate? $fn")).pure[F]
       case ConflictTest(existing) => Conflict(
         errorJson(s"Cannot start a test on ${existing.data.feature} yet before an existing test") ++
           Json.obj(

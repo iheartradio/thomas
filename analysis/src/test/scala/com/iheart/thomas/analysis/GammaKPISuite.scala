@@ -111,7 +111,7 @@ class GammaKPISuite extends FunSuite with Matchers {
     val resultEither = GammaKPIDistribution(KPIName("test"),
       Normal(0.8, 0.2),
       Normal(6, 1)
-    ).updateFromData(OffsetDateTime.now.minusDays(1), OffsetDateTime.now)
+    ).updateFromData[F](OffsetDateTime.now.minusDays(1), OffsetDateTime.now)
 
     resultEither.isRight shouldBe true
 
