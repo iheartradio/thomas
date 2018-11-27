@@ -155,7 +155,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
 
   def getTestByFeature(feature: FeatureName): F[Entity[Abtest]] =
     getTestsByFeature(feature)
-      .ensure(Error.NotFound)(_.nonEmpty)
+      .ensure(Error.NotFound(None))(_.nonEmpty)
       .map(_.head)
 
   def getTestByFeature(feature: FeatureName, at: OffsetDateTime): F[Entity[Abtest]] =
@@ -334,7 +334,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
 
   private def ensureFeature(name: FeatureName): F[Entity[Feature]] =
     featureDao.byName(name).recoverWith {
-      case Error.NotFound =>
+      case Error.NotFound(_) =>
         featureDao.insert(Feature(name, None, Map()))
     }
 
@@ -349,6 +349,6 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
   private def lastTest(testSpec: AbtestSpec): F[Option[Entity[Abtest]]] =
     getTestByFeature(testSpec.feature)
       .map(Option.apply)
-      .recover { case NotFound => None }
+      .recover { case NotFound(_) => None }
 
 }

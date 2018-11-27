@@ -52,12 +52,12 @@ object Client extends EntityReads {
     val ws = StandaloneAhcWSClient(AhcWSClientConfigFactory.forConfig())
 
     private def get[A: Reads](request: StandaloneWSRequest): F[A] =
-      parse[A](request.addHttpHeaders("Accept" -> "application/json").get())
+      parse[A](request.addHttpHeaders("Accept" -> "application/json").get(), request.url)
 
 
-    private def parse[A: Reads](resp: => Future[StandaloneWSResponse] ): F[A] = {
+    private def parse[A: Reads](resp: => Future[StandaloneWSResponse], url: String): F[A] = {
       IO.fromFuture(IO(resp)).to[F].flatMap { resp =>
-        if(resp.status == 404) F.raiseError[A](NotFound)
+        if(resp.status == 404) F.delay(println(url + " Not Found")) *> F.raiseError[A](NotFound(Some(url)))
         else
           resp.body[JsValue].validate[A].fold(
             errs => F.raiseError(ErrorParseJson(errs)),
@@ -78,10 +78,10 @@ object Client extends EntityReads {
       get[Vector[Entity[Abtest]]](ws.url(urls.test(feature))).map(_.headOption)
 
     def getKPI(name: String): F[KPIDistribution] =
-      get[KPIDistribution](ws.url(urls.kPIs + "/" + name))
+      get[KPIDistribution](ws.url(urls.kPIs + name))
 
     def updateKPI(kpi: KPIDistribution): F[KPIDistribution] =
-      parse[KPIDistribution](ws.url(urls.kPIs).post(Json.toJson(kpi)))
+      parse[KPIDistribution](ws.url(urls.kPIs).post(Json.toJson(kpi)), urls.kPIs)
 
     def close(): F[Unit] =
       F.delay(ws.close()) *> IO.fromFuture(IO(system.terminate())).to[F].void

@@ -56,7 +56,7 @@ class AbtestController[F[_]](
   val updateKPIDistribution = withJsonReq { (kpi: KPIDistribution) =>
     kpiDAO.findOne('name -> kpi.name.n)
       .flatMap(e => kpiDAO.update(e.copy(data = kpi)))
-      .recoverWith { case Error.NotFound => kpiDAO.insert(kpi) }
+      .recoverWith { case Error.NotFound(_) => kpiDAO.insert(kpi) }
   }
 
   def get(id: TestId) = Action.async(api.getTest(id))
@@ -161,7 +161,7 @@ class HttpResults[F[_]](alerter: Option[Alerter[F]])(implicit F: Async[F]) {
 
     error match {
       case ValidationErrors(detail)      => BadRequest(errorJson(detail.toList.map(validationErrorMsg))).pure[F]
-      case APINotFound                   => F.pure(NotFound)
+      case APINotFound(_)                => F.pure(NotFound)
       case FailedToPersist(msg)          => serverError("Failed to save to DB: " + msg)
       case DBException(t)                => serverError("DB Error" + t.getMessage)
       case DBLastError(t)                => serverError("DB Operation Rejected" + t)
