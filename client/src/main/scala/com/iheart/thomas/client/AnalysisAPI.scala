@@ -32,7 +32,7 @@ trait AnalysisAPI[F[_]] {
                      (implicit F: MonadError[F, Throwable])
     : F[(KPIDistribution, Double)] = {
     updateKPI(name, start, end, priorExtraScale).recoverWith {
-      case NotFound => initKPI(init).flatMap(k => updateKPI(k.name, start, end, priorExtraScale))
+      case NotFound(_) => initKPI(init).flatMap(k => updateKPI(k.name, start, end, priorExtraScale))
     }
   }
 }
