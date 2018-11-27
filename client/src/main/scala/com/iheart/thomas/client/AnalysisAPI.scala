@@ -16,9 +16,9 @@ import scala.util.control.NoStackTrace
 trait AnalysisAPI[F[_]] {
   def updateKPI(name: KPIName,
                 start: OffsetDateTime,
-                end: OffsetDateTime, priorExtraScale: Double): F[(KPIDistribution, Double)]
+                end: OffsetDateTime): F[(KPIDistribution, Double)]
 
-  def initKPI(kpi: KPIDistribution): F[KPIDistribution]
+  def saveKPI(kpi: KPIDistribution): F[KPIDistribution]
 
   def assess(feature: FeatureName,
              kpi: KPIName,
@@ -31,8 +31,8 @@ trait AnalysisAPI[F[_]] {
                       init: => KPIDistribution)
                      (implicit F: MonadError[F, Throwable])
     : F[(KPIDistribution, Double)] = {
-    updateKPI(name, start, end, priorExtraScale).recoverWith {
-      case NotFound(_) => initKPI(init).flatMap(k => updateKPI(k.name, start, end, priorExtraScale))
+    updateKPI(name, start, end).recoverWith {
+      case NotFound(_) => saveKPI(init).flatMap(k => updateKPI(k.name, start, end))
     }
   }
 }
@@ -43,6 +43,7 @@ object AnalysisAPI {
   implicit def default[F[_]](
     implicit
       G: Measurable[F, GammaKPIDistribution],
+      B: Measurable[F, BetaKPIDistribution],
       sampleSettings: SampleSettings,
       client: Client[F],
       F: MonadError[F, Throwable]): AnalysisAPI[F] = new AnalysisAPI[F] {
@@ -52,13 +53,12 @@ object AnalysisAPI {
 
     def updateKPI(name: KPIName,
                   start: OffsetDateTime,
-                  end: OffsetDateTime,
-                  priorExtraScale: Double): F[(KPIDistribution, Double)] = {
+                  end: OffsetDateTime): F[(KPIDistribution, Double)] = {
       for {
         kpi <- client.getKPI(name.n)
         p <- kpi.updateFromData[F](start, end)
         (updated, score) = p
-        stored <- client.updateKPI(updated.rescalePrior[F](priorExtraScale))
+        stored <- client.saveKPI(updated)
       } yield (stored, score)
     }
 
@@ -70,7 +70,7 @@ object AnalysisAPI {
         r <- kpi.assess(abtest.data, baseline)
       } yield r
 
-    def initKPI(kpi: KPIDistribution): F[KPIDistribution] = client.updateKPI(kpi)
+    def saveKPI(kpi: KPIDistribution): F[KPIDistribution] = client.saveKPI(kpi)
   }
 
   case object AbtestNotFound extends RuntimeException with NoStackTrace

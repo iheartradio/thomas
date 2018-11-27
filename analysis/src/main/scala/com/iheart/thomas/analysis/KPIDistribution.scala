@@ -34,30 +34,44 @@ object KPIDistribution  {
     derived.flat.oformat[KPIDistribution](( __ \ "type").format[String])
 
   implicit def abtestKPIGeneric[F[_]](
-    implicit G: AbtestKPI[F, GammaKPIDistribution]
+    implicit G: AbtestKPI[F, GammaKPIDistribution],
+             B: AbtestKPI[F, BetaKPIDistribution]
   ) : AbtestKPI[F, KPIDistribution] = new AbtestKPI[F, KPIDistribution] {
     def assess(k: KPIDistribution, abtest: Abtest, baselineGroup: GroupName): F[Map[GroupName, NumericGroupResult]] =
       k match {
         case g: GammaKPIDistribution => G.assess(g, abtest, baselineGroup)
+        case b: BetaKPIDistribution => B.assess(b, abtest, baselineGroup)
       }
   }
 
   implicit def updatableKPIGeneric[F[_]: Functor](
-                                 implicit G: UpdatableKPI[F, GammaKPIDistribution]
+                                 implicit G: UpdatableKPI[F, GammaKPIDistribution],
+                                          B: UpdatableKPI[F, BetaKPIDistribution]
                                  ) : UpdatableKPI[F, KPIDistribution] = new UpdatableKPI[F, KPIDistribution] {
-    def rescalePrior(k: KPIDistribution, scale: Double): KPIDistribution = k match {
-      case g: GammaKPIDistribution => G.rescalePrior(g, scale)
-    }
-
     def updateFromData(kpi: KPIDistribution, start: OffsetDateTime, end: OffsetDateTime): F[(KPIDistribution, Double)] =
       kpi match {
         case g: GammaKPIDistribution => G.updateFromData(g, start, end).widen
+        case b: BetaKPIDistribution => B.updateFromData(b, start, end).widen
       }
   }
 
 }
 
+case class BetaKPIDistribution(name: KPIName, alphaPrior: Double, betaPrior: Double) extends KPIDistribution
 
+object BetaKPIDistribution {
+  implicit def betaKPIMeasurable[F[_]](implicit
+                                        sampleSettings: SampleSettings,
+                                        rng: RNG,
+                                        K: Measurable[F, BetaKPIDistribution],
+                                        F: MonadError[F, Throwable]): AbtestKPI[F, BetaKPIDistribution] with UpdatableKPI[F, BetaKPIDistribution] =
+    new BayesianAbtestKPI[F, BetaKPIDistribution] with UpdatableKPI[F, BetaKPIDistribution] {
+      protected def sampleIndicator(k: BetaKPIDistribution, data: Measurements): Indicator = ???
+
+      def updateFromData(kpi: BetaKPIDistribution, start: OffsetDateTime, end: OffsetDateTime): F[(BetaKPIDistribution, Double)] = ???
+    }
+
+}
 case class GammaKPIDistribution(name: KPIName,
                                 shapePrior: Normal,
                                 scalePrior: Normal) extends KPIDistribution {
@@ -69,11 +83,11 @@ case class GammaKPIDistribution(name: KPIName,
 
 object GammaKPIDistribution {
 
-  implicit def gammaKPIMeasurable[F[_]](implicit
-                                        sampleSettings: SampleSettings,
-                                        rng: RNG,
-                                        K:  Measurable[F, GammaKPIDistribution],
-                                        F: MonadError[F, Throwable]) : AbtestKPI[F, GammaKPIDistribution] with UpdatableKPI[F, GammaKPIDistribution] =
+  implicit def gammaKPIInstances[F[_]](implicit
+                                       sampleSettings: SampleSettings,
+                                       rng: RNG,
+                                       K:  Measurable[F, GammaKPIDistribution],
+                                       F: MonadError[F, Throwable]) : AbtestKPI[F, GammaKPIDistribution] with UpdatableKPI[F, GammaKPIDistribution] =
     new BayesianAbtestKPI[F, GammaKPIDistribution] with UpdatableKPI[F, GammaKPIDistribution] {
 
       private def fitModel(gk: GammaKPIDistribution, data: List[Double]): RandomVariable[(Real, Real, Continuous)] =
@@ -83,7 +97,7 @@ object GammaKPIDistribution {
           g <- Gamma(shape, scale).fit(data)
         } yield (shape, scale, g)
 
-      def fitToData(gk: GammaKPIDistribution, data: List[Double]): Indicator =
+      def sampleIndicator(gk: GammaKPIDistribution, data: List[Double]): Indicator =
         fitModel(gk, data).map {
           case (shape, scale, _) => shape * scale
         }
@@ -106,8 +120,5 @@ object GammaKPIDistribution {
           (updated, ksStatistics)
         }
 
-
-      def rescalePrior(k: GammaKPIDistribution, scale: Double): GammaKPIDistribution =
-        k.scalePriors(scale)
     }
 }

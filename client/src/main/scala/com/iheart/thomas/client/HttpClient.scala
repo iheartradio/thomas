@@ -30,7 +30,7 @@ trait Client[F[_]] {
 
   def getKPI(name: String): F[KPIDistribution]
 
-  def updateKPI(KPIDistribution: KPIDistribution): F[KPIDistribution]
+  def saveKPI(KPIDistribution: KPIDistribution): F[KPIDistribution]
 
   def close(): F[Unit]
 }
@@ -80,7 +80,7 @@ object Client extends EntityReads {
     def getKPI(name: String): F[KPIDistribution] =
       get[KPIDistribution](ws.url(urls.kPIs + name))
 
-    def updateKPI(kpi: KPIDistribution): F[KPIDistribution] =
+    def saveKPI(kpi: KPIDistribution): F[KPIDistribution] =
       parse[KPIDistribution](ws.url(urls.kPIs).post(Json.toJson(kpi)), urls.kPIs)
 
     def close(): F[Unit] =

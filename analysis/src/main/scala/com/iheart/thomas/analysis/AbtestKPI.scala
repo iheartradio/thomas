@@ -17,8 +17,6 @@ trait AbtestKPI[F[_], K] {
 
 
 trait UpdatableKPI[F[_], K] {
-  def rescalePrior(k: K, scale: Double): K
-
   def updateFromData(kpi: K,
                      start: OffsetDateTime,
                      end: OffsetDateTime): F[(K, Double)]
@@ -38,9 +36,6 @@ trait KPISyntax {
     def updateFromData[F[_]](start: OffsetDateTime,
                        end: OffsetDateTime)(implicit K: UpdatableKPI[F, K]): F[(K, Double)] =
       K.updateFromData(k, start, end)
-
-    def rescalePrior[F[_]](scale: Double)(implicit K: UpdatableKPI[F, K]): K =
-      K.rescalePrior(k, scale)
   }
 }
 
@@ -55,7 +50,7 @@ object AbtestKPI {
                                             K:  Measurable[F, K],
                                             F: MonadError[F, Throwable]
                                       ) extends AbtestKPI[F, K] {
-    protected def fitToData(k: K, data: Measurements): Indicator
+    protected def sampleIndicator(k: K, data: Measurements): Indicator
 
     def assess(k: K,
                abtest: Abtest,
@@ -72,8 +67,8 @@ object AbtestKPI {
           case (gn, ms) =>
             import samplerSettings._
             val improvement = (for {
-              treatmentIndicator <- fitToData(k, ms)
-              controlIndicator <- fitToData(k, baselineMeasurements)
+              treatmentIndicator <- sampleIndicator(k, ms)
+              controlIndicator <- sampleIndicator(k, baselineMeasurements)
             } yield treatmentIndicator - controlIndicator).sample(sampler, warmupIterations, iterations, keepEvery)
 
             (gn, NumericGroupResult(improvement))
