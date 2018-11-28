@@ -73,7 +73,8 @@ object BetaKPIDistribution {
         Beta(postAlpha, postBeta).param
       }
 
-      def updateFromData(kpi: BetaKPIDistribution, start: OffsetDateTime, end: OffsetDateTime): F[(BetaKPIDistribution, Double)] = B.measureHistory(kpi, start, end).map { conversions =>
+      def updateFromData(kpi: BetaKPIDistribution, start: OffsetDateTime, end: OffsetDateTime): F[(BetaKPIDistribution, Double)] =
+        B.measureHistory(kpi, start, end).map { conversions =>
          ( kpi.copy(alphaPrior = conversions.converted + 1d,
            betaPrior = conversions.total - conversions.converted + 1d ),
            0d)
