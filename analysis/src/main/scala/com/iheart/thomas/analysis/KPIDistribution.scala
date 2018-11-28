@@ -7,7 +7,7 @@ import com.iheart.thomas.Formats.j
 import com.iheart.thomas.analysis.AbtestKPI.BayesianAbtestKPI
 import com.iheart.thomas.analysis.DistributionSpec.Normal
 import com.stripe.rainier.compute.Real
-import com.stripe.rainier.core.{Continuous, Gamma, RandomVariable}
+import com.stripe.rainier.core.{Beta, Continuous, Gamma, RandomVariable}
 import com.stripe.rainier.sampler.RNG
 import io.estatico.newtype.Coercible
 import monocle.macros.syntax.lens._
@@ -61,17 +61,26 @@ case class BetaKPIDistribution(name: KPIName, alphaPrior: Double, betaPrior: Dou
 
 object BetaKPIDistribution {
   implicit def betaKPIMeasurable[F[_]](implicit
-                                        sampleSettings: SampleSettings,
-                                        rng: RNG,
-                                        K: Measurable[F, BetaKPIDistribution],
-                                        F: MonadError[F, Throwable]): AbtestKPI[F, BetaKPIDistribution] with UpdatableKPI[F, BetaKPIDistribution] =
-    new BayesianAbtestKPI[F, BetaKPIDistribution] with UpdatableKPI[F, BetaKPIDistribution] {
-      protected def sampleIndicator(k: BetaKPIDistribution, data: Measurements): Indicator = ???
+                                       sampleSettings: SampleSettings,
+                                       rng: RNG,
+                                       B: Measurable[F, Conversions, BetaKPIDistribution],
+                                       F: MonadError[F, Throwable]): AbtestKPI[F, BetaKPIDistribution] with UpdatableKPI[F, BetaKPIDistribution] =
+    new BayesianAbtestKPI[F, BetaKPIDistribution, Conversions] with UpdatableKPI[F, BetaKPIDistribution] {
 
-      def updateFromData(kpi: BetaKPIDistribution, start: OffsetDateTime, end: OffsetDateTime): F[(BetaKPIDistribution, Double)] = ???
+      protected def sampleIndicator(b: BetaKPIDistribution, data: Conversions): Indicator = {
+        val postAlpha = b.alphaPrior + data.converted
+        val postBeta = b.betaPrior + data.total - data.converted
+        Beta(postAlpha, postBeta).param
+      }
+
+      def updateFromData(kpi: BetaKPIDistribution, start: OffsetDateTime, end: OffsetDateTime): F[(BetaKPIDistribution, Double)] = B.measureHistory(kpi, start, end).map { conversions =>
+         ( kpi.copy(alphaPrior = conversions.converted + 1d,
+           betaPrior = conversions.total - conversions.converted + 1d ),
+           0d)
+      }
     }
-
 }
+
 case class GammaKPIDistribution(name: KPIName,
                                 shapePrior: Normal,
                                 scalePrior: Normal) extends KPIDistribution {
@@ -86,9 +95,9 @@ object GammaKPIDistribution {
   implicit def gammaKPIInstances[F[_]](implicit
                                        sampleSettings: SampleSettings,
                                        rng: RNG,
-                                       K:  Measurable[F, GammaKPIDistribution],
+                                       K:  Measurable[F, Measurements, GammaKPIDistribution],
                                        F: MonadError[F, Throwable]) : AbtestKPI[F, GammaKPIDistribution] with UpdatableKPI[F, GammaKPIDistribution] =
-    new BayesianAbtestKPI[F, GammaKPIDistribution] with UpdatableKPI[F, GammaKPIDistribution] {
+    new BayesianAbtestKPI[F, GammaKPIDistribution, Measurements] with UpdatableKPI[F, GammaKPIDistribution] {
 
       private def fitModel(gk: GammaKPIDistribution, data: List[Double]): RandomVariable[(Real, Real, Continuous)] =
         for {

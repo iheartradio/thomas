@@ -42,8 +42,8 @@ trait AnalysisAPI[F[_]] {
 object AnalysisAPI {
   implicit def default[F[_]](
     implicit
-      G: Measurable[F, GammaKPIDistribution],
-      B: Measurable[F, BetaKPIDistribution],
+      G: Measurable[F, Measurements, GammaKPIDistribution],
+      B: Measurable[F, Conversions, BetaKPIDistribution],
       sampleSettings: SampleSettings,
       client: Client[F],
       F: MonadError[F, Throwable]): AnalysisAPI[F] = new AnalysisAPI[F] {

@@ -44,13 +44,13 @@ object AbtestKPI {
 
   case object ControlGroupMeasurementMissing extends RuntimeException with NoStackTrace
 
-  abstract class BayesianAbtestKPI[F[_], K](implicit
+  abstract class BayesianAbtestKPI[F[_], K, M](implicit
                                             samplerSettings: SampleSettings,
                                             rng: RNG,
-                                            K:  Measurable[F, K],
+                                            K:  Measurable[F, M, K],
                                             F: MonadError[F, Throwable]
                                       ) extends AbtestKPI[F, K] {
-    protected def sampleIndicator(k: K, data: Measurements): Indicator
+    protected def sampleIndicator(k: K, data: M): Indicator
 
     def assess(k: K,
                abtest: Abtest,

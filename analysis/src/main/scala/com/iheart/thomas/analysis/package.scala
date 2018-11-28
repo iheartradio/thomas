@@ -17,5 +17,6 @@ object `package` {
 
   type Indicator = RandomVariable[Real]
   type Measurements = List[Double]
-
 }
+
+case class Conversions(converted: Long, total: Long)
