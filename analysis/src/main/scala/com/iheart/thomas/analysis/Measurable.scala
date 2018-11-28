@@ -7,7 +7,7 @@ import cats.tagless.autoContravariant
 import model.{Abtest, GroupName}
 
 @autoContravariant
-trait Measurable[F[_], K] {
-  def measureAbtest(k: K, abtest: Abtest): F[Map[GroupName, Measurements]]
-  def measureHistory(k: K, start: OffsetDateTime, end: OffsetDateTime): F[Measurements]
+trait Measurable[F[_], M, K] {
+  def measureAbtest(k: K, abtest: Abtest): F[Map[GroupName, M]]
+  def measureHistory(k: K, start: OffsetDateTime, end: OffsetDateTime): F[M]
 }
