@@ -13,12 +13,12 @@ import com.iheart.thomas.Error.NotFound
 
 import scala.util.control.NoStackTrace
 
-trait AnalysisAPI[F[_]] {
+trait AnalysisAPI[F[_], K <: KPIDistribution] {
   def updateKPI(name: KPIName,
                 start: OffsetDateTime,
-                end: OffsetDateTime): F[(KPIDistribution, Double)]
+                end: OffsetDateTime): F[(K, Double)]
 
-  def saveKPI(kpi: KPIDistribution): F[KPIDistribution]
+  def saveKPI(kpi: K): F[K]
 
   def assess(feature: FeatureName,
              kpi: KPIName,
@@ -27,10 +27,9 @@ trait AnalysisAPI[F[_]] {
   def updateOrInitKPI(name: KPIName,
                       start: OffsetDateTime,
                       end: OffsetDateTime,
-                      priorExtraScale: Double,
-                      init: => KPIDistribution)
+                      init: => K)
                      (implicit F: MonadError[F, Throwable])
-    : F[(KPIDistribution, Double)] = {
+    : F[(K, Double)] = {
     updateKPI(name, start, end).recoverWith {
       case NotFound(_) => saveKPI(init).flatMap(k => updateKPI(k.name, start, end))
     }
@@ -40,37 +39,63 @@ trait AnalysisAPI[F[_]] {
 
 
 object AnalysisAPI {
-  implicit def default[F[_]](
-    implicit
-      G: Measurable[F, Measurements, GammaKPIDistribution],
-      B: Measurable[F, Conversions, BetaKPIDistribution],
-      sampleSettings: SampleSettings,
-      client: Client[F],
-      F: MonadError[F, Throwable]): AnalysisAPI[F] = new AnalysisAPI[F] {
 
-    implicit val rng: RNG = RNG.default
+  abstract class AnalysisAPIWithClient[F[_], K <: KPIDistribution](
+                                                implicit UK: UpdatableKPI[F, K],
+                                                abtestKPI: AbtestKPI[F, K],
 
+    client: Client[F],
+    F: MonadError[F, Throwable]) extends AnalysisAPI[F, K] {
+
+    def validateKPIType(k: KPIDistribution): F[K] = narrowToK.lift.apply(k).liftTo[F](AbtestNotFound)
+
+    def narrowToK: PartialFunction[KPIDistribution, K]
 
     def updateKPI(name: KPIName,
                   start: OffsetDateTime,
-                  end: OffsetDateTime): F[(KPIDistribution, Double)] = {
+                  end: OffsetDateTime): F[(K, Double)] = {
       for {
-        kpi <- client.getKPI(name.n)
+        kpi <- client.getKPI(name.n).flatMap(validateKPIType)
         p <- kpi.updateFromData[F](start, end)
         (updated, score) = p
-        stored <- client.saveKPI(updated)
+        stored <- client.saveKPI(updated).flatMap(validateKPIType)
       } yield (stored, score)
     }
 
     def assess(feature: FeatureName, kpi: KPIName, baseline: GroupName): F[Map[GroupName, NumericGroupResult]] =
       for {
-        kpi  <- client.getKPI(kpi.n)
+        kpi  <- client.getKPI(kpi.n).flatMap(validateKPIType)
         abtestO <- client.test(feature)
         abtest <- abtestO.liftTo[F](AbtestNotFound)
         r <- kpi.assess(abtest.data, baseline)
       } yield r
 
-    def saveKPI(kpi: KPIDistribution): F[KPIDistribution] = client.saveKPI(kpi)
+    def saveKPI(kpi: K): F[K] = client.saveKPI(kpi).flatMap(validateKPIType)
+  }
+
+
+  implicit def defaultGamma[F[_]](
+    implicit
+      G: Measurable[F, Measurements, GammaKPIDistribution],
+      sampleSettings: SampleSettings,
+      rng: RNG = RNG.default,
+      client: Client[F],
+      F: MonadError[F, Throwable]): AnalysisAPI[F, GammaKPIDistribution] = new AnalysisAPIWithClient[F, GammaKPIDistribution] {
+    def narrowToK: PartialFunction[KPIDistribution, GammaKPIDistribution] = {
+      case g: GammaKPIDistribution => g
+    }
+  }
+
+  implicit def defaultBeta[F[_]](
+    implicit
+      G: Measurable[F, Conversions, BetaKPIDistribution],
+      sampleSettings: SampleSettings,
+      rng: RNG = RNG.default,
+      client: Client[F],
+      F: MonadError[F, Throwable]): AnalysisAPI[F, BetaKPIDistribution] = new AnalysisAPIWithClient[F, BetaKPIDistribution] {
+    def narrowToK: PartialFunction[KPIDistribution, BetaKPIDistribution] = {
+      case b: BetaKPIDistribution => b
+    }
   }
 
   case object AbtestNotFound extends RuntimeException with NoStackTrace
