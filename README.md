@@ -1,6 +1,8 @@
 
 # Thomas - a new A/B test library
 
+[![Build Status](https://travis-ci.org/iheartradio/thomas.svg?branch=master)](https://travis-ci.org/iheartradio/thomas)
+
 ## Features 
 
 * Focus on the user assignment side
