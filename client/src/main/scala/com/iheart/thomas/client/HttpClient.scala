@@ -57,19 +57,22 @@ object Client extends EntityReads {
 
     private def parse[A: Reads](resp: => Future[StandaloneWSResponse], url: String): F[A] = {
       IO.fromFuture(IO(resp)).to[F].flatMap { resp =>
-        if(resp.status == 404) F.delay(println(url + " Not Found")) *> F.raiseError[A](NotFound(Some(url)))
-        else
-          resp.body[JsValue].validate[A].fold(
-            errs => F.raiseError(ErrorParseJson(errs)),
+        if (resp.status == 404) F.raiseError[A](NotFound(Some(url)))
+        else {
+          val jsBody = resp.body[JsValue]
+          jsBody.validate[A].fold(
+            errs => F.raiseError(ErrorParseJson(errs, jsBody)),
             F.pure(_)
           )
+        }
+
       }
     }
 
     def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]] = {
       val baseUrl = ws.url(urls.tests)
 
-      get(asOf.fold(baseUrl){ ao =>
+      get(asOf.fold(baseUrl) { ao =>
         baseUrl.addQueryStringParameters(("at", (ao.toInstant.toEpochMilli / 1000).toString))
       })
     }
@@ -98,7 +101,9 @@ object Client extends EntityReads {
   def create[F[_]: Async](serviceUrl: HttpServiceUrls): Resource[F, Client[F]] =
     Resource.make(http(serviceUrl))(_.close())
 
-  case class ErrorParseJson(errs: Seq[(JsPath, Seq[JsonValidationError])]) extends RuntimeException with NoStackTrace
+  case class ErrorParseJson(errs: Seq[(JsPath, Seq[JsonValidationError])], body: JsValue) extends RuntimeException with NoStackTrace {
+    override def getMessage: String = errs.toList.mkString(s"Error parsing json ($body):\n ", "; ", "")
+  }
 
   /**
    * Shortcuts for getting the assigned group only.
