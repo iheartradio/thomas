@@ -11,7 +11,7 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 lazy val libs =
   org.typelevel.libraries
   .addJVM(name = "rainier",               version = "0.1.3",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
-  .addJVM(name = "lihua",                 version = "0.12",   org ="com.iheart", "lihua-mongo", "lihua-crypt", "lihua-core")
+  .addJVM(name = "lihua",                 version = "0.13",   org ="com.iheart", "lihua-mongo", "lihua-crypt", "lihua-core")
   .addJVM(name = "breeze",                version = "0.13.2", org ="org.scalanlp", "breeze", "breeze-viz")
   .addJVM(name = "henkan-convert",        version = "0.6.2",  org ="com.kailuowang")
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
@@ -19,6 +19,7 @@ lazy val libs =
   .addJVM(name = "newtype",               version = "0.4.2",  org = "io.estatico")
   .addJVM(name = "decline",               version = "0.5.0",  org = "com.monovore")
   .addJVM(name = "log4cats",              version = "0.1.0",  org = "io.chrisdavenport", "log4cats-slf4j")
+  .addJava(name = "log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
   .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
 
 
@@ -63,6 +64,7 @@ lazy val playLib = project
     Defaults.itSettings,
     parallelExecution in IntegrationTest := false,
     taglessSettings,
+    libs.dependency("log4j-core", Some(IntegrationTest.name)),
     libraryDependencies ++= Seq(
       "com.typesafe.play" %% "play" % "2.6.10",
       "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.0",
