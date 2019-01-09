@@ -11,7 +11,7 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 lazy val libs =
   org.typelevel.libraries
   .addJVM(name = "rainier",               version = "0.1.3",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
-  .addJVM(name = "lihua",                 version = "0.13",   org ="com.iheart", "lihua-mongo", "lihua-crypt", "lihua-core")
+  .addJVM(name = "lihua",                 version = "0.14",   org ="com.iheart", "lihua-mongo", "lihua-crypt", "lihua-core")
   .addJVM(name = "breeze",                version = "0.13.2", org ="org.scalanlp", "breeze", "breeze-viz")
   .addJVM(name = "henkan-convert",        version = "0.6.2",  org ="com.kailuowang")
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
