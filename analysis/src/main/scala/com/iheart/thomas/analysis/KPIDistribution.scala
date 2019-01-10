@@ -37,7 +37,9 @@ object KPIDistribution  {
     implicit G: AbtestKPI[F, GammaKPIDistribution],
              B: AbtestKPI[F, BetaKPIDistribution]
   ) : AbtestKPI[F, KPIDistribution] = new AbtestKPI[F, KPIDistribution] {
-    def assess(k: KPIDistribution, abtest: Abtest, baselineGroup: GroupName): F[Map[GroupName, NumericGroupResult]] =
+    def assess(k: KPIDistribution, abtest: Abtest, baselineGroup: GroupName,
+               start: Option[OffsetDateTime] = None,
+               end: Option[OffsetDateTime] = None): F[Map[GroupName, NumericGroupResult]] =
       k match {
         case g: GammaKPIDistribution => G.assess(g, abtest, baselineGroup)
         case b: BetaKPIDistribution => B.assess(b, abtest, baselineGroup)
