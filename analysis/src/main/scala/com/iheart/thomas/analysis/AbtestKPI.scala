@@ -12,7 +12,11 @@ import scala.util.control.NoStackTrace
 import cats.MonadError
 
 trait AbtestKPI[F[_], K] {
-  def assess(k: K, abtest: Abtest, baselineGroup: GroupName): F[Map[GroupName, NumericGroupResult]]
+  def assess(k: K,
+             abtest: Abtest,
+             baselineGroup: GroupName,
+             start: Option[OffsetDateTime] = None,
+             end: Option[OffsetDateTime] = None): F[Map[GroupName, NumericGroupResult]]
 }
 
 
@@ -29,7 +33,10 @@ object UpdatableKPI {
 trait KPISyntax {
 
   implicit class abtestKPIOps[F[_], K](k: K)(implicit K: AbtestKPI[F, K]) {
-    def assess(abtest: Abtest, baselineGroup: GroupName): F[Map[GroupName, NumericGroupResult]] = K.assess(k, abtest, baselineGroup)
+    def assess(abtest: Abtest, baselineGroup: GroupName,
+               start: Option[OffsetDateTime] = None,
+               end: Option[OffsetDateTime] = None): F[Map[GroupName, NumericGroupResult]] =
+      K.assess(k, abtest, baselineGroup, start, end)
   }
 
   implicit class updatableKPIOps[K](k: K) {
@@ -54,11 +61,13 @@ object AbtestKPI {
 
     def assess(k: K,
                abtest: Abtest,
-               baselineGroup: GroupName
+               baselineGroup: GroupName,
+               start: Option[OffsetDateTime] = None,
+               end: Option[OffsetDateTime] = None
                ): F[Map[GroupName, NumericGroupResult]] = {
 
       for {
-        allMeasurement <- K.measureAbtest(k, abtest)
+        allMeasurement <- K.measureAbtest(k, abtest, start, end)
         baselineMeasurements <- allMeasurement.get(baselineGroup).liftTo[F](BaselineGroupNameNotFound(baselineGroup, abtest))
       } yield {
         val groupMeasurements = allMeasurement.filterKeys(_ != baselineGroup)

@@ -26,7 +26,8 @@ import play.api.libs.ws.JsonBodyWritables._
 
 trait Client[F[_]] {
   def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]]
-  def test(feature: FeatureName): F[Option[Entity[Abtest]]]
+
+  def test(feature: FeatureName, asOf: Option[OffsetDateTime] = None): F[Option[Entity[Abtest]]]
 
   def getKPI(name: String): F[KPIDistribution]
 
@@ -77,8 +78,10 @@ object Client extends EntityReads {
       })
     }
 
-    def test(feature: FeatureName): F[Option[Entity[Abtest]]] =
-      get[Vector[Entity[Abtest]]](ws.url(urls.test(feature))).map(_.headOption)
+    def test(feature: FeatureName, asOf: Option[OffsetDateTime] = None): F[Option[Entity[Abtest]]] =
+      tests(asOf).map(_.collectFirst {
+        case (test, Feature(`feature`, _, _, _, _)) => test
+      })
 
     def getKPI(name: String): F[KPIDistribution] =
       get[KPIDistribution](ws.url(urls.kPIs + name))
@@ -94,7 +97,6 @@ object Client extends EntityReads {
   trait HttpServiceUrls {
     //it takes an optional  `at` parameter for as of time
     def tests: String
-    def test(featureName: FeatureName): String
     def kPIs: String
   }
 
@@ -113,7 +115,6 @@ object Client extends EntityReads {
     Client.create[F](new HttpServiceUrls {
       val tests: String = serviceUrl
       def kPIs: String = ???
-      def test(featureName: FeatureName): String = ???
     }).use(_.tests(time).map(t => AssignGroups.fromTestsFeatures[Id](t)))
 }
 

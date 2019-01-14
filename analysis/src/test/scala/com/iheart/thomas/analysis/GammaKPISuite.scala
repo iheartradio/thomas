@@ -25,7 +25,9 @@ class GammaKPISuite extends FunSuite with Matchers {
   def mock(abTestData: Map[GroupName, Measurements] = Map(),
                                                  historical: Measurements = Nil): Measurable[F, Measurements, GammaKPIDistribution] =
     new Measurable[F, Measurements, GammaKPIDistribution] {
-      def measureAbtest(k: GammaKPIDistribution, abtest: Abtest): F[Map[GroupName, Measurements]] = abTestData.asRight
+      def measureAbtest(k: GammaKPIDistribution, abtest: Abtest,
+                        start: Option[OffsetDateTime] = None,
+                        end: Option[OffsetDateTime] = None): F[Map[GroupName, Measurements]] = abTestData.asRight
       def measureHistory(k: GammaKPIDistribution, start: OffsetDateTime, end: OffsetDateTime): F[Measurements] = historical.asRight
   }
 

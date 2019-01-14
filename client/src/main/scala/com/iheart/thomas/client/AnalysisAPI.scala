@@ -22,7 +22,9 @@ trait AnalysisAPI[F[_], K <: KPIDistribution] {
 
   def assess(feature: FeatureName,
              kpi: KPIName,
-             baseline: GroupName): F[Map[GroupName, NumericGroupResult]]
+             baseline: GroupName,
+             start: Option[OffsetDateTime] = None,
+             end: Option[OffsetDateTime] = None): F[Map[GroupName, NumericGroupResult]]
 
   def updateOrInitKPI(name: KPIName,
                       start: OffsetDateTime,
@@ -62,12 +64,16 @@ object AnalysisAPI {
       } yield (stored, score)
     }
 
-    def assess(feature: FeatureName, kpi: KPIName, baseline: GroupName): F[Map[GroupName, NumericGroupResult]] =
+    def assess(feature: FeatureName,
+               kpi: KPIName,
+               baseline: GroupName,
+               start: Option[OffsetDateTime] = None,
+               end: Option[OffsetDateTime] = None): F[Map[GroupName, NumericGroupResult]] =
       for {
         kpi  <- client.getKPI(kpi.n).flatMap(validateKPIType)
-        abtestO <- client.test(feature)
+        abtestO <- client.test(feature, start)
         abtest <- abtestO.liftTo[F](AbtestNotFound)
-        r <- kpi.assess(abtest.data, baseline)
+        r <- kpi.assess(abtest.data, baseline, start, end)
       } yield r
 
     def saveKPI(kpi: K): F[K] = client.saveKPI(kpi).flatMap(validateKPIType)
