@@ -19,9 +19,10 @@ class JavaAssignments(serviceUrl: String, asOf: Option[Long]) {
   def assignments(
     userId: String,
     tags:   java.util.ArrayList[String],
-    meta:   java.util.Map[String, String]
+    meta:   java.util.Map[String, String],
+    features: java.util.ArrayList[String]
   ): java.util.Map[String, String] = {
-    assignGroups.assign(UserGroupQuery(Some(userId), time, tags.asScala.toList, meta.asScala.toMap))._2.map {
+    assignGroups.assign(UserGroupQuery(Some(userId), time, tags.asScala.toList, meta.asScala.toMap, features = features.asScala.toList))._2.map {
       case (fn, (gn, _)) => (fn, gn)
     }.asJava
   }
@@ -29,7 +30,13 @@ class JavaAssignments(serviceUrl: String, asOf: Option[Long]) {
   def assignments(
     userId: String
   ): java.util.Map[String, String] =
-    assignments(userId, new java.util.ArrayList[String](), new java.util.HashMap[String, String]())
+    assignments(userId, new java.util.ArrayList[String](), new java.util.HashMap[String, String](), new java.util.ArrayList[String]())
+
+  def assignments(
+    userId: String,
+    features: java.util.ArrayList[String]
+  ): java.util.Map[String, String] =
+    assignments(userId, new java.util.ArrayList[String](), new java.util.HashMap[String, String](), features)
 }
 
 object JavaAssignments {
