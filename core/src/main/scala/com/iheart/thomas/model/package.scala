@@ -113,7 +113,8 @@ package model {
     userId: Option[UserId],
     at:     Option[OffsetDateTime] = None,
     tags:   List[Tag]              = Nil,
-    meta:   UserMeta               = Map()
+    meta:   UserMeta               = Map(),
+    features: List[FeatureName]   = Nil
   )
 
   case class UserGroupQueryResult(

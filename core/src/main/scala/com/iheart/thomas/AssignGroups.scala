@@ -7,7 +7,7 @@ package com.iheart.thomas
 
 import java.time.OffsetDateTime
 
-import cats.Monad
+import cats.{Monad}
 import com.iheart.thomas.model._
 import lihua.{Entity, EntityDAO}
 import cats.implicits._
@@ -49,29 +49,30 @@ object AssignGroups {
   )(implicit eligibilityControl: EligibilityControl[F]) extends AssignGroups[F] {
 
     def assign(query: UserGroupQuery): (OffsetDateTime, F[Map[FeatureName, (GroupName, Entity[Abtest])]]) = {
-
       val ofTime = query.at.getOrElse(TimeUtil.currentMinute)
-
-      (ofTime, testsRetriever(ofTime).flatMap(_.traverseFilter { test ⇒
-        eligibilityControl.eligible(query, test.data).flatMap { eligible =>
-          featureRetriever(test.data.feature).map { feature =>
-            val idToUse = test.data.idToUse(query)
-            def overriddenGroup = {
-              (feature, idToUse).mapN((f, uid) => f.overrides.get(uid)).flatten
+      val allTests = testsRetriever(ofTime)
+      val targetTests = if(query.features.isEmpty) allTests else allTests.map(_.filter(t => query.features.contains(t.data.feature)))
+      (ofTime,
+        targetTests.flatMap(_.traverseFilter { test ⇒
+          eligibilityControl.eligible(query, test.data).flatMap { eligible =>
+            featureRetriever(test.data.feature).map { feature =>
+              val idToUse = test.data.idToUse(query)
+              def overriddenGroup = {
+                (feature, idToUse).mapN((f, uid) => f.overrides.get(uid)).flatten
+              }
+              {
+                if (eligible)
+                  overriddenGroup orElse {
+                    idToUse.flatMap(uid => Bucketing.getGroup(uid, test.data))
+                  }
+                else if (feature.fold(false)(_.overrideEligibility))
+                  overriddenGroup
+                else
+                  None
+              }.map(gn => (test.data.feature, (gn, test)))
             }
-            {
-              if (eligible)
-                overriddenGroup orElse {
-                  idToUse.flatMap(uid => Bucketing.getGroup(uid, test.data))
-                }
-              else if (feature.fold(false)(_.overrideEligibility))
-                overriddenGroup
-              else
-                None
-            }.map(gn => (test.data.feature, (gn, test)))
           }
-        }
-      }.map(_.toMap)))
+        }.map(_.toMap)))
     }
   }
 
