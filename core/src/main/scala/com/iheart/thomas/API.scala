@@ -76,6 +76,8 @@ trait API[F[_]] {
 
   def removeOverrides(featureName: FeatureName, userId: UserId): F[Feature]
 
+  def removeAllOverrides(featureName: FeatureName): F[Feature]
+
   /**
    * get all groups of a user by features
    * @param time
@@ -175,6 +177,11 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
   def removeOverrides(featureName: FeatureName, userId: UserId): F[Feature] = for {
     feature <- featureDao.byName(featureName)
     updated <- featureDao.update(feature.lens(_.data.overrides).modify(_ - userId))
+  } yield updated.data
+
+  def removeAllOverrides(featureName: FeatureName): F[Feature] = for {
+    feature <- featureDao.byName(featureName)
+    updated <- featureDao.update(feature.lens(_.data.overrides).set(Map()))
   } yield updated.data
 
   def getOverrides(featureName: FeatureName): F[Feature] =
