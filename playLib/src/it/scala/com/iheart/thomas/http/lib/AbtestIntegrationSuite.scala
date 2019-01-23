@@ -827,6 +827,28 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     }
   }
 
+  "DELETE /features/:feature/overrides" should {
+    "remove an override to an existing test" in {
+
+      val ab = createAbtestOnServer(fakeAb(1, 2, feature = "a_new_feature_to_override"))
+
+      val userId1 = randomUserId
+      val userId2 = randomUserId
+
+      val overrideGroup = ab.data.groups.last.name
+
+      toServer(controller.addOverride(ab.data.feature, userId1, overrideGroup))
+
+      toServer(controller.addOverride(ab.data.feature, userId2, overrideGroup))
+
+      toServer(controller.removeAllOverrides(ab.data.feature))
+
+      val retrievedOverridesAfterRemoval = contentAsJson(toServer(controller.getOverrides(ab.data.feature))).as[Feature].overrides
+
+      retrievedOverridesAfterRemoval mustBe empty
+    }
+  }
+
   "Continuation integration test" should {
 
     def getGroupAssignment(test: Entity[Abtest], ids: List[UserId]): Map[GroupName, List[UserId]] =

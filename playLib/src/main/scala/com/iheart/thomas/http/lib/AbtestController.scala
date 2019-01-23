@@ -121,6 +121,10 @@ class AbtestController[F[_]](
     api.removeOverrides(feature, userId)
   }
 
+  def removeAllOverrides(feature: FeatureName) = Action.async {
+    api.removeAllOverrides(feature)
+  }
+
   def getOverrides(feature: FeatureName) = Action.async {
     api.getOverrides(feature)
   }

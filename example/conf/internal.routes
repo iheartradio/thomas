@@ -179,6 +179,15 @@ PUT       /features/:feature/overridesEligibility    controllers.HttpController.
 DELETE    /features/:feature/overrides/:userId                      controllers.HttpController.removeOverride(feature: String, userId: String)
 
 ###
+#  summary: remove all overrides from a feature
+#  responses:
+#    200:
+#      schema:
+#        $ref: '#/definitions/com.iheart.thomas.model.Feature'
+###
+DELETE    /features/:feature/overrides                          controllers.HttpController.removeAllOverrides(feature: String)
+
+###
 #  summary: GET overrides for a feature
 #  responses:
 #    200:
