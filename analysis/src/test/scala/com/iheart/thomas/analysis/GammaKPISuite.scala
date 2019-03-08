@@ -54,9 +54,9 @@ class GammaKPISuite extends FunSuite with Matchers {
     result.keys should contain("A")
     plot1D(result("A").indicatorSample.coerce[List[Double]])
 
-//    result("A").expectedEffect.d shouldBe (0.15 +- 0.2)
-//    result("A").probabilityOfImprovement.p shouldBe (0.9 +- 0.4)
-//    result("A").riskOfUsing.d shouldBe (0.1 +- 0.2)
+    result("A").expectedEffect.d shouldBe (0.15 +- 0.2)
+    result("A").probabilityOfImprovement.p shouldBe (0.9 +- 0.4)
+    result("A").riskOfUsing.d shouldBe (0.1 +- 0.2)
 
   }
 
@@ -119,9 +119,9 @@ class GammaKPISuite extends FunSuite with Matchers {
     resultEither.isRight shouldBe true
 
     val result = resultEither.right.get
-//    result._1.shapePrior.location shouldBe (0.55 +- 0.1)
-//    result._1.scalePrior.location shouldBe (3d +- 1d)
-//    result._2 shouldBe <(0.5)
+    result._1.shapePrior.location shouldBe (0.55 +- 0.1)
+    result._1.scalePrior.location shouldBe (3d +- 1d)
+    result._2 shouldBe <(0.5)
 
   }
 }
