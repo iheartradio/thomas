@@ -7,7 +7,7 @@ import com.iheart.thomas.Formats.j
 import com.iheart.thomas.analysis.AbtestKPI.BayesianAbtestKPI
 import com.iheart.thomas.analysis.DistributionSpec.Normal
 import com.stripe.rainier.compute.Real
-import com.stripe.rainier.core.{Beta, Continuous, Gamma, RandomVariable}
+import com.stripe.rainier.core._
 import com.stripe.rainier.sampler.RNG
 import io.estatico.newtype.Coercible
 import monocle.macros.syntax.lens._
@@ -102,7 +102,7 @@ object GammaKPIDistribution {
                                        F: MonadError[F, Throwable]) : AbtestKPI[F, GammaKPIDistribution] with UpdatableKPI[F, GammaKPIDistribution] =
     new BayesianAbtestKPI[F, GammaKPIDistribution, Measurements] with UpdatableKPI[F, GammaKPIDistribution] {
 
-      private def fitModel(gk: GammaKPIDistribution, data: List[Double]): RandomVariable[(Real, Real, Continuous)] =
+      private def fitModel(gk: GammaKPIDistribution, data: List[Double]): RandomVariable[(Real, Real, Distribution[Double])] =
         for {
           shape <- gk.shapePrior.distribution.param
           scale <- gk.scalePrior.distribution.param

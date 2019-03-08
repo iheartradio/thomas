@@ -66,7 +66,7 @@ class GammaKPISuite extends FunSuite with Matchers {
     implicit val measurable = mock(Map(
       "A" -> Random.shuffle(Gamma(0.5, 3).param.sample()).take(n),
       "B" -> Random.shuffle(Gamma(0.55, 3).param.sample()).take(n),
-      "C" -> Random.shuffle(Gamma(0.55, 3).param.sample()).take(n),
+      "C" -> Random.shuffle(Gamma(0.55, 3).param.sample()).take(n)
     ))
 
     val resultEither = GammaKPIDistribution(KPIName("test"),

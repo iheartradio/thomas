@@ -10,8 +10,8 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
 lazy val libs =
   org.typelevel.libraries
-  .addJVM(name = "rainier",               version = "0.1.3",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
   .addJVM(name = "lihua",                 version = "0.14",   org ="com.iheart", "lihua-mongo", "lihua-crypt", "lihua-core")
+  .addJVM(name = "rainier",               version = "0.2.2",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
   .addJVM(name = "breeze",                version = "0.13.2", org ="org.scalanlp", "breeze", "breeze-viz")
   .addJVM(name = "henkan-convert",        version = "0.6.2",  org ="com.kailuowang")
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
@@ -154,7 +154,7 @@ lazy val commonSettings = addCompilerPlugins(libs, "kind-projector") ++ sharedCo
   scalaVersion := libs.vers("scalac_2.12"),
   parallelExecution in Test := false,
   releaseCrossBuild := false,
-  crossScalaVersions := Seq(scalaVersion.value),
+  crossScalaVersions := Seq(scalaVersion.value, libs.vers("scalac_2.11")),
   developers := List(Developer("Kailuo Wang", "@kailuowang", "kailuo.wang@gmail.com", new java.net.URL("http://kailuowang.com"))),
   scalacOptions in (Compile, console) ~= lessStrictScalaChecks,
   scalacOptions in (Test, compile) ~= lessStrictScalaChecks,
