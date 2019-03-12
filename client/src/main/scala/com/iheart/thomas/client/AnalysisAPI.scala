@@ -49,7 +49,7 @@ object AnalysisAPI {
     client: Client[F],
     F: MonadError[F, Throwable]) extends AnalysisAPI[F, K] {
 
-    def validateKPIType(k: KPIDistribution): F[K] = narrowToK.lift.apply(k).liftTo[F](AbtestNotFound)
+    def validateKPIType(k: KPIDistribution): F[K] = narrowToK.lift.apply(k).liftTo[F](KPINotFound)
 
     def narrowToK: PartialFunction[KPIDistribution, K]
 
@@ -105,4 +105,5 @@ object AnalysisAPI {
   }
 
   case object AbtestNotFound extends RuntimeException with NoStackTrace
+  case object KPINotFound extends RuntimeException with NoStackTrace
 }
