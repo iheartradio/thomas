@@ -68,7 +68,7 @@ object AbtestKPI {
 
       for {
         allMeasurement <- K.measureAbtest(k, abtest, start, end)
-        baselineMeasurements <- allMeasurement.get(baselineGroup).liftTo[F](BaselineGroupNameNotFound(baselineGroup, abtest))
+        baselineMeasurements <- allMeasurement.get(baselineGroup).liftTo[F](BaselineGroupNameNotFound(baselineGroup, allMeasurement.keys))
       } yield {
         val groupMeasurements = allMeasurement.filterKeys(_ != baselineGroup)
 
@@ -87,8 +87,8 @@ object AbtestKPI {
     }
   }
 
-  case class BaselineGroupNameNotFound(n: GroupName, abtest: Abtest) extends RuntimeException with NoStackTrace {
-    override def getMessage: String = s"$n is not a group in ${abtest.feature} test (${abtest.groups.map(_.name).mkString(",")})"
+  case class BaselineGroupNameNotFound(n: GroupName, groups: Iterable[GroupName]) extends RuntimeException with NoStackTrace {
+    override def getMessage: String = s""" "$n" is not found in measurements: ${groups.mkString(",")}) """
   }
 
 
