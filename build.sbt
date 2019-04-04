@@ -10,24 +10,27 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
 lazy val libs =
   org.typelevel.libraries
-  .addJVM(name = "lihua",                 version = "0.14",   org ="com.iheart", "lihua-mongo", "lihua-crypt", "lihua-core")
+  .addJVM(name = "lihua",                 version = "0.15",   org ="com.iheart", "lihua-mongo", "lihua-crypt", "lihua-core")
   .addJVM(name = "rainier",               version = "0.2.2",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
   .addJVM(name = "breeze",                version = "0.13.2", org ="org.scalanlp", "breeze", "breeze-viz")
   .addJVM(name = "henkan-convert",        version = "0.6.2",  org ="com.kailuowang")
+  .add(   name = "play",                  version = "2.6.2",  org = "com.typesafe.play" , "play-json")
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
   .addJVM(name = "play-json-derived-codecs", version = "4.0.0", org = "org.julienrf")
   .addJVM(name = "newtype",               version = "0.4.2",  org = "io.estatico")
   .addJVM(name = "decline",               version = "0.5.0",  org = "com.monovore")
+  .addJVM(name = "scala-java8-compat",    version = "0.9.0",  org = "org.scala-lang.modules")
   .addJVM(name = "log4cats",              version = "0.1.0",  org = "io.chrisdavenport", "log4cats-slf4j")
-  .addJava(name = "log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
+  .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
   .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
-
+  .addJVM(name = "http4s",                version = "0.20.0-RC1", org= "org.http4s", "http4s-dsl", "http4s-blaze-server", "http4s-blaze-client", "http4s-play-json")
+  .addJVM(name = "akka-slf4j",            version = "2.5.22",   org = "com.typesafe.akka")
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias("validate", s";thomas/test;playLib/IntegrationTest/test")
 
 lazy val thomas = project.in(file("."))
-  .aggregate(example, playLib, client)
+  .aggregate(example, playLib, client, http4s)
   .settings(
     rootSettings,
     crossScalaVersions := Nil,
@@ -54,23 +57,6 @@ lazy val example = project.enablePlugins(PlayScala, SwaggerPlugin)
     (stage in Docker) := (stage in Docker).dependsOn(swagger).value
   )
 
-lazy val playLib = project
-  .dependsOn(mongo)
-  .aggregate(mongo, core)
-  .configs(IntegrationTest)
-  .settings(rootSettings)
-  .settings(
-    name := "thomas-play-lib",
-    Defaults.itSettings,
-    parallelExecution in IntegrationTest := false,
-    taglessSettings,
-    libs.dependency("log4j-core", Some(IntegrationTest.name)),
-    libraryDependencies ++= Seq(
-      "com.typesafe.play" %% "play" % "2.6.10",
-      "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.0",
-      "org.scalatest" %% "scalatest" % "3.0.1" % IntegrationTest,
-      "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % IntegrationTest )
-  )
 
 lazy val client = project
   .dependsOn(analysis)
@@ -82,12 +68,10 @@ lazy val client = project
     taglessSettings,
     Defaults.itSettings,
     libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-slf4j" % "2.5.6",
       "com.typesafe.play" %% "play-ahc-ws-standalone" % "1.1.9",
       "com.typesafe.play" %% "play-ws-standalone-json" % "1.1.9",
       "org.scalatest" %% "scalatest" % "3.0.1" % "it, test"),
-    libs.dependencies("cats-effect", "decline", "log4cats-slf4j", "logback-classic")
-
+    libs.dependencies("cats-effect", "decline", "log4cats-slf4j", "logback-classic", "akka-slf4j")
   )
 
 lazy val core = project
@@ -96,20 +80,16 @@ lazy val core = project
   .settings(taglessSettings)
   .settings(
     libs.testDependencies("scalacheck", "scalatest"),
-    libs.dependencies("cats-core", "monocle-macro", "monocle-core", "lihua-core", "mouse", "henkan-convert"),
-    libraryDependencies ++=  Seq(
-      "com.typesafe.play" %% "play-json" % "2.6.2"
-    ),
-    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
+    libs.dependencies("cats-core",
+      "monocle-macro", 
+      "monocle-core",
+      "lihua-core",
+      "mouse",
+      "henkan-convert",
+      "play-json"),
+     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
   )
 
-lazy val mongo = project
-  .dependsOn(core, analysis)
-  .settings(name := "thomas-mongo")
-  .settings(rootSettings)
-  .settings(
-    libs.dependencies("lihua-mongo", "lihua-crypt")
-  )
 
 lazy val analysis = project
   .dependsOn(core)
@@ -130,6 +110,26 @@ lazy val analysis = project
     """.stripMargin,
   )
 
+
+lazy val mongo = project
+  .dependsOn(analysis)
+  .settings(name := "thomas-mongo")
+  .settings(rootSettings)
+  .settings(
+    libs.dependencies("lihua-mongo", "lihua-crypt")
+  )
+
+
+lazy val http4s = project
+  .dependsOn(mongo)
+  .settings(name := "thomas-http4s")
+  .settings(rootSettings)
+  .settings(taglessSettings)
+  .settings(
+    libs.testDependencies("scalacheck", "scalatest"),
+    libs.dependencies("logback-classic", "http4s-blaze-server", "http4s-dsl", "http4s-play-json", "scala-java8-compat", "log4cats-slf4j", "akka-slf4j")
+  )
+
 lazy val stress = project
   .aggregate(example)
   .dependsOn(example)
@@ -143,6 +143,24 @@ lazy val stress = project
       "io.gatling.highcharts" % "gatling-charts-highcharts" % "2.3.1" % Test,
       "io.gatling"            % "gatling-test-framework"    % "2.3.1" % Test
     )
+  )
+
+lazy val playLib = project
+  .dependsOn(mongo)
+  .aggregate(mongo, core)
+  .configs(IntegrationTest)
+  .settings(rootSettings)
+  .settings(
+    name := "thomas-play-lib",
+    Defaults.itSettings,
+    parallelExecution in IntegrationTest := false,
+    taglessSettings,
+    libs.dependency("log4j-core", Some(IntegrationTest.name)),
+    libs.dependency("scala-java8-compat"),
+    libraryDependencies ++= Seq(
+      "com.typesafe.play" %% "play" % "2.6.10",
+      "org.scalatest" %% "scalatest" % "3.0.1" % IntegrationTest,
+      "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % IntegrationTest )
   )
 
 

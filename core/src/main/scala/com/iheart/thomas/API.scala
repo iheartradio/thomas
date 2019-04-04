@@ -55,6 +55,9 @@ trait API[F[_]] {
    */
   def getAllTests(time: Option[OffsetDateTime]): F[Vector[Entity[Abtest]]]
 
+  def getAllTestsEpoch(time: Option[Long]): F[Vector[Entity[Abtest]]] =
+    getAllTests(time.map(TimeUtil.toDateTime))
+
 
   def setOverrideEligibilityIn(feature: FeatureName, overrideEligibility: Boolean): F[Feature]
 
@@ -64,11 +67,17 @@ trait API[F[_]] {
    */
   def getAllTestsEndAfter(time: OffsetDateTime): F[Vector[Entity[Abtest]]]
 
+  def getAllTestsEndAfter(time: Long): F[Vector[Entity[Abtest]]] =
+    getAllTestsEndAfter(TimeUtil.toDateTime(time))
+
   /**
    * Get all the tests together with their Feature cached.
    * @param time optional time constraint, if set, this will only return tests as of that time.
    */
   def getAllTestsCached(time: Option[OffsetDateTime]): F[Vector[(Entity[Abtest], Feature)]]
+
+  def getAllTestsCachedEpoch(time: Option[Long]): F[Vector[(Entity[Abtest], Feature)]] =
+    getAllTestsCached(time.map(TimeUtil.toDateTime))
 
   def addOverrides(featureName: FeatureName, overrides: Overrides): F[Feature]
 
@@ -96,7 +105,8 @@ trait API[F[_]] {
   def getGroupAssignments(ids: List[String], feature: FeatureName, at: OffsetDateTime): F[List[(String, GroupName)]]
 }
 
-object API
+object API {
+}
 
 
 final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
@@ -108,7 +118,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
   eligibilityControl:  EligibilityControl[F],
   idSelector :         EntityId => JsObject
 ) extends API[F] {
-  import QueryHelpers._
+  import QueryDSL._
 
   def create(testSpec: AbtestSpec, auto: Boolean): F[Entity[Abtest]] =
     addTestWithLock(testSpec.feature)(createWithoutLock(testSpec, auto))

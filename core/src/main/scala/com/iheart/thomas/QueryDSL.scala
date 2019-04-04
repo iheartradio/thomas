@@ -1,4 +1,5 @@
-package com.iheart.thomas
+package com.iheart
+package thomas
 
 import java.time.OffsetDateTime
 
@@ -6,7 +7,7 @@ import com.iheart.thomas.model.{Feature, FeatureName}
 import lihua.{Entity, EntityDAO}
 import play.api.libs.json.{JsObject, Json, Writes}
 
-object QueryHelpers {
+object QueryDSL {
 
   object abtests {
     def byTime(time: OffsetDateTime): JsObject =

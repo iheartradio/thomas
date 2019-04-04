@@ -21,7 +21,7 @@ trait AssignGroups[F[_]] {
 }
 
 object AssignGroups {
-  import QueryHelpers._
+  import QueryDSL._
   def fromDB[F[_]: Monad](cacheTtl: FiniteDuration)(
     implicit
     abTestDao:          EntityDAO[F, Abtest, JsObject],
