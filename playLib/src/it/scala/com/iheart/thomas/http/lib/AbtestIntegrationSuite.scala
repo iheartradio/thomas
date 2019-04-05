@@ -960,7 +960,7 @@ class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with 
   lazy val provider = app.injector.instanceOf[APIProvider]
   lazy val api = provider.api
 
-  lazy val controller = new AbtestController(api, provider.kpiDAO, app.injector.instanceOf[ControllerComponents], None)
+  lazy val controller = new AbtestController(api, provider.kpiApi, app.injector.instanceOf[ControllerComponents], None)
 
 
   def fakeAb: AbtestSpec = fakeAb()
