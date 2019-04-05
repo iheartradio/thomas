@@ -23,6 +23,6 @@ object KPIApi {
     def upsert(kpi: KPIDistribution): F[Entity[KPIDistribution]] =
       dao.findOne('name -> kpi.name.n)
         .flatMap(e => dao.update(e.copy(data = kpi)))
-        .recoverWith { case Error.NotFound(_) => dao.insert(kpi) }
+        .recoverWith { case Error.NotFound(_) => dao.insert(kpi)}
   }
 }

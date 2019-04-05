@@ -29,14 +29,16 @@ class APIProvider @Inject() (config: Configuration, lifecycle: ApplicationLifecy
   implicit val cfg = config.underlying
   import mongo.idSelector
 
-  implicit val (api: API[F], kpiApi: KPIApi[F]) = mongo.daos[IO].map { dao =>
-    implicit val (abtestDAO, abtestExtraDAO, featureDAO, kpiDAO) = dao
+  lazy val daos = mongo.daos[IO].unsafeRunTimed(10.seconds).
+    getOrElse(throw new FailedToStartApplicationException("Cannot start application"))
+
+  lazy val (api: API[F], kpiApi: KPIApi[F]) = {
+    implicit val (abtestDAO, abtestExtraDAO, featureDAO, kpiDAO) = daos
 
       import scala.compat.java8.DurationConverters._
       val ttl = cfg.getDuration("iheart.abtest.get-groups.ttl").toScala //this is safe because it's in reference config
       (new DefaultAPI[F](ttl), KPIApi.default)
-  }.unsafeRunTimed(10.seconds)
-    .getOrElse(throw new FailedToStartApplicationException("Cannot start application"))
+  }
 }
 
 object APIProvider {

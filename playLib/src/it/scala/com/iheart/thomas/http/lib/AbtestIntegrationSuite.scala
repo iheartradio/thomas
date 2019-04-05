@@ -989,7 +989,7 @@ class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with 
 
   after {
     val dapi = api.asInstanceOf[DefaultAPI[F]]
-    List[EntityDAO[F, _, JsObject]](dapi.abTestDao, dapi.abTestExtrasDao, dapi.featureDao, provider.kpiDAO).foreach(_.removeAll(Json.obj()).value.unsafeRunSync().left.foreach { e =>
+    List[EntityDAO[F, _, JsObject]](provider.daos._1, provider.daos._2,provider.daos._3,provider.daos._4).foreach(_.removeAll(Json.obj()).value.unsafeRunSync().left.foreach { e =>
        println("Failed to clean up DB after: " + e.getMessage)
     })
   }
