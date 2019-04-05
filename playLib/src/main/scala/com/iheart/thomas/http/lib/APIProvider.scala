@@ -9,13 +9,11 @@ package http.lib
 import javax.inject._
 import cats.data.EitherT
 import cats.effect.IO
-import com.iheart.thomas.analysis.KPIDistribution
+import com.iheart.thomas.analysis.{KPIApi}
 import lihua.mongo._
 import play.api.Configuration
 import play.api.inject.ApplicationLifecycle
 import com.iheart.thomas.http.lib.APIProvider.FailedToStartApplicationException
-import lihua.EntityDAO
-import play.api.libs.json.JsObject
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -31,14 +29,16 @@ class APIProvider @Inject() (config: Configuration, lifecycle: ApplicationLifecy
   implicit val cfg = config.underlying
   import mongo.idSelector
 
-  implicit val (api: API[F], kpiDAO: EntityDAO[F, KPIDistribution, JsObject]) = mongo.daos[IO].map { dao =>
-    implicit val (abtestDAO, abtestExtraDAO, featureDAO, kpiDAO) = dao
+  lazy val daos = mongo.daos[IO].unsafeRunTimed(10.seconds).
+    getOrElse(throw new FailedToStartApplicationException("Cannot start application"))
+
+  lazy val (api: API[F], kpiApi: KPIApi[F]) = {
+    implicit val (abtestDAO, abtestExtraDAO, featureDAO, kpiDAO) = daos
 
       import scala.compat.java8.DurationConverters._
       val ttl = cfg.getDuration("iheart.abtest.get-groups.ttl").toScala //this is safe because it's in reference config
-      (new DefaultAPI[F](ttl), kpiDAO)
-  }.unsafeRunTimed(10.seconds)
-    .getOrElse(throw new FailedToStartApplicationException("Cannot start application"))
+      (new DefaultAPI[F](ttl), KPIApi.default)
+  }
 }
 
 object APIProvider {

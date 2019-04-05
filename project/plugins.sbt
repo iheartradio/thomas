@@ -6,4 +6,4 @@ addSbtPlugin("com.iheart" % "sbt-play-swagger" % "0.7.4")
 
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.7")
 
-addSbtPlugin("org.typelevel" %% "sbt-catalysts" % "0.11.1")
+addSbtPlugin("org.typelevel" %% "sbt-catalysts" % "0.12")

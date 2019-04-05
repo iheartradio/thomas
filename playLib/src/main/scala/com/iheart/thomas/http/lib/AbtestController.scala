@@ -6,7 +6,7 @@
 package com.iheart.thomas
 package http.lib
 
-import cats.data.EitherT
+import cats.data.{EitherT, OptionT}
 import cats.effect._
 import Error.{NotFound => APINotFound, _}
 import AbtestController.Alerter
@@ -18,13 +18,12 @@ import com.iheart.thomas.model._
 
 import scala.concurrent.Future
 import Formats._
-import com.iheart.thomas.analysis.KPIDistribution
-import lihua.EntityDAO
+import com.iheart.thomas.analysis.{KPIApi, KPIDistribution}
 import lihua.mongo.JsonFormats._
 
 class AbtestController[F[_]](
   api:        API[EitherT[F, Error, ?]],
-  kpiDAO:     EntityDAO[EitherT[F, Error, ?], KPIDistribution, JsObject],
+  kpiAPI:     KPIApi[EitherT[F, Error, ?]],
   components: ControllerComponents,
   alerter:    Option[Alerter[F]]
 )(
@@ -47,16 +46,15 @@ class AbtestController[F[_]](
     )
   }
 
-  import QueryHelpers._
+  private def liftOption[T](o: EitherT[F, Error, Option[T]]): EitherT[F, Error, T] =
+    OptionT(o).getOrElseF(EitherT.leftT(APINotFound(None)))
 
   def getKPIDistribution(name: String) = Action.async(
-    kpiDAO.findOne('name -> name)
+    liftOption(kpiAPI.get(name))
   )
 
   val updateKPIDistribution = withJsonReq { (kpi: KPIDistribution) =>
-    kpiDAO.findOne('name -> kpi.name.n)
-      .flatMap(e => kpiDAO.update(e.copy(data = kpi)))
-      .recoverWith { case Error.NotFound(_) => kpiDAO.insert(kpi) }
+    kpiAPI.upsert(kpi)
   }
 
   def get(id: TestId) = Action.async(api.getTest(id))
@@ -69,17 +67,16 @@ class AbtestController[F[_]](
 
   def getAllTests(at: Option[Long], endAfter: Option[Long]) = Action.async {
     if (endAfter.isDefined && at.isDefined) {
-      Future.successful(BadRequest(errorJson("Cannot specify both at and endFrom")))
+      Future.successful(BadRequest(errorJson("Cannot specify both at and endAfter")))
     } else toResult {
       endAfter.fold(api.getAllTests(at.map(TimeUtil.toDateTime))) { ea =>
-        api.getAllTestsEndAfter(TimeUtil.toDateTime(ea))
+        api.getAllTestsEndAfter(ea)
       }
     }
   }
 
   def getAllTestsCached(at: Option[Long]) = Action.async {
-    val time = at.map(TimeUtil.toDateTime)
-    api.getAllTestsCached(time)
+    api.getAllTestsCachedEpoch(at)
   }
 
   def create(autoResolveConflict: Boolean): Action[JsValue] = withJsonReq((t: AbtestSpec) => api.create(t, autoResolveConflict))

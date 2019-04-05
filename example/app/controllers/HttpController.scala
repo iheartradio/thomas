@@ -15,4 +15,4 @@ import com.iheart.thomas.http.lib._
 class HttpController @Inject() (
   provider:      APIProvider,
   components:    ControllerComponents,
-)(implicit ec: ExecutionContext) extends AbtestController(provider.api, provider.kpiDAO, components, None)
+)(implicit ec: ExecutionContext) extends AbtestController(provider.api, provider.kpiApi, components, None)
