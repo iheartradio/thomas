@@ -10,7 +10,7 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
 lazy val libs =
   org.typelevel.libraries
-  .addJVM(name = "lihua",                 version = "0.15",   org ="com.iheart", "lihua-mongo", "lihua-crypt", "lihua-core")
+  .addJVM(name = "lihua",                 version = "0.16",   org ="com.iheart", "lihua-mongo", "lihua-crypt", "lihua-core")
   .addJVM(name = "rainier",               version = "0.2.2",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
   .addJVM(name = "breeze",                version = "0.13.2", org ="org.scalanlp", "breeze", "breeze-viz")
   .addJVM(name = "henkan-convert",        version = "0.6.2",  org ="com.kailuowang")
@@ -183,12 +183,9 @@ lazy val commonSettings = addCompilerPlugins(libs, "kind-projector") ++ sharedCo
 lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =
   _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports",  "-Ywarn-dead-code"))
 
-lazy val taglessSettings = Seq(
-  addCompilerPlugin(
-    ("org.scalameta" % "paradise" % "3.0.0-M11").cross(CrossVersion.full)
-  ),
+lazy val taglessSettings =  paradiseSettings(libs) ++ Seq(
   libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-tagless-macros" % "0.2.0"
+    "org.typelevel" %% "cats-tagless-macros" % "0.5"
   )
 )
 
