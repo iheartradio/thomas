@@ -17,7 +17,7 @@ import cats._
 import monocle.macros.syntax.lens._
 import play.api.libs.json._
 import henkan.convert.Syntax._
-import cats.tagless.{autoFunctorK, finalAlg}
+import cats.tagless.FunctorK
 
 import concurrent.duration._
 import scala.util.Random
@@ -28,8 +28,6 @@ import scala.util.Random
  * Final Tagless encoding
  * @tparam F
  */
-
-@autoFunctorK(autoDerivation = false) @finalAlg
 trait API[F[_]] {
 
   def create(testSpec: AbtestSpec, auto: Boolean): F[Entity[Abtest]]
@@ -106,6 +104,7 @@ trait API[F[_]] {
 }
 
 object API {
+  implicit val functorKInstance: FunctorK[API] = cats.tagless.Derive.functorK[API]
 }
 
 

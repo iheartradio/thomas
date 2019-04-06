@@ -15,12 +15,11 @@ import lihua.mongo._
 
 import scala.concurrent.ExecutionContext
 import cats.implicits._
+import cats.tagless.FunctorK
 import com.iheart.thomas.analysis.KPIDistribution
 import com.iheart.thomas.model.{Abtest, AbtestExtras, Feature}
 import lihua.mongo.DBError.UpdatedCountErrorDetail
 import play.api.libs.json.{Format, JsObject}
-
-
 
 package object mongo {
 
@@ -38,8 +37,11 @@ package object mongo {
 
   implicit val idSelector: EntityId => JsObject = lihua.mongo.Query.idSelector
 
-  def convert[F[_]: cats.Functor, A](e: F[EntityDAO[AsyncEntityDAO.Result[F, ?], A, Query]]): F[EntityDAO[APIResult[F, ?], A, JsObject]] =
-    e.map(od => EntityDAO.mapK(od.contramap(Query.fromSelector))(toApiResult[F]))
+  def convert[F[_]: cats.Functor, A](e: F[EntityDAO[AsyncEntityDAO.Result[F, ?], A, Query]]): F[EntityDAO[APIResult[F, ?], A, JsObject]] = {
+    val functorK = implicitly[FunctorK[EntityDAO[?[_], A, JsObject]]]
+    e.map(od => functorK.mapK(od.contramap(Query.fromSelector))(toApiResult[F]))
+  }
+
 
   def crypt[F[_]: Async](implicit config: Config): Option[Crypt[F]] = {
     import net.ceedubs.ficus.Ficus._
