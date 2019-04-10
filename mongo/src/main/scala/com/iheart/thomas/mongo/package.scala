@@ -19,7 +19,7 @@ import cats.tagless.FunctorK
 import com.iheart.thomas.analysis.KPIDistribution
 import com.iheart.thomas.model.{Abtest, AbtestExtras, Feature}
 import lihua.mongo.DBError.UpdatedCountErrorDetail
-import play.api.libs.json.{Format, JsObject}
+import play.api.libs.json.JsObject
 
 package object mongo {
 
@@ -42,11 +42,16 @@ package object mongo {
     e.map(od => functorK.mapK(od.contramap(Query.fromSelector))(toApiResult[F]))
   }
 
-
   def crypt[F[_]: Async](implicit config: Config): Option[Crypt[F]] = {
     import net.ceedubs.ficus.Ficus._
     config.as[Option[String]]("mongoDB.secret").map(new CryptTsec[F](_))
   }
+
+  def mongodb[F[_]: Async](implicit
+                            shutdownHook: ShutdownHook,
+                            config:       Config,
+                            ex:           ExecutionContext
+                          ): F[MongoDB[F]] = MongoDB[F](config, crypt)
 
   def daos[F[_]: Async](
     implicit
@@ -56,18 +61,23 @@ package object mongo {
   ): F[(EntityDAO[APIResult[F, ?], Abtest, JsObject],
          EntityDAO[APIResult[F, ?], AbtestExtras, JsObject],
          EntityDAO[APIResult[F, ?], Feature, JsObject],
-         EntityDAO[APIResult[F, ?], KPIDistribution, JsObject])] = {
+         EntityDAO[APIResult[F, ?], KPIDistribution, JsObject])] =
+    mongodb.flatMap { implicit m =>
+      daosFromMongo
+    }
 
-    MongoDB[F](
-      config,
-      crypt
-    ).flatMap { implicit m =>
-      (convert((new AbtestDAOFactory[F]).create),
+  def daosFromMongo[F[_]: Async](implicit mongoDB: MongoDB[F],
+                                               ex: ExecutionContext)
+  : F[(EntityDAO[APIResult[F, ?], Abtest, JsObject],
+       EntityDAO[APIResult[F, ?], AbtestExtras, JsObject],
+       EntityDAO[APIResult[F, ?], Feature, JsObject],
+       EntityDAO[APIResult[F, ?], KPIDistribution, JsObject])] ={
+    (convert((new AbtestDAOFactory[F]).create),
       convert((new AbtestExtrasDAOFactory[F]).create),
       convert((new FeatureDAOFactory[F]).create),
       convert((new KPIDistributionDAOFactory[F]).create)).tupled
-    }
   }
+
   def daosResource[F[_]: Async](
     implicit
     config:       Config,
@@ -75,20 +85,11 @@ package object mongo {
   ): Resource[F, (EntityDAO[APIResult[F, ?], Abtest, JsObject],
          EntityDAO[APIResult[F, ?], AbtestExtras, JsObject],
          EntityDAO[APIResult[F, ?], Feature, JsObject],
-         EntityDAO[APIResult[F, ?], KPIDistribution, JsObject])] = {
-    import Formats._
-    def daoResource[A: Format](factory: EitherTDAOFactory[A, F])(implicit mongoDB: MongoDB[F])
-      : Resource[F, EntityDAO[APIResult[F, ?], A, JsObject]] =
-      Resource.liftF(convert(factory.create))
-
+         EntityDAO[APIResult[F, ?], KPIDistribution, JsObject])] =
     MongoDB.resource[F](
       config,
       crypt
-    ).flatMap { implicit m =>
-      (daoResource(new AbtestDAOFactory[F]),
-        daoResource(new AbtestExtrasDAOFactory[F]),
-        daoResource(new FeatureDAOFactory[F]),
-        daoResource(new KPIDistributionDAOFactory[F])).tupled
+    ).evalMap { implicit m =>
+      daosFromMongo
     }
-  }
 }

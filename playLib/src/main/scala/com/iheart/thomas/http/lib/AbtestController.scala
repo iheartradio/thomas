@@ -34,19 +34,19 @@ class AbtestController[F[_]](
   import thr._
   type EF[A] = EitherT[F, Error, A]
 
-  implicit private def toResult[Resp: Writes](apiResult: EF[Resp]): Future[Result] =
+  implicit protected def toResult[Resp: Writes](apiResult: EF[Resp]): Future[Result] =
     apiResult.value
       .flatMap(_.fold(errorResult(alerter), t => Ok(Json.toJson(t)).pure[F]))
       .toIO.unsafeToFuture
 
-  private def withJsonReq[T: Reads](f: T => Future[Result]) = Action.async[JsValue](parse.tolerantJson) { req =>
+  protected def withJsonReq[T: Reads](f: T => Future[Result]) = Action.async[JsValue](parse.tolerantJson) { req =>
     req.body.validate[T].fold(
       errs => badRequest(errs.map(_.toString): _*).toIO.unsafeToFuture(),
       f
     )
   }
 
-  private def liftOption[T](o: EitherT[F, Error, Option[T]]): EitherT[F, Error, T] =
+  protected def liftOption[T](o: EitherT[F, Error, Option[T]]): EitherT[F, Error, T] =
     OptionT(o).getOrElseF(EitherT.leftT(APINotFound(None)))
 
   def getKPIDistribution(name: String) = Action.async(
