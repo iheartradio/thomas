@@ -14,7 +14,8 @@ lazy val libs =
   .addJVM(name = "rainier",               version = "0.2.2",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
   .addJVM(name = "breeze",                version = "0.13.2", org ="org.scalanlp", "breeze", "breeze-viz")
   .addJVM(name = "henkan-convert",        version = "0.6.2",  org ="com.kailuowang")
-  .add(   name = "play",                  version = "2.6.2",  org = "com.typesafe.play" , "play-json")
+  .add(   name = "play-json",             version = "2.6.13",  org = "com.typesafe.play")
+  .add(   name = "play",                  version = "2.6.20", org = "com.typesafe.play")
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
   .addJVM(name = "play-json-derived-codecs", version = "4.0.0", org = "org.julienrf")
   .addJVM(name = "newtype",               version = "0.4.2",  org = "io.estatico")
@@ -156,9 +157,8 @@ lazy val playLib = project
     parallelExecution in IntegrationTest := false,
     taglessSettings,
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
-    libs.dependency("scala-java8-compat"),
+    libs.dependencies("scala-java8-compat", "play"),
     libraryDependencies ++= Seq(
-      "com.typesafe.play" %% "play" % "2.6.10",
       "org.scalatest" %% "scalatest" % "3.0.1" % IntegrationTest,
       "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % IntegrationTest )
   )

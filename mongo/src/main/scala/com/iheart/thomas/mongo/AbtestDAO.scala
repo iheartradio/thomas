@@ -25,10 +25,9 @@ import scala.concurrent.ExecutionContext
         ("end", IndexType.Descending)
       ))
     ) *> collection.indexesManager.ensure(
-        Index(Seq(
-          ("feature", IndexType.Ascending)
-        ))
-      ).void)).to[F]
+      Index(Seq(
+        ("feature", IndexType.Ascending)
+      ))).void)).to[F]
 
 }
 
