@@ -45,18 +45,19 @@ object Client extends EntityReads {
 
   import play.api.libs.ws.JsonBodyReadables._
 
-  def http[F[_]](urls: HttpServiceUrls)(implicit F: Async[F]): F[Client[F]] = F.delay(new Client[F] {
-    implicit val system = ActorSystem()
+  class PlayClient[F[_]](implicit F: Async[F]) extends EntityReads {
 
-    implicit val materializer = ActorMaterializer()
+    implicit private val system = ActorSystem()
+
+    implicit private val materializer = ActorMaterializer()
 
     val ws = StandaloneAhcWSClient(AhcWSClientConfigFactory.forConfig())
 
-    private def get[A: Reads](request: StandaloneWSRequest): F[A] =
+    def get[A: Reads](request: StandaloneWSRequest): F[A] =
       parse[A](request.addHttpHeaders("Accept" -> "application/json").get(), request.url)
 
 
-    private def parse[A: Reads](resp: => Future[StandaloneWSResponse], url: String): F[A] = {
+    def parse[A: Reads](resp: => Future[StandaloneWSResponse], url: String): F[A] = {
       IO.fromFuture(IO(resp)).to[F].flatMap { resp =>
         if (resp.status == 404) F.raiseError[A](NotFound(Some(url)))
         else {
@@ -66,10 +67,17 @@ object Client extends EntityReads {
             F.pure(_)
           )
         }
-
       }
     }
 
+    def jsonPost[Req: Writes, Res: Reads](req: Req, url: String): F[Res] =
+      parse[Res](ws.url(url).post(Json.toJson(req)), url)
+
+    def close(): F[Unit] =
+      F.delay(ws.close()) *> IO.fromFuture(IO(system.terminate())).to[F].void
+  }
+
+  def httpPlay[F[_]](urls: HttpServiceUrls)(implicit F: Async[F]): F[PlayClient[F] with Client[F]] = F.delay(new PlayClient[F] with Client[F] {
     def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]] = {
       val baseUrl = ws.url(urls.tests)
 
@@ -86,13 +94,8 @@ object Client extends EntityReads {
     def getKPI(name: String): F[KPIDistribution] =
       get[KPIDistribution](ws.url(urls.kPIs + name))
 
-    def saveKPI(kpi: KPIDistribution): F[KPIDistribution] =
-      parse[KPIDistribution](ws.url(urls.kPIs).post(Json.toJson(kpi)), urls.kPIs)
-
-    def close(): F[Unit] =
-      F.delay(ws.close()) *> IO.fromFuture(IO(system.terminate())).to[F].void
+    def saveKPI(kpi: KPIDistribution): F[KPIDistribution] = jsonPost(kpi, urls.kPIs)
   })
-
 
   trait HttpServiceUrls {
     //it takes an optional  `at` parameter for as of time
@@ -101,7 +104,7 @@ object Client extends EntityReads {
   }
 
   def create[F[_]: Async](serviceUrl: HttpServiceUrls): Resource[F, Client[F]] =
-    Resource.make(http(serviceUrl))(_.close())
+    Resource.make(httpPlay(serviceUrl))(_.close()).widen
 
   case class ErrorParseJson(errs: Seq[(JsPath, Seq[JsonValidationError])], body: JsValue) extends RuntimeException with NoStackTrace {
     override def getMessage: String = errs.toList.mkString(s"Error parsing json ($body):\n ", "; ", "")
