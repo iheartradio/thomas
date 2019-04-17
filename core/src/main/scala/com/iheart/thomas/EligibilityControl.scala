@@ -10,6 +10,8 @@ import com.iheart.thomas.model.{Abtest, UserGroupQuery}
 import cats.implicits._
 import cats.kernel.Semigroup
 
+import scala.util.matching.Regex
+
 trait EligibilityControl[F[_]] {
 
   def eligible(
@@ -42,7 +44,7 @@ abstract class EligibilityControlInstances0 extends EligibilityControlInstances1
 
   lazy val byGroupMeta: EligibilityControl[Id] = EligibilityControl[Id]((userInfo, test) =>
     test.matchingUserMeta.forall {
-      case (k, v) => userInfo.meta.get(k).fold(false)(_ === v)
+      case (k, r) => userInfo.meta.get(k).fold(false)(v => new Regex(r).findFirstMatchIn(v).isDefined)
     })
 
   lazy val byRequiredTags: EligibilityControl[Id] = EligibilityControl[Id]((userInfo: UserGroupQuery, test: Abtest) =>

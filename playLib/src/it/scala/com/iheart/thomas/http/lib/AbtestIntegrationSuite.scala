@@ -577,6 +577,22 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       val ab = createAbtestOnServer(fakeAb(matchingUserMeta = Map("sex" -> "M")))
       getGroups(Some(randomUserId), Some(ab.data.start), Map("sex" -> "M")).size mustBe 1
     }
+
+    "eligible to test if there is matching meta with regex" in {
+      val ab = createAbtestOnServer(fakeAb(matchingUserMeta = Map("sex" -> "Male|^M$")))
+      getGroups(Some(randomUserId), Some(ab.data.start), Map("sex" -> "Male")).size mustBe 1
+      getGroups(Some(randomUserId), Some(ab.data.start), Map("sex" -> "M")).size mustBe 1
+    }
+
+    "Not eligible to test if there is one mismatch meta" in {
+      val ab = createAbtestOnServer(fakeAb(matchingUserMeta = Map("sex" -> "Male|^M$", "age" -> "^2\\d$")))
+      getGroups(Some(randomUserId), Some(ab.data.start), Map("sex" -> "Male", "age" -> "33")) must be(empty)
+    }
+
+    "Eligible to test all criterion are met" in {
+      val ab = createAbtestOnServer(fakeAb(matchingUserMeta = Map("sex" -> "Male|^M$", "age" -> "^2\\d$")))
+      getGroups(Some(randomUserId), Some(ab.data.start), Map("sex" -> "Male", "age" -> "23", "occupation" -> "engineer")).size mustBe 1
+    }
   }
 
   "Segment Range integration" should {
