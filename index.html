@@ -1,0 +1,157 @@
+<html><head><title>Thomas: Home</title><meta charset="utf-8" /><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="Kailuo Wang" /><meta name="description" content="A library for A/B tests" /><meta name="og:image" content="/thomas/img/poster.png" /><meta name="og:title" content="Thomas: Home" /><meta name="og:site_name" content="Thomas" /><meta name="og:url" content="https://github.com/iheartradio/thomas" /><meta name="og:type" content="website" /><meta name="og:description" content="A library for A/B tests" /><link rel="icon" type="image/png" href="/thomas/img/favicon.png" /><meta name="twitter:title" content="Thomas: Home" /><meta name="twitter:image" content="https://github.com/iheartradio/thomasimg/poster.png" /><meta name="twitter:description" content="A library for A/B tests" /><meta name="twitter:card" content="summary_large_image" /><link rel="icon" type="image/png" sizes="16x16" href="/thomas/img/favicon16x16.png" /><link rel="icon" type="image/png" sizes="24x24" href="/thomas/img/favicon24x24.png" /><link rel="icon" type="image/png" sizes="32x32" href="/thomas/img/favicon32x32.png" /><link rel="icon" type="image/png" sizes="48x48" href="/thomas/img/favicon48x48.png" /><link rel="icon" type="image/png" sizes="57x57" href="/thomas/img/favicon57x57.png" /><link rel="icon" type="image/png" sizes="60x60" href="/thomas/img/favicon60x60.png" /><link rel="icon" type="image/png" sizes="64x64" href="/thomas/img/favicon64x64.png" /><link rel="icon" type="image/png" sizes="70x70" href="/thomas/img/favicon70x70.png" /><link rel="icon" type="image/png" sizes="72x72" href="/thomas/img/favicon72x72.png" /><link rel="icon" type="image/png" sizes="76x76" href="/thomas/img/favicon76x76.png" /><link rel="icon" type="image/png" sizes="96x96" href="/thomas/img/favicon96x96.png" /><link rel="icon" type="image/png" sizes="114x114" href="/thomas/img/favicon114x114.png" /><link rel="icon" type="image/png" sizes="120x120" href="/thomas/img/favicon120x120.png" /><link rel="icon" type="image/png" sizes="128x128" href="/thomas/img/favicon128x128.png" /><link rel="icon" type="image/png" sizes="144x144" href="/thomas/img/favicon144x144.png" /><link rel="icon" type="image/png" sizes="150x150" href="/thomas/img/favicon150x150.png" /><link rel="icon" type="image/png" sizes="152x152" href="/thomas/img/favicon152x152.png" /><link rel="icon" type="image/png" sizes="196x196" href="/thomas/img/favicon196x196.png" /><link rel="icon" type="image/png" sizes="310x310" href="/thomas/img/favicon310x310.png" /><link rel="icon" type="image/png" sizes="310x150" href="/thomas/img/favicon310x150.png" /><link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" /><link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" /><link rel="stylesheet" href="/thomas/highlight/styles/atom-one-light.css" /><link rel="stylesheet" href="/thomas/css/style.css" /><link rel="stylesheet" href="/thomas/css/palette.css" /><link rel="stylesheet" href="/thomas/css/codemirror.css" /></head><body><header id="site-header"><div class="navbar-wrapper"><div class="container"><div class="row"><div class="col-xs-6"><a href="/thomas/" class="brand"><div class="icon-wrapper"><span>Thomas</span></div></a></div><div class="col-xs-6"><nav class="text-right"><ul class=""><li><a href="https://github.com/iheartradio/thomas"><i class="fa fa-github"></i><span class="hidden-xs">GitHub</span></a></li></ul></nav></div></div></div></div><div class="jumbotron"><div class="container"><h1 class="text-center">A library for A/B tests</h1><h2></h2><p class="text-center"><a href="https://github.com/iheartradio/thomas" class="btn btn-outline-inverse">View on GitHub</a></p></div></div><div><ul class="horizontalNav">     <li><a class=" active " href="/thomas/">Home</a></li> </ul></div></header><main id="site-main"><section class="use"><div class="container"><div id="content"><h1 id="thomas---a-new-ab-test-library">Thomas - a new A/B test library</h1>
+
+<p><a href="https://travis-ci.org/iheartradio/thomas"><img src="https://travis-ci.org/iheartradio/thomas.svg?branch=master" alt="Build Status" /></a></p>
+
+<p>Thomas is a modular library for setting up an A/B test service for A/B test management and user group assignment. It also provides tools for results analysis. 
+To use it as a complete A/B test solution, a team needs to:</p>
+
+<ol>
+  <li>be able to modify and deploy either play or http4s applications</li>
+  <li>have their own analytic platform and access to data</li>
+  <li>be able to read and understand Scala code written in the functional programming paradigm.</li>
+  <li>run and maintain a tiny MongoDB cluster (other data stores can be supported if users implement a data access layer).</li>
+</ol>
+
+<p>Still here? Ok, this is the set of features that differentiate Thomas from other existing A/B frameworks/libraries.</p>
+
+<h2 id="features">Features</h2>
+
+<ul>
+  <li>Real-time hash-based assignment</li>
+  <li>Experiment evolution with consistent user assignments</li>
+  <li>Bayesian analysis</li>
+  <li>Eligibility control decoupled from user domain</li>
+  <li>Mutually exclusive experiments</li>
+  <li>Distributed group assignment with Spark (and Pyspark) support</li>
+  <li>High Performance</li>
+  <li>Modular and lightweight</li>
+</ul>
+
+<h3 id="real-time-hash-based-assignment">Real-time hash-based assignment</h3>
+
+<p>Thomas’ A/B group assignment for users is always done real-time by a mathematical function that deterministically and uniformly distributes users into different groups. This function takes in a timestamp, a user Id and their relevant meta info, it then returns the assignments of all A/B test experiments running at that time. Thomas does not batch pre-assign users nor does it store the assignments anywhere. Every time you ask Thomas for group assignments of a user, it will run that mathematical function to answer you.</p>
+
+<p>This real-time assignment algorithm may seem mundane, but it has important implications. Specifically, it has to be strictly deterministic, as a mathematical function should be. With the same input, user info and timestamp, it guarantees to return the same assignments whenever it’s called. To ensure that Thomas enforces that all A/B test experiments are read-only. To evolve an experiment, you have to terminate the existing one and start a new version.</p>
+
+<p>Other implications include:</p>
+
+<ol>
+  <li>Experiments’ metadata is the only data that need to be persistent by Thomas. This design greatly simplified the data storage requirements in Thomas.</li>
+  <li>Since there is no user lookup, Thomas is more scalable in regards to the number of end users.</li>
+  <li>Assignments computation can be distributed as mathematic functions can be easily distributed. Thomas provides a thomas-client module that can compute assignments in parallel. More details below.</li>
+</ol>
+
+<h3 id="ab-test-experiment-evolution-with-consistent-user-assignments">A/B test experiment evolution with consistent user assignments</h3>
+
+<p>It’s common that an A/B test consists of several rounds of experiments, with minor modifications of treatment and/or group size. Sometimes it is preferable not to reassign existing users within each group which will cause an abrupt discontinuity in their user experiences. Thomas supports such experiment evolution with consistent user assignments.</p>
+
+<p>When a new experiment of an A/B test is rolled out with different group sizes, Thomas can be set to either completely redistribute all users uniformly or keep the user assignment as consistent as possible. When a group is enlarged, all of its existing users will remain in it; when a group is shrunk, a minimally required portion of its existing users will be reassigned to other groups. Thomas does this without deviating from the real-time assignment algorithm.</p>
+
+<p>This also enables Thomas to double as a valid gradual feature rollout system. A small treatment group can increase its size incrementally to roll out a feature. There are no disruptions of user experience in this process thanks to the consistent user assignment.</p>
+
+<h3 id="bayesian-analysis-utilities">Bayesian analysis utilities</h3>
+
+<p>Thomas provides a module thomas-analysis that can be used to perform Bayesian analysis for A/B test results. This library is built using the wonderful <a href="https://github.com/stripe/rainier">Bayesian inference library Rainier</a>.  Using this thomas-analysis, users can write analysis tools that compute a posterior distribution of the effect of the treatment v.s. control using Markov Chain Monte Carlo.</p>
+
+<p>In its essence, the A/B test analysis’s main task is that, given the observed difference in analytics results between multiple treatment groups, pick the treatment that works best towards the goal for the product. The traditional frequentist approach has been trying to determine whether the difference observed is statistically significantly or not. The Bayesian analysis allows us to answer a different question: given the observed difference, what will be the risk of picking one treatment over another. In another sentence, what will be the maximum reduction of KPI in the scenario when one treatment is chosen over another but the real difference is the opposite of the one saw in the experiment.</p>
+
+<p>The Bayesian A/B analysis tool in Thomas produces results that look like the following.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code> Group:   Treatment A
+ Count:   53179
+ Chance of better than control: 0.82692
+ Expected Benefit: 0.03209179240152402
+ Median Benefit: 0.02028449645941638
+ Risk of Using: -0.014472377020694363
+ Risk of Not Using: -0.05524666066837561
+ Plot:
+     1930 |                                                                                
+                                 ○                                              
+                                 ○○                                             
+                             ∘○· ○○ ∘                                           
+                             ○○○○○○ ○·                                          
+     1440 |                          ∘∘·○○○○○○○○○··                                        
+                         ∘○○○○○○○○○○○○○○∘                                       
+                        ∘○○○○○○○○○○○○○○○○·○                                     
+                       ·○○○○○○○○○○○○○○○○○○○○                                    
+                      ○○○○○○○○○○○○○○○○○○○○○○                                    
+      960 |                     ·○○○○○○○○○○○○○○○○○○○○○○                                    
+                   ∘∘○○○○○○○○○○○○○○○○○○○○○○○∘∘                                  
+                 ∘∘○○○○○○○○○○○○○○○○○○○○○○○○○○○∘                                 
+                ·○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○∘                                
+               ∘○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○∘                               
+      480 |              ∘○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○∘·                             
+            ·∘○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○∘·                           
+            ○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○                          
+        ·∘○∘○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○∘∘                        
+    ·∘·○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○···                    
+        0 |··∘∘○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○∘∘··········  ·   ·
+--------|--------|--------|--------|--------|--------|--------|--------|--------
+        -0.039   -0.023   -0.007   0.010    0.026    0.042    0.058    0.075    0.091  
+
+</code></pre>
+</div>
+
+<p>Note that to use these utilities users need to implement integration with data retrieval from their analytical system.</p>
+
+<h3 id="eligibility-control-decoupled-from-user-domain">Eligibility control decoupled from user domain</h3>
+
+<p>Thomas does not require any direct integration with in house user meta-data storage. It uses a different mechanism to control users’ eligibility for  A/B test experiments: when a client calls Thomas assignment service, it can pass in a small set of relevant metadata of the user. Experiments can be set with some eligibility criteria that filter users based on the metadata given.</p>
+
+<h3 id="mutually-exclusive-experiments">Mutually exclusive experiments</h3>
+
+<p>Thomas provides an easy way to support mutually exclusive A/B test experiments, i.e., a user could join either experiment but not both. An experiment can be set with an arbitrary numeric range within the range 0 to 1. A/B test experiments with non-overlapping ranges are mutually exclusive with each other.</p>
+
+<h3 id="distributed-assignment--spark-support">Distributed assignment / Spark support</h3>
+
+<p>Thomas provides a thomas-client that can pull down experiments metadata and calculate user assignments in parallel on local CPUs. It also provides a native Java API usable in Spark and Pyspark. This would allow users to efficiently batch process data according to A/B test group assignment without any extra workload to a centralized A/B test service.</p>
+
+<h3 id="high-performance">High Performance</h3>
+
+<p>A/B test information retrieval is an overhead for all features running A/B tests. High performance is an uncompromisable top priority for Thomas since the very beginning. Thanks to the real-time assignment design, Thomas is able to easily keep all necessary data in memory when serving user assignment requests. Moreover, it’s written in “sleek performant low-overhead Scala code with high-order functions that would run on anything. Period. End of sentence.” 
+When running on a MacBook Pro, with about two dozens of ongoing experiments, server-side response time 95th percentile is 4ms, 99th percentile is 8ms. When running on production servers at iHeartRadio, the 99th percentile server-side response time is 1ms.</p>
+
+<h3 id="modular-and-lightweight">Modular and lightweight</h3>
+
+<p>Thomas is developed in small modules so that users can pick and choose what they need.</p>
+<ul>
+  <li>thomas-core: core logic and algorithms</li>
+  <li>thomas-http4s: library for creating an HTTP service using Http4s, also runs out of box</li>
+  <li>thomas-play-lib: library for creating an HTTP service using Play framework</li>
+  <li>thomas-mongo: data access layer using MongoDB</li>
+  <li>thomas-client: the distributed client that provides assignment by running the algorithm locally</li>
+  <li>thomas-analysis: Bayesian analysis utilities</li>
+  <li>example: a play app example for using thomas-play-lib</li>
+</ul>
+
+<h2 id="whats-not-included--still-lacking-in-thomas">What’s not included / still lacking in Thomas</h2>
+
+<ul>
+  <li>
+    <h4 id="no-built-in-analytics">No built-in analytics</h4>
+    <p>Users of Thomas have to pick and implement their own analytics system. We took the approach that A/B test solution is decoupled from the analytics solution.</p>
+  </li>
+  <li>
+    <h4 id="no-admin-ui">No Admin UI</h4>
+    <p>The HTTP service lib from Thomas makes it easier to set up a REST HTTP API service. The example play app also includes integration with Swagger-UI to make the API services more accessible with a rough Web UI automatically generated from the API service. If a fully functional web UI is needed for less technical persons to administrate A/B tests, it will have to be developed from scratch on top of the API service.</p>
+  </li>
+  <li>
+    <h4 id="no-built-in-authenticationauthorization-for-management-api">No built-in authentication/authorization for management API</h4>
+    <p>Such an auth system has to be built into the Admin UI on top of the API service.</p>
+  </li>
+  <li>
+    <h4 id="documentation-is-sparse">Documentation is sparse</h4>
+    <p>We are still in the process of slowing building the documentation.</p>
+  </li>
+</ul>
+
+<h2 id="thomas-at-iheartradio">Thomas at iHeartRadio</h2>
+
+<p>Thomas has been serving A/B tests at iHeartRadio for over a year. On a typical day, it runs 20-30 ongoing A/B test experiments with our 120+ million registered users. There were a couple of glitches during the early phase but has been stabilized and issue free for more than half a year. If you are considering running an in-house A/B test platform, please consider giving Thomas a try.</p>
+
+</div></div></section><section class="technologies"><div class="container"><div class="row"></div></div></section></main><footer id="site-footer"><div class="container"><div class="row"><div class="col-xs-6"><p>Thomas is designed and developed by <a href="https://github.com/iheartradio/thomas" target="_blank">Kailuo Wang</a></p></div><div class="col-xs-6"><p class="text-right"><a href="https://github.com/iheartradio/thomas"><span class="fa fa-github"></span>View on GitHub</a></p></div></div><div class="row"><div class="col-xs-6"><p>Website built with <a href="https://47deg.github.io/sbt-microsites/" target="_blank">Sbt-microsites</a> - © 2016 <a href="https://www.47deg.com/" target="_blank">47 Degrees</a></p></div></div></div></footer><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script><script src="/thomas/highlight/highlight.pack.js"></script><script>hljs.configure({
+languages:['scala','java','bash']
+});
+hljs.initHighlighting();
+             </script><script>((window.gitter = {}).chat = {}).options = {
+room: 'iheartradio/thomas'};</script><script src="https://sidecar.gitter.im/dist/sidecar.v1.js"></script></body></html>
