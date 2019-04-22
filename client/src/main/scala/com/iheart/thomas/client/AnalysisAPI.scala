@@ -43,11 +43,10 @@ trait AnalysisAPI[F[_], K <: KPIDistribution] {
 object AnalysisAPI {
 
   abstract class AnalysisAPIWithClient[F[_], K <: KPIDistribution](
-                                                implicit UK: UpdatableKPI[F, K],
-                                                abtestKPI: AbtestKPI[F, K],
-
-    client: Client[F],
-    F: MonadError[F, Throwable]) extends AnalysisAPI[F, K] {
+    implicit UK: UpdatableKPI[F, K],
+             abtestKPI: AbtestKPI[F, K],
+             client: Client[F],
+             F: MonadError[F, Throwable]) extends AnalysisAPI[F, K] {
 
     def validateKPIType(k: KPIDistribution): F[K] = narrowToK.lift.apply(k).liftTo[F](KPINotFound)
 
