@@ -1,5 +1,5 @@
 import com.typesafe.sbt.SbtGit.git
-
+import microsites._
 
 val apache2 = "Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")
 
@@ -24,7 +24,7 @@ lazy val libs =
   .addJVM(name = "log4cats",              version = "0.1.0",  org = "io.chrisdavenport", "log4cats-slf4j")
   .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
   .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
-  .addJVM(name = "http4s",                version = "0.20.0-RC1", org= "org.http4s", "http4s-dsl", "http4s-blaze-server", "http4s-blaze-client", "http4s-play-json")
+  .addJVM(name = "http4s",                version = "0.20.0", org= "org.http4s", "http4s-dsl", "http4s-blaze-server", "http4s-blaze-client", "http4s-play-json")
   .addJVM(name = "akka-slf4j",            version = "2.5.22",   org = "com.typesafe.akka")
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
@@ -111,6 +111,44 @@ lazy val analysis = project
     """.stripMargin,
   )
 
+lazy val docs = project
+  .dependsOn(client)
+  .settings(rootSettings)
+  .settings(moduleName := gh.proj + "-docs")
+  .settings(noPublishSettings)
+  .settings(unidocCommonSettings)
+  .enablePlugins(MicrositesPlugin)
+  .settings(
+    organization  := gh.organisation,
+    autoAPIMappings := true,
+    micrositeName := "Thomas",
+    micrositeDescription := "Thomas, a library for A/B tests",
+    micrositeBaseUrl := "thomas",
+    micrositeGithubOwner := "iheartradio",
+    micrositeGithubRepo := "thomas",
+    micrositeHighlightTheme := "atom-one-light",
+    fork in tut := true,
+    micrositeExtraMdFiles := Map(
+      file("README.md") -> ExtraMdFileConfig(
+        "index.md",
+        "home",
+        Map("title" -> "Home", "section" -> "home", "position" -> "0")
+      )
+    ),
+    micrositePalette := Map(
+      "brand-primary"     -> "#51839A",
+      "brand-secondary"   -> "#EDAF79",
+      "brand-tertiary"    -> "#96A694",
+      "gray-dark"         -> "#192946",
+      "gray"              -> "#424F67",
+      "gray-light"        -> "#E3E2E3",
+      "gray-lighter"      -> "#F4F3F4",
+      "white-color"       -> "#FFFFFF"),
+    ghpagesNoJekyll := false,
+    micrositeAuthor := "Kailuo Wang",
+    scalacOptions in Tut ~= (_.filterNot(Set("-Ywarn-unused-import", "-Ywarn-dead-code"))),
+    git.remoteRepo := gh.repo,
+    includeFilter in makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js" | "*.swf" | "*.yml" | "*.md")
 
 lazy val mongo = project
   .dependsOn(analysis)
@@ -128,7 +166,14 @@ lazy val http4s = project
   .settings(taglessSettings)
   .settings(
     libs.testDependencies("scalacheck", "scalatest"),
-    libs.dependencies("logback-classic", "http4s-blaze-server", "http4s-dsl", "http4s-play-json", "scala-java8-compat", "log4cats-slf4j", "akka-slf4j")
+    libs.dependencies(
+      "logback-classic",
+      "http4s-blaze-server",
+      "http4s-dsl",
+      "http4s-play-json", 
+      "scala-java8-compat",
+      "log4cats-slf4j",
+      "akka-slf4j")
   )
 
 lazy val stress = project
