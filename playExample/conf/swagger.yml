@@ -8,7 +8,7 @@
   produces:
     - application/json
   definitions:
-    com.iheart.abtest.model.UserGroupQuery:
+    com.iheart.thomas.model.UserGroupQuery:
       properties:
         userId:
           description: Profile Id of the user. This field can be missing if the user doesn't have a profileId, but has some meta (see the meta below)
@@ -18,7 +18,7 @@
         meta:
           description: extra meta data of the user. For example, the device id of the client can be passed here under the key deviceId
           type: Map[string, string]
-    com.iheart.abtest.model.UserGroupQueryResult:
+    com.iheart.thomas.model.UserGroupQueryResult:
       properties:
         groups:
           description: pairs of feature -> group assignment

@@ -2,6 +2,7 @@
 # Thomas - a new A/B test library
 
 [![Build Status](https://travis-ci.org/iheartradio/thomas.svg?branch=master)](https://travis-ci.org/iheartradio/thomas)
+[![Gitter](https://badges.gitter.im/iheartradio/thomas.svg)](https://gitter.im/iheartradio/thomas?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 Thomas is a modular library for setting up an A/B test service for A/B test management and user group assignment. It also provides tools for results analysis. 
 To use it as a complete A/B test solution, a team needs to: 
@@ -153,6 +154,11 @@ Thomas is developed in small modules so that users can pick and choose what they
 
 Thomas has been serving A/B tests at iHeartRadio for over a year. On a typical day, it runs 20-30 ongoing A/B test experiments with our 120+ million registered users. There were a couple of glitches during the early phase but has been stabilized and issue free for more than half a year. If you are considering running an in-house A/B test platform, please consider giving Thomas a try.  
 
+## Contribute
+
+We welcome all feedback and questions. You can either [submit a github issue](https://github.com/iheartradio/thomas/issues/new) or raise it in Thomas' [gitter channel](ttps://gitter.im/iheartradio/thomas)  
+Any contribution, big or small, are truly appreciated. We open source Thomas because we believe that a community can build a A/B test library better than a single organization. 
+ 
 
 ## Copyright and License
 

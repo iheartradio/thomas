@@ -37,10 +37,6 @@ lazy val thomas = project.in(file("."))
     crossScalaVersions := Nil,
     noPublishing)
 
-
-
-
-
 lazy val client = project
   .dependsOn(analysis)
   .aggregate(analysis)
@@ -101,6 +97,7 @@ lazy val docs = project
     micrositeSettings(gh, developerKai,  "Thomas, a library for A/B tests"),
     micrositeDocumentationUrl := "/thomas/api/com/iheart/thomas/index.html",
     micrositeDocumentationLabelDescription := "API Documentation",
+    micrositeGithubOwner := "iheartradio",
     micrositeExtraMdFiles := Map(
       file("README.md") -> ExtraMdFileConfig(
         "index.md",
