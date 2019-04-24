@@ -28,35 +28,17 @@ lazy val libs =
   .addJVM(name = "akka-slf4j",            version = "2.5.22",   org = "com.typesafe.akka")
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
-addCommandAlias("validate", s";thomas/test;playLib/IntegrationTest/test")
+addCommandAlias("validate", s";thomas/test;play/IntegrationTest/test")
 
 lazy val thomas = project.in(file("."))
-  .aggregate(example, playLib, client, http4s)
+  .aggregate(playExample, client, http4s)
   .settings(
     rootSettings,
     crossScalaVersions := Nil,
     noPublishing)
 
 
-lazy val example = project.enablePlugins(PlayScala, SwaggerPlugin)
-  .dependsOn(playLib)
-  .aggregate(playLib)
-  .settings(
-    rootSettings,
-    noPublishing,
-    crossScalaVersions := Seq(scalaVersion.value)
-  )
-  .settings(
-    name := "thomas-example",
-    libraryDependencies ++= Seq(
-      guice,
-      ws,
-      filters,
-      "org.webjars" % "swagger-ui" % "3.9.2"),
-    dockerExposedPorts in Docker := Seq(9000),
-    swaggerDomainNameSpaces := Seq("com.iheart.thomas"),
-    (stage in Docker) := (stage in Docker).dependsOn(swagger).value
-  )
+
 
 
 lazy val client = project
@@ -177,8 +159,8 @@ lazy val http4s = project
   )
 
 lazy val stress = project
-  .aggregate(example)
-  .dependsOn(example)
+  .aggregate(playExample)
+  .dependsOn(playExample)
   .enablePlugins(GatlingPlugin)
   .settings(name := "thomas-stress")
   .settings(noPublishing)
@@ -191,13 +173,13 @@ lazy val stress = project
     )
   )
 
-lazy val playLib = project
+lazy val play = project
   .dependsOn(mongo)
   .aggregate(mongo, core)
   .configs(IntegrationTest)
   .settings(rootSettings)
   .settings(
-    name := "thomas-play-lib",
+    name := "thomas-play",
     Defaults.itSettings,
     parallelExecution in IntegrationTest := false,
     taglessSettings,
@@ -206,6 +188,26 @@ lazy val playLib = project
     libraryDependencies ++= Seq(
       "org.scalatest" %% "scalatest" % "3.0.1" % IntegrationTest,
       "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % IntegrationTest )
+  )
+
+lazy val playExample = project.enablePlugins(PlayScala, SwaggerPlugin)
+  .dependsOn(play)
+  .aggregate(play)
+  .settings(
+    rootSettings,
+    noPublishing,
+    crossScalaVersions := Seq(scalaVersion.value)
+  )
+  .settings(
+    name := "thomas-play-example",
+    libraryDependencies ++= Seq(
+      guice,
+      ws,
+      filters,
+      "org.webjars" % "swagger-ui" % "3.9.2"),
+    dockerExposedPorts in Docker := Seq(9000),
+    swaggerDomainNameSpaces := Seq("com.iheart.thomas"),
+    (stage in Docker) := (stage in Docker).dependsOn(swagger).value
   )
 
 

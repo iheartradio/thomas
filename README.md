@@ -35,15 +35,28 @@ Other implications include:
 
 1. Experiments' metadata is the only data that need to be persistent by Thomas. This design greatly simplified the data storage requirements in Thomas. 
 2. Since there is no user lookup, Thomas is more scalable in regards to the number of end users. 
-3. Assignments computation can be distributed as mathematic functions can be easily distributed. Thomas provides a thomas-client module that can compute assignments in parallel. More details below.
+3. Assignments computation can be distributed as mathematical functions can be easily distributed. Thomas provides a thomas-client module that can compute assignments in parallel. More details below.
 
 ### A/B test experiment evolution with consistent user assignments
 
-It's common that an A/B test consists of several rounds of experiments, with minor modifications of treatment and/or group size. Sometimes it is preferable not to reassign existing users within each group which will cause an abrupt discontinuity in their user experiences. Thomas supports such experiment evolution with consistent user assignments. 
+It's common that an A/B test consists of several rounds of experiments, sometimes introducing new treatment groups, sometimes changing the size of exiting groups. It is often preferable to avoid reassigning existing users within each group which will cause an abrupt discontinuity in their user experiences. Thomas supports such experiment evolution with consistent user assignments. 
 
-When a new experiment of an A/B test is rolled out with different group sizes, Thomas can be set to either completely redistribute all users uniformly or keep the user assignment as consistent as possible. When a group is enlarged, all of its existing users will remain in it; when a group is shrunk, a minimally required portion of its existing users will be reassigned to other groups. Thomas does this without deviating from the real-time assignment algorithm.
+When a new experiment of an A/B test is rolled out with a different group setup, Thomas can be set to either completely redistribute all users uniformly or keep the user assignment as consistent as possible. When a group is enlarged, all of its existing users will remain in it; when a group is shrunk, a minimally required portion of its existing users will be reassigned to other groups. The best way to demonstrate is through the following examples. 
 
-This also enables Thomas to double as a valid gradual feature rollout system. A small treatment group can increase its size incrementally to roll out a feature. There are no disruptions of user experience in this process thanks to the consistent user assignment. 
+
+![newGroup](/imgs/newGroup.png)
+
+In this example, a new treatment group C is introduced. To make space for this new group the size of group B is decreased, while the size of A is unchanged.
+In this scenario, Thomas will reassign part of the users in group B to the new group C while all users in group A remains in group A. 
+
+
+![resizeGroup](/imgs/resizeGroup.png)
+
+In this example, the sizes of the groups are changes. Group A is enlarged, group B is shrunk. In this scenario, Thomas will reassign just enough users from B to A but no more than necessary.   
+
+This also enables Thomas to double as a valid gradual feature roll-out system. A small treatment group can increase its size incrementally to roll out a feature. There are no disruptions of user experience in this process thanks to the consistent user assignment. 
+
+Also note that Thomas does this without deviating from the real-time assignment algorithm. 
 
 ### Bayesian analysis utilities
 
@@ -113,7 +126,8 @@ When running on a MacBook Pro, with about two dozens of ongoing experiments, ser
 Thomas is developed in small modules so that users can pick and choose what they need. 
  - thomas-core: core logic and algorithms
  - thomas-http4s: library for creating an HTTP service using Http4s, also runs out of box
- - thomas-play-lib: library for creating an HTTP service using Play framework
+ - thomas-play: library for creating an HTTP service using Play framework
+ - thomas-play-example: an example Thomas http service application using thomas-play and Play Framework 
  - thomas-mongo: data access layer using MongoDB
  - thomas-client: the distributed client that provides assignment by running the algorithm locally
  - thomas-analysis: Bayesian analysis utilities
