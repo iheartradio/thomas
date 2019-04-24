@@ -64,7 +64,7 @@ lazy val core = project
   .settings(
     libs.testDependencies("scalacheck", "scalatest"),
     libs.dependencies("cats-core",
-      "monocle-macro", 
+      "monocle-macro",
       "monocle-core",
       "lihua-core",
       "mouse",
@@ -80,7 +80,7 @@ lazy val analysis = project
   .settings(rootSettings)
   .settings(taglessSettings)
   .settings(
-    sources in (Compile, doc) := Nil, //disable scaladoc due to scalameta not working in scaladoc 
+    sources in (Compile, doc) := Nil, //disable scaladoc due to scalameta not working in scaladoc
     resolvers += Resolver.bintrayRepo("cibotech", "public"),
     libs.testDependencies("scalacheck", "scalatest"),
     libs.dependencies("rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "rainier-plot", "commons-math3", "play-json-derived-codecs"),
@@ -94,22 +94,13 @@ lazy val analysis = project
   )
 
 lazy val docs = project
-  .dependsOn(client)
-  .settings(rootSettings)
-  .settings(moduleName := gh.proj + "-docs")
-  .settings(noPublishSettings)
-  .settings(unidocCommonSettings)
+  .configure(mkDocConfig(gh, rootSettings, taglessSettings, client, http4s, play, core, analysis))
   .enablePlugins(MicrositesPlugin)
+  .enablePlugins(ScalaUnidocPlugin)
   .settings(
-    organization  := gh.organisation,
-    autoAPIMappings := true,
-    micrositeName := "Thomas",
-    micrositeDescription := "Thomas, a library for A/B tests",
-    micrositeBaseUrl := "thomas",
-    micrositeGithubOwner := "iheartradio",
-    micrositeGithubRepo := "thomas",
-    micrositeHighlightTheme := "atom-one-light",
-    fork in tut := true,
+    micrositeSettings(gh, developerKai,  "Thomas, a library for A/B tests"),
+    micrositeDocumentationUrl := "/thomas/api/com/iheart/thomas/index.html",
+    micrositeDocumentationLabelDescription := "API Documentation",
     micrositeExtraMdFiles := Map(
       file("README.md") -> ExtraMdFileConfig(
         "index.md",
@@ -125,12 +116,9 @@ lazy val docs = project
       "gray"              -> "#424F67",
       "gray-light"        -> "#E3E2E3",
       "gray-lighter"      -> "#F4F3F4",
-      "white-color"       -> "#FFFFFF"),
-    ghpagesNoJekyll := false,
-    micrositeAuthor := "Kailuo Wang",
-    scalacOptions in Tut ~= (_.filterNot(Set("-Ywarn-unused-import", "-Ywarn-dead-code"))),
-    git.remoteRepo := gh.repo,
-    includeFilter in makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js" | "*.swf" | "*.yml" | "*.md")
+      "white-color"       -> "#FFFFFF")
+  )
+
 
 lazy val mongo = project
   .dependsOn(analysis)
@@ -152,7 +140,7 @@ lazy val http4s = project
       "logback-classic",
       "http4s-blaze-server",
       "http4s-dsl",
-      "http4s-play-json", 
+      "http4s-play-json",
       "scala-java8-compat",
       "log4cats-slf4j",
       "akka-slf4j")
@@ -214,13 +202,14 @@ lazy val playExample = project.enablePlugins(PlayScala, SwaggerPlugin)
 lazy val noPublishing = Seq(skip in publish := true)
 
 
+lazy val developerKai = Developer("Kailuo Wang", "@kailuowang", "kailuo.wang@gmail.com", new java.net.URL("http://kailuowang.com"))
 lazy val commonSettings = addCompilerPlugins(libs, "kind-projector") ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := libs.vers("scalac_2.12"),
   parallelExecution in Test := false,
   releaseCrossBuild := false,
   crossScalaVersions := Seq(scalaVersion.value, libs.vers("scalac_2.11")),
-  developers := List(Developer("Kailuo Wang", "@kailuowang", "kailuo.wang@gmail.com", new java.net.URL("http://kailuowang.com"))),
+  developers := List(developerKai),
   scalacOptions in (Compile, console) ~= lessStrictScalaChecks,
   scalacOptions in (Test, compile) ~= lessStrictScalaChecks,
   scalacOptions in (IntegrationTest, compile) ~= lessStrictScalaChecks,
