@@ -8,7 +8,7 @@ package thomas
 
 import java.time.OffsetDateTime
 
-import play.api.libs.json.JsObject
+import _root_.play.api.libs.json.JsObject
 
 package object model {
   type TestId = String

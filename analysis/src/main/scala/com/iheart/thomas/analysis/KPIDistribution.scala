@@ -13,7 +13,7 @@ import io.estatico.newtype.Coercible
 import monocle.macros.syntax.lens._
 import org.apache.commons.math3.distribution.GammaDistribution
 import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
-import play.api.libs.json._
+import _root_.play.api.libs.json._
 import cats.implicits._
 import com.iheart.thomas.model.{Abtest, GroupName}
 import implicits._

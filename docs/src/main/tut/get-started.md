@@ -14,7 +14,12 @@ Thomas needs a basic data store to store test metadata. Since the amount of data
 
 ### Step 2 create a http service application using either thomas-http4s or thomas-play
 
-`thomas-core` provides the core functionality through [a facad API](https://iheartradio.github.io/thomas/api/com/iheart/thomas/API.html). If your product is using the typical server-client architecture, you can either incorporate this library into your existing service (it needs to be scala compatible though), or you can use either `thomas-http4s` or `thomas-play` to setup a standalone http service to serve this API. 
+`thomas-core` provides the core functionality through [a facade API](https://iheartradio.github.io/thomas/api/com/iheart/thomas/API.html). If your product is using the typical server-client architecture, you can either incorporate this library into your existing service (it needs to be scala compatible though), or you can utilize either `thomas-http4s` or `thomas-play` to setup a standalone http service to serve this API. 
+
+#### incorporate Thomas-core library into existing scala http service application
+
+You will need to instantiate the [Thomas facade API](https://iheartradio.github.io/thomas/api/com/iheart/thomas/API.html). To instance this API you need an implementation of the data access layer. Right now thomas-mongo provide one for the MongoDB. 
+Since the instance maintains DB connection pool, it's a resource that needs to be managed. Depending on the paradigm of your existing http service application, you follow [the example in thomas-http4s](https://iheartradio.github.io/thomas/api/com/iheart/thomas/http4s/AbtestService$.html) if it's pure functional, or [the example in thomas-play](https://iheartradio.github.io/thomas/api/com/iheart/thomas/play/APIProvider.html) if it's more traditionally OO.  
 
 #### Setting up with http4s
 
@@ -25,10 +30,12 @@ libraryDependencies += "com.iheart" %% "thomas-http4s" % ThomasVersion
 ``` 
 Then add a `Main` object 
 
-```tut:silent
-import com.iheart.thomas.http4s.Example
+```tut
+import com.iheart.thomas.http4s
 
-object Main extends Example
+```
+```tut
+object Main extends http4s.ExampleHtt4sApp 
 
 ```
 

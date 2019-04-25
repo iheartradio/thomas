@@ -1,5 +1,5 @@
 package com.iheart.thomas
-package http.lib
+package play
 
 import java.time.OffsetDateTime
 
@@ -10,15 +10,15 @@ import lihua.{Entity, EntityDAO, EntityId}
 import org.scalatest.BeforeAndAfter
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.mvc.{Action, ControllerComponents, Request, Result}
-import play.api.test.FakeRequest
-import play.api.test.Helpers.status
+import _root_.play.api.mvc.{Action, ControllerComponents, Request, Result}
+import _root_.play.api.test.FakeRequest
+import _root_.play.api.test.Helpers.status
 import org.scalatestplus.play._
 import Formats._
 import com.iheart.thomas.analysis.DistributionSpec.Normal
 import com.iheart.thomas.analysis._
-import play.api.libs.json.{JsObject, Json, Writes}
-import play.api.test.Helpers._
+import _root_.play.api.libs.json.{JsObject, Json, Writes}
+import _root_.play.api.test.Helpers._
 import lihua.mongo.JsonFormats._
 
 import scala.concurrent.Future

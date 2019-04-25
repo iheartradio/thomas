@@ -146,7 +146,7 @@ Thomas is developed in small modules so that users can pick and choose what they
 * #### No built-in authentication/authorization for management API
   Such an auth system has to be built into the Admin UI on top of the API service.     
 
-* #### Documentation is sparse
+* #### Documentation is WIP
   We are still in the process of slowing building the documentation. 
  
 

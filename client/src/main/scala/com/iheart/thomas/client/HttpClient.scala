@@ -12,17 +12,17 @@ import cats.Id
 import cats.effect.{Async, IO, Resource}
 import com.iheart.thomas.model.{Abtest, Feature, FeatureName}
 import lihua.Entity
-import play.api.libs.json._
+import _root_.play.api.libs.json._
 import cats.implicits._
 import Formats._
 import com.iheart.thomas.Error.NotFound
 import com.iheart.thomas.analysis.KPIDistribution
 import lihua.EntityId.toEntityId
-import play.api.libs.ws.{StandaloneWSRequest, StandaloneWSResponse}
+import _root_.play.api.libs.ws.{StandaloneWSRequest, StandaloneWSResponse}
 
 import scala.concurrent.Future
 import scala.util.control.NoStackTrace
-import play.api.libs.ws.JsonBodyWritables._
+import _root_.play.api.libs.ws.JsonBodyWritables._
 
 trait Client[F[_]] {
   def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]]
@@ -41,9 +41,9 @@ object Client extends EntityReads {
 
   import akka.actor.ActorSystem
   import akka.stream.ActorMaterializer
-  import play.api.libs.ws.ahc._
+  import _root_.play.api.libs.ws.ahc._
 
-  import play.api.libs.ws.JsonBodyReadables._
+  import _root_.play.api.libs.ws.JsonBodyReadables._
 
   class PlayClient[F[_]](implicit F: Async[F]) extends EntityReads {
 

@@ -6,10 +6,10 @@
 package controllers
 
 import javax.inject._
-import play.api.mvc._
+import _root_.play.api.mvc._
 
 import concurrent._
-import com.iheart.thomas.http.lib._
+import com.iheart.thomas.play._
 
 @Singleton
 class HttpController @Inject() (

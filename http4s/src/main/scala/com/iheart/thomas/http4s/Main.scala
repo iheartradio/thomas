@@ -8,9 +8,9 @@ import org.http4s.server.blaze._
 import scala.concurrent.ExecutionContext.Implicits.global
 import cats.implicits._
 
-object Main extends Example
+object Main extends ExampleHtt4sApp
 
-trait Example extends IOApp {
+trait ExampleHtt4sApp extends IOApp {
   def run(args: List[String]): IO[ExitCode] =
     AbtestService.mongo[IO].use { s =>
       BlazeServerBuilder[IO]
