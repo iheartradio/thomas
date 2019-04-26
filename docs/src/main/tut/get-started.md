@@ -38,7 +38,6 @@ Then add a `Main` object
 import com.iheart.thomas.http4s.ExampleHtt4sApp
 
 object Main extends ExampleHtt4sApp 
-
 ```
 
 Then assuming you have a local MongoDB instance already up and running
