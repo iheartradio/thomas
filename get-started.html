@@ -6,14 +6,17 @@
 
 <h3 id="step-2-create-a-http-service-application-using-either-thomas-http4s-or-thomas-play">Step 2 create a http service application using either thomas-http4s or thomas-play</h3>
 
-<p><code class="highlighter-rouge">thomas-core</code> provides the core functionality through <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/API.html">a facade API</a>. If your product is using the typical server-client architecture, you can either incorporate this library into your existing service (it needs to be scala compatible though), or you can utilize either <code class="highlighter-rouge">thomas-http4s</code> or <code class="highlighter-rouge">thomas-play</code> to setup a standalone http service to serve this API.</p>
+<p><code class="highlighter-rouge">thomas-core</code> provides the core functionality through <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/API.html">a facade API</a>. If your product is using the typical server-client architecture, you can either incorporate this library into your existing service (it needs to be scala compatible though), or set up a standalone http service to serve this API.</p>
 
-<h4 id="incorporate-thomas-core-library-into-existing-scala-http-service-application">incorporate Thomas-core library into existing scala http service application</h4>
+<h4 id="step-2-option-1-incorporate-thomas-core-library-into-existing-scala-http-service-application">Step 2 Option 1: incorporate Thomas-core library into existing scala http service application</h4>
 
-<p>You will need to instantiate the <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/API.html">Thomas facade API</a>. To instance this API you need an implementation of the data access layer. Right now thomas-mongo provide one for the MongoDB. 
-Since the instance maintains DB connection pool, it’s a resource that needs to be managed. Depending on the paradigm of your existing http service application, you follow <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/http4s/AbtestService$.html">the example in thomas-http4s</a> if it’s pure functional, or <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/play/APIProvider.html">the example in thomas-play</a> if it’s more traditionally OO.</p>
+<p>Basically you need to instantiate the <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/API.html">Thomas facade API</a> and have your http service delegate to it. To instantiate this API you need an implementation of the data access layer. Right now thomas-mongo provide one for the MongoDB.</p>
 
-<h4 id="setting-up-with-http4s">Setting up with http4s</h4>
+<p>Since the instance maintains DB connection pool, it’s a resource that needs to be managed. Depending on the paradigm of your existing http service application, you can follow <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/http4s/AbtestService$.html">the example in thomas-http4s</a> if it’s pure functional, or <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/play/APIProvider.html">the example in thomas-play</a> if it’s more traditionally OO.</p>
+
+<p>If you choose to set up a standalone service, you can utilize either <code class="highlighter-rouge">thomas-http4s</code> or <code class="highlighter-rouge">thomas-play</code>.</p>
+
+<h4 id="step-2-option-2a-setting-up-with-http4s">Step 2 Option 2a: Setting up with http4s</h4>
 
 <p>Create a new Scala project and in build.sbt add</p>
 
@@ -22,9 +25,9 @@ Since the instance maintains DB connection pool, it’s a resource that needs to
 </div>
 <p>Then add a <code class="highlighter-rouge">Main</code> object</p>
 
-<div class="language-scala highlighter-rouge"><pre class="highlight"><code>
-<span class="k">object</span> <span class="nc">Main</span> <span class="k">extends</span> <span class="n">com</span><span class="o">.</span><span class="n">iheart</span><span class="o">.</span><span class="n">thomas</span><span class="o">.</span><span class="n">http4s</span><span class="o">.</span><span class="nc">Example</span>
+<div class="language-scala highlighter-rouge"><pre class="highlight"><code><span class="k">import</span> <span class="nn">com.iheart.thomas.http4s.ExampleHtt4sApp</span>
 
+<span class="k">object</span> <span class="nc">Main</span> <span class="k">extends</span> <span class="nc">ExampleHtt4sApp</span> 
 </code></pre>
 </div>
 
@@ -37,7 +40,7 @@ Since the instance maintains DB connection pool, it’s a resource that needs to
 </code></pre>
 </div>
 
-<h4 id="setting-up-with-play-framework">Setting up with Play framework</h4>
+<h4 id="step-2-option-2b-setting-up-with-play-framework">Step 2 Option 2b: Setting up with Play framework</h4>
 
 <p>Setting up a play application involves a little more effort.</p>
 
@@ -54,6 +57,8 @@ Since the instance maintains DB connection pool, it’s a resource that needs to
 <p>Then assuming you have a local MongoDB instance already up and running</p>
 
 <p><code class="highlighter-rouge">sbt run</code> shall start the service locally.</p>
+
+<p>Note that although these steps help you set up a basic http service for Thomas, it’s likely that you might want to modify or enhance this service, e.g. add monitoring, logging, integration with an authentication system etc. Thomas, as a library, is designed such that it won’t stand in the way however you want to build your service.</p>
 
 <h3 id="step-3-include-group-assignments-in-analytics-event-report">Step 3 include group assignments in analytics event report</h3>
 
