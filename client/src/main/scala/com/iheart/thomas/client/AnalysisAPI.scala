@@ -82,26 +82,28 @@ object AnalysisAPI {
   implicit def defaultGamma[F[_]](
     implicit
       G: Measurable[F, Measurements, GammaKPIDistribution],
-      sampleSettings: SampleSettings,
+      sampleSettings: SampleSettings = SampleSettings.default,
       rng: RNG = RNG.default,
       client: Client[F],
-      F: MonadError[F, Throwable]): AnalysisAPI[F, GammaKPIDistribution] = new AnalysisAPIWithClient[F, GammaKPIDistribution] {
-    def narrowToK: PartialFunction[KPIDistribution, GammaKPIDistribution] = {
-      case g: GammaKPIDistribution => g
+      F: MonadError[F, Throwable]): AnalysisAPI[F, GammaKPIDistribution] =
+    new AnalysisAPIWithClient[F, GammaKPIDistribution] {
+      def narrowToK: PartialFunction[KPIDistribution, GammaKPIDistribution] = {
+        case g: GammaKPIDistribution => g
+      }
     }
-  }
 
   implicit def defaultBeta[F[_]](
     implicit
       G: Measurable[F, Conversions, BetaKPIDistribution],
-      sampleSettings: SampleSettings,
+      sampleSettings: SampleSettings = SampleSettings.default,
       rng: RNG = RNG.default,
       client: Client[F],
-      F: MonadError[F, Throwable]): AnalysisAPI[F, BetaKPIDistribution] = new AnalysisAPIWithClient[F, BetaKPIDistribution] {
-    def narrowToK: PartialFunction[KPIDistribution, BetaKPIDistribution] = {
-      case b: BetaKPIDistribution => b
+      F: MonadError[F, Throwable]): AnalysisAPI[F, BetaKPIDistribution] =
+    new AnalysisAPIWithClient[F, BetaKPIDistribution] {
+      def narrowToK: PartialFunction[KPIDistribution, BetaKPIDistribution] = {
+        case b: BetaKPIDistribution => b
+      }
     }
-  }
 
   case object AbtestNotFound extends RuntimeException with NoStackTrace
   case object KPINotFound extends RuntimeException with NoStackTrace

@@ -45,7 +45,7 @@ object Client extends EntityReads {
 
   import _root_.play.api.libs.ws.JsonBodyReadables._
 
-  class PlayClient[F[_]](implicit F: Async[F]) extends EntityReads {
+  private class PlayClient[F[_]](implicit F: Async[F]) extends EntityReads {
 
     implicit private val system = ActorSystem()
 
@@ -77,7 +77,7 @@ object Client extends EntityReads {
       F.delay(ws.close()) *> IO.fromFuture(IO(system.terminate())).to[F].void
   }
 
-  def httpPlay[F[_]](urls: HttpServiceUrls)(implicit F: Async[F]): F[PlayClient[F] with Client[F]] = F.delay(new PlayClient[F] with Client[F] {
+  private def httpPlay[F[_]](urls: HttpServiceUrls)(implicit F: Async[F]): F[PlayClient[F] with Client[F]] = F.delay(new PlayClient[F] with Client[F] {
     def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]] = {
       val baseUrl = ws.url(urls.tests)
 
@@ -98,10 +98,19 @@ object Client extends EntityReads {
   })
 
   trait HttpServiceUrls {
-    //it takes an optional  `at` parameter for as of time
+
+    /**
+     * Service URL corresponding to [[API]].getAllTestsCached
+     */
     def tests: String
+
+    /**
+     * Service URL corresponding to [[analysis.KPIApi]].get
+     */
     def kPIs: String
   }
+
+  case class HttpServiceUrlsSimple(tests: String, kPIs: String) extends HttpServiceUrls
 
   def create[F[_]: Async](serviceUrl: HttpServiceUrls): Resource[F, Client[F]] =
     Resource.make(httpPlay(serviceUrl))(_.close()).widen

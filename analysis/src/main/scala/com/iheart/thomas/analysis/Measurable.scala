@@ -14,6 +14,7 @@ trait Measurable[F[_], M, K] {
   def measureHistory(k: K, start: OffsetDateTime, end: OffsetDateTime): F[M]
 }
 
-object Measurable{
+object Measurable {
+  type GammaMeasurable[F[_]] = Measurable[F, Measurements, GammaKPIDistribution]
   implicit def contravariantInst[F[_], M]: Contravariant[Measurable[F, M, ?]] = cats.tagless.Derive.contravariant[Measurable[F, M, ?]]
 }

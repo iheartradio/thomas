@@ -45,13 +45,13 @@ It's common that an A/B test consists of several rounds of experiments, sometime
 When a new experiment of an A/B test is rolled out with a different group setup, Thomas can be set to either completely redistribute all users uniformly or keep the user assignment as consistent as possible. When a group is enlarged, all of its existing users will remain in it; when a group is shrunk, a minimally required portion of its existing users will be reassigned to other groups. The best way to demonstrate is through the following examples. 
 
 
-![newGroup](/imgs/newGroup.png)
+![newGroup](https://iheartradio.github.io/thomas/img/newGroup.png)
 
 In this example, a new treatment group C is introduced. To make space for this new group the size of group B is decreased, while the size of A is unchanged.
 In this scenario, Thomas will reassign part of the users in group B to the new group C while all users in group A remains in group A. 
 
 
-![resizeGroup](/imgs/resizeGroup.png)
+![resizeGroup](https://iheartradio.github.io/thomas/img/resizeGroup.png)
 
 In this example, the sizes of the groups are changes. Group A is enlarged, group B is shrunk. In this scenario, Thomas will reassign just enough users from B to A but no more than necessary.   
 
