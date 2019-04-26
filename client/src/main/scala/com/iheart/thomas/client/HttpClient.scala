@@ -45,7 +45,7 @@ object Client extends EntityReads {
 
   import _root_.play.api.libs.ws.JsonBodyReadables._
 
-  private class PlayClient[F[_]](implicit F: Async[F]) extends EntityReads {
+  class PlayClient[F[_]](implicit F: Async[F]) extends EntityReads {
 
     implicit private val system = ActorSystem()
 
@@ -77,7 +77,11 @@ object Client extends EntityReads {
       F.delay(ws.close()) *> IO.fromFuture(IO(system.terminate())).to[F].void
   }
 
-  private def httpPlay[F[_]](urls: HttpServiceUrls)(implicit F: Async[F]): F[PlayClient[F] with Client[F]] = F.delay(new PlayClient[F] with Client[F] {
+  /**
+   * lower level API, It's recommended to use Client.create instead
+   * @return
+   */
+  def httpPlay[F[_]](urls: HttpServiceUrls)(implicit F: Async[F]): F[PlayClient[F] with Client[F]] = F.delay(new PlayClient[F] with Client[F] {
     def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]] = {
       val baseUrl = ws.url(urls.tests)
 

@@ -6,7 +6,7 @@ position: 10
 ---
 
 
-To setup your own A/B test platform using Thomas
+## Guide to to setup an A/B test platform using Thomas
 
 ### Step 1 setup a Mongo cluster for Thomas
 
@@ -79,5 +79,5 @@ Nothing Thomas can help here. To analyze the results, your client code needs to 
 ### Step 4 (Optional) write integration with your analytics
  
 Your analytics platform probably support you to run A/B test results analysis. To use the Bayesian analysis tool though, you need to write 
-an integration layer to help Thomas retrieve the data needed for such analysis. Please refer to [the dedicated page](bayesian.html) for detailed guide on this one. 
+an integration layer to help Thomas retrieve the data needed for such analysis. Please refer to [this dedicated page for running Bayesian analysis using Thomas](bayesian.html). 
 

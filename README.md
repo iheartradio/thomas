@@ -147,14 +147,17 @@ Thomas is developed in small modules so that users can pick and choose what they
   Such an auth system has to be built into the Admin UI on top of the API service.     
 
 * #### Documentation is WIP
-  We are still in the process of slowing building the documentation. 
+  We are still in the process of adding documentation. 
  
 
 ## Thomas at iHeartRadio 
 
 Thomas has been serving A/B tests at iHeartRadio for over a year. On a typical day, it runs 20-30 ongoing A/B test experiments with our 120+ million registered users. There were a couple of glitches during the early phase but has been stabilized and issue free for more than half a year. If you are considering running an in-house A/B test platform, please consider giving Thomas a try.  
 
+## Ready to get started?
 
+Please follow the guide [here](https://iheartradio.github.io/thomas/get-started.html). 
+ 
 ## Contribute
 
 We welcome all feedback and questions. You can either [submit a github issue](https://github.com/iheartradio/thomas/issues/new) or raise it in Thomas' [gitter channel](ttps://gitter.im/iheartradio/thomas)  
