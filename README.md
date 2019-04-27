@@ -1,13 +1,14 @@
 
 # Thomas - a new A/B test library
 
+*Go to [https://iheartradio.github.io/thomas/](https://iheartradio.github.io/thomas/) for more comprehensive documentation.*
+
 [![Build Status](https://travis-ci.org/iheartradio/thomas.svg?branch=master)](https://travis-ci.org/iheartradio/thomas)
 [![Gitter](https://badges.gitter.im/iheartradio/thomas.svg)](https://gitter.im/iheartradio/thomas?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-Find documentation, start guide, FAQ etc, on [Thomas' website](https://iheartradio.github.io/thomas/).
-
 Thomas is a modular library for setting up an A/B test service for A/B test management and user group assignment. It also provides tools for results analysis. 
-To use it as a complete A/B test solution, a team needs to: 
+
+To use Thomas as a complete A/B test solution, a team needs to: 
 
 1. be able to modify and deploy either play or http4s applications
 2. have their own analytic platform and access to data  
