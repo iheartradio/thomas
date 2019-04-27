@@ -37,7 +37,7 @@ object EligibilityControl extends EligibilityControlInstances0 {
   }
 }
 
-abstract class EligibilityControlInstances0 extends EligibilityControlInstances1 {
+private[thomas] sealed abstract class EligibilityControlInstances0 extends EligibilityControlInstances1 {
 
   implicit def default: EligibilityControl[Id] =
     byGroupMeta |+| byRequiredTags |+| bySegRanges
@@ -60,7 +60,7 @@ abstract class EligibilityControlInstances0 extends EligibilityControlInstances1
 
 }
 
-sealed abstract class EligibilityControlInstances1 {
+private[thomas] sealed abstract class EligibilityControlInstances1 {
 
   implicit def fromIdEControl[F[_]: Applicative](implicit idec: EligibilityControl[Id]): EligibilityControl[F] = EligibilityControl[F](
     (u, t) => idec.eligible(u, t).pure[F]

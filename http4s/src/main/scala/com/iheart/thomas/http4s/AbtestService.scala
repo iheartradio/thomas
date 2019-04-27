@@ -8,7 +8,7 @@ import com.iheart.thomas.model._
 import com.typesafe.config.ConfigFactory
 import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes, Response}
 import org.http4s.dsl.Http4sDsl
-import play.api.libs.json._
+import _root_.play.api.libs.json._
 import org.http4s.implicits._
 import org.http4s.server.Router
 import Formats._
@@ -16,7 +16,7 @@ import org.http4s.play._
 import lihua.mongo.JsonFormats._
 
 import scala.concurrent.ExecutionContext
-import play.api.libs.json.Json.toJson
+import _root_.play.api.libs.json.Json.toJson
 import cats.implicits._
 import Error.{NotFound => APINotFound, _}
 import cats.data.{EitherT, OptionT}

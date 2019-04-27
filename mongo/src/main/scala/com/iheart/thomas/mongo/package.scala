@@ -19,7 +19,7 @@ import cats.tagless.FunctorK
 import com.iheart.thomas.analysis.KPIDistribution
 import com.iheart.thomas.model.{Abtest, AbtestExtras, Feature}
 import lihua.mongo.DBError.UpdatedCountErrorDetail
-import play.api.libs.json.JsObject
+import _root_.play.api.libs.json.JsObject
 
 package object mongo {
 

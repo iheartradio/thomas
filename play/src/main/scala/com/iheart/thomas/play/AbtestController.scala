@@ -4,14 +4,14 @@
  */
 
 package com.iheart.thomas
-package http.lib
+package play
 
 import cats.data.{EitherT, OptionT}
 import cats.effect._
 import Error.{NotFound => APINotFound, _}
 import AbtestController.Alerter
-import play.api.libs.json._
-import play.api.mvc._
+import _root_.play.api.libs.json._
+import _root_.play.api.mvc._
 import cats.implicits._
 import cats.effect.implicits._
 import com.iheart.thomas.model._
@@ -135,7 +135,7 @@ class HttpResults[F[_]](alerter: Option[Alerter[F]])(implicit F: Async[F]) {
 
   def errorJson(msg: String): JsObject = errorJson(List(msg))
 
-  import play.api.Logger
+  import _root_.play.api.Logger
 
   import Results._
   def errorResult(reporter: Option[Alerter[F]])(error: Error): F[Result] = {

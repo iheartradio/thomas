@@ -12,7 +12,7 @@ import com.iheart.thomas.model._
 import lihua.{Entity, EntityDAO}
 import cats.implicits._
 import com.iheart.thomas.model.Abtest.Status.InProgress
-import play.api.libs.json.JsObject
+import _root_.play.api.libs.json.JsObject
 
 import scala.concurrent.duration.FiniteDuration
 

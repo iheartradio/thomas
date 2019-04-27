@@ -15,7 +15,7 @@ import cats.implicits._
 import mouse.all._
 import cats._
 import monocle.macros.syntax.lens._
-import play.api.libs.json._
+import _root_.play.api.libs.json._
 import henkan.convert.Syntax._
 import cats.tagless.FunctorK
 

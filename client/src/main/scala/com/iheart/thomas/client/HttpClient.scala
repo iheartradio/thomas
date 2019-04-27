@@ -12,17 +12,17 @@ import cats.Id
 import cats.effect.{Async, IO, Resource}
 import com.iheart.thomas.model.{Abtest, Feature, FeatureName}
 import lihua.Entity
-import play.api.libs.json._
+import _root_.play.api.libs.json._
 import cats.implicits._
 import Formats._
 import com.iheart.thomas.Error.NotFound
 import com.iheart.thomas.analysis.KPIDistribution
 import lihua.EntityId.toEntityId
-import play.api.libs.ws.{StandaloneWSRequest, StandaloneWSResponse}
+import _root_.play.api.libs.ws.{StandaloneWSRequest, StandaloneWSResponse}
 
 import scala.concurrent.Future
 import scala.util.control.NoStackTrace
-import play.api.libs.ws.JsonBodyWritables._
+import _root_.play.api.libs.ws.JsonBodyWritables._
 
 trait Client[F[_]] {
   def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]]
@@ -41,9 +41,9 @@ object Client extends EntityReads {
 
   import akka.actor.ActorSystem
   import akka.stream.ActorMaterializer
-  import play.api.libs.ws.ahc._
+  import _root_.play.api.libs.ws.ahc._
 
-  import play.api.libs.ws.JsonBodyReadables._
+  import _root_.play.api.libs.ws.JsonBodyReadables._
 
   class PlayClient[F[_]](implicit F: Async[F]) extends EntityReads {
 
@@ -77,6 +77,10 @@ object Client extends EntityReads {
       F.delay(ws.close()) *> IO.fromFuture(IO(system.terminate())).to[F].void
   }
 
+  /**
+   * lower level API, It's recommended to use Client.create instead
+   * @return
+   */
   def httpPlay[F[_]](urls: HttpServiceUrls)(implicit F: Async[F]): F[PlayClient[F] with Client[F]] = F.delay(new PlayClient[F] with Client[F] {
     def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]] = {
       val baseUrl = ws.url(urls.tests)
@@ -98,10 +102,19 @@ object Client extends EntityReads {
   })
 
   trait HttpServiceUrls {
-    //it takes an optional  `at` parameter for as of time
+
+    /**
+     * Service URL corresponding to [[API]].getAllTestsCached
+     */
     def tests: String
+
+    /**
+     * Service URL corresponding to [[analysis.KPIApi]].get
+     */
     def kPIs: String
   }
+
+  case class HttpServiceUrlsSimple(tests: String, kPIs: String) extends HttpServiceUrls
 
   def create[F[_]: Async](serviceUrl: HttpServiceUrls): Resource[F, Client[F]] =
     Resource.make(httpPlay(serviceUrl))(_.close()).widen

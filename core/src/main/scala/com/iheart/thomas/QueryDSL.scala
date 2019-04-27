@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 
 import com.iheart.thomas.model.{Feature, FeatureName}
 import lihua.{Entity, EntityDAO}
-import play.api.libs.json.{JsObject, Json, Writes}
+import _root_.play.api.libs.json.{JsObject, Json, Writes}
 
 object QueryDSL {
 

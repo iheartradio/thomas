@@ -1,8 +1,8 @@
 package com.iheart.thomas
 
 import model._
-import play.api.libs.json.Json.WithDefaultValues
-import play.api.libs.json._
+import _root_.play.api.libs.json.Json.WithDefaultValues
+import _root_.play.api.libs.json._
 
 import scala.reflect.ClassTag
 

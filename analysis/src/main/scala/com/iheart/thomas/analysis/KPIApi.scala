@@ -4,7 +4,7 @@ package analysis
 
 import cats.MonadError
 import lihua.{Entity, EntityDAO}
-import play.api.libs.json.JsObject
+import _root_.play.api.libs.json.JsObject
 import cats.implicits._
 
 trait KPIApi[F[_]] {

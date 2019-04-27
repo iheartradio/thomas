@@ -1,5 +1,6 @@
 package com.iheart.thomas.analysis
 import cats.effect.Sync
+import com.stripe.rainier.repl.DensityPlot
 import io.estatico.newtype.ops._
 
 
@@ -28,5 +29,18 @@ case class NumericGroupResult(rawSample: List[Double]) {
         Extent(1800, 600))
     }
   }
+
+  def plot(plotPortionO: Option[Double] = None): String = {
+
+    val plotSample = plotPortionO.fold(rawSample) { pp =>
+      val noPlotEndPortion = (1d - pp)/2d
+       val plotRangeMin = findMinimum(1d - noPlotEndPortion)
+       val plotRangeMax = findMinimum(noPlotEndPortion)
+      rawSample.filter(d => d > plotRangeMin && d < plotRangeMax)
+    }
+
+    DensityPlot().plot1D(plotSample).mkString("\n|")
+  }
+
 }
 

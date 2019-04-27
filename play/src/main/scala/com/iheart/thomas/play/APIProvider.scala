@@ -4,16 +4,16 @@
  */
 
 package com.iheart.thomas
-package http.lib
+package play
 
 import javax.inject._
 import cats.data.EitherT
 import cats.effect.IO
 import com.iheart.thomas.analysis.KPIApi
 import lihua.mongo._
-import play.api.Configuration
-import play.api.inject.ApplicationLifecycle
-import com.iheart.thomas.http.lib.APIProvider.FailedToStartApplicationException
+import _root_.play.api.Configuration
+import _root_.play.api.inject.ApplicationLifecycle
+import com.iheart.thomas.play.APIProvider.FailedToStartApplicationException
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
