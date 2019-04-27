@@ -16,14 +16,14 @@ Still here? Ok, this is the set of features that differentiate Thomas from other
   
 ## Features 
 
-* Real-time hash-based assignment 
-* Experiment evolution with consistent user assignments
-* Bayesian analysis
-* Eligibility control decoupled from user domain
-* Mutually exclusive experiments
-* Distributed group assignment with Spark (and Pyspark) support
-* High Performance
-* Modular and lightweight
+* [Real-time hash-based assignment](#real-time-hash-based-assignment)
+* [Experiment evolution with consistent user assignments](#ab-test-experiment-evolution-with-consistent-user-assignments)
+* [Bayesian analysis](#bayesian-analysis-utilities)
+* [Eligibility control decoupled from user domain](#eligibility-control-decoupled-from-user-domain)
+* [Mutually exclusive experiments](#mutually-exclusive-experiments)
+* [Distributed group assignment with Spark (and Pyspark) support](#distributed-assignment--spark-support)
+* [High Performance](#high-performance)
+* [Modular and lightweight](#modular-and-lightweight)
 
 
 ### Real-time hash-based assignment
@@ -122,7 +122,7 @@ Thomas provides a thomas-client that can pull down experiments metadata and calc
 A/B test information retrieval is an overhead for all features running A/B tests. High performance is an uncompromisable top priority for Thomas since the very beginning. Thanks to the real-time assignment design, Thomas is able to easily keep all necessary data in memory when serving user assignment requests. Moreover, it's written in "sleek performant low-overhead Scala code with high-order functions that would run on anything. Period. End of sentence." 
 When running on a MacBook Pro, with about two dozens of ongoing experiments, server-side response time 95th percentile is 4ms, 99th percentile is 8ms. When running on production servers at iHeartRadio, the 99th percentile server-side response time is 1ms.   
 
-#### Modular and lightweight
+### Modular and lightweight
 
 Thomas is developed in small modules so that users can pick and choose what they need. 
  - thomas-core: core logic and algorithms
