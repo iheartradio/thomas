@@ -165,7 +165,9 @@ Please follow the guide [here](https://iheartradio.github.io/thomas/get-started.
 We welcome all feedback and questions. You can either [submit a github issue](https://github.com/iheartradio/thomas/issues/new) or raise it in Thomas' [gitter channel](ttps://gitter.im/iheartradio/thomas)  
 Any contribution, big or small, are truly appreciated. We open source Thomas because we believe that a community can build a A/B test library better than a single organization. 
  
-##
+## Code of conduct 
+
+See our [Code of Conduct file](https://github.com/iheartradio/thomas/blob/master/CODE_OF_CONDUCT.md).
 
 ## Copyright and License
 
