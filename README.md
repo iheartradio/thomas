@@ -132,9 +132,8 @@ Thomas is developed in small modules so that users can pick and choose what they
  - thomas-mongo: data access layer using MongoDB
  - thomas-client: the distributed client that provides assignment by running the algorithm locally
  - thomas-analysis: Bayesian analysis utilities
- - example: a play app example for using thomas-play-lib
- 
- 
+
+
 ## What's not included / still lacking in Thomas
 
 * #### No built-in analytics
