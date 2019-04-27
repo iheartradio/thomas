@@ -128,13 +128,13 @@ When running on a MacBook Pro, with about two dozens of ongoing experiments, ser
 ### Modular and lightweight
 
 Thomas is developed in small modules so that users can pick and choose what they need. 
- - thomas-core: core logic and algorithms
- - thomas-http4s: library for creating an HTTP service using Http4s, also runs out of box
- - thomas-play: library for creating an HTTP service using Play framework
- - thomas-play-example: an example Thomas http service application using thomas-play and Play Framework 
- - thomas-mongo: data access layer using MongoDB
- - thomas-client: the distributed client that provides assignment by running the algorithm locally
- - thomas-analysis: Bayesian analysis utilities
+ - **thomas-core**: core logic and algorithms
+ - **thomas-http4s**: library for creating an HTTP service using Http4s, also runs out of box
+ - **thomas-play**: library for creating an HTTP service using Play framework
+ - **thomas-play-example**: an example Thomas http service application using thomas-play and Play Framework 
+ - **thomas-mongo**: data access layer using MongoDB
+ - **thomas-client**: the distributed client that provides assignment by running the algorithm locally
+ - **thomas-analysis**: Bayesian analysis utilities
 
 
 ## What's not included / still lacking in Thomas
