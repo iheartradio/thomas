@@ -149,7 +149,7 @@ Thomas is developed in small modules so that users can pick and choose what they
   Such an auth system has to be built into the Admin UI on top of the API service.     
 
 * #### Documentation is WIP
-  We are still in the process of adding documentation. 
+  We are still in the process of adding documentation. In the meantime, if you have any questions, feel free to [submit a github issue](https://github.com/iheartradio/thomas/issues/new) or raise it in our [gitter channel](ttps://gitter.im/iheartradio/thomas).
  
 
 ## Thomas at iHeartRadio 
