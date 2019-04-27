@@ -15,7 +15,7 @@ To use Thomas as part of a complete A/B test solution, a team needs to:
 3. be able to read and understand Scala code written in the functional programming paradigm.  
 4. run and maintain a tiny MongoDB cluster (other data stores can be supported if users implement a data access layer).  
 
-Still here? Ok, this is the set of features that differentiate Thomas from other existing A/B frameworks/libraries.  
+Still here? Ok, here is the set of features that differentiate Thomas from other existing A/B frameworks/libraries.  
   
 ## Features 
 
