@@ -6,7 +6,7 @@
 [![Build Status](https://travis-ci.org/iheartradio/thomas.svg?branch=master)](https://travis-ci.org/iheartradio/thomas)
 [![Gitter](https://badges.gitter.im/iheartradio/thomas.svg)](https://gitter.im/iheartradio/thomas?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-**Thomas is a modular library for setting up an A/B test service for A/B test management and user group assignment. It also provides tools for results analysis.**
+**Thomas is a modular Scala library for setting up an A/B test service for A/B test management and user group assignment. It also provides tools for results analysis.**
 
 To use Thomas as part of a complete A/B test solution, a team needs to: 
 
@@ -37,7 +37,7 @@ This real-time assignment algorithm may seem mundane, but it has important impli
 
 Other implications include:
 
-1. Experiments' metadata is the only data that need to be persistent by Thomas. This design greatly simplified the data storage requirements in Thomas. 
+1. Experiments' metadata is the only data that need to be persistent by Thomas. This design greatly simplified the data storage requirements. 
 2. Since there is no user lookup, Thomas is more scalable in regards to the number of end users. 
 3. Assignments computation can be distributed as mathematical functions can be easily distributed. Thomas provides a thomas-client module that can compute assignments in parallel. More details below.
 
@@ -56,7 +56,7 @@ In this scenario, Thomas will reassign part of the users in group B to the new g
 #### Example 2: resize of existing groups
 <img src="https://iheartradio.github.io/thomas/img/resizeGroup.png" width="300px" />
 
-In this example, the sizes of the groups are changes. Group A is enlarged, group B is shrunk. In this scenario, Thomas will reassign just enough users from B to A but no more than necessary.   
+In this example, the sizes of the groups are changed. Group A is enlarged, group B is shrunk. Thomas will reassign just enough users from B to A but no more than necessary.   
 
 This also enables Thomas to double as a valid gradual feature roll-out system. A small treatment group can increase its size incrementally to roll out a feature. There are no disruptions of user experience in this process thanks to the consistent user assignment. 
 
