@@ -108,7 +108,7 @@ class AbtestController[F[_]](
     api.addOverrides(feature, overrides)
   }
 
-  def addGroupMetas(testId: TestId) = withJsonReq((metas: Map[GroupName, GroupMeta]) => api.addGroupMetas(testId, metas))
+  def addGroupMetas(testId: TestId, auto: Boolean) = withJsonReq((metas: Map[GroupName, GroupMeta]) => api.addGroupMetas(testId, metas, auto))
 
   def getGroupMetas(testId: TestId) = Action.async(api.getTestExtras(testId))
 
