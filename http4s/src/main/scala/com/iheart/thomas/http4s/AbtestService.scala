@@ -124,7 +124,7 @@ class AbtestService[F[_]: Async](
       respondOption(api.terminate(testId))
 
     case req @ PUT -> Root / "tests" / testId / "groups" / "metas" :? auto(a) =>
-      req.as[Map[GroupName, GroupMeta]] >>= ( m => respond(api.addGroupMetas(testId, m, a)))
+      req.as[Map[GroupName, GroupMeta]] >>= ( m => respond(api.addGroupMetas(testId, m, a.getOrElse(false))))
 
     case GET -> Root / "tests" / testId / "groups" / "metas" =>
       respondOption(api.getTestExtras(testId))
