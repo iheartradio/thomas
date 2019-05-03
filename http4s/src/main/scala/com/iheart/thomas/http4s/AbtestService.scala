@@ -123,8 +123,8 @@ class AbtestService[F[_]: Async](
     case DELETE -> Root / "tests" / testId =>
       respondOption(api.terminate(testId))
 
-    case req @ PUT -> Root / "tests" / testId / "groups" / "metas" =>
-      req.as[Map[GroupName, GroupMeta]] >>= ( m => respond(api.addGroupMetas(testId, m)))
+    case req @ PUT -> Root / "tests" / testId / "groups" / "metas" :? auto(a) =>
+      req.as[Map[GroupName, GroupMeta]] >>= ( m => respond(api.addGroupMetas(testId, m, a)))
 
     case GET -> Root / "tests" / testId / "groups" / "metas" =>
       respondOption(api.getTestExtras(testId))
