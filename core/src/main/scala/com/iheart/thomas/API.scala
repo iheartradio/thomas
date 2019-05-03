@@ -93,7 +93,7 @@ trait API[F[_]] {
 
   def getGroupsWithMeta(query: UserGroupQuery): F[UserGroupQueryResult]
 
-  def addGroupMetas(test: TestId, metas: Map[GroupName, GroupMeta]): F[Entity[AbtestExtras]]
+  def addGroupMetas(test: TestId, metas: Map[GroupName, GroupMeta], auto: Boolean): F[Entity[AbtestExtras]]
 
   def getTestExtras(test: TestId): F[Option[Entity[AbtestExtras]]]
 
@@ -203,7 +203,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
     getTest(testId).flatMap { test =>
       test.data.statusAsOf(OffsetDateTime.now) match {
         case Abtest.Status.Scheduled =>
-          abTestDao.remove(testId).as(None)
+          delete(testId).as(None)
         case Abtest.Status.InProgress =>
           abTestDao.update(test.lens(_.data.end).set(Some(OffsetDateTime.now))).map(Option.apply)
         case Abtest.Status.Expired =>
@@ -211,18 +211,30 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
       }
     }
 
+  private def delete(testId: TestId): F[Unit] = {
+    abTestExtrasDao.remove(testId).recover { case Error.NotFound(_) => () } *>
+    abTestDao.remove(testId)
+  }
 
-  def addGroupMetas(testId: TestId, metas: Map[GroupName, GroupMeta]): F[Entity[AbtestExtras]] =
+
+  def addGroupMetas(testId: TestId, metas: Map[GroupName, GroupMeta], auto: Boolean): F[Entity[AbtestExtras]] =
     for {
-      test <- canChange(testId)
+      candidate <- abTestDao.get(EntityId(testId))
+      test <- canChange(candidate).fold(F.pure(candidate))(e =>
+        if(auto)
+          create(candidate.data.to[AbtestSpec].set(start = OffsetDateTime.now), auto = true)
+        else
+          F.raiseError(e)
+      )
       _ <- errorsOToF(metas.keys.toList.map(gn => (!test.data.groups.exists(_.name === gn)).
         option(Error.GroupNameDoesNotExist(gn))))
-      existing <- getTestExtras(testId)
-      toUpdate = existing.fold(Entity(testId, AbtestExtras(metas)))(
+      existing <- getTestExtras(test._id)
+      toUpdate = existing.fold(Entity(test._id, AbtestExtras(metas)))(
         _.lens(_.data.groupMetas).modify(_ ++ metas)
       )
       r <- abTestExtrasDao.upsert(toUpdate)
     } yield r
+
 
   def getTestExtras(testId: TestId): F[Option[Entity[AbtestExtras]]] = {
     abTestExtrasDao.findOneOption(EntityId(testId))
@@ -313,11 +325,20 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
   private def toGroups(assignments: Map[FeatureName, (GroupName, Entity[Abtest])]): Map[FeatureName, GroupName] =
     assignments.toList.map { case (k, v) => (k, v._1) }.toMap
 
+  /**
+   * Are changes allowed for most fields (the groups field can never be changed on the entity thanks to consistent evolution)
+   */
   private def canChange(testId: TestId): F[Entity[Abtest]] =
     for {
       test <- abTestDao.get(EntityId(testId))
-      _ <- test.data.start.isBefore(OffsetDateTime.now.plusMinutes(1)).option(CannotToChangePastTest(test.data.start)).fold(F.pure(()))(F.raiseError)
+      _ <- canChange(test).fold(F.pure(()))(F.raiseError)
     } yield test
+
+  /**
+   * see overload above
+   */
+  private def canChange(test: Entity[Abtest]): Option[Error] =
+    test.data.start.isBefore(OffsetDateTime.now.plusMinutes(1)).option(CannotToChangePastTest(test.data.start))
 
   private def getGroupAssignmentsOf(query: UserGroupQuery): (OffsetDateTime, F[Map[FeatureName, (GroupName, Entity[Abtest])]]) = AssignGroups.fromDB[F](cacheTtl).assign(query)
 

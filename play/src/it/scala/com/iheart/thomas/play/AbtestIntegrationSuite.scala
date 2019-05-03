@@ -674,7 +674,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
       val feature = ab.data.feature
 
-      toServer(controller.addGroupMetas(ab._id), jsonRequest(
+      toServer(controller.addGroupMetas(ab._id, false), jsonRequest(
         Json.obj("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
       ))
 
@@ -695,22 +695,39 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
     }
 
-    "Cannot change meta for past test" in {
+    "Cannot change meta for test already started when auto is false" in {
       val ab = createAbtestOnServer(fakeAb.copy(start = OffsetDateTime.now))
       Thread.sleep(100)
-      val r = controller.addGroupMetas(ab._id)(jsonRequest(Json.obj("A" -> Json.obj("ff" -> "a"))))
+      val r = controller.addGroupMetas(ab._id, false)(jsonRequest(Json.obj("A" -> Json.obj("ff" -> "a"))))
       status(r) mustBe BAD_REQUEST
+    }
+
+    "Can change meta for test already started when auto is true" in {
+      val ab = createAbtestOnServer(fakeAb.copy(start = OffsetDateTime.now))
+      val feature = ab.data.feature
+
+      Thread.sleep(100)
+      toServer(controller.addGroupMetas(ab._id, true),
+        jsonRequest(Json.obj("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))))
+
+      val resultTests = contentAsJson(controller.getByFeature(feature)(FakeRequest())).as[List[Entity[Abtest]]]
+
+      resultTests.size mustBe 2
+
+
+      val extraResult = contentAsJson(controller.getGroupMetas(resultTests.head._id.value)(FakeRequest())).as[Entity[AbtestExtras]]
+      extraResult.data.groupMetas mustBe Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
     }
 
     "throw validation error when group name in meta does not exist in test" in {
       val ab = createAbtestOnServer(fakeAb(1))
-      val r = controller.addGroupMetas(ab._id)(jsonRequest(Json.obj("NonexistingGroup" -> Json.obj("ff" -> "a"))))
+      val r = controller.addGroupMetas(ab._id, false)(jsonRequest(Json.obj("NonexistingGroup" -> Json.obj("ff" -> "a"))))
       status(r) mustBe BAD_REQUEST
     }
 
     "pass validation when not all the groups in tests are mentioned in meta" in {
       val ab = createAbtestOnServer(fakeAb(1))
-      val r = controller.addGroupMetas(ab._id)(jsonRequest(Json.obj("A" -> Json.obj("ff" -> "a"))))
+      val r = controller.addGroupMetas(ab._id, false)(jsonRequest(Json.obj("A" -> Json.obj("ff" -> "a"))))
       status(r) mustBe OK
     }
 
@@ -730,7 +747,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     "subsequent tests inherits meta settings" in {
       val ab = createAbtestOnServer(fakeAb(1, 20))
 
-      toServer(controller.addGroupMetas(ab._id), jsonRequest(
+      toServer(controller.addGroupMetas(ab._id, false), jsonRequest(
         Json.obj("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
       ))
 
@@ -800,7 +817,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
       val ab = createAbtestOnServer(fakeAb(1, 20).copy(groups = List(Group("A", 1), Group(overrideGroup, 0))))
 
-      toServer(controller.addGroupMetas(ab._id), jsonRequest(
+      toServer(controller.addGroupMetas(ab._id, false), jsonRequest(
         Json.obj("A" -> Json.obj("ff" -> "a"), overrideGroup -> Json.obj("ff" -> "b"))
       ))
 
