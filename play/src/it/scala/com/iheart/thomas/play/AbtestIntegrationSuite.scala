@@ -707,22 +707,16 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       val feature = ab.data.feature
 
       Thread.sleep(100)
-      controller.addGroupMetas(ab._id, true)(
+      toServer(controller.addGroupMetas(ab._id, true),
         jsonRequest(Json.obj("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))))
 
+      val resultTests = contentAsJson(controller.getByFeature(feature)(FakeRequest())).as[List[Entity[Abtest]]]
 
-      val userIds = (1 to 20).map(_ => randomUserId)
+      resultTests.size mustBe 2
 
-      userIds.foreach { userId =>
-        val result = contentAsJson(
-          controller.getGroupsWithMeta(
-            jsonRequest(
-              UserGroupQuery(Some(userId), at = Some(OffsetDateTime.now.plusHours(1)))
-            )
-          )
-        ).as[UserGroupQueryResult]
-        result.metas(feature).value("ff").as[String] mustBe result.groups(feature).toLowerCase
-      }
+
+      val extraResult = contentAsJson(controller.getGroupMetas(resultTests.head._id.value)(FakeRequest())).as[Entity[AbtestExtras]]
+      extraResult.data.groupMetas mustBe Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
     }
 
     "throw validation error when group name in meta does not exist in test" in {

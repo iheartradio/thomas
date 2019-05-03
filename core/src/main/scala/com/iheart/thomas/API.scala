@@ -228,8 +228,8 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
       )
       _ <- errorsOToF(metas.keys.toList.map(gn => (!test.data.groups.exists(_.name === gn)).
         option(Error.GroupNameDoesNotExist(gn))))
-      existing <- getTestExtras(testId)
-      toUpdate = existing.fold(Entity(testId, AbtestExtras(metas)))(
+      existing <- getTestExtras(test._id)
+      toUpdate = existing.fold(Entity(test._id, AbtestExtras(metas)))(
         _.lens(_.data.groupMetas).modify(_ ++ metas)
       )
       r <- abTestExtrasDao.upsert(toUpdate)
