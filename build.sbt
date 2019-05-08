@@ -55,7 +55,7 @@ lazy val cli = project
   .settings(
     name := "thomas-cli",
     rootSettings,
-    libs.dependencies("decline")
+    libs.dependencies("decline", "logback-classic")
   )
 
 
@@ -146,8 +146,7 @@ lazy val http4s = project
       "http4s-dsl",
       "http4s-play-json",
       "scala-java8-compat",
-      "log4cats-slf4j",
-      "akka-slf4j")
+      "log4cats-slf4j")
   )
 
 lazy val stress = project
@@ -196,7 +195,7 @@ lazy val playExample = project.enablePlugins(PlayScala, SwaggerPlugin)
       guice,
       ws,
       filters,
-      "org.webjars" % "swagger-ui" % "3.9.2"),
+      "org.webjars" % "swagger-ui" % "3.22.0"),
     dockerExposedPorts in Docker := Seq(9000),
     swaggerDomainNameSpaces := Seq("com.iheart.thomas"),
     (stage in Docker) := (stage in Docker).dependsOn(swagger).value

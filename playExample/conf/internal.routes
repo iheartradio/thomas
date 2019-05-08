@@ -139,7 +139,7 @@ DELETE       /tests/:testId                                        controllers.H
 #      schema:
 #        $ref: '#/definitions/com.iheart.thomas.model.AbtestExtras'
 ###
-PUT       /tests/:testId/groups/metas    controllers.HttpController.addGroupMetas(testId, auto: Boolean = true)
+PUT       /tests/:testId/groups/metas    controllers.HttpController.addGroupMetas(testId: String, auto: Boolean)
 
 ###
 #  summary: get group metas for a test

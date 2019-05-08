@@ -8,20 +8,21 @@ package client
 
 import java.time.OffsetDateTime
 
-import cats.{Functor, Id}
+import cats.{Functor, Id, MonadError}
 import cats.effect._
 import com.iheart.thomas.model._
 import lihua.Entity
 import _root_.play.api.libs.json._
 import cats.implicits._
 import Formats._
+import com.iheart.thomas.Error.NotFound
 import com.iheart.thomas.analysis.KPIDistribution
 import lihua.EntityId.toEntityId
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NoStackTrace
 import com.iheart.thomas.client.Client.HttpServiceUrls
-import org.http4s.{Query, Status}
+import org.http4s.Status
 import org.http4s.client.UnexpectedStatus
 import org.http4s.client.dsl.Http4sClientDsl
 
@@ -36,7 +37,12 @@ trait Client[F[_]] {
 
   def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]]
 
+  def featureLatestTest(feature: FeatureName)(implicit F: MonadError[F, Throwable]): F[Entity[Abtest]] =
+    featureTests(feature).flatMap(_.headOption.liftTo[F](NotFound(Some(s"No tests found under $feature"))))
+
   def getGroupMeta(tid: TestId): F[Map[GroupName, GroupMeta]]
+
+  def addGroupMeta(tid: TestId, gm: JsObject, auto: Boolean): F[Entity[AbtestExtras]]
 
   def getKPI(name: String): F[KPIDistribution]
 
@@ -54,6 +60,7 @@ class Http4sClient[F[_]: Sync](c: HClient[F], urls: HttpServiceUrls) extends Ent
   import Method._
 
   implicit def jsonEncoderOf_[A: Writes]: EntityEncoder[F, A] = jsonEncoderOf[F, A]
+  implicit def jsObjectEncoder: EntityEncoder[F, JsObject] = jsonEncoder[F].narrow
   implicit def jsonDeoder[A: Reads]: EntityDecoder[F, A] = jsonOf
 
   def getKPI(name: String): F[KPIDistribution] =
@@ -65,15 +72,17 @@ class Http4sClient[F[_]: Sync](c: HClient[F], urls: HttpServiceUrls) extends Ent
     c.expect(POST(kd, Uri.unsafeFromString(urls.kPIs)))
 
   def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]] = {
-    val baseUrl = Uri.unsafeFromString(urls.tests)
-
+    val baseUrl: Uri = Uri.unsafeFromString(urls.tests)
     c.expect(asOf.fold(baseUrl) { ao =>
-      baseUrl.copy(query = Query("at" -> Some((ao.toInstant.toEpochMilli / 1000).toString)))
+      baseUrl +? ("at" , (ao.toInstant.toEpochMilli / 1000).toString)
     })
   }
 
   def getGroupMeta(tid: TestId): F[Map[GroupName, GroupMeta]] =
-    c.expect[Entity[AbtestExtras]](urls.getGroupMeta(tid)).map(_.data.groupMetas)
+    c.expect[Entity[AbtestExtras]](urls.groupMeta(tid)).map(_.data.groupMetas)
+
+  def addGroupMeta(tid: TestId, gm: JsObject, auto: Boolean): F[Entity[AbtestExtras]] =
+    c.expect(PUT(gm, Uri.unsafeFromString(urls.groupMeta(tid)) +? ("auto", auto)))
 
   def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]] =
     c.expect(urls.featureTests(feature))
@@ -102,7 +111,7 @@ object Client extends EntityReads {
      */
     def kPIs: String
 
-    def getGroupMeta(testId: TestId): String
+    def groupMeta(testId: TestId): String
 
     def featureTests(featureName: FeatureName): String
   }
@@ -118,7 +127,7 @@ object Client extends EntityReads {
 
     def kPIs: String = root + "/kPIs"
 
-    def getGroupMeta(testId: TestId) = root + "/tests/" + testId +  "/groups/metas"
+    def groupMeta(testId: TestId) = root + "/tests/" + testId +  "/groups/metas"
 
     def featureTests(featureName: FeatureName): String = s"$root/features/$featureName/tests"
   }
