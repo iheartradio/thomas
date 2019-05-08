@@ -44,14 +44,20 @@ lazy val client = project
   .settings(
     name := "thomas-client",
     rootSettings,
-    taglessSettings,
     Defaults.itSettings,
     libraryDependencies ++= Seq(
-      "com.typesafe.play" %% "play-ahc-ws-standalone" % "1.1.9",
-      "com.typesafe.play" %% "play-ws-standalone-json" % "1.1.9",
       "org.scalatest" %% "scalatest" % "3.0.1" % "it, test"),
-    libs.dependencies("cats-effect", "decline", "log4cats-slf4j", "logback-classic", "akka-slf4j")
+    libs.dependencies( "http4s-blaze-client", "http4s-play-json")
   )
+
+lazy val cli = project
+  .dependsOn(client)
+  .settings(
+    name := "thomas-cli",
+    rootSettings,
+    libs.dependencies("decline")
+  )
+
 
 lazy val core = project
   .settings(name := "thomas-core")
@@ -90,7 +96,7 @@ lazy val analysis = project
   )
 
 lazy val docs = project
-  .configure(mkDocConfig(gh, rootSettings, taglessSettings, client, http4s, play, core, analysis))
+  .configure(mkDocConfig(gh, rootSettings, taglessSettings, client, http4s, play, core, analysis, cli))
   .enablePlugins(MicrositesPlugin)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(

@@ -6,14 +6,15 @@
 package com.iheart.thomas
 package client
 
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
 import com.iheart.thomas.model.UserGroupQuery
 
 import collection.JavaConverters._
 
-class JavaAssignments(serviceUrl: String, asOf: Option[Long]) {
+class JavaAssignments private (serviceUrl: String, asOf: Option[Long]) {
   private val time = asOf.map(TimeUtil.toDateTime)
-
+  import scala.concurrent.ExecutionContext.Implicits.global
+  implicit val csIo: ContextShift[IO] = IO.contextShift(global)
   val assignGroups = Client.assignGroups[IO](serviceUrl, time).unsafeRunSync()
 
   def assignments(

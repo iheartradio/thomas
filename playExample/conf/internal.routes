@@ -5,6 +5,7 @@ GET   /docs/swagger-ui/*file        controllers.Assets.at(path:String="/public/l
 GET   /assets/*file                 controllers.Assets.versioned(path="/public", file: Asset)
 
 
+
 ###
 #  summary: create a new a/b test
 #  parameters:
@@ -240,3 +241,6 @@ GET   /KPIs/:name   controllers.HttpController.getKPIDistribution(name: String)
 #      description: KPI Distribution added
 ###
 POST   /KPIs/    controllers.HttpController.updateKPIDistribution
+
+
+->   /           publicEndpoints.Routes
