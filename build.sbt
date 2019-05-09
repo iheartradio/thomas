@@ -56,16 +56,9 @@ lazy val cli = project
     name := "thomas-cli",
     rootSettings,
     libs.dependencies("decline", "logback-classic"),
-    releasePublishArtifactsAction := Def.taskDyn {
-      if (scalaVersion.value == defaultScalaVer) {
-        Def.task {
-          (assembly in assembly).value
-          releasePublishArtifactsAction.value
-        }
-      } else
-        Def.task(releasePublishArtifactsAction.value)
-    }.value,
-    
+    releasePublishArtifactsAction := {
+      (assembly in assembly).value
+      releasePublishArtifactsAction.value },
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(prependShellScript = Some(defaultUniversalScript(shebang = false))),
     assemblyOutputPath in assembly := file(s"release/thomas-cli_${releaseSC(scalaVersion.value)}-${version.value}.jar")
   )
