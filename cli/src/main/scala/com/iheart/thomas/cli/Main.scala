@@ -11,7 +11,7 @@ object Main extends IOApp {
   def run(args: List[String]): IO[ExitCode] = {
     val gmCmd = new GroupMetaCommands[IO].groupMetaCommand
 
-    IO(System.out.print(util.Random.shuffle(logs).head+ "\n" )) *>
+    IO(System.out.print(util.Random.shuffle(logos).head+ "\n" )) *>
     gmCmd.parse(args).fold(
       help => IO(System.err.println(help)).as(ExitCode.Error),
       _.as(ExitCode.Success)
@@ -25,7 +25,7 @@ object Main extends IOApp {
   }
 
 
-  val logs = Seq(
+  val logos = Seq(
     """
       |    .....                                                                     .x+=:.
       | .H8888888h.  ~-.    .uef^"                                                  z`    ^%
