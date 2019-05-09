@@ -1,6 +1,6 @@
 import com.typesafe.sbt.SbtGit.git
 import microsites._
-
+import sbtassembly.AssemblyPlugin.defaultUniversalScript
 val apache2 = "Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")
 
 val gh = GitHubSettings(org = "iheartradio", proj = "thomas", publishOrg = "com.iheart", license = apache2)
@@ -55,9 +55,27 @@ lazy val cli = project
   .settings(
     name := "thomas-cli",
     rootSettings,
-    libs.dependencies("decline", "logback-classic")
+    libs.dependencies("decline", "logback-classic"),
+    releasePublishArtifactsAction := Def.taskDyn {
+      if (scalaVersion.value == defaultScalaVer) {
+        Def.task {
+          (assembly in assembly).value
+          releasePublishArtifactsAction.value
+        }
+      } else
+        Def.task(releasePublishArtifactsAction.value)
+    }.value,
+    
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(prependShellScript = Some(defaultUniversalScript(shebang = false))),
+    assemblyOutputPath in assembly := file(s"release/thomas-cli_${releaseSC(scalaVersion.value)}-${version.value}.jar")
   )
 
+def releaseSC(scalaVersion: String): String = {
+  CrossVersion.partialVersion(scalaVersion) match {
+    case Some((major, minor)) => s"${major}.$minor"
+    case _ => scalaVersion
+  }
+}
 
 lazy val core = project
   .settings(name := "thomas-core")
@@ -86,13 +104,6 @@ lazy val analysis = project
     resolvers += Resolver.bintrayRepo("cibotech", "public"),
     libs.testDependencies("scalacheck", "scalatest"),
     libs.dependencies("rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "rainier-plot", "commons-math3", "play-json-derived-codecs"),
-    initialCommands in console :=
-    """
-      |import com.iheart.thomas.analysis._
-      |import com.stripe.rainier.repl._
-      |import com.stripe.rainier.core._
-      |
-    """.stripMargin,
   )
 
 lazy val docs = project
@@ -203,12 +214,12 @@ lazy val playExample = project.enablePlugins(PlayScala, SwaggerPlugin)
 
 
 lazy val noPublishing = Seq(skip in publish := true)
-
+lazy val defaultScalaVer = libs.vers("scalac_2.12")
 
 lazy val developerKai = Developer("Kailuo Wang", "@kailuowang", "kailuo.wang@gmail.com", new java.net.URL("http://kailuowang.com"))
 lazy val commonSettings = addCompilerPlugins(libs, "kind-projector") ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
   organization := "com.iheart",
-  scalaVersion := libs.vers("scalac_2.12"),
+  scalaVersion := defaultScalaVer,
   parallelExecution in Test := false,
   releaseCrossBuild := false,
   crossScalaVersions := Seq(scalaVersion.value, libs.vers("scalac_2.11")),

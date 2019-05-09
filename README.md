@@ -135,6 +135,7 @@ Thomas is developed in small modules so that users can pick what they need.
  - **thomas-mongo**: data access layer using MongoDB
  - **thomas-client**: the distributed client that provides assignment by running the algorithm locally
  - **thomas-analysis**: Bayesian analysis utilities
+ - **thomas-cli**: Command line interface using `thomas-client`
 
 
 ## What's not included / still lacking in Thomas

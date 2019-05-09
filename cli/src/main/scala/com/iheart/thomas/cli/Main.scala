@@ -9,10 +9,10 @@ import cats.implicits._
 
 object Main extends IOApp {
   def run(args: List[String]): IO[ExitCode] = {
-    val gmCmd = new GroupMetaCommands[IO].groupMetaCommand
+    val cmd = Command("thomas", "Thomas cli")(subCommands(new GroupMetaCommands[IO].groupMetaCommand))
 
     IO(System.out.print(util.Random.shuffle(logos).head+ "\n" )) *>
-    gmCmd.parse(args).fold(
+    cmd.parse(args).fold(
       help => IO(System.err.println(help)).as(ExitCode.Error),
       _.as(ExitCode.Success)
     )

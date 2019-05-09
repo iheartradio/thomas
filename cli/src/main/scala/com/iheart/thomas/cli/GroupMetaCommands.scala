@@ -43,10 +43,14 @@ class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
       }
   }
 
+  val metaOpts = Opts.option[String]("meta", "A Json object representing the group metas to be added. \nIt's root level keys are the group names, whose values are the corresponding meta object.").asJsObject
+  val newRevOpts = Opts.flag("new", "create a new revision if the current one has already started").orFalse
+
   val addCommand = Command("add", "add group metas") {
+
     ( fidOrFnOps,
-      Opts.option[String]("groupMeta", "json for group meta").asJsObject,
-      Opts.flag("new", "create a new revision if the current one is already started").orFalse,
+      metaOpts,
+      newRevOpts,
       HttpClientOpts.opts[F]).mapN { (tidOrFeature, gm, nt, client) =>
 
         tidOrFeature.flatMap { tidOrF =>
