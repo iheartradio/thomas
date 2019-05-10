@@ -110,7 +110,7 @@ class AbtestController[F[_]](
 
   def addGroupMetas(testId: TestId, auto: Boolean) = withJsonReq((metas: Map[GroupName, GroupMeta]) => api.addGroupMetas(testId, metas, auto))
 
-  def getGroupMetas(testId: TestId) = Action.async(api.getTestExtras(testId))
+  def getGroupMetas(testId: TestId) = Action.async(liftOption(api.getTestExtras(testId)))
 
   val getGroupsWithMeta = withJsonReq((query: UserGroupQuery) => api.getGroupsWithMeta(query))
 

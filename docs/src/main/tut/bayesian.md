@@ -61,12 +61,12 @@ Thus depending on which type of KPI you are analyzing, you need to instantiate d
 
 ```tut:silent
 import com.iheart.thomas.client._
-import com.iheart.thomas.client.Client.HttpServiceUrlsSimple
+import com.iheart.thomas.client.Client.HttpServiceUrlsPlay
 import cats.effect.IO
 import com.iheart.thomas.analysis.Measurable.GammaMeasurable
 
 //these are Url to your Thomas http service instance that provides tests and kpi endpoints
-val httpServiceUrl = HttpServiceUrlsSimple("http://localhost/tests", "http://localhost/kpi")
+val httpServiceUrl = HttpServiceUrlsPlay("http://localhost/internal")
 
 Client.create[IO](httpServiceUrl).use { implicit client =>
   implicit val measurable: GammaMeasurable[IO] = null  //user needs to implement a GammaMeasurable, null used here so that code compiles 

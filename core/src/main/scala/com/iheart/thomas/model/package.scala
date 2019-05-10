@@ -7,6 +7,7 @@ package com.iheart
 package thomas
 
 import java.time.OffsetDateTime
+import cats.implicits._
 
 import _root_.play.api.libs.json.JsObject
 
@@ -26,6 +27,8 @@ package object model {
 }
 
 package model {
+
+  import cats.Eq
 
   /**
    * Internal representation of an A/B test, the public representation is [[Abtest]]
@@ -52,6 +55,9 @@ package model {
         Abtest.Status.Expired
       else
         Abtest.Status.InProgress
+
+    def canChange: Boolean =
+      statusAsOf(OffsetDateTime.now) === Abtest.Status.Scheduled
 
     def endsAfter(time: OffsetDateTime) =
       end.fold(true)(_.isAfter(time))
@@ -97,6 +103,7 @@ package model {
       case object Scheduled extends Status
       case object InProgress extends Status
       case object Expired extends Status
+      implicit val eq: Eq[Status] = Eq.fromUniversalEquals
     }
   }
 

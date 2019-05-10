@@ -220,11 +220,11 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
   def addGroupMetas(testId: TestId, metas: Map[GroupName, GroupMeta], auto: Boolean): F[Entity[AbtestExtras]] =
     for {
       candidate <- abTestDao.get(EntityId(testId))
-      test <- canChange(candidate).fold(F.pure(candidate))(e =>
+      test <- candidate.data.canChange.fold(F.pure(candidate),
         if(auto)
           create(candidate.data.to[AbtestSpec].set(start = OffsetDateTime.now), auto = true)
         else
-          F.raiseError(e)
+          F.raiseError(CannotToChangePastTest(candidate.data.start))
       )
       _ <- errorsOToF(metas.keys.toList.map(gn => (!test.data.groups.exists(_.name === gn)).
         option(Error.GroupNameDoesNotExist(gn))))
@@ -325,20 +325,6 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
   private def toGroups(assignments: Map[FeatureName, (GroupName, Entity[Abtest])]): Map[FeatureName, GroupName] =
     assignments.toList.map { case (k, v) => (k, v._1) }.toMap
 
-  /**
-   * Are changes allowed for most fields (the groups field can never be changed on the entity thanks to consistent evolution)
-   */
-  private def canChange(testId: TestId): F[Entity[Abtest]] =
-    for {
-      test <- abTestDao.get(EntityId(testId))
-      _ <- canChange(test).fold(F.pure(()))(F.raiseError)
-    } yield test
-
-  /**
-   * see overload above
-   */
-  private def canChange(test: Entity[Abtest]): Option[Error] =
-    test.data.start.isBefore(OffsetDateTime.now.plusMinutes(1)).option(CannotToChangePastTest(test.data.start))
 
   private def getGroupAssignmentsOf(query: UserGroupQuery): (OffsetDateTime, F[Map[FeatureName, (GroupName, Entity[Abtest])]]) = AssignGroups.fromDB[F](cacheTtl).assign(query)
 

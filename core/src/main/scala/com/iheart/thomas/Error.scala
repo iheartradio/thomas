@@ -27,7 +27,9 @@ object Error {
   case class DBException(e: Throwable) extends Error
   case class DBLastError(override val getMessage: String) extends Error
 
-  case class CannotToChangePastTest(start: OffsetDateTime) extends Error
+  case class CannotToChangePastTest(start: OffsetDateTime) extends Error {
+    override def getMessage = s"Cannot change tests that are already started $start"
+  }
 
   sealed trait ValidationError extends Product with Serializable
 

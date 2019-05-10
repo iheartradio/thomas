@@ -8,9 +8,9 @@ package client
 
 import java.time.OffsetDateTime
 
-import cats.Id
-import cats.effect.{Async, IO, Resource}
-import com.iheart.thomas.model.{Abtest, Feature, FeatureName}
+import cats.{Functor, Id, MonadError}
+import cats.effect._
+import com.iheart.thomas.model._
 import lihua.Entity
 import _root_.play.api.libs.json._
 import cats.implicits._
@@ -18,88 +18,86 @@ import Formats._
 import com.iheart.thomas.Error.NotFound
 import com.iheart.thomas.analysis.KPIDistribution
 import lihua.EntityId.toEntityId
-import _root_.play.api.libs.ws.{StandaloneWSRequest, StandaloneWSResponse}
 
-import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 import scala.util.control.NoStackTrace
-import _root_.play.api.libs.ws.JsonBodyWritables._
+import com.iheart.thomas.client.Client.HttpServiceUrls
+import org.http4s.Status
+import org.http4s.client.UnexpectedStatus
+import org.http4s.client.dsl.Http4sClientDsl
 
 trait Client[F[_]] {
   def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]]
 
-  def test(feature: FeatureName, asOf: Option[OffsetDateTime] = None): F[Option[Entity[Abtest]]]
+  def test(feature: FeatureName, asOf: Option[OffsetDateTime] = None)
+          (implicit F: Functor[F]): F[Option[Entity[Abtest]]] =
+    tests(asOf).map(_.collectFirst {
+      case (test, Feature(`feature`, _, _, _, _)) => test
+    })
+
+  def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]]
+
+  def featureLatestTest(feature: FeatureName)(implicit F: MonadError[F, Throwable]): F[Entity[Abtest]] =
+    featureTests(feature).flatMap(_.headOption.liftTo[F](NotFound(Some(s"No tests found under $feature"))))
+
+  def getGroupMeta(tid: TestId): F[Map[GroupName, GroupMeta]]
+
+  def addGroupMeta(tid: TestId, gm: JsObject, auto: Boolean): F[Entity[AbtestExtras]]
 
   def getKPI(name: String): F[KPIDistribution]
 
   def saveKPI(KPIDistribution: KPIDistribution): F[KPIDistribution]
 
-  def close(): F[Unit]
+}
+
+
+import org.http4s.client.{Client => HClient}
+
+class Http4sClient[F[_]: Sync](c: HClient[F], urls: HttpServiceUrls) extends EntityReads with Http4sClientDsl[F] with Client[F] {
+  import org.http4s.play._
+  import org.http4s.{EntityDecoder, EntityEncoder}
+  import org.http4s.{Method, Uri}
+  import Method._
+
+  implicit def jsonEncoderOf_[A: Writes]: EntityEncoder[F, A] = jsonEncoderOf[F, A]
+  implicit def jsObjectEncoder: EntityEncoder[F, JsObject] = jsonEncoder[F].narrow
+  implicit def jsonDeoder[A: Reads]: EntityDecoder[F, A] = jsonOf
+
+  def getKPI(name: String): F[KPIDistribution] =
+    c.expect[KPIDistribution](urls.kPIs + "/name").adaptError{
+      case UnexpectedStatus(status) if status == Status.NotFound => Error.NotFound(Some("kpi " + name + " is not found"))
+    }
+
+  def saveKPI(kd: KPIDistribution): F[KPIDistribution] =
+    c.expect(POST(kd, Uri.unsafeFromString(urls.kPIs)))
+
+  def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]] = {
+    val baseUrl: Uri = Uri.unsafeFromString(urls.tests)
+    c.expect(asOf.fold(baseUrl) { ao =>
+      baseUrl +? ("at" , (ao.toInstant.toEpochMilli / 1000).toString)
+    })
+  }
+
+  def getGroupMeta(tid: TestId): F[Map[GroupName, GroupMeta]] =
+    c.expect[Entity[AbtestExtras]](urls.groupMeta(tid)).map(_.data.groupMetas)
+
+  def addGroupMeta(tid: TestId, gm: JsObject, auto: Boolean): F[Entity[AbtestExtras]] =
+    c.expect(PUT(gm, Uri.unsafeFromString(urls.groupMeta(tid)) +? ("auto", auto)))
+
+  def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]] =
+    c.expect(urls.featureTests(feature))
+
+}
+
+object Http4sClient {
+  import org.http4s.client.blaze.BlazeClientBuilder
+  def resource[F[_]: ConcurrentEffect](urls: HttpServiceUrls,
+                                       ec: ExecutionContext): Resource[F, Client[F]] = {
+    BlazeClientBuilder[F](ec).resource.map(cl => new Http4sClient[F](cl, urls))
+  }
 }
 
 object Client extends EntityReads {
-
-
-  import akka.actor.ActorSystem
-  import akka.stream.ActorMaterializer
-  import _root_.play.api.libs.ws.ahc._
-
-  import _root_.play.api.libs.ws.JsonBodyReadables._
-
-  class PlayClient[F[_]](implicit F: Async[F]) extends EntityReads {
-
-    implicit private val system = ActorSystem()
-
-    implicit private val materializer = ActorMaterializer()
-
-    val ws = StandaloneAhcWSClient(AhcWSClientConfigFactory.forConfig())
-
-    def get[A: Reads](request: StandaloneWSRequest): F[A] =
-      parse[A](request.addHttpHeaders("Accept" -> "application/json").get(), request.url)
-
-
-    def parse[A: Reads](resp: => Future[StandaloneWSResponse], url: String): F[A] = {
-      IO.fromFuture(IO(resp)).to[F].flatMap { resp =>
-        if (resp.status == 404) F.raiseError[A](NotFound(Some(url)))
-        else {
-          val jsBody = resp.body[JsValue]
-          jsBody.validate[A].fold(
-            errs => F.raiseError(ErrorParseJson(errs, jsBody)),
-            F.pure(_)
-          )
-        }
-      }
-    }
-
-    def jsonPost[Req: Writes, Res: Reads](req: Req, url: String): F[Res] =
-      parse[Res](ws.url(url).post(Json.toJson(req)), url)
-
-    def close(): F[Unit] =
-      F.delay(ws.close()) *> IO.fromFuture(IO(system.terminate())).to[F].void
-  }
-
-  /**
-   * lower level API, It's recommended to use Client.create instead
-   * @return
-   */
-  def httpPlay[F[_]](urls: HttpServiceUrls)(implicit F: Async[F]): F[PlayClient[F] with Client[F]] = F.delay(new PlayClient[F] with Client[F] {
-    def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]] = {
-      val baseUrl = ws.url(urls.tests)
-
-      get(asOf.fold(baseUrl) { ao =>
-        baseUrl.addQueryStringParameters(("at", (ao.toInstant.toEpochMilli / 1000).toString))
-      })
-    }
-
-    def test(feature: FeatureName, asOf: Option[OffsetDateTime] = None): F[Option[Entity[Abtest]]] =
-      tests(asOf).map(_.collectFirst {
-        case (test, Feature(`feature`, _, _, _, _)) => test
-      })
-
-    def getKPI(name: String): F[KPIDistribution] =
-      get[KPIDistribution](ws.url(urls.kPIs + name))
-
-    def saveKPI(kpi: KPIDistribution): F[KPIDistribution] = jsonPost(kpi, urls.kPIs)
-  })
 
   trait HttpServiceUrls {
 
@@ -112,12 +110,27 @@ object Client extends EntityReads {
      * Service URL corresponding to [[analysis.KPIApi]].get
      */
     def kPIs: String
+
+    def groupMeta(testId: TestId): String
+
+    def featureTests(featureName: FeatureName): String
   }
 
-  case class HttpServiceUrlsSimple(tests: String, kPIs: String) extends HttpServiceUrls
 
-  def create[F[_]: Async](serviceUrl: HttpServiceUrls): Resource[F, Client[F]] =
-    Resource.make(httpPlay(serviceUrl))(_.close()).widen
+  /**
+   * service urls based on play example routes
+   * @param root protocal + host + rootpath e.g. "http://localhost/internal"
+   */
+  class HttpServiceUrlsPlay(root: String) extends HttpServiceUrls {
+
+    def tests: String = root + "/testsWithFeatures"
+
+    def kPIs: String = root + "/kPIs"
+
+    def groupMeta(testId: TestId) = root + "/tests/" + testId +  "/groups/metas"
+
+    def featureTests(featureName: FeatureName): String = s"$root/features/$featureName/tests"
+  }
 
   case class ErrorParseJson(errs: Seq[(JsPath, Seq[JsonValidationError])], body: JsValue) extends RuntimeException with NoStackTrace {
     override def getMessage: String = errs.toList.mkString(s"Error parsing json ($body):\n ", "; ", "")
@@ -127,11 +140,10 @@ object Client extends EntityReads {
    * Shortcuts for getting the assigned group only.
    * @param serviceUrl for getting all running tests as of `time`
    */
-  def assignGroups[F[_]: Async](serviceUrl: String, time: Option[OffsetDateTime]): F[AssignGroups[Id]] =
-    Client.create[F](new HttpServiceUrls {
-      val tests: String = serviceUrl
-      def kPIs: String = ???
-    }).use(_.tests(time).map(t => AssignGroups.fromTestsFeatures[Id](t)))
+  def assignGroups[F[_]: ConcurrentEffect](serviceUrl: String, time: Option[OffsetDateTime])(implicit ec: ExecutionContext): F[AssignGroups[Id]] =
+    Http4sClient.resource[F](new HttpServiceUrlsPlay("mock") {
+      override val tests: String = serviceUrl
+    }, ec).use(_.tests(time).map(t => AssignGroups.fromTestsFeatures[Id](t)))
 }
 
 trait EntityReads {

@@ -1,6 +1,6 @@
 import com.typesafe.sbt.SbtGit.git
 import microsites._
-
+import sbtassembly.AssemblyPlugin.defaultUniversalScript
 val apache2 = "Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")
 
 val gh = GitHubSettings(org = "iheartradio", proj = "thomas", publishOrg = "com.iheart", license = apache2)
@@ -31,7 +31,7 @@ addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias("validate", s";thomas/test;play/IntegrationTest/test")
 
 lazy val thomas = project.in(file("."))
-  .aggregate(playExample, client, http4s)
+  .aggregate(playExample, client, http4s, cli)
   .settings(
     rootSettings,
     crossScalaVersions := Nil,
@@ -44,14 +44,31 @@ lazy val client = project
   .settings(
     name := "thomas-client",
     rootSettings,
-    taglessSettings,
     Defaults.itSettings,
     libraryDependencies ++= Seq(
-      "com.typesafe.play" %% "play-ahc-ws-standalone" % "1.1.9",
-      "com.typesafe.play" %% "play-ws-standalone-json" % "1.1.9",
       "org.scalatest" %% "scalatest" % "3.0.1" % "it, test"),
-    libs.dependencies("cats-effect", "decline", "log4cats-slf4j", "logback-classic", "akka-slf4j")
+    libs.dependencies( "http4s-blaze-client", "http4s-play-json")
   )
+
+lazy val cli = project
+  .dependsOn(client)
+  .settings(
+    name := "thomas-cli",
+    rootSettings,
+    libs.dependencies("decline", "logback-classic"),
+    releasePublishArtifactsAction := {
+      (assembly in assembly).value
+      releasePublishArtifactsAction.value },
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(prependShellScript = Some(defaultUniversalScript(shebang = false))),
+    assemblyOutputPath in assembly := file(s"release/thomas-cli_${releaseSC(scalaVersion.value)}-${version.value}.jar")
+  )
+
+def releaseSC(scalaVersion: String): String = {
+  CrossVersion.partialVersion(scalaVersion) match {
+    case Some((major, minor)) => s"${major}.$minor"
+    case _ => scalaVersion
+  }
+}
 
 lazy val core = project
   .settings(name := "thomas-core")
@@ -80,17 +97,10 @@ lazy val analysis = project
     resolvers += Resolver.bintrayRepo("cibotech", "public"),
     libs.testDependencies("scalacheck", "scalatest"),
     libs.dependencies("rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "rainier-plot", "commons-math3", "play-json-derived-codecs"),
-    initialCommands in console :=
-    """
-      |import com.iheart.thomas.analysis._
-      |import com.stripe.rainier.repl._
-      |import com.stripe.rainier.core._
-      |
-    """.stripMargin,
   )
 
 lazy val docs = project
-  .configure(mkDocConfig(gh, rootSettings, taglessSettings, client, http4s, play, core, analysis))
+  .configure(mkDocConfig(gh, rootSettings, taglessSettings, client, http4s, play, core, analysis, cli))
   .enablePlugins(MicrositesPlugin)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
@@ -140,8 +150,7 @@ lazy val http4s = project
       "http4s-dsl",
       "http4s-play-json",
       "scala-java8-compat",
-      "log4cats-slf4j",
-      "akka-slf4j")
+      "log4cats-slf4j")
   )
 
 lazy val stress = project
@@ -190,7 +199,7 @@ lazy val playExample = project.enablePlugins(PlayScala, SwaggerPlugin)
       guice,
       ws,
       filters,
-      "org.webjars" % "swagger-ui" % "3.9.2"),
+      "org.webjars" % "swagger-ui" % "3.22.0"),
     dockerExposedPorts in Docker := Seq(9000),
     swaggerDomainNameSpaces := Seq("com.iheart.thomas"),
     (stage in Docker) := (stage in Docker).dependsOn(swagger).value
@@ -198,12 +207,12 @@ lazy val playExample = project.enablePlugins(PlayScala, SwaggerPlugin)
 
 
 lazy val noPublishing = Seq(skip in publish := true)
-
+lazy val defaultScalaVer = libs.vers("scalac_2.12")
 
 lazy val developerKai = Developer("Kailuo Wang", "@kailuowang", "kailuo.wang@gmail.com", new java.net.URL("http://kailuowang.com"))
 lazy val commonSettings = addCompilerPlugins(libs, "kind-projector") ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
   organization := "com.iheart",
-  scalaVersion := libs.vers("scalac_2.12"),
+  scalaVersion := defaultScalaVer,
   parallelExecution in Test := false,
   releaseCrossBuild := false,
   crossScalaVersions := Seq(scalaVersion.value, libs.vers("scalac_2.11")),
@@ -225,7 +234,25 @@ lazy val taglessSettings =  paradiseSettings(libs) ++ Seq(
 
 lazy val buildSettings = sharedBuildSettings(gh, libs)
 
-lazy val publishSettings = sharedPublishSettings(gh) ++ credentialSettings ++ sharedReleaseProcess
+import ReleaseTransformations._
+
+lazy val publishSettings = sharedPublishSettings(gh) ++ credentialSettings ++ sharedReleaseProcess ++ Seq(
+  releaseProcess := Seq[ReleaseStep](
+    checkSnapshotDependencies,
+    inquireVersions,
+    releaseStepCommandAndRemaining("+clean"),
+    releaseStepCommandAndRemaining("+test"),
+    setReleaseVersion,
+    commitReleaseVersion,
+    tagRelease,
+    releaseStepCommandAndRemaining("+publishSigned"),
+    releaseStepCommandAndRemaining("cli/assembly"),
+    setNextVersion,
+    commitNextVersion,
+    releaseStepCommand("sonatypeReleaseAll"),
+    pushChanges)
+ )
+
 
 lazy val disciplineDependencies = libs.dependencies("discipline", "scalacheck")
 
