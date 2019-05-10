@@ -234,7 +234,25 @@ lazy val taglessSettings =  paradiseSettings(libs) ++ Seq(
 
 lazy val buildSettings = sharedBuildSettings(gh, libs)
 
-lazy val publishSettings = sharedPublishSettings(gh) ++ credentialSettings ++ sharedReleaseProcess
+import ReleaseTransformations._
+
+lazy val publishSettings = sharedPublishSettings(gh) ++ credentialSettings ++ sharedReleaseProcess ++ Seq(
+  releaseProcess := Seq[ReleaseStep](
+    checkSnapshotDependencies,
+    inquireVersions,
+    releaseStepCommandAndRemaining("+clean"),
+    releaseStepCommandAndRemaining("+test"),
+    setReleaseVersion,
+    commitReleaseVersion,
+    tagRelease,
+    releaseStepCommandAndRemaining("+publishSigned"),
+    releaseStepCommandAndRemaining("cli/assembly"),
+    setNextVersion,
+    commitNextVersion,
+    releaseStepCommand("sonatypeReleaseAll"),
+    pushChanges)
+ )
+
 
 lazy val disciplineDependencies = libs.dependencies("discipline", "scalacheck")
 
