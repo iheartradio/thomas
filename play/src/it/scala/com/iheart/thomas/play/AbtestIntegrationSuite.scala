@@ -607,7 +607,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       }
 
       val countOfUsersInTests = userAssignments.count(_.size == 2)
-      countOfUsersInTests.toDouble / 500d mustBe (0.3 +- 0.05)
+      countOfUsersInTests.toDouble / 500d mustBe (0.3 +- 0.1)
     }
 
     "two tests having mutually exclusive ranges should have no overlaps of users" in {
