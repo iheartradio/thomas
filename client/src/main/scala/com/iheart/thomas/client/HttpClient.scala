@@ -53,15 +53,10 @@ trait Client[F[_]] {
 
 import org.http4s.client.{Client => HClient}
 
-class Http4sClient[F[_]: Sync](c: HClient[F], urls: HttpServiceUrls) extends EntityReads with Http4sClientDsl[F] with Client[F] {
-  import org.http4s.play._
-  import org.http4s.{EntityDecoder, EntityEncoder}
+class Http4sClient[F[_]: Sync](c: HClient[F], urls: HttpServiceUrls) extends PlayJsonHttp4sClient[F] with Client[F] {
   import org.http4s.{Method, Uri}
   import Method._
 
-  implicit def jsonEncoderOf_[A: Writes]: EntityEncoder[F, A] = jsonEncoderOf[F, A]
-  implicit def jsObjectEncoder: EntityEncoder[F, JsObject] = jsonEncoder[F].narrow
-  implicit def jsonDeoder[A: Reads]: EntityDecoder[F, A] = jsonOf
 
   def getKPI(name: String): F[KPIDistribution] =
     c.expect[KPIDistribution](urls.kPIs + "/name").adaptError{
@@ -145,6 +140,18 @@ object Client extends EntityReads {
       override val tests: String = serviceUrl
     }, ec).use(_.tests(time).map(t => AssignGroups.fromTestsFeatures[Id](t)))
 }
+
+abstract class PlayJsonHttp4sClient[F[_]: Sync] extends EntityReads with Http4sClientDsl[F] {
+  import org.http4s.play._
+  import org.http4s.{EntityDecoder, EntityEncoder}
+
+  implicit def jsonEncoderOf_[A: Writes]: EntityEncoder[F, A] = jsonEncoderOf[F, A]
+  implicit def jsObjectEncoder: EntityEncoder[F, JsObject] = jsonEncoder[F].narrow
+  implicit def jsonDeoder[A: Reads]: EntityDecoder[F, A] = jsonOf
+
+}
+
+
 
 trait EntityReads {
 
