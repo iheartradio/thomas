@@ -52,6 +52,7 @@ lazy val client = project
 
 lazy val cli = project
   .dependsOn(client)
+  .enablePlugins(BuildInfoPlugin)
   .settings(
     name := "thomas-cli",
     rootSettings,
@@ -60,15 +61,10 @@ lazy val cli = project
       (assembly in assembly).value
       releasePublishArtifactsAction.value },
     assemblyOption in assembly := (assemblyOption in assembly).value.copy(prependShellScript = Some(defaultUniversalScript(shebang = false))),
-    assemblyOutputPath in assembly := file(s"release/thomas-cli_${releaseSC(scalaVersion.value)}-${version.value}.jar")
+    assemblyOutputPath in assembly := file(s"release/thomas-cli_${version.value}.jar"),
+    buildInfoKeys := BuildInfoKey.ofN(name, version),
+    buildInfoPackage := "com.iheart.thomas"
   )
-
-def releaseSC(scalaVersion: String): String = {
-  CrossVersion.partialVersion(scalaVersion) match {
-    case Some((major, minor)) => s"${major}.$minor"
-    case _ => scalaVersion
-  }
-}
 
 lazy val core = project
   .settings(name := "thomas-core")
