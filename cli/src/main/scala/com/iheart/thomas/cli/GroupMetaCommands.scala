@@ -58,11 +58,13 @@ class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
             tidOrF.fold(c.addGroupMeta(_, gm, nt).void,
               f => for {
                 t <- c.featureLatestTest(f)
-                r <- if(!t.data.canChange && !nt)
+                _ <- if(!t.data.canChange && !nt)
                        F.delay(println("The latest test is already started, if you want to automatically create a new revision, please run the command again with \"--new\" flag"))
                      else
-                       c.addGroupMeta(t._id, gm, nt).void
-              } yield r
+                       c.addGroupMeta(t._id, gm, nt).flatMap { ae =>
+                         F.delay(println(s"Successfully added group meta to test with Id ${ae._id}. "))
+                       }
+              } yield ()
             )
           }
         }
