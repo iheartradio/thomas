@@ -26,7 +26,7 @@ package object mongo {
   def toApiResult[F[_]: Functor]: FunctionK[AsyncEntityDAO.Result[F, ?], APIResult[F, ?]] = new FunctionK[AsyncEntityDAO.Result[F, ?], APIResult[F, ?]] {
     override def apply[A](fa: AsyncEntityDAO.Result[F, A]): APIResult[F, A] = {
       fa.leftMap {
-        case DBError.NotFound            => Error.NotFound(None)
+        case DBError.NotFound            => Error.NotFound("Cannot find in DB")
         case DBError.DBLastError(msg)    => Error.DBLastError(msg)
         case DBError.DBException(e, _)   => Error.DBException(e)
         case e @ UpdatedCountErrorDetail(_, _)  => Error.FailedToPersist(e.getMessage())

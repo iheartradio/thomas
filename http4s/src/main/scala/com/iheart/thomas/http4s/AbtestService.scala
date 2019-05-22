@@ -32,8 +32,8 @@ class AbtestService[F[_]: Async](
 
   import AbtestService.QueryParamDecoderMatchers._
 
-  def respondOption[T: Format](result: APIResult[F, Option[T]]): F[Response[F]] =
-    respond(OptionT(result).getOrElseF(EitherT.leftT(Error.NotFound(None))))
+  def respondOption[T: Format](result: APIResult[F, Option[T]], notFoundMsg: String): F[Response[F]] =
+    respond(OptionT(result).getOrElseF(EitherT.leftT(Error.NotFound(notFoundMsg))))
 
   def respond[T: Format](result: APIResult[F, T]): F[Response[F]] = {
 
@@ -121,13 +121,13 @@ class AbtestService[F[_]: Async](
       respond(api.getTest(testId))
 
     case DELETE -> Root / "tests" / testId =>
-      respondOption(api.terminate(testId))
+      respondOption(api.terminate(testId), s"No test with id $testId")
 
     case req @ PUT -> Root / "tests" / testId / "groups" / "metas" :? auto(a) =>
       req.as[Map[GroupName, GroupMeta]] >>= ( m => respond(api.addGroupMetas(testId, m, a.getOrElse(false))))
 
     case GET -> Root / "tests" / testId / "groups" / "metas" =>
-      respondOption(api.getTestExtras(testId))
+      respondOption(api.getTestExtras(testId), s"No group meta under test with id $testId")
 
     case GET -> Root / "tests" / "cache" :? at(a) =>
       respond(api.getAllTestsCachedEpoch(a))
@@ -157,7 +157,7 @@ class AbtestService[F[_]: Async](
       req.as[Map[UserId, GroupName]] >>= (m => respond(api.addOverrides(feature, m)))
 
     case GET -> Root / "KPIs" / name =>
-      respondOption(kpiAPI.get(name))
+      respondOption(kpiAPI.get(name), s"No Kpi under name $name")
 
     case req @ POST -> Root / "KPIs" =>
       req.as[KPIDistribution] >>= (k => respond(kpiAPI.upsert(k)))

@@ -4,15 +4,12 @@
  */
 
 package com.iheart.thomas.stress
-import java.time.{Instant, OffsetDateTime, ZoneId, ZoneOffset}
 
 import io.gatling.core.Predef._
-import io.gatling.core.structure.{ChainBuilder, PopulationBuilder}
 import io.gatling.http.Predef._
 
 import scala.concurrent.duration._
 
-//import scala.language.postfixOps
 
 class GetGroupsSimulation extends Simulation {
 
