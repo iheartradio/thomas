@@ -264,7 +264,7 @@ object BucketingTests {
       feature <- arbitrary[String]
       name <- arbitrary[String]
       (ranges, groups) <- groupRangeGen(3)
-    } yield Abtest(name, "author", feature, tenDayAgo, Some(tenDayAfter), groups, None, ranges)
+    } yield Abtest(name, "author", feature, tenDayAgo, Some(tenDayAfter), groups, ranges)
 
   implicit val testA: Arbitrary[Abtest] = Arbitrary(testG)
   implicit val userListA: Arbitrary[List[UserId]] = Arbitrary(usersListG)
