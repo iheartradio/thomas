@@ -31,7 +31,7 @@ addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias("validate", s";thomas/test;play/IntegrationTest/test")
 
 lazy val thomas = project.in(file("."))
-  .aggregate(playExample, client, http4s, cli)
+  .aggregate(playExample, play, client, http4s, cli, mongo, analysis, docs, stress)
   .settings(
     rootSettings,
     crossScalaVersions := Nil,

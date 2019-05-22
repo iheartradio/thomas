@@ -166,7 +166,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
 
   def getTestByFeature(feature: FeatureName): F[Entity[Abtest]] =
     getTestsByFeature(feature)
-      .ensure(Error.NotFound(None))(_.nonEmpty)
+      .ensure(Error.NotFound(s"No tests found under $feature"))(_.nonEmpty)
       .map(_.head)
 
   def getTestByFeature(feature: FeatureName, at: OffsetDateTime): F[Entity[Abtest]] =

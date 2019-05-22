@@ -24,6 +24,7 @@ import lihua.mongo.JsonFormats._
 import scala.concurrent.Future
 import scala.util.Random
 
+
 class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
   "GET test" should {

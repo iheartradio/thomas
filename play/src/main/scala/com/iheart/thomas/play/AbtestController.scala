@@ -46,11 +46,11 @@ class AbtestController[F[_]](
     )
   }
 
-  protected def liftOption[T](o: EitherT[F, Error, Option[T]]): EitherT[F, Error, T] =
-    OptionT(o).getOrElseF(EitherT.leftT(APINotFound(None)))
+  protected def liftOption[T](o: EitherT[F, Error, Option[T]], notFoundMsg: String): EitherT[F, Error, T] =
+    OptionT(o).getOrElseF(EitherT.leftT(APINotFound(notFoundMsg)))
 
   def getKPIDistribution(name: String) = Action.async(
-    liftOption(kpiAPI.get(name))
+    liftOption(kpiAPI.get(name), s"Cannot find KPI named $name")
   )
 
   val updateKPIDistribution = withJsonReq { (kpi: KPIDistribution) =>
@@ -110,7 +110,7 @@ class AbtestController[F[_]](
 
   def addGroupMetas(testId: TestId, auto: Boolean) = withJsonReq((metas: Map[GroupName, GroupMeta]) => api.addGroupMetas(testId, metas, auto))
 
-  def getGroupMetas(testId: TestId) = Action.async(liftOption(api.getTestExtras(testId)))
+  def getGroupMetas(testId: TestId) = Action.async(liftOption(api.getTestExtras(testId), s"Cannot find group meta for $testId"))
 
   val getGroupsWithMeta = withJsonReq((query: UserGroupQuery) => api.getGroupsWithMeta(query))
 

@@ -38,7 +38,7 @@ trait Client[F[_]] {
   def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]]
 
   def featureLatestTest(feature: FeatureName)(implicit F: MonadError[F, Throwable]): F[Entity[Abtest]] =
-    featureTests(feature).flatMap(_.headOption.liftTo[F](NotFound(Some(s"No tests found under $feature"))))
+    featureTests(feature).flatMap(_.headOption.liftTo[F](NotFound(s"No tests found under $feature")))
 
   def getGroupMeta(tid: TestId): F[Map[GroupName, GroupMeta]]
 
@@ -59,8 +59,8 @@ class Http4sClient[F[_]: Sync](c: HClient[F], urls: HttpServiceUrls) extends Pla
 
 
   def getKPI(name: String): F[KPIDistribution] =
-    c.expect[KPIDistribution](urls.kPIs + "/name").adaptError{
-      case UnexpectedStatus(status) if status == Status.NotFound => Error.NotFound(Some("kpi " + name + " is not found"))
+    c.expect[KPIDistribution](urls.kPIs + "/" + name).adaptError{
+      case UnexpectedStatus(status) if status == Status.NotFound => Error.NotFound("KPI " + name + " is not found")
     }
 
   def saveKPI(kd: KPIDistribution): F[KPIDistribution] =
@@ -120,7 +120,7 @@ object Client extends EntityReads {
 
     def tests: String = root + "/testsWithFeatures"
 
-    def kPIs: String = root + "/kPIs"
+    def kPIs: String = root + "/KPIs"
 
     def groupMeta(testId: TestId) = root + "/tests/" + testId +  "/groups/metas"
 

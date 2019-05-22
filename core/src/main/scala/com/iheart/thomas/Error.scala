@@ -22,7 +22,7 @@ object Error {
   }
 
   case class ValidationErrors(detail: NonEmptyList[ValidationError]) extends Error
-  case class NotFound(msg: Option[String] = None) extends Error
+  case class NotFound(override val getMessage: String) extends Error
 
   case class DBException(e: Throwable) extends Error
   case class DBLastError(override val getMessage: String) extends Error
