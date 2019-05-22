@@ -305,12 +305,24 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
         case Abtest.Status.Scheduled =>
           terminate(lte._id) >> createWithoutLock(ts, false)
         case Abtest.Status.InProgress =>
-          continueWith(ts, lte)
+          tryUpdate(lte, ts).getOrElse(continueWith(ts, lte))
         case Abtest.Status.Expired =>
           doCreate(ts, lastOne)
       }
     }
   } yield r
+
+  private def tryUpdate(toUpdate: Entity[Abtest], updateWith: AbtestSpec): Option[F[Entity[Abtest]]] =
+    if(toUpdate.data.canChange && toUpdate.data.groups.sortBy(_.name) == updateWith.groups.sortBy(_.name))
+      Some(abTestDao.update(
+        toUpdate.copy(
+          data = updateWith.to[Abtest].set(
+                  ranges = toUpdate.data.ranges,
+                  salt = (if (updateWith.reshuffle) Option(newSalt) else toUpdate.data.salt)
+          ))))
+    else None
+
+  private def newSalt = Random.alphanumeric.take(10).mkString
 
   private def continueWith(testSpec: AbtestSpec, continueFrom: Entity[Abtest]): F[Entity[Abtest]] =
     for {
@@ -332,7 +344,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
     for {
       newTest <- abTestDao.insert(newSpec.to[Abtest].set(
         ranges = Bucketing.newRanges(newSpec.groups, inheritFrom.map(_.data.ranges).getOrElse(Map.empty)),
-        salt = (if (newSpec.reshuffle) Option(Random.alphanumeric.take(10).mkString) else inheritFrom.flatMap(_.data.salt))
+        salt = (if (newSpec.reshuffle) Option(newSalt) else inheritFrom.flatMap(_.data.salt))
       ))
       _ <- inheritFrom.fold(F.unit) { inheritTest =>
         getTestExtras(inheritTest._id).flatMap(_.fold(F.unit) { toCopy =>

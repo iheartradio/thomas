@@ -57,7 +57,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     "get test by feature name sorted by start and end date" in {
       val startTime = OffsetDateTime.now.plusDays(1)
       val test1 = createAbtestOnServer(fakeAb().copy(start = startTime))
-      val test2 = createAbtestOnServer(Some(fakeAb(feature = test1.data.feature).copy(start = startTime)), auto = true)
+      val test2 = createAbtestOnServer(Some(fakeAb(feature = test1.data.feature, groups = List(Group("A", 0.2))).copy(start = startTime)), auto = true)
 
       val found = controller.getByFeature(test1.data.feature)(FakeRequest())
       contentAsJson(found).as[List[Entity[Abtest]]].map(_._id) mustBe List(test2, test1).map(_._id)
@@ -66,7 +66,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     "get test by feature name sorted by end date missing" in {
       val startTime = OffsetDateTime.now.plusDays(1)
       val test1 = createAbtestOnServer(fakeAb().copy(start = startTime))
-      val test2 = createAbtestOnServer(Some(fakeAb(feature = test1.data.feature).copy(start = startTime, end = None)), auto = true)
+      val test2 = createAbtestOnServer(Some(fakeAb(feature = test1.data.feature, groups = List(Group("A", 0.2))).copy(start = startTime, end = None)), auto = true)
 
       val found = controller.getByFeature(test1.data.feature)(FakeRequest())
       contentAsJson(found).as[List[Entity[Abtest]]].map(_._id) mustBe List(test2, test1).map(_._id)
@@ -151,11 +151,28 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       created.data.name mustBe ab.name
     }
 
-    "auto continue a test with a conflict" in {
+    "auto update the conflict test if there is no group change" in {
+      val featureName = "A_new_big_feature"
+
+      val existing = createAbtestOnServer(fakeAb(1, 3, feature = featureName))
+
+      val ab = fakeAb(2, 5, feature = featureName)
+
+      val result = create(ab, true)
+
+      status(result) mustBe OK
+      val updated = contentAsJson(result).as[Entity[Abtest]]
+
+      updated.data mustBe existing.data.copy(start = ab.start, end = ab.end)
+      updated._id mustBe existing._id
+    }
+
+
+    "auto continue a test with a conflict when there is a group change" in {
       val featureName = "A_new_big_feature"
       val conflict = createAbtestOnServer(fakeAb(1, 3, feature = featureName))
 
-      val ab = fakeAb(2, 5, feature = featureName)
+      val ab = fakeAb(2, 5, feature = featureName, groups= List(Group("A", 0.7), Group("B", 0.3)))
 
       val creation = create(ab, true)
 
@@ -165,12 +182,12 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       old.data.end mustBe Some(ab.start)
     }
 
-    "auto delete all tests that scheduled after this one" in {
+    "auto delete all tests that scheduled after this one if group is different" in {
       val featureName = "A_new_big_feature_2"
       val conflict1 = createAbtestOnServer(fakeAb(2, 3, feature = featureName))
       val conflict2 = createAbtestOnServer(fakeAb(4, 6, feature = featureName))
 
-      val ab = fakeAb(1, 5, feature = featureName)
+      val ab = fakeAb(1, 5, feature = featureName,  groups= List(Group("A", 0.7), Group("B", 0.3)))
 
       val attempt1 = create(ab, true)
 

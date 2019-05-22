@@ -4,8 +4,6 @@ import model._
 import _root_.play.api.libs.json.Json.WithDefaultValues
 import _root_.play.api.libs.json._
 
-import scala.reflect.ClassTag
-
 object Formats {
 
   val j = Json.using[WithDefaultValues]
