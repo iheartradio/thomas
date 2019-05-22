@@ -302,11 +302,11 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
     r <- lastOne.fold(doCreate(ts, None)) { lte =>
       val lt = lte.data
       lt.statusAsOf(ts.start) match {
-        case Abtest.Status.Scheduled =>
+        case Abtest.Status.Scheduled => //when the existing test is ahead of the new test
           terminate(lte._id) >> createWithoutLock(ts, false)
-        case Abtest.Status.InProgress =>
+        case Abtest.Status.InProgress => //when the exiting test has overlap with the new test
           tryUpdate(lte, ts).getOrElse(continueWith(ts, lte))
-        case Abtest.Status.Expired =>
+        case Abtest.Status.Expired => //when the existing test is before the new test.
           doCreate(ts, lastOne)
       }
     }
