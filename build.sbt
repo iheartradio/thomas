@@ -150,8 +150,6 @@ lazy val http4s = project
   )
 
 lazy val stress = project
-  .aggregate(playExample)
-  .dependsOn(playExample)
   .enablePlugins(GatlingPlugin)
   .settings(name := "thomas-stress")
   .settings(noPublishing)
