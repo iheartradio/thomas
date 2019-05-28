@@ -1,19 +1,11 @@
 language: scala
 sudo: false
 
-scala:
-  - 2.12.8
-
 jdk:
   - oraclejdk8
 
 services:
   - mongodb
-
-
-script:
-  - sbt ++$TRAVIS_SCALA_VERSION clean validate;
-
 
 before_script:
   - mongo ABTest --eval 'db.createCollection("ABTests"); db.createCollection("feature");'
@@ -27,3 +19,11 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.coursier/cache
     - $HOME/.sbt
+
+jobs:
+  include:
+    # it can speed up the overall build to have the longer-running jobs at the top of this list.
+    - env: TEST="validate"
+      script: sbt validate
+    - env: TEST="Scala 2.11"
+      script: sbt "++2.11.12 test"

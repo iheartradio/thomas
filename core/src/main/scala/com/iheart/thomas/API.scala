@@ -338,7 +338,8 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
     assignments.toList.map { case (k, v) => (k, v._1) }.toMap
 
 
-  private def getGroupAssignmentsOf(query: UserGroupQuery): (OffsetDateTime, F[Map[FeatureName, (GroupName, Entity[Abtest])]]) = AssignGroups.fromDB[F](cacheTtl).assign(query)
+  private def getGroupAssignmentsOf(query: UserGroupQuery): (OffsetDateTime, F[Map[FeatureName, (GroupName, Entity[Abtest])]]) =
+    AssignGroups.fromDB[F](cacheTtl).assign(query)
 
   private def doCreate(newSpec: AbtestSpec, inheritFrom: Option[Entity[Abtest]]): F[Entity[Abtest]] = {
     for {
