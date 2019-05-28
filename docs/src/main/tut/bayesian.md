@@ -64,11 +64,14 @@ import com.iheart.thomas.client._
 import com.iheart.thomas.client.Client.HttpServiceUrlsPlay
 import cats.effect.IO
 import com.iheart.thomas.analysis.Measurable.GammaMeasurable
+import concurrent.ExecutionContext.Implicits.global
+
 
 //these are Url to your Thomas http service instance that provides tests and kpi endpoints
-val httpServiceUrl = HttpServiceUrlsPlay("http://localhost/internal")
+val httpServiceUrl = new HttpServiceUrlsPlay("http://localhost/internal")
+implicit val conextShift = IO.contextShift(global)
 
-Client.create[IO](httpServiceUrl).use { implicit client =>
+Http4sClient.resource[IO](httpServiceUrl, global).use { implicit client =>
   implicit val measurable: GammaMeasurable[IO] = null  //user needs to implement a GammaMeasurable, null used here so that code compiles 
   val analysisAPI = AnalysisAPI.defaultGamma[IO]
   //do something with analysisAPI

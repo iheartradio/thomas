@@ -4,9 +4,11 @@ package analysis
 import DistributionSpec.Normal
 import syntax.AllSyntax
 import com.stripe.rainier.sampler.RNG
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuiteLike
 
-class NormalSuite extends FunSuite with Matchers with AllSyntax {
+
+class NormalSuite extends AnyFunSuiteLike with Matchers with AllSyntax {
   implicit val rng = RNG.default
 
   test("Normal fit consistent with spec") {

@@ -10,14 +10,14 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
 lazy val libs =
   org.typelevel.libraries
-  .addJVM(name = "lihua",                 version = "0.17",   org ="com.iheart", "lihua-mongo", "lihua-crypt", "lihua-core")
+  .addJVM(name = "lihua",                 version = "0.18",   org ="com.iheart", "lihua-mongo", "lihua-crypt", "lihua-core")
   .addJVM(name = "rainier",               version = "0.2.2",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
   .addJVM(name = "breeze",                version = "0.13.2", org ="org.scalanlp", "breeze", "breeze-viz")
   .addJVM(name = "henkan-convert",        version = "0.6.2",  org ="com.kailuowang")
-  .add(   name = "play-json",             version = "2.6.13",  org = "com.typesafe.play")
-  .add(   name = "play",                  version = "2.6.20", org = "com.typesafe.play")
+  .add(   name = "play-json",             version = "2.7.3",  org = "com.typesafe.play")
+  .add(   name = "play",                  version = "2.7.2", org = "com.typesafe.play")
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
-  .addJVM(name = "play-json-derived-codecs", version = "4.0.0", org = "org.julienrf")
+  .addJVM(name = "play-json-derived-codecs", version = "5.0.0", org = "org.julienrf")
   .addJVM(name = "newtype",               version = "0.4.2",  org = "io.estatico")
   .addJVM(name = "decline",               version = "0.5.0",  org = "com.monovore")
   .addJVM(name = "scala-java8-compat",    version = "0.9.0",  org = "org.scala-lang.modules")
@@ -25,10 +25,13 @@ lazy val libs =
   .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
   .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
   .addJVM(name = "http4s",                version = "0.20.0", org= "org.http4s", "http4s-dsl", "http4s-blaze-server", "http4s-blaze-client", "http4s-play-json")
-  .addJVM(name = "akka-slf4j",            version = "2.5.22",   org = "com.typesafe.akka")
+  .addJVM(name = "akka-slf4j",            version = "2.5.22", org = "com.typesafe.akka")
+  .add(name = "scalatestplus-scalacheck", version = "1.0.0-SNAP6",   org = "org.scalatestplus")
+  .add   (name = "scalatestplus-play",    version = "4.0.2",   org = "org.scalatestplus.play")
+
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
-addCommandAlias("validate", s";thomas/test;play/IntegrationTest/test")
+addCommandAlias("validate", s";clean;test;play/IntegrationTest/test;playExample/compile;docs/tut")
 
 lazy val thomas = project.in(file("."))
   .aggregate(playExample, play, client, http4s, cli, mongo, analysis, docs, stress)
@@ -46,7 +49,7 @@ lazy val client = project
     rootSettings,
     Defaults.itSettings,
     libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % "3.0.1" % "it, test"),
+      "org.scalatest" %% "scalatest" % libs.vers("scalatest") % "it, test"),
     libs.dependencies( "http4s-blaze-client", "http4s-play-json")
   )
 
@@ -71,7 +74,7 @@ lazy val core = project
   .settings(rootSettings)
   .settings(taglessSettings)
   .settings(
-    libs.testDependencies("scalacheck", "scalatest"),
+    libs.testDependencies("scalacheck", "scalatest", "scalatestplus-scalacheck"),
     libs.dependencies("cats-core",
       "monocle-macro",
       "monocle-core",
@@ -100,6 +103,7 @@ lazy val docs = project
   .enablePlugins(MicrositesPlugin)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
+    crossScalaVersions := Seq(scalaVersion.value),
     scalacOptions in Tut ~= (_.filterNot(Set("-Ywarn-unused:imports"))),
     micrositeSettings(gh, developerKai,  "Thomas, a library for A/B tests"),
     micrositeDocumentationUrl := "/thomas/api/com/iheart/thomas/index.html",
@@ -129,6 +133,7 @@ lazy val mongo = project
   .settings(name := "thomas-mongo")
   .settings(rootSettings)
   .settings(
+    crossScalaVersions := Seq(scalaVersion.value),
     libs.dependencies("lihua-mongo", "lihua-crypt")
   )
 
@@ -139,6 +144,7 @@ lazy val http4s = project
   .settings(rootSettings)
   .settings(taglessSettings)
   .settings(
+    crossScalaVersions := Seq(scalaVersion.value),
     libs.testDependencies("scalacheck", "scalatest"),
     libs.dependencies(
       "logback-classic",
@@ -156,6 +162,7 @@ lazy val stress = project
   .settings(rootSettings)
   .settings(
     resolvers += Resolver.sonatypeRepo("snapshots"),
+    crossScalaVersions := Seq(scalaVersion.value),
     libraryDependencies ++= Seq(
       "io.gatling.highcharts" % "gatling-charts-highcharts" % "2.3.1" % Test,
       "io.gatling"            % "gatling-test-framework"    % "2.3.1" % Test
@@ -172,11 +179,12 @@ lazy val play = project
     Defaults.itSettings,
     parallelExecution in IntegrationTest := false,
     taglessSettings,
+    crossScalaVersions := Seq(scalaVersion.value),
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
+    libs.dependency("scalatestplus-play", Some(IntegrationTest.name)),
     libs.dependencies("scala-java8-compat", "play"),
-    libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % "3.0.1" % IntegrationTest,
-      "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % IntegrationTest )
+    libraryDependencies +=
+      "org.scalatest" %% "scalatest" % "3.0.7" % IntegrationTest,
   )
 
 lazy val playExample = project.enablePlugins(PlayScala, SwaggerPlugin)

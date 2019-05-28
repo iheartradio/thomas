@@ -1,9 +1,11 @@
 package com.iheart.thomas.analysis
 
 import syntax.AllSyntax
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuiteLike
 
-class NumericGroupResultSuite extends FunSuite with Matchers with AllSyntax {
+
+class NumericGroupResultSuite extends AnyFunSuiteLike with Matchers with AllSyntax {
   test("probability of Improvement") {
     val subject = NumericGroupResult(List(-1, 1, -3, 2, -3))
     subject.probabilityOfImprovement shouldBe Probability(0.4d)

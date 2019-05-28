@@ -141,7 +141,7 @@ class HttpResults[F[_]](alerter: Option[Alerter[F]])(implicit F: Async[F]) {
   def errorResult(reporter: Option[Alerter[F]])(error: Error): F[Result] = {
 
     def serverError(msg: String): F[Result] = {
-      F.delay(Logger.error("Server Error: " + msg)) *>
+      F.delay(Logger("Thomas").error("Server Error: " + msg)) *>
         reporter.traverse(_.alert(msg)) *>
         F.pure(InternalServerError(errorJson(msg)))
     }

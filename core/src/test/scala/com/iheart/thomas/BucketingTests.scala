@@ -11,13 +11,15 @@ import com.iheart.thomas.model._
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalacheck.{Arbitrary, Gen, Shrink}
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuiteLike
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import Gen._
 import cats.implicits._
 
 import scala.util.Random
 
-trait BucketingTestsBase extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
+trait BucketingTestsBase extends AnyFunSuiteLike with ScalaCheckDrivenPropertyChecks with Matchers {
   import BucketingTests._
   def rangesConsistentWithSize(ranges: GroupRanges, groups: List[Group]): Unit =
     groups.foreach { group =>

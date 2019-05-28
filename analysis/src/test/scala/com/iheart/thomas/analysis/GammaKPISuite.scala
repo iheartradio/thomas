@@ -12,13 +12,15 @@ import com.iheart.thomas.analysis.DistributionSpec.Normal
 import com.iheart.thomas.model.{Abtest, GroupName}
 import com.stripe.rainier.core.Gamma
 import com.stripe.rainier.sampler._
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuiteLike
+
 import com.stripe.rainier.repl.plot1D
 import cats.implicits._
 
 import scala.util.Random
 
-class GammaKPISuite extends FunSuite with Matchers {
+class GammaKPISuite extends AnyFunSuiteLike with Matchers {
   implicit val rng = RNG.default
   implicit val sampleSettings = SampleSettings.default
   type F[A] = Either[Throwable, A]
