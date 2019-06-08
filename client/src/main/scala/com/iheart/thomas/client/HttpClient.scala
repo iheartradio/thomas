@@ -74,7 +74,11 @@ class Http4sClient[F[_]: Sync](c: HClient[F], urls: HttpServiceUrls) extends Pla
   }
 
   def getGroupMeta(tid: TestId): F[Map[GroupName, GroupMeta]] =
-    c.expect[Entity[AbtestExtras]](urls.groupMeta(tid)).map(_.data.groupMetas)
+    for {
+      req <- GET(Uri.unsafeFromString(urls.groupMeta(tid)))
+      testExtraO <- c.expectOption[Entity[AbtestExtras]](req)
+    } yield
+      testExtraO.map(_.data.groupMetas).getOrElse(Map())
 
   def addGroupMeta(tid: TestId, gm: JsObject, auto: Boolean): F[Entity[AbtestExtras]] =
     c.expect(PUT(gm, Uri.unsafeFromString(urls.groupMeta(tid)) +? ("auto", auto)))
