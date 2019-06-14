@@ -20,8 +20,9 @@ package object model {
   type UserId = String
   type Overrides = Map[UserId, GroupName]
   type GroupRanges = Map[GroupName, List[GroupRange]]
-  type GroupSize = Double
   type GroupMeta = JsObject
+  type GroupMetas = Map[GroupName, GroupMeta]
+  type GroupSize = Double
   type Tag = String
   type UserMeta = Map[MetaFieldName, String]
 }
@@ -45,7 +46,8 @@ package model {
     alternativeIdName:   Option[MetaFieldName]       = None,
     matchingUserMeta:    UserMeta                    = Map(),
     salt:                Option[String]              = None,
-    segmentRanges:       List[GroupRange]            = Nil
+    segmentRanges:       List[GroupRange]            = Nil,
+    groupMetas:          GroupMetas                  = Map()
   ) {
     def statusAsOf(time: OffsetDateTime): Abtest.Status =
       if (time isBefore start)
@@ -91,7 +93,8 @@ package model {
     alternativeIdName:   Option[MetaFieldName]       = None,
     matchingUserMeta:    UserMeta                    = Map(),
     reshuffle:           Boolean                     = false,
-    segmentRanges:       List[GroupRange]            = Nil
+    segmentRanges:       List[GroupRange]            = Nil,
+    groupMetas:          GroupMetas                  = Map()
   )
 
   object Abtest {
@@ -134,7 +137,7 @@ package model {
     at:     Option[OffsetDateTime] = None,
     tags:   List[Tag]              = Nil,
     meta:   UserMeta               = Map(),
-    features: List[FeatureName]   = Nil
+    features: List[FeatureName]    = Nil
   )
 
   case class UserGroupQueryResult(

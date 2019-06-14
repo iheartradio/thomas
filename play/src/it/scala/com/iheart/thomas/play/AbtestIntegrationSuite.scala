@@ -781,6 +781,28 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
       result.metas.contains(ab.data.feature) mustBe true
     }
+
+    "subsequent test from spec inherits meta settings when new spec has empty meta" in {
+
+      val metas = Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
+      val ab = createAbtestOnServer(fakeAb(1, 20, groupMetas = metas))
+
+      val subSequent = createAbtestOnServer(fakeAb(21, 25, feature = ab.data.feature))
+
+      subSequent.data.groupMetas mustBe metas
+    }
+
+    "subsequent test from spec rewrite meta settings " in {
+
+      val metas = Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
+      val ab = createAbtestOnServer(fakeAb(1, 20, groupMetas = metas))
+
+      val newMetas = Map("A" -> Json.obj("ff" -> "aa"), "B" -> Json.obj("ff" -> "bb"))
+
+      val subSequent = createAbtestOnServer(fakeAb(21, 25, feature = ab.data.feature, groupMetas = newMetas))
+
+      subSequent.data.groupMetas mustBe newMetas
+    }
   }
 
   "PUT /tests/overrides" should {
@@ -1024,7 +1046,8 @@ class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with 
               groups:            List[Group]           = List(Group("A", 0.5), Group("B", 0.5)),
               matchingUserMeta:  UserMeta              = Map(),
               segRanges:         List[GroupRange]      = Nil,
-              requiredTags:      List[Tag]             = Nil
+              requiredTags:      List[Tag]             = Nil,
+              groupMetas:        GroupMetas            = Map()
             ): AbtestSpec = AbtestSpec(
     name = "test",
     author = "kai",
@@ -1035,7 +1058,9 @@ class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with 
     alternativeIdName = alternativeIdName,
     matchingUserMeta = matchingUserMeta,
     segmentRanges = segRanges,
-    requiredTags = requiredTags
+    requiredTags = requiredTags,
+    groupMetas = groupMetas
+
   )
 
   after {

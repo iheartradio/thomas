@@ -345,7 +345,8 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
     for {
       newTest <- abTestDao.insert(newSpec.to[Abtest].set(
         ranges = Bucketing.newRanges(newSpec.groups, inheritFrom.map(_.data.ranges).getOrElse(Map.empty)),
-        salt = (if (newSpec.reshuffle) Option(newSalt) else inheritFrom.flatMap(_.data.salt))
+        salt = (if (newSpec.reshuffle) Option(newSalt) else inheritFrom.flatMap(_.data.salt)),
+        groupMetas = (if(newSpec.groupMetas.isEmpty) inheritFrom.map(_.data.groupMetas).getOrElse(Map.empty) else newSpec.groupMetas)
       ))
       _ <- inheritFrom.fold(F.unit) { inheritTest =>
         getTestExtras(inheritTest._id).flatMap(_.fold(F.unit) { toCopy =>
