@@ -30,8 +30,3 @@ import scala.concurrent.ExecutionContext
       ))).void)).to[F]
 
 }
-
-
-class AbtestExtrasDAOFactory[F[_]: Async] extends EitherTDAOFactory[AbtestExtras, F]("abtest", "testsExtras") {
-  protected def ensure(collection: JSONCollection): F[Unit] = Async[F].unit
-}

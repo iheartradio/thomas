@@ -41,7 +41,7 @@ class APIProviderBase(config: Configuration, lifecycle: ApplicationLifecycle)(im
   }
 
   lazy val (api: API[F], kpiApi: KPIApi[F]) = {
-    implicit val (abtestDAO, abtestExtraDAO, featureDAO, kpiDAO) = daos
+    implicit val (abtestDAO, featureDAO, kpiDAO) = daos
     (new DefaultAPI[F](ttl), KPIApi.default)
   }
 }

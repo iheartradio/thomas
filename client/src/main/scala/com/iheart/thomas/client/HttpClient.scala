@@ -42,7 +42,7 @@ trait Client[F[_]] {
 
   def getGroupMeta(tid: TestId): F[Map[GroupName, GroupMeta]]
 
-  def addGroupMeta(tid: TestId, gm: JsObject, auto: Boolean): F[Entity[AbtestExtras]]
+  def addGroupMeta(tid: TestId, gm: JsObject, auto: Boolean): F[Entity[Abtest]]
 
   def getKPI(name: String): F[KPIDistribution]
 
@@ -75,12 +75,11 @@ class Http4sClient[F[_]: Sync](c: HClient[F], urls: HttpServiceUrls) extends Pla
 
   def getGroupMeta(tid: TestId): F[Map[GroupName, GroupMeta]] =
     for {
-      req <- GET(Uri.unsafeFromString(urls.groupMeta(tid)))
-      testExtraO <- c.expectOption[Entity[AbtestExtras]](req)
-    } yield
-      testExtraO.map(_.data.groupMetas).getOrElse(Map())
+      req <- GET(Uri.unsafeFromString(urls.test(tid)))
+      test <- c.expect[Entity[Abtest]](req)
+    } yield test.data.groupMetas
 
-  def addGroupMeta(tid: TestId, gm: JsObject, auto: Boolean): F[Entity[AbtestExtras]] =
+  def addGroupMeta(tid: TestId, gm: JsObject, auto: Boolean): F[Entity[Abtest]] =
     c.expect(PUT(gm, Uri.unsafeFromString(urls.groupMeta(tid)) +? ("auto", auto)))
 
   def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]] =
@@ -110,6 +109,8 @@ object Client extends EntityReads {
      */
     def kPIs: String
 
+    def test(testId: TestId): String
+
     def groupMeta(testId: TestId): String
 
     def featureTests(featureName: FeatureName): String
@@ -127,6 +128,8 @@ object Client extends EntityReads {
     def kPIs: String = root + "/KPIs"
 
     def groupMeta(testId: TestId) = root + "/tests/" + testId +  "/groups/metas"
+
+    def test(testId: TestId) = root + "/tests/" + testId
 
     def featureTests(featureName: FeatureName): String = s"$root/features/$featureName/tests"
   }

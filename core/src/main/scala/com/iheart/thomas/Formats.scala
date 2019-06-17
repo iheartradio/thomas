@@ -13,7 +13,6 @@ object Formats {
   implicit val groupRangeFormat = j.format[GroupRange]
   implicit val abtestFormat = j.format[Abtest]
   implicit val abtestSpecFormat = j.format[AbtestSpec]
-  implicit val abtestExtrasFormat = j.format[AbtestExtras]
   implicit val featureFormat = j.format[Feature]
   implicit val userGroupQueryFormat = j.format[UserGroupQuery]
   implicit val userGroupQueryResultFormat = j.format[UserGroupQueryResult]

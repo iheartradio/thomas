@@ -733,8 +733,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       resultTests.size mustBe 2
 
 
-      val extraResult = contentAsJson(controller.getGroupMetas(resultTests.head._id.value)(FakeRequest())).as[Entity[AbtestExtras]]
-      extraResult.data.groupMetas mustBe Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
+      val testResult = contentAsJson(controller.get(resultTests.head._id.value)(FakeRequest())).as[Entity[Abtest]]
+      testResult.data.groupMetas mustBe Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
     }
 
     "throw validation error when group name in meta does not exist in test" in {
@@ -1065,7 +1065,7 @@ class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with 
 
   after {
     val dapi = api.asInstanceOf[DefaultAPI[F]]
-    List[EntityDAO[F, _, JsObject]](provider.daos._1, provider.daos._2,provider.daos._3,provider.daos._4).foreach(_.removeAll(Json.obj()).value.unsafeRunSync().left.foreach { e =>
+    List[EntityDAO[F, _, JsObject]](provider.daos._1, provider.daos._2, provider.daos._3).foreach(_.removeAll(Json.obj()).value.unsafeRunSync().left.foreach { e =>
        println("Failed to clean up DB after: " + e.getMessage)
     })
   }

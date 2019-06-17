@@ -58,7 +58,7 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
 
     result("A").expectedEffect.d shouldBe (0.15 +- 0.2)
     result("A").probabilityOfImprovement.p shouldBe (0.9 +- 0.4)
-    result("A").riskOfUsing.d shouldBe (0.1 +- 0.2)
+    result("A").riskOfUsing.d shouldBe (0.1 +- 0.3)
 
   }
 

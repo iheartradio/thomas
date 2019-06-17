@@ -128,10 +128,6 @@ package model {
     locked:              Boolean        = false
   )
 
-  case class AbtestExtras(
-    groupMetas: Map[GroupName, GroupMeta] = Map()
-  )
-
   case class UserGroupQuery(
     userId: Option[UserId],
     at:     Option[OffsetDateTime] = None,
