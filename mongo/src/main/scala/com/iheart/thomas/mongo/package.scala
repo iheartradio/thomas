@@ -17,7 +17,7 @@ import scala.concurrent.ExecutionContext
 import cats.implicits._
 import cats.tagless.FunctorK
 import com.iheart.thomas.analysis.KPIDistribution
-import com.iheart.thomas.model.{Abtest, AbtestExtras, Feature}
+import com.iheart.thomas.model.{Abtest, Feature}
 import lihua.mongo.DBError.UpdatedCountErrorDetail
 import _root_.play.api.libs.json.JsObject
 
@@ -59,7 +59,6 @@ package object mongo {
     config:       Config,
     ex:           ExecutionContext
   ): F[(EntityDAO[APIResult[F, ?], Abtest, JsObject],
-         EntityDAO[APIResult[F, ?], AbtestExtras, JsObject],
          EntityDAO[APIResult[F, ?], Feature, JsObject],
          EntityDAO[APIResult[F, ?], KPIDistribution, JsObject])] =
     mongodb.flatMap { implicit m =>
@@ -69,11 +68,9 @@ package object mongo {
   def daosFromMongo[F[_]: Async](implicit mongoDB: MongoDB[F],
                                                ex: ExecutionContext)
   : F[(EntityDAO[APIResult[F, ?], Abtest, JsObject],
-       EntityDAO[APIResult[F, ?], AbtestExtras, JsObject],
        EntityDAO[APIResult[F, ?], Feature, JsObject],
        EntityDAO[APIResult[F, ?], KPIDistribution, JsObject])] ={
     (convert((new AbtestDAOFactory[F]).create),
-      convert((new AbtestExtrasDAOFactory[F]).create),
       convert((new FeatureDAOFactory[F]).create),
       convert((new KPIDistributionDAOFactory[F]).create)).tupled
   }
@@ -83,7 +80,6 @@ package object mongo {
     config:       Config,
     ex:           ExecutionContext
   ): Resource[F, (EntityDAO[APIResult[F, ?], Abtest, JsObject],
-         EntityDAO[APIResult[F, ?], AbtestExtras, JsObject],
          EntityDAO[APIResult[F, ?], Feature, JsObject],
          EntityDAO[APIResult[F, ?], KPIDistribution, JsObject])] =
     MongoDB.resource[F](

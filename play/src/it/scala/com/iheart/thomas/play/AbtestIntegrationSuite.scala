@@ -733,8 +733,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       resultTests.size mustBe 2
 
 
-      val extraResult = contentAsJson(controller.getGroupMetas(resultTests.head._id.value)(FakeRequest())).as[Entity[AbtestExtras]]
-      extraResult.data.groupMetas mustBe Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
+      val testResult = contentAsJson(controller.get(resultTests.head._id.value)(FakeRequest())).as[Entity[Abtest]]
+      testResult.data.groupMetas mustBe Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
     }
 
     "throw validation error when group name in meta does not exist in test" in {
@@ -780,6 +780,28 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       ).as[UserGroupQueryResult]
 
       result.metas.contains(ab.data.feature) mustBe true
+    }
+
+    "subsequent test from spec inherits meta settings when new spec has empty meta" in {
+
+      val metas = Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
+      val ab = createAbtestOnServer(fakeAb(1, 20, groupMetas = metas))
+
+      val subSequent = createAbtestOnServer(fakeAb(21, 25, feature = ab.data.feature))
+
+      subSequent.data.groupMetas mustBe metas
+    }
+
+    "subsequent test from spec rewrite meta settings " in {
+
+      val metas = Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
+      val ab = createAbtestOnServer(fakeAb(1, 20, groupMetas = metas))
+
+      val newMetas = Map("A" -> Json.obj("ff" -> "aa"), "B" -> Json.obj("ff" -> "bb"))
+
+      val subSequent = createAbtestOnServer(fakeAb(21, 25, feature = ab.data.feature, groupMetas = newMetas))
+
+      subSequent.data.groupMetas mustBe newMetas
     }
   }
 
@@ -1024,7 +1046,8 @@ class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with 
               groups:            List[Group]           = List(Group("A", 0.5), Group("B", 0.5)),
               matchingUserMeta:  UserMeta              = Map(),
               segRanges:         List[GroupRange]      = Nil,
-              requiredTags:      List[Tag]             = Nil
+              requiredTags:      List[Tag]             = Nil,
+              groupMetas:        GroupMetas            = Map()
             ): AbtestSpec = AbtestSpec(
     name = "test",
     author = "kai",
@@ -1035,12 +1058,14 @@ class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with 
     alternativeIdName = alternativeIdName,
     matchingUserMeta = matchingUserMeta,
     segmentRanges = segRanges,
-    requiredTags = requiredTags
+    requiredTags = requiredTags,
+    groupMetas = groupMetas
+
   )
 
   after {
     val dapi = api.asInstanceOf[DefaultAPI[F]]
-    List[EntityDAO[F, _, JsObject]](provider.daos._1, provider.daos._2,provider.daos._3,provider.daos._4).foreach(_.removeAll(Json.obj()).value.unsafeRunSync().left.foreach { e =>
+    List[EntityDAO[F, _, JsObject]](provider.daos._1, provider.daos._2, provider.daos._3).foreach(_.removeAll(Json.obj()).value.unsafeRunSync().left.foreach { e =>
        println("Failed to clean up DB after: " + e.getMessage)
     })
   }

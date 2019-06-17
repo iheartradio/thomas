@@ -137,18 +137,10 @@ DELETE       /tests/:testId                                        controllers.H
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.AbtestExtras'
+#        $ref: '#/definitions/com.iheart.thomas.model.Abtest'
 ###
 PUT       /tests/:testId/groups/metas    controllers.HttpController.addGroupMetas(testId: String, auto: Boolean)
 
-###
-#  summary: get group metas for a test
-#  responses:
-#    200:
-#      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.AbtestExtras'
-###
-GET       /tests/:testId/groups/metas    controllers.HttpController.getGroupMetas(testId)
 
 ###
 #  summary: Add an override for testing purpose

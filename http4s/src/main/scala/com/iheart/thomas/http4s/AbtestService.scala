@@ -126,9 +126,6 @@ class AbtestService[F[_]: Async](
     case req @ PUT -> Root / "tests" / testId / "groups" / "metas" :? auto(a) =>
       req.as[Map[GroupName, GroupMeta]] >>= ( m => respond(api.addGroupMetas(testId, m, a.getOrElse(false))))
 
-    case GET -> Root / "tests" / testId / "groups" / "metas" =>
-      respondOption(api.getTestExtras(testId), s"No group meta under test with id $testId")
-
     case GET -> Root / "tests" / "cache" :? at(a) =>
       respond(api.getAllTestsCachedEpoch(a))
 
@@ -176,7 +173,7 @@ object AbtestService {
         thomas.mongo.daosResource[F]
       }
     } yield {
-      implicit val (abtestDAO, abtestExtraDAO, featureDAO, kpiDAO) = daos
+      implicit val (abtestDAO, featureDAO, kpiDAO) = daos
       import scala.compat.java8.DurationConverters._
       val ttl = cfg.getDuration("iheart.abtest.get-groups.ttl").toScala
       new AbtestService(new DefaultAPI[APIResult[F, ?]](ttl),

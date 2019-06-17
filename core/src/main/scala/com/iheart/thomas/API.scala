@@ -93,9 +93,7 @@ trait API[F[_]] {
 
   def getGroupsWithMeta(query: UserGroupQuery): F[UserGroupQueryResult]
 
-  def addGroupMetas(test: TestId, metas: Map[GroupName, GroupMeta], auto: Boolean): F[Entity[AbtestExtras]]
-
-  def getTestExtras(test: TestId): F[Option[Entity[AbtestExtras]]]
+  def addGroupMetas(test: TestId, metas: Map[GroupName, GroupMeta], auto: Boolean): F[Entity[Abtest]]
 
   /**
    * Get the assignments for a list of ids bypassing the eligibility control
@@ -111,7 +109,6 @@ object API {
 final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
   implicit
   private[thomas] val abTestDao : EntityDAO[F, Abtest, JsObject],
-  private[thomas] val abTestExtrasDao :       EntityDAO[F, AbtestExtras, JsObject],
   private[thomas] val featureDao  : EntityDAO[F, Feature, JsObject],
   F:                   MonadError[F, Error],
   eligibilityControl:  EligibilityControl[F],
@@ -211,47 +208,35 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
       }
     }
 
-  private def delete(testId: TestId): F[Unit] = {
-    abTestExtrasDao.remove(testId).recover { case Error.NotFound(_) => () } *>
+  private def delete(testId: TestId): F[Unit] =
     abTestDao.remove(testId)
-  }
 
 
-  def addGroupMetas(testId: TestId, metas: Map[GroupName, GroupMeta], auto: Boolean): F[Entity[AbtestExtras]] =
+  def addGroupMetas(testId: TestId, metas: Map[GroupName, GroupMeta], auto: Boolean): F[Entity[Abtest]] =
     for {
       candidate <- abTestDao.get(EntityId(testId))
       test <- candidate.data.canChange.fold(F.pure(candidate),
-        if(auto)
-          create(candidate.data.to[AbtestSpec].set(start = OffsetDateTime.now), auto = true)
-        else
-          F.raiseError(CannotToChangePastTest(candidate.data.start))
-      )
+                if(auto)
+                  create(candidate.data.to[AbtestSpec].set(start = OffsetDateTime.now), auto = true)
+                else
+                  CannotToChangePastTest(candidate.data.start).raiseError[F, Entity[Abtest]]
+              )
       _ <- errorsOToF(metas.keys.toList.map(gn => (!test.data.groups.exists(_.name === gn)).
         option(Error.GroupNameDoesNotExist(gn))))
-      existing <- getTestExtras(test._id)
-      toUpdate = existing.fold(Entity(test._id, AbtestExtras(metas)))(
-        _.lens(_.data.groupMetas).modify(_ ++ metas)
-      )
-      r <- abTestExtrasDao.upsert(toUpdate)
-    } yield r
+      updated <- abTestDao.update(test.lens(_.data.groupMetas).modify(_ ++ metas))
+    } yield updated
 
-
-  def getTestExtras(testId: TestId): F[Option[Entity[AbtestExtras]]] = {
-    abTestExtrasDao.findOneOption(EntityId(testId))
-  }
 
   def getGroupsWithMeta(query: UserGroupQuery): F[UserGroupQueryResult] = {
     val (at, groupAssignmentsF) = getGroupAssignmentsOf(query)
-    for {
-      groupAssignments <- groupAssignmentsF
-      metas <- groupAssignments.toList.traverseFilter {
-        case (feature, (groupName, test)) =>
-          abTestExtrasDao.findCached(test._id, cacheTtl).map { f =>
-            f.headOption.flatMap(_.data.groupMetas.get(groupName).map((feature, _)))
-          }
-      }
-    } yield UserGroupQueryResult(at, toGroups(groupAssignments), metas.toMap)
 
+    groupAssignmentsF.map { groupAssignments =>
+     val metas = groupAssignments.mapFilter {
+      case (groupName, test) =>
+        test.data.groupMetas.get(groupName)
+      }
+      UserGroupQueryResult(at, toGroups(groupAssignments), metas)
+    }
   }
 
   /**
@@ -345,13 +330,9 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
     for {
       newTest <- abTestDao.insert(newSpec.to[Abtest].set(
         ranges = Bucketing.newRanges(newSpec.groups, inheritFrom.map(_.data.ranges).getOrElse(Map.empty)),
-        salt = (if (newSpec.reshuffle) Option(newSalt) else inheritFrom.flatMap(_.data.salt))
+        salt = (if (newSpec.reshuffle) Option(newSalt) else inheritFrom.flatMap(_.data.salt)),
+        groupMetas = (if(newSpec.groupMetas.isEmpty) inheritFrom.map(_.data.groupMetas).getOrElse(Map.empty) else newSpec.groupMetas)
       ))
-      _ <- inheritFrom.fold(F.unit) { inheritTest =>
-        getTestExtras(inheritTest._id).flatMap(_.fold(F.unit) { toCopy =>
-          abTestExtrasDao.upsert(toCopy.copy(_id = newTest._id)).void
-        })
-      }
       _ <- ensureFeature(newSpec.feature)
     } yield newTest
   }
