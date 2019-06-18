@@ -60,6 +60,7 @@ class AbtestService[F[_]: Async](
         case GroupNameDoesNotExist(gn)     => s"The group name $gn does not exist in the test."
         case InvalidFeatureName            => s"Feature name can only consist of alphanumeric _, - and ."
         case InvalidAlternativeIdName      => s"AlternativeIdName can only consist of alphanumeric _, - and ."
+        case EmptyUserId                   => s"User id cannot be an empty string."
       }
 
       error match {
