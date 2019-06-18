@@ -345,6 +345,24 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
   }
 
   "GET groups" should {
+    "error out if the user id is an empty string" in {
+      val resp = controller.getGroups("", tomorrow)(FakeRequest())
+      status(resp) mustBe BAD_REQUEST
+      val errors = (contentAsJson(resp) \ "errors").as[List[String]]
+      errors.exists(_.contains("User id cannot be an empty string")) mustBe true
+    }
+
+    "error out on getGroupWithMeta if the user id is an empty string" in {
+      val resp =
+        controller.getGroupsWithMeta(
+          jsonRequest(UserGroupQuery(Some("")))
+        )
+      status(resp) mustBe BAD_REQUEST
+      val errors = (contentAsJson(resp) \ "errors").as[List[String]]
+      errors.exists(_.contains("User id cannot be an empty string")) mustBe true
+    }
+
+
     "get groups for the test the user is in" in {
 
       val test1 = createAbtestOnServer().data
@@ -439,6 +457,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       val retrieved = contentAsJson(groups).as[Map[FeatureName, GroupName]]
       retrieved mustNot be(empty)
     }
+
     "get groups if the user does have the tag required by the test - multiple tags separated with comma" in {
       val ab = fakeAb.copy(requiredTags = List("English Speaking", "Feature N"))
       createAbtestOnServer(ab)

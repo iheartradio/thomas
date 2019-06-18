@@ -194,6 +194,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
     featureDao.byName(featureName).map(_.data)
 
   def getGroups(userId: UserId, time: Option[OffsetDateTime], userTags: List[Tag]): F[Map[FeatureName, GroupName]] =
+    validateUserId(userId) >>
     getGroupAssignmentsOf(UserGroupQuery(Some(userId), time, userTags))._2.map(toGroups)
 
   def terminate(testId: TestId): F[Option[Entity[Abtest]]] =
@@ -227,15 +228,16 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
     } yield updated
 
 
-  def getGroupsWithMeta(query: UserGroupQuery): F[UserGroupQueryResult] = {
-    val (at, groupAssignmentsF) = getGroupAssignmentsOf(query)
+  def getGroupsWithMeta(query: UserGroupQuery): F[UserGroupQueryResult] =
+    validate(query) >> {
+      val (at, groupAssignmentsF) = getGroupAssignmentsOf(query)
 
-    groupAssignmentsF.map { groupAssignments =>
-     val metas = groupAssignments.mapFilter {
-      case (groupName, test) =>
-        test.data.groupMetas.get(groupName)
-      }
-      UserGroupQueryResult(at, toGroups(groupAssignments), metas)
+      groupAssignmentsF.map { groupAssignments =>
+       val metas = groupAssignments.mapFilter {
+        case (groupName, test) =>
+          test.data.groupMetas.get(groupName)
+        }
+        UserGroupQueryResult(at, toGroups(groupAssignments), metas)
     }
   }
 
@@ -348,6 +350,12 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
       (!testSpec.feature.matches("[-_.A-Za-z0-9]+")).option(Error.InvalidFeatureName),
       (!testSpec.alternativeIdName.fold(true)(_.matches("[-_.A-Za-z0-9]+"))).option(Error.InvalidAlternativeIdName)
     )
+
+  private def validate(userGroupQuery: UserGroupQuery): F[Unit] =
+    userGroupQuery.userId.fold(F.unit)(validateUserId)
+
+  private def validateUserId(userId: UserId): F[Unit] =
+    List(userId.isEmpty.option(Error.EmptyUserId))
 
   private def ensureFeature(name: FeatureName): F[Entity[Feature]] =
     featureDao.byName(name).recoverWith {
