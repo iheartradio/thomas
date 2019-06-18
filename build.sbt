@@ -32,6 +32,7 @@ lazy val libs =
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias("validate", s";clean;test;play/IntegrationTest/test;playExample/compile;docs/tut")
+addCommandAlias("it", s"play/IntegrationTest/test")
 
 lazy val thomas = project.in(file("."))
   .aggregate(playExample, play, client, http4s, cli, mongo, analysis, docs, stress)
