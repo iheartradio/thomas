@@ -110,6 +110,10 @@ class AbtestController[F[_]](
 
   def addGroupMetas(testId: TestId, auto: Boolean) = withJsonReq((metas: Map[GroupName, GroupMeta]) => api.addGroupMetas(testId, metas, auto))
 
+  def removeGroupMetas(testId: TestId, auto: Boolean) = Action.async {
+    api.removeGroupMetas(testId, auto)
+  }
+
   //for legacy support
   def getGroupMetas(testId: TestId) = Action.async {
     api.getTest(testId).map(_.data.groupMetas)
@@ -157,6 +161,7 @@ class HttpResults[F[_]](alerter: Option[Alerter[F]])(implicit F: Async[F]) {
       case ContinuationBefore(ls, st)    => s"Cannot schedule a continuation ($st) before the last test starts ($ls)"
       case DuplicatedGroupName           => "group names must be unique."
       case EmptyGroups                   => "There must be at least one group."
+      case EmptyGroupMeta                => "Group meta to update is empty."
       case GroupNameTooLong              => "Group names must be less than 256 chars."
       case GroupNameDoesNotExist(gn)     => s"The group name $gn does not exist in the test."
       case InvalidFeatureName            => s"Feature name can only consist of alphanumeric _, - and ."

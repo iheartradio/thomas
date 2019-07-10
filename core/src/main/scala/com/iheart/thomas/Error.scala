@@ -42,6 +42,7 @@ object Error {
   case object DuplicatedGroupName extends ValidationError
   case object GroupNameTooLong extends ValidationError
   case object EmptyUserId extends ValidationError
+  case object EmptyGroupMeta extends ValidationError
   case object InvalidFeatureName extends ValidationError
   case object InvalidAlternativeIdName extends ValidationError
   case class GroupNameDoesNotExist(name: GroupName) extends ValidationError

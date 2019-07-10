@@ -44,6 +44,8 @@ trait Client[F[_]] {
 
   def addGroupMeta(tid: TestId, gm: JsObject, auto: Boolean): F[Entity[Abtest]]
 
+  def removeGroupMetas(tid: TestId, auto: Boolean): F[Entity[Abtest]]
+
   def getKPI(name: String): F[KPIDistribution]
 
   def saveKPI(KPIDistribution: KPIDistribution): F[KPIDistribution]
@@ -81,6 +83,9 @@ class Http4sClient[F[_]: Sync](c: HClient[F], urls: HttpServiceUrls) extends Pla
 
   def addGroupMeta(tid: TestId, gm: JsObject, auto: Boolean): F[Entity[Abtest]] =
     c.expect(PUT(gm, Uri.unsafeFromString(urls.groupMeta(tid)) +? ("auto", auto)))
+
+  def removeGroupMetas(tid: TestId, auto: Boolean): F[Entity[Abtest]] =
+    c.expect(DELETE(Uri.unsafeFromString(urls.groupMeta(tid)) +? ("auto", auto)))
 
   def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]] =
     c.expect(urls.featureTests(feature))

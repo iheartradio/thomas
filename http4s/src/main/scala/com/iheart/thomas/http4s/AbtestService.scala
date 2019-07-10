@@ -58,6 +58,7 @@ class AbtestService[F[_]: Async](
         case EmptyGroups                   => "There must be at least one group."
         case GroupNameTooLong              => "Group names must be less than 256 chars."
         case GroupNameDoesNotExist(gn)     => s"The group name $gn does not exist in the test."
+        case EmptyGroupMeta                => s"Cannot update with an empty group meta"
         case InvalidFeatureName            => s"Feature name can only consist of alphanumeric _, - and ."
         case InvalidAlternativeIdName      => s"AlternativeIdName can only consist of alphanumeric _, - and ."
         case EmptyUserId                   => s"User id cannot be an empty string."

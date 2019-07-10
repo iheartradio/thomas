@@ -71,8 +71,32 @@ class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
       }
   }
 
+  val removeCommand = Command("remove", "remove group metas") {
+
+    ( fidOrFnOps,
+      newRevOpts,
+      HttpClientOpts.opts[F]).mapN { (tidOrFeature, nt, client) =>
+
+        tidOrFeature.flatMap { tidOrF =>
+          client.use { c =>
+            tidOrF.fold(c.removeGroupMetas(_, nt).void,
+              f => for {
+                t <- c.featureLatestTest(f)
+                _ <- if(!t.data.canChange && !nt)
+                       F.delay(println("The latest test is already started, if you want to automatically create a new revision, please run the command again with \"--new\" flag"))
+                     else
+                       c.removeGroupMetas(t._id, nt).flatMap { ae =>
+                         F.delay(println(s"Successfully removed group meta to test with Id ${ae._id}. "))
+                       }
+              } yield ()
+            )
+          }
+        }
+      }
+  }
+
   val groupMetaCommand = Command(
     "groupMeta", "managing group meta"
-  ) {Opts.subcommand(showCommand) orElse Opts.subcommand(addCommand)}
+  ) {Opts.subcommand(showCommand) orElse Opts.subcommand(addCommand) orElse Opts.subcommand(removeCommand)}
 
 }
