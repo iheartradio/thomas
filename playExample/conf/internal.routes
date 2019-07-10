@@ -141,6 +141,15 @@ DELETE       /tests/:testId                                        controllers.H
 ###
 PUT       /tests/:testId/groups/metas    controllers.HttpController.addGroupMetas(testId: String, auto: Boolean)
 
+###
+#  summary: remove group meta from a test
+#  responses:
+#    200:
+#      schema:
+#        $ref: '#/definitions/com.iheart.thomas.model.Abtest'
+###
+DELETE       /tests/:testId/groups/metas    controllers.HttpController.removeGroupMetas(testId: String, auto: Boolean)
+
 
 ###
 #  summary: Add an override for testing purpose

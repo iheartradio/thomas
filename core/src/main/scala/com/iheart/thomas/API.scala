@@ -95,6 +95,8 @@ trait API[F[_]] {
 
   def addGroupMetas(test: TestId, metas: Map[GroupName, GroupMeta], auto: Boolean): F[Entity[Abtest]]
 
+  def removeGroupMetas(test: TestId, auto: Boolean): F[Entity[Abtest]]
+
   /**
    * Get the assignments for a list of ids bypassing the eligibility control
    */
@@ -214,6 +216,11 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
 
 
   def addGroupMetas(testId: TestId, metas: Map[GroupName, GroupMeta], auto: Boolean): F[Entity[Abtest]] =
+    errorToF(metas.isEmpty.option(EmptyGroupMeta)) *>
+      updateGroupMetas(testId, metas, auto)
+
+
+  private def updateGroupMetas(testId: TestId, metas: Map[GroupName, GroupMeta], auto: Boolean): F[Entity[Abtest]] =
     for {
       candidate <- abTestDao.get(EntityId(testId))
       test <- candidate.data.canChange.fold(F.pure(candidate),
@@ -224,9 +231,14 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
               )
       _ <- errorsOToF(metas.keys.toList.map(gn => (!test.data.groups.exists(_.name === gn)).
         option(Error.GroupNameDoesNotExist(gn))))
-      updated <- abTestDao.update(test.lens(_.data.groupMetas).modify(_ ++ metas))
+      updated <- abTestDao.update(test.lens(_.data.groupMetas)
+                    .modify { existing =>
+                      if(metas.nonEmpty) existing ++ metas else metas
+                    })
     } yield updated
 
+  def removeGroupMetas(testId: TestId, auto: Boolean): F[Entity[Abtest]] =
+    updateGroupMetas(testId, Map.empty, auto)
 
   def getGroupsWithMeta(query: UserGroupQuery): F[UserGroupQueryResult] =
     validate(query) >> {
