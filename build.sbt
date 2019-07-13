@@ -19,7 +19,7 @@ lazy val libs =
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
   .addJVM(name = "play-json-derived-codecs", version = "5.0.0", org = "org.julienrf")
   .addJVM(name = "newtype",               version = "0.4.2",  org = "io.estatico")
-  .addJVM(name = "decline",               version = "0.5.0",  org = "com.monovore")
+  .addJVM(name = "decline",               version = "0.5.1",  org = "com.monovore")
   .addJVM(name = "scala-java8-compat",    version = "0.9.0",  org = "org.scala-lang.modules")
   .addJVM(name = "log4cats",              version = "0.1.0",  org = "io.chrisdavenport", "log4cats-slf4j")
   .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
