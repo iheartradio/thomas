@@ -185,7 +185,7 @@ lazy val play = project
     libs.dependency("scalatestplus-play", Some(IntegrationTest.name)),
     libs.dependencies("scala-java8-compat", "play"),
     libraryDependencies +=
-      "org.scalatest" %% "scalatest" % "3.0.7" % IntegrationTest,
+      "org.scalatest" %% "scalatest" % "3.0.8" % IntegrationTest,
   )
 
 lazy val playExample = project.enablePlugins(PlayScala, SwaggerPlugin)
