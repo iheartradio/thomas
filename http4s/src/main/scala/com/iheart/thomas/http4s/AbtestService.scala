@@ -20,7 +20,10 @@ import _root_.play.api.libs.json.Json.toJson
 import cats.implicits._
 import Error.{NotFound => APINotFound, _}
 import cats.data.{EitherT, OptionT}
+import lihua.EntityId
 import org.http4s.dsl.impl.{OptionalQueryParamDecoderMatcher, QueryParamDecoderMatcher}
+import scalacache.Mode
+
 
 class AbtestService[F[_]: Async](
   api: API[APIResult[F, ?]],
@@ -120,13 +123,13 @@ class AbtestService[F[_]: Async](
       respond(api.getAllTests(None))
 
     case GET -> Root / "tests" / testId =>
-      respond(api.getTest(testId))
+      respond(api.getTest(EntityId(testId)))
 
     case DELETE -> Root / "tests" / testId =>
-      respondOption(api.terminate(testId), s"No test with id $testId")
+      respondOption(api.terminate(EntityId(testId)), s"No test with id $testId")
 
     case req @ PUT -> Root / "tests" / testId / "groups" / "metas" :? auto(a) =>
-      req.as[Map[GroupName, GroupMeta]] >>= ( m => respond(api.addGroupMetas(testId, m, a.getOrElse(false))))
+      req.as[Map[GroupName, GroupMeta]] >>= ( m => respond(api.addGroupMetas(EntityId(testId), m, a.getOrElse(false))))
 
     case GET -> Root / "tests" / "cache" :? at(a) =>
       respond(api.getAllTestsCachedEpoch(a))
@@ -166,7 +169,8 @@ class AbtestService[F[_]: Async](
 
 
 object AbtestService {
-  def mongo[F[_]](implicit F: Async[F], ex: ExecutionContext): Resource[F, AbtestService[F]]= {
+  def mongo[F[_]](implicit F: Async[F], ex: ExecutionContext, M: Mode[APIResult[F, ?]]): Resource[F, AbtestService[F]]= {
+
     import thomas.mongo.idSelector
     for {
       cfg <- Resource.liftF(F.delay(ConfigFactory.load))

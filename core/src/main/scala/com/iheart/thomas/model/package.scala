@@ -7,12 +7,13 @@ package com.iheart
 package thomas
 
 import java.time.OffsetDateTime
-import cats.implicits._
 
+import cats.implicits._
 import _root_.play.api.libs.json.JsObject
+import lihua.EntityId
 
 package object model {
-  type TestId = String
+  type TestId = EntityId
   type TestName = String
   type FeatureName = String
   type MetaFieldName = String

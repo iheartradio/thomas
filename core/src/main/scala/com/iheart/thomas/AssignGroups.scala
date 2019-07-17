@@ -7,14 +7,16 @@ package com.iheart.thomas
 
 import java.time.OffsetDateTime
 
-import cats.{Monad}
+import cats.Monad
 import com.iheart.thomas.model._
 import lihua.{Entity, EntityDAO}
 import cats.implicits._
 import com.iheart.thomas.model.Abtest.Status.InProgress
 import _root_.play.api.libs.json.JsObject
+import scalacache.Mode
 
 import scala.concurrent.duration.FiniteDuration
+import lihua.cache.caffeine.implicits._
 
 trait AssignGroups[F[_]] {
   def assign(query: UserGroupQuery): (OffsetDateTime, F[Map[FeatureName, (GroupName, Entity[Abtest])]])
@@ -22,7 +24,7 @@ trait AssignGroups[F[_]] {
 
 object AssignGroups {
   import QueryDSL._
-  def fromDB[F[_]: Monad](cacheTtl: FiniteDuration)(
+  def fromDB[F[_]: Monad: Mode](cacheTtl: FiniteDuration)(
     implicit
     abTestDao:          EntityDAO[F, Abtest, JsObject],
     featureDao:         EntityDAO[F, Feature, JsObject],

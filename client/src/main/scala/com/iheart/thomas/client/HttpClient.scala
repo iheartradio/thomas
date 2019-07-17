@@ -17,7 +17,6 @@ import cats.implicits._
 import Formats._
 import com.iheart.thomas.Error.NotFound
 import com.iheart.thomas.analysis.KPIDistribution
-import lihua.EntityId.toEntityId
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NoStackTrace
@@ -166,12 +165,12 @@ abstract class PlayJsonHttp4sClient[F[_]: Sync] extends EntityReads with Http4sC
 
 
 trait EntityReads {
-
+  import lihua._
   implicit def entityFormat[T: Reads]: Reads[Entity[T]] = new Reads[Entity[T]] {
     def reads(json: JsValue): JsResult[Entity[T]] = for {
       id <- (json \ "_id" \ "$oid").validate[String]
       t <- json.validate[T]
-    } yield Entity(id, t)
+    } yield  t.toEntity(id)
   }
 
 }

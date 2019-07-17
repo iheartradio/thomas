@@ -7,17 +7,21 @@ import com.iheart.thomas.cli.OptsSyntax._
 import com.iheart.thomas.client.Client
 import com.iheart.thomas.model.{FeatureName, TestId}
 import com.monovore.decline._
+import lihua.EntityId
 import play.api.libs.json.Json.{prettyPrint, toJson}
 
 class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
 
-  val tidOpts = Opts.option[String]("id", "test id", "i")
+  val tidOpts = Opts.option[String]("id", "test id", "i").map(EntityId(_))
   val fnOpts = Opts.option[String]("feature", "test feature", "f")
 
-  val fidOrFnOps: Opts[F[Either[String, String]]] = tidOpts.either[F](fnOpts)
+  /**
+    * Either a test id or a feature name
+    */
+  val tidOrFnOps: Opts[F[Either[TestId, FeatureName]]] = tidOpts.either[F](fnOpts)
 
   val showCommand = Command("show", "show group metas") {
-    ( fidOrFnOps,
+    ( tidOrFnOps,
       HttpClientOpts.opts[F]).mapN { (tidOrFeature, client) =>
 
         tidOrFeature.flatMap { tidOrF =>
@@ -48,7 +52,7 @@ class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
   val newRevOpts = Opts.flag("new", "create a new revision if the current one has already started").orFalse
 
   val addCommand = Command("add", "add group metas") {
-    ( fidOrFnOps,
+    ( tidOrFnOps,
       metaOpts,
       newRevOpts,
       HttpClientOpts.opts[F]).mapN { (tidOrFeature, gm, nt, clientR) =>
@@ -60,7 +64,7 @@ class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
 
 
   val removeCommand = Command("remove", "remove group metas") {
-    (fidOrFnOps,
+    (tidOrFnOps,
       newRevOpts,
       HttpClientOpts.opts[F]).mapN { (tidOrFeature, nt, clientR) =>
       updateGroupMeta(tidOrFeature, clientR, nt) { (c, tid) =>

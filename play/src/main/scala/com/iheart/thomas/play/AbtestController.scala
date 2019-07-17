@@ -19,6 +19,7 @@ import com.iheart.thomas.model._
 import scala.concurrent.Future
 import Formats._
 import com.iheart.thomas.analysis.{KPIApi, KPIDistribution}
+import lihua.EntityId
 import lihua.mongo.JsonFormats._
 
 class AbtestController[F[_]](
@@ -33,6 +34,7 @@ class AbtestController[F[_]](
   val thr = new HttpResults[F](alerter)
   import thr._
   type EF[A] = EitherT[F, Error, A]
+
 
   implicit protected def toResult[Resp: Writes](apiResult: EF[Resp]): Future[Result] =
     apiResult.value
@@ -57,13 +59,13 @@ class AbtestController[F[_]](
     kpiAPI.upsert(kpi)
   }
 
-  def get(id: TestId) = Action.async(api.getTest(id))
+  def get(id: String) = Action.async(api.getTest(EntityId(id)))
 
   def getByFeature(feature: FeatureName) = Action.async(api.getTestsByFeature(feature))
 
   def getAllFeatures = Action.async(api.getAllFeatures)
 
-  def terminate(id: TestId) = Action.async(api.terminate(id))
+  def terminate(id: String) = Action.async(api.terminate(EntityId(id)))
 
   def getAllTests(at: Option[Long], endAfter: Option[Long]) = Action.async {
     if (endAfter.isDefined && at.isDefined) {
@@ -108,15 +110,15 @@ class AbtestController[F[_]](
     api.addOverrides(feature, overrides)
   }
 
-  def addGroupMetas(testId: TestId, auto: Boolean) = withJsonReq((metas: Map[GroupName, GroupMeta]) => api.addGroupMetas(testId, metas, auto))
+  def addGroupMetas(testId: String, auto: Boolean) = withJsonReq((metas: Map[GroupName, GroupMeta]) => api.addGroupMetas(EntityId(testId), metas, auto))
 
-  def removeGroupMetas(testId: TestId, auto: Boolean) = Action.async {
-    api.removeGroupMetas(testId, auto)
+  def removeGroupMetas(testId: String, auto: Boolean) = Action.async {
+    api.removeGroupMetas(EntityId(testId), auto)
   }
 
   //for legacy support
-  def getGroupMetas(testId: TestId) = Action.async {
-    api.getTest(testId).map(_.data.groupMetas)
+  def getGroupMetas(testId: String) = Action.async {
+    api.getTest(EntityId(testId)).map(_.data.groupMetas)
   }
 
   val getGroupsWithMeta = withJsonReq((query: UserGroupQuery) => api.getGroupsWithMeta(query))

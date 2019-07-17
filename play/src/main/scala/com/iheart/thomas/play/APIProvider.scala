@@ -17,7 +17,7 @@ import com.iheart.thomas.play.APIProvider.FailedToStartApplicationException
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-
+import scalacache.CatsEffect.modes._
 @Singleton
 class APIProvider @Inject() (config: Configuration, lifecycle: ApplicationLifecycle)(implicit ex: ExecutionContext) extends APIProviderBase(config, lifecycle)
 

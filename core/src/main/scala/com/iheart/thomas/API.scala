@@ -18,6 +18,7 @@ import monocle.macros.syntax.lens._
 import _root_.play.api.libs.json._
 import henkan.convert.Syntax._
 import cats.tagless.FunctorK
+import scalacache.Mode
 
 import concurrent.duration._
 import scala.util.Random
@@ -114,9 +115,11 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
   private[thomas] val featureDao  : EntityDAO[F, Feature, JsObject],
   F:                   MonadError[F, Error],
   eligibilityControl:  EligibilityControl[F],
-  idSelector :         EntityId => JsObject
+  idSelector :         EntityId => JsObject,
+  mode: Mode[F]
 ) extends API[F] {
   import QueryDSL._
+  import lihua.cache.caffeine.implicits._
 
   def create(testSpec: AbtestSpec, auto: Boolean): F[Entity[Abtest]] =
     addTestWithLock(testSpec.feature)(createWithoutLock(testSpec, auto))
@@ -222,7 +225,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
 
   private def updateGroupMetas(testId: TestId, metas: Map[GroupName, GroupMeta], auto: Boolean): F[Entity[Abtest]] =
     for {
-      candidate <- abTestDao.get(EntityId(testId))
+      candidate <- abTestDao.get(testId)
       test <- candidate.data.canChange.fold(F.pure(candidate),
                 if(auto)
                   create(candidate.data.to[AbtestSpec].set(start = OffsetDateTime.now), auto = true)
