@@ -3,33 +3,33 @@
  * All rights reserved
  */
 
-package com.iheart
-package thomas
+package com.iheart.thomas
+package abtest
 
 import java.time.OffsetDateTime
 
+import _root_.play.api.libs.json._
+import cats._
+import cats.implicits._
+import cats.tagless.FunctorK
+import com.iheart.thomas.TimeUtil
 import Error._
 import model._
 import lihua._
-import cats.implicits._
-import mouse.all._
-import cats._
 import monocle.macros.syntax.lens._
-import _root_.play.api.libs.json._
-import henkan.convert.Syntax._
-import cats.tagless.FunctorK
+import mouse.all._
 import scalacache.Mode
-
-import concurrent.duration._
+import henkan.convert.Syntax._
+import scala.concurrent.duration._
 import scala.util.Random
 
 
 /**
- * Algebra for ABT API
+ * Algebra for ABTest API
  * Final Tagless encoding
  * @tparam F
  */
-trait API[F[_]] {
+trait AbtestAlg[F[_]] {
 
   def create(testSpec: AbtestSpec, auto: Boolean): F[Entity[Abtest]]
 
@@ -104,12 +104,12 @@ trait API[F[_]] {
   def getGroupAssignments(ids: List[String], feature: FeatureName, at: OffsetDateTime): F[List[(String, GroupName)]]
 }
 
-object API {
-  implicit val functorKInstance: FunctorK[API] = cats.tagless.Derive.functorK[API]
+object AbtestAlg {
+  implicit val functorKInstance: FunctorK[AbtestAlg] = cats.tagless.Derive.functorK[AbtestAlg]
 }
 
 
-final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
+final class DefaultAbtestAlg[F[_]](cacheTtl: FiniteDuration)(
   implicit
   private[thomas] val abTestDao : EntityDAO[F, Abtest, JsObject],
   private[thomas] val featureDao  : EntityDAO[F, Feature, JsObject],
@@ -117,7 +117,7 @@ final class DefaultAPI[F[_]](cacheTtl: FiniteDuration)(
   eligibilityControl:  EligibilityControl[F],
   idSelector :         EntityId => JsObject,
   mode: Mode[F]
-) extends API[F] {
+) extends AbtestAlg[F] {
   import QueryDSL._
   import lihua.cache.caffeine.implicits._
 

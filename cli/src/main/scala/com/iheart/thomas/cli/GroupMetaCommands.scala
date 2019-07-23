@@ -5,7 +5,7 @@ import cats.effect.{ConcurrentEffect, Resource}
 import cats.implicits._
 import com.iheart.thomas.cli.OptsSyntax._
 import com.iheart.thomas.client.Client
-import com.iheart.thomas.model.{FeatureName, TestId}
+import com.iheart.thomas.abtest.model.TestId
 import com.monovore.decline._
 import lihua.EntityId
 import play.api.libs.json.Json.{prettyPrint, toJson}

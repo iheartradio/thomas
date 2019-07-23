@@ -4,7 +4,7 @@ package analysis
 
 import java.time.OffsetDateTime
 
-import com.iheart.thomas.model.{Abtest, GroupName}
+import com.iheart.thomas.abtest.model.Abtest
 import com.stripe.rainier.sampler.RNG
 import cats.implicits._
 

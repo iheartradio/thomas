@@ -5,35 +5,36 @@
 
 package com.iheart.thomas
 package play
+import abtest._, Formats._, model._
 
 import cats.data.{EitherT, OptionT}
 import cats.effect._
 import Error.{NotFound => APINotFound, _}
+
 import AbtestController.Alerter
 import _root_.play.api.libs.json._
 import _root_.play.api.mvc._
 import cats.implicits._
 import cats.effect.implicits._
-import com.iheart.thomas.model._
+
 
 import scala.concurrent.Future
-import Formats._
 import com.iheart.thomas.analysis.{KPIApi, KPIDistribution}
 import lihua.EntityId
 import lihua.mongo.JsonFormats._
 
 class AbtestController[F[_]](
-  api:        API[EitherT[F, Error, ?]],
-  kpiAPI:     KPIApi[EitherT[F, Error, ?]],
-  components: ControllerComponents,
-  alerter:    Option[Alerter[F]]
+                              api:        AbtestAlg[EitherT[F, abtest.Error, ?]],
+                              kpiAPI:     KPIApi[EitherT[F, abtest.Error, ?]],
+                              components: ControllerComponents,
+                              alerter:    Option[Alerter[F]]
 )(
   implicit
   F: Effect[F]
 ) extends AbstractController(components) {
   val thr = new HttpResults[F](alerter)
   import thr._
-  type EF[A] = EitherT[F, Error, A]
+  type EF[A] = EitherT[F, abtest.Error, A]
 
 
   implicit protected def toResult[Resp: Writes](apiResult: EF[Resp]): Future[Result] =
@@ -48,7 +49,7 @@ class AbtestController[F[_]](
     )
   }
 
-  protected def liftOption[T](o: EitherT[F, Error, Option[T]], notFoundMsg: String): EitherT[F, Error, T] =
+  protected def liftOption[T](o: EitherT[F, abtest.Error, Option[T]], notFoundMsg: String): EitherT[F, abtest.Error, T] =
     OptionT(o).getOrElseF(EitherT.leftT(APINotFound(notFoundMsg)))
 
   def getKPIDistribution(name: String) = Action.async(
@@ -147,7 +148,7 @@ class HttpResults[F[_]](alerter: Option[Alerter[F]])(implicit F: Async[F]) {
   import _root_.play.api.Logger
 
   import Results._
-  def errorResult(reporter: Option[Alerter[F]])(error: Error): F[Result] = {
+  def errorResult(reporter: Option[Alerter[F]])(error: abtest.Error): F[Result] = {
 
     def serverError(msg: String): F[Result] = {
       F.delay(Logger("Thomas").error("Server Error: " + msg)) *>

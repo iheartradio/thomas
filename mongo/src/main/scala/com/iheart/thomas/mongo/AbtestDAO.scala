@@ -9,11 +9,11 @@ package mongo
 
 import cats.effect.{IO, Async}
 import cats.implicits._
-import com.iheart.thomas.model._
+import com.iheart.thomas.abtest.model._
 import lihua.mongo.EitherTDAOFactory
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.play.json.collection.JSONCollection
-import Formats._
+import abtest.Formats._
 
 import scala.concurrent.ExecutionContext
 

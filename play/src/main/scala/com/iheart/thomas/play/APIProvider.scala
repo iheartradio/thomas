@@ -5,6 +5,7 @@
 
 package com.iheart.thomas
 package play
+import abtest._
 
 import javax.inject._
 import cats.data.EitherT
@@ -40,9 +41,9 @@ class APIProviderBase(config: Configuration, lifecycle: ApplicationLifecycle)(im
     cfg.getDuration("iheart.abtest.get-groups.ttl").toScala
   }
 
-  lazy val (api: API[F], kpiApi: KPIApi[F]) = {
+  lazy val (api: AbtestAlg[F], kpiApi: KPIApi[F]) = {
     implicit val (abtestDAO, featureDAO, kpiDAO) = daos
-    (new DefaultAPI[F](ttl), KPIApi.default)
+    (new DefaultAbtestAlg[F](ttl), KPIApi.default)
   }
 }
 

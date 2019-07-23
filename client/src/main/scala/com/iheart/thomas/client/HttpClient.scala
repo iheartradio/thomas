@@ -10,14 +10,14 @@ import java.time.OffsetDateTime
 
 import cats.{Functor, Id, MonadError}
 import cats.effect._
-import com.iheart.thomas.model._
+import com.iheart.thomas.abtest.model._
 import lihua.Entity
 import _root_.play.api.libs.json._
 import cats.implicits._
-import Formats._
-import com.iheart.thomas.Error.NotFound
+import com.iheart.thomas.abtest.Error
+import com.iheart.thomas.abtest.AssignGroups
 import com.iheart.thomas.analysis.KPIDistribution
-
+import abtest.Formats._
 import scala.concurrent.ExecutionContext
 import scala.util.control.NoStackTrace
 import com.iheart.thomas.client.Client.HttpServiceUrls
@@ -37,7 +37,7 @@ trait Client[F[_]] {
   def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]]
 
   def featureLatestTest(feature: FeatureName)(implicit F: MonadError[F, Throwable]): F[Entity[Abtest]] =
-    featureTests(feature).flatMap(_.headOption.liftTo[F](NotFound(s"No tests found under $feature")))
+    featureTests(feature).flatMap(_.headOption.liftTo[F](Error.NotFound(s"No tests found under $feature")))
 
   def getGroupMeta(tid: TestId): F[Map[GroupName, GroupMeta]]
 
@@ -104,7 +104,7 @@ object Client extends EntityReads {
   trait HttpServiceUrls {
 
     /**
-     * Service URL corresponding to [[API]].getAllTestsCached
+     * Service URL corresponding to [[AbtestAlg]].getAllTestsCached
      */
     def tests: String
 

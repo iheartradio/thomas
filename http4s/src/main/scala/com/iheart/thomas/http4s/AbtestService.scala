@@ -2,16 +2,17 @@ package com.iheart
 package thomas
 package http4s
 
+import abtest._, model._, Formats._
+
 import cats.effect.{Async, Resource}
 import analysis.{KPIApi, KPIDistribution}
-import com.iheart.thomas.model._
+
 import com.typesafe.config.ConfigFactory
 import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes, Response}
 import org.http4s.dsl.Http4sDsl
 import _root_.play.api.libs.json._
 import org.http4s.implicits._
 import org.http4s.server.Router
-import Formats._
 import org.http4s.play._
 import lihua.mongo.JsonFormats._
 
@@ -19,6 +20,7 @@ import scala.concurrent.ExecutionContext
 import _root_.play.api.libs.json.Json.toJson
 import cats.implicits._
 import Error.{NotFound => APINotFound, _}
+
 import cats.data.{EitherT, OptionT}
 import lihua.EntityId
 import org.http4s.dsl.impl.{OptionalQueryParamDecoderMatcher, QueryParamDecoderMatcher}
@@ -26,8 +28,8 @@ import scalacache.Mode
 
 
 class AbtestService[F[_]: Async](
-  api: API[APIResult[F, ?]],
-  kpiAPI: KPIApi[APIResult[F, ?]]) extends Http4sDsl[F] {
+                                  api: AbtestAlg[APIResult[F, ?]],
+                                  kpiAPI: KPIApi[APIResult[F, ?]]) extends Http4sDsl[F] {
 
   implicit val jsonObjectEncoder: EntityEncoder[F, JsObject] = implicitly[EntityEncoder[F, JsValue]].narrow
 
@@ -40,7 +42,7 @@ class AbtestService[F[_]: Async](
 
   def respond[T: Format](result: APIResult[F, T]): F[Response[F]] = {
 
-    def errResponse(error: Error): F[Response[F]] = {
+    def errResponse(error: abtest.Error): F[Response[F]] = {
 
       def errorsJson(msgs: Seq[String]): JsObject =
         Json.obj("errors" -> JsArray(msgs.map(JsString)))
@@ -182,7 +184,7 @@ object AbtestService {
       implicit val (abtestDAO, featureDAO, kpiDAO) = daos
       import scala.compat.java8.DurationConverters._
       val ttl = cfg.getDuration("iheart.abtest.get-groups.ttl").toScala
-      new AbtestService(new DefaultAPI[APIResult[F, ?]](ttl),
+      new AbtestService(new DefaultAbtestAlg[APIResult[F, ?]](ttl),
          KPIApi.default)
     }
   }

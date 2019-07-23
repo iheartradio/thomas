@@ -6,6 +6,7 @@ import cats.MonadError
 import lihua.{Entity, EntityDAO}
 import _root_.play.api.libs.json.JsObject
 import cats.implicits._
+import abtest.Error
 
 trait KPIApi[F[_]] {
   def get(name: KPIName): F[Option[Entity[KPIDistribution]]]
@@ -15,8 +16,8 @@ trait KPIApi[F[_]] {
 
 object KPIApi {
   def default[F[_]](implicit dao: EntityDAO[F, KPIDistribution, JsObject],
-                    F: MonadError[F, Error]): KPIApi[F] = new KPIApi[F] {
-    import QueryDSL._
+                    F: MonadError[F, abtest.Error]): KPIApi[F] = new KPIApi[F] {
+    import com.iheart.thomas.abtest.QueryDSL._
     def get(name: KPIName): F[Option[Entity[KPIDistribution]]] =
       dao.findOneOption('name -> name)
 
