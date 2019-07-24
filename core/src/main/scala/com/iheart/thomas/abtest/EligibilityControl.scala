@@ -4,12 +4,13 @@
  */
 
 package com.iheart.thomas
+package abtest
 
-import cats.{Applicative, Id, Monad}
-import com.iheart.thomas.model.{Abtest, UserGroupQuery}
 import cats.implicits._
 import cats.kernel.Semigroup
-
+import cats.{Applicative, Id, Monad}
+import com.iheart.thomas.abtest
+import model._
 import scala.util.matching.Regex
 
 trait EligibilityControl[F[_]] {
@@ -42,15 +43,15 @@ private[thomas] sealed abstract class EligibilityControlInstances0 extends Eligi
   implicit def default: EligibilityControl[Id] =
     byGroupMeta |+| byRequiredTags |+| bySegRanges
 
-  lazy val byGroupMeta: EligibilityControl[Id] = EligibilityControl[Id]((userInfo, test) =>
+  lazy val byGroupMeta: EligibilityControl[Id] = abtest.EligibilityControl[Id]((userInfo, test) =>
     test.matchingUserMeta.forall {
       case (k, r) => userInfo.meta.get(k).fold(false)(v => new Regex(r).findFirstMatchIn(v).isDefined)
     })
 
-  lazy val byRequiredTags: EligibilityControl[Id] = EligibilityControl[Id]((userInfo: UserGroupQuery, test: Abtest) =>
+  lazy val byRequiredTags: EligibilityControl[Id] = abtest.EligibilityControl[Id]((userInfo: UserGroupQuery, test: Abtest) =>
     test.requiredTags.forall(userInfo.tags.contains))
 
-  lazy val bySegRanges: EligibilityControl[Id] = EligibilityControl[Id]((userInfo: UserGroupQuery, test: Abtest) =>
+  lazy val bySegRanges: EligibilityControl[Id] = abtest.EligibilityControl[Id]((userInfo: UserGroupQuery, test: Abtest) =>
     if (test.segmentRanges.isEmpty) true
     else test.segmentRanges.exists { range =>
       test.idToUse(userInfo).fold(false) { id =>

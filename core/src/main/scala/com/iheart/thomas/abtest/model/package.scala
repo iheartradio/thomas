@@ -3,20 +3,20 @@
  * All rights reserved
  */
 
-package com.iheart
-package thomas
+package com.iheart.thomas
+package abtest
 
 import java.time.OffsetDateTime
-import cats.implicits._
 
+import cats.implicits._
 import _root_.play.api.libs.json.JsObject
+import lihua.EntityId
+
 
 package object model {
-  type TestId = String
+  type TestId = EntityId
   type TestName = String
-  type FeatureName = String
   type MetaFieldName = String
-  type GroupName = String
   type UserId = String
   type Overrides = Map[UserId, GroupName]
   type GroupRanges = Map[GroupName, List[GroupRange]]
@@ -26,6 +26,7 @@ package object model {
   type Tag = String
   type UserMeta = Map[MetaFieldName, String]
 }
+
 
 package model {
 
