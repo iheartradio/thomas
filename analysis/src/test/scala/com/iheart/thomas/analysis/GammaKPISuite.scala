@@ -9,7 +9,7 @@ import cats.effect.IO
 import io.estatico.newtype.ops._
 import implicits._
 import com.iheart.thomas.analysis.DistributionSpec.Normal
-import com.iheart.thomas.model.{Abtest, GroupName}
+import com.iheart.thomas.abtest.model.Abtest
 import com.stripe.rainier.core.Gamma
 import com.stripe.rainier.sampler._
 import org.scalatest.Matchers

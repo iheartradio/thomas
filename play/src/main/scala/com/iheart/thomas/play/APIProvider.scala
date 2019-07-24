@@ -5,6 +5,7 @@
 
 package com.iheart.thomas
 package play
+import abtest._
 
 import javax.inject._
 import cats.data.EitherT
@@ -17,7 +18,7 @@ import com.iheart.thomas.play.APIProvider.FailedToStartApplicationException
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-
+import scalacache.CatsEffect.modes._
 @Singleton
 class APIProvider @Inject() (config: Configuration, lifecycle: ApplicationLifecycle)(implicit ex: ExecutionContext) extends APIProviderBase(config, lifecycle)
 
@@ -40,9 +41,9 @@ class APIProviderBase(config: Configuration, lifecycle: ApplicationLifecycle)(im
     cfg.getDuration("iheart.abtest.get-groups.ttl").toScala
   }
 
-  lazy val (api: API[F], kpiApi: KPIApi[F]) = {
+  lazy val (api: AbtestAlg[F], kpiApi: KPIApi[F]) = {
     implicit val (abtestDAO, featureDAO, kpiDAO) = daos
-    (new DefaultAPI[F](ttl), KPIApi.default)
+    (new DefaultAbtestAlg[F](ttl), KPIApi.default)
   }
 }
 
