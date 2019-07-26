@@ -15,7 +15,7 @@ lazy val libs =
   .addJVM(name = "breeze",                version = "0.13.2", org ="org.scalanlp", "breeze", "breeze-viz")
   .addJVM(name = "henkan-convert",        version = "0.6.2",  org ="com.kailuowang")
   .add(   name = "play-json",             version = "2.7.3",  org = "com.typesafe.play")
-  .add(   name = "play",                  version = "2.7.2", org = "com.typesafe.play")
+  .add(   name = "play",                  version = "2.7.2",  org = "com.typesafe.play")
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
   .addJVM(name = "play-json-derived-codecs", version = "5.0.0", org = "org.julienrf")
   .addJVM(name = "newtype",               version = "0.4.3",  org = "io.estatico")
@@ -28,8 +28,8 @@ lazy val libs =
   .addJVM(name = "http4s",                version = "0.20.8", org= "org.http4s", "http4s-dsl", "http4s-blaze-server", "http4s-blaze-client", "http4s-play-json")
   .addJVM(name = "akka-slf4j",            version = "2.5.22", org = "com.typesafe.akka")
   .add(name = "scalatestplus-scalacheck", version = "1.0.0-SNAP6",   org = "org.scalatestplus")
-  .add   (name = "scalatestplus-play",    version = "4.0.2",   org = "org.scalatestplus.play")
-
+  .add   (name = "scalatestplus-play",    version = "4.0.2",  org = "org.scalatestplus.play")
+  .addJVM(name = "breeze",                version = "1.0-RC3",org = "org.scalanlp")
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias("validate", s";clean;test;play/IntegrationTest/test;playExample/compile;docs/tut")
@@ -72,10 +72,10 @@ lazy val cli = project
   )
 
 lazy val core = project
-  .settings(name := "thomas-core")
-  .settings(rootSettings)
-  .settings(taglessSettings)
   .settings(
+    name := "thomas-core",
+    rootSettings,
+    taglessSettings,
     libs.testDependencies("scalacheck", "scalatest", "scalatestplus-scalacheck"),
     libs.dependencies("cats-core",
       "monocle-macro",
@@ -83,9 +83,9 @@ lazy val core = project
       "lihua-cache",
       "mouse",
       "henkan-convert",
-      "tempus-core",
-      "play-json"),
-     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
+      "play-json", "breeze"),
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
+    simulacrumSettings(libs)
   )
 
 
