@@ -4,20 +4,16 @@ import cats.Monad
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.bandit.model.BanditState
 import cats.implicits._
-import cats.implicits._
 
 trait APIAlg[F[_]] {
-  def updateRewardState[R, Algo <: AlgorithmAlgebra[F, R]](
-      featureName: FeatureName,
-      r: R,
-      algo: Algo)(implicit stateDAO: StateDAO[F, R], R: RewardState[R]): F[BanditState[R]]
+  def updateRewardState[R](featureName: FeatureName, r: R)(
+      implicit stateDAO: StateDAO[F, R],
+      R: RewardState[R]): F[BanditState[R]]
 }
 
 object APIAlg {
   implicit def default[F[_]: Monad]: APIAlg[F] = new APIAlg[F] {
-    def updateRewardState[R, Algo <: AlgorithmAlgebra[F, R]](featureName: FeatureName,
-                                                             r: R,
-                                                             algo: Algo)(
+    def updateRewardState[R](featureName: FeatureName, r: R)(
         implicit stateDAO: StateDAO[F, R],
         R: RewardState[R]): F[BanditState[R]] =
       for {
