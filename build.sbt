@@ -15,7 +15,7 @@ lazy val libs =
   .addJVM(name = "rainier",               version = "0.2.2",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
   .addJVM(name = "breeze",                version = "1.0-RC4", org ="org.scalanlp", "breeze", "breeze-viz")
   .addJVM(name = "henkan-convert",        version = "0.6.2",  org ="com.kailuowang")
-  .add(   name = "play-json",             version = "2.7.3",  org = "com.typesafe.play")
+  .add(   name = "play-json",             version = "2.7.4",  org = "com.typesafe.play")
   .add(   name = "play",                  version = "2.7.2",  org = "com.typesafe.play")
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
   .addJVM(name = "play-json-derived-codecs", version = "5.0.0", org = "org.julienrf")
