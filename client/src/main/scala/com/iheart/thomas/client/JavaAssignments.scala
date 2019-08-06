@@ -7,7 +7,7 @@ package com.iheart.thomas
 package client
 
 import cats.effect.{ContextShift, IO}
-import com.iheart.thomas.model.UserGroupQuery
+import com.iheart.thomas.abtest.model.UserGroupQuery
 
 import collection.JavaConverters._
 
