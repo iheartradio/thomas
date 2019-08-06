@@ -1,9 +1,10 @@
-package com.iheart.thomas.analysis
+package com.iheart.thomas
+package analysis
 
 import java.time.OffsetDateTime
 
 import cats.{Functor, MonadError}
-import com.iheart.thomas.Formats.j
+import com.iheart.thomas.abtest.Formats.j
 import com.iheart.thomas.analysis.AbtestKPI.BayesianAbtestKPI
 import com.iheart.thomas.analysis.DistributionSpec.Normal
 import com.stripe.rainier.compute.Real
@@ -15,7 +16,7 @@ import org.apache.commons.math3.distribution.GammaDistribution
 import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
 import _root_.play.api.libs.json._
 import cats.implicits._
-import com.iheart.thomas.model.{Abtest, GroupName}
+import com.iheart.thomas.abtest.model.Abtest
 import implicits._
 
 sealed trait KPIDistribution extends Serializable with Product {

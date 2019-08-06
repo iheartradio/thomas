@@ -4,7 +4,7 @@ package analysis
 import java.time.OffsetDateTime
 
 import cats.Contravariant
-import model.{Abtest, GroupName}
+import com.iheart.thomas.abtest.model.Abtest
 
 trait Measurable[F[_], M, K] {
   def measureAbtest(k: K,

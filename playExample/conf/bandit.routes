@@ -1,0 +1,5 @@
+
+### NoDocs ###
+GET   /assets/*file                 controllers.Assets.versioned(path="/public", file: Asset)
+
+PUT  /features/:feature/reward_state/    controllers.MyBanditController.updateConversion(feature, total: Long, converted: Long)

@@ -1,11 +1,11 @@
-package com.iheart
-package thomas
+package com.iheart.thomas
+package abtest
 
 import java.time.OffsetDateTime
 
-import com.iheart.thomas.model.{Feature, FeatureName}
+import model._
 import lihua.{Entity, EntityDAO}
-import _root_.play.api.libs.json.{JsObject, Json, Writes}
+import play.api.libs.json.{JsObject, Json, Writes}
 
 object QueryDSL {
 
