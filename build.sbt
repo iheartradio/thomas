@@ -13,7 +13,7 @@ lazy val libs =
   .addJVM(name = "lihua",                 version = "0.21",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo")
   .addJVM(name = "scanamo",               version = "1.0.0-M10", org ="org.scanamo", "scanamo-testkit")
   .addJVM(name = "rainier",               version = "0.2.2",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
-  .addJVM(name = "breeze",                version = "0.13.2", org ="org.scalanlp", "breeze", "breeze-viz")
+  .addJVM(name = "breeze",                version = "1.0-RC4", org ="org.scalanlp", "breeze", "breeze-viz")
   .addJVM(name = "henkan-convert",        version = "0.6.2",  org ="com.kailuowang")
   .add(   name = "play-json",             version = "2.7.3",  org = "com.typesafe.play")
   .add(   name = "play",                  version = "2.7.2",  org = "com.typesafe.play")
@@ -30,7 +30,6 @@ lazy val libs =
   .addJVM(name = "akka-slf4j",            version = "2.5.22", org = "com.typesafe.akka")
   .add(name    = "scalatestplus-scalacheck", version = "1.0.0-SNAP6",   org = "org.scalatestplus")
   .add   (name = "scalatestplus-play",    version = "4.0.2",  org = "org.scalatestplus.play")
-  .addJVM(name = "breeze",                version = "1.0-RC3",org = "org.scalanlp")
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias("validate", s";clean;test;play/IntegrationTest/test;playExample/compile;docs/tut")
