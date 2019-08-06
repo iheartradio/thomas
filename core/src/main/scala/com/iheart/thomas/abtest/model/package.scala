@@ -17,7 +17,6 @@ package object model {
   type TestId = EntityId
   type TestName = String
   type MetaFieldName = String
-  type UserId = String
   type Overrides = Map[UserId, GroupName]
   type GroupRanges = Map[GroupName, List[GroupRange]]
   type GroupMeta = JsObject
