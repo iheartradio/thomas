@@ -12,11 +12,13 @@ import scala.concurrent.ExecutionContext
 
 
 class KPIDistributionDAOFactory[F[_]: Async](implicit ec: ExecutionContext) extends EitherTDAOFactory[KPIDistribution, F]("abtest", "KPIDistributions") {
-  protected def ensure(collection: JSONCollection): F[Unit] =
+  protected def ensure(collection: JSONCollection): F[Unit] = {
+    implicit def contextShiftIO = IO.contextShift(ec)
     IO.fromFuture(IO(collection.indexesManager.ensure(
       Index(Seq(
         ("name", IndexType.Descending)
       ))
     ).void)).to[F]
+  }
 }
 

@@ -4,11 +4,12 @@
  */
 
 package com.iheart.thomas
+package abtest
 
 import java.time.OffsetDateTime
 
 import cats.data.NonEmptyList
-import com.iheart.thomas.model.{Abtest, FeatureName, GroupName, GroupSize}
+import model._
 import lihua.Entity
 
 import scala.util.control.NoStackTrace
