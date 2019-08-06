@@ -4,18 +4,20 @@
  */
 
 package com.iheart.thomas
+package abtest
+
+
 
 import java.time.OffsetDateTime
 
-import com.iheart.thomas.model._
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalacheck.{Arbitrary, Gen, Shrink}
+import cats.implicits._
+import model._
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen._
+import org.scalacheck.{Arbitrary, Gen, Shrink}
 import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import Gen._
-import cats.implicits._
 
 import scala.util.Random
 

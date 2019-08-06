@@ -1,20 +1,15 @@
-/*
- * Copyright [2018] [iHeartMedia Inc]
- * All rights reserved
- */
+package com.iheart.thomas
+package abtest
 
-package com.iheart
-package thomas
-
-import com.iheart.thomas.model._
+import model._
 import cats.implicits._
 
 private[thomas] object Bucketing {
 
   import java.math.MathContext
-
-  import scala.math.{BigInt, BigDecimal}
   import java.security.MessageDigest
+
+  import scala.math.{BigDecimal, BigInt}
 
   private val max128BitValue = { BigDecimal(BigInt(1).setBit(128)) }
 
