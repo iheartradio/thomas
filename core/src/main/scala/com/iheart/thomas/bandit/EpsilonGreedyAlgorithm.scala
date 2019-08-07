@@ -10,9 +10,8 @@ import cats.implicits._
 import RewardState.nonInheritedOps._
 import scala.util.Random
 
-class EpsilonGreedyAlgorithm[RewardStateT](
-    initEpsilon: Double,
-    initialRewardState: RewardStateT)(implicit RewardStateT: RewardState[RewardStateT])
+class EpsilonGreedyAlgorithm[RewardStateT](initEpsilon: Double)(
+    implicit RewardStateT: RewardState[RewardStateT])
     extends AlgorithmAlgebra[Id, RewardStateT] {
 
   def chooseArm(state: State): State = {
