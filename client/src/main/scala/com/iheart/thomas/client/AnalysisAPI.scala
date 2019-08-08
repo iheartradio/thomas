@@ -5,11 +5,10 @@ import java.time.OffsetDateTime
 
 import cats.MonadError
 import com.iheart.thomas.analysis._
-import com.iheart.thomas.model.{FeatureName, GroupName}
 import analysis.implicits._
 import com.stripe.rainier.sampler.RNG
 import cats.implicits._
-import com.iheart.thomas.Error.NotFound
+import com.iheart.thomas.abtest.Error.NotFound
 
 import scala.util.control.NoStackTrace
 

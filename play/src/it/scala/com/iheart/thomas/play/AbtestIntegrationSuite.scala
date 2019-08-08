@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 
 import cats.data.EitherT
 import cats.effect.IO
-import model._
+import abtest._, model._, Formats._
 import lihua.{Entity, EntityDAO, EntityId}
 import org.scalatest.BeforeAndAfter
 import org.scalatestplus.play.PlaySpec
@@ -14,7 +14,6 @@ import _root_.play.api.mvc.{Action, ControllerComponents, Request, Result}
 import _root_.play.api.test.FakeRequest
 import _root_.play.api.test.Helpers.status
 import org.scalatestplus.play._
-import Formats._
 import com.iheart.thomas.analysis.DistributionSpec.Normal
 import com.iheart.thomas.analysis._
 import _root_.play.api.libs.json.{JsObject, Json, Writes}
@@ -1047,6 +1046,9 @@ class AbtestKPIIntegrationSuite extends AbtestIntegrationSuiteBase {
 
 class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with BeforeAndAfter {
 
+  implicit def toEntityId(sid: String): EntityId = EntityId(sid)
+  implicit def toString(eid: EntityId): String = eid.value
+
   type F[A] = EitherT[IO, Error, A]
 
   lazy val provider = app.injector.instanceOf[APIProvider]
@@ -1083,7 +1085,7 @@ class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with 
   )
 
   after {
-    val dapi = api.asInstanceOf[DefaultAPI[F]]
+    val dapi = api.asInstanceOf[DefaultAbtestAlg[F]]
     List[EntityDAO[F, _, JsObject]](provider.daos._1, provider.daos._2, provider.daos._3).foreach(_.removeAll(Json.obj()).value.unsafeRunSync().left.foreach { e =>
        println("Failed to clean up DB after: " + e.getMessage)
     })

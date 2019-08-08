@@ -17,9 +17,10 @@ import scala.concurrent.ExecutionContext
 import cats.implicits._
 import cats.tagless.FunctorK
 import com.iheart.thomas.analysis.KPIDistribution
-import com.iheart.thomas.model.{Abtest, Feature}
+import com.iheart.thomas.abtest.model.{Abtest, Feature}
 import lihua.mongo.DBError.UpdatedCountErrorDetail
 import _root_.play.api.libs.json.JsObject
+import abtest._
 
 package object mongo {
 
