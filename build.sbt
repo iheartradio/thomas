@@ -29,7 +29,7 @@ lazy val libs =
   .addJVM(name = "http4s",                version = "0.20.9", org= "org.http4s", "http4s-dsl", "http4s-blaze-server", "http4s-blaze-client", "http4s-play-json")
   .addJVM(name = "akka-slf4j",            version = "2.5.22", org = "com.typesafe.akka")
   .add(name    = "scalatestplus-scalacheck", version = "1.0.0-SNAP6",   org = "org.scalatestplus")
-  .add   (name = "scalatestplus-play",    version = "4.0.2",  org = "org.scalatestplus.play")
+  .add   (name = "scalatestplus-play",    version = "4.0.3",  org = "org.scalatestplus.play")
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias("validate", s";clean;test;play/IntegrationTest/test;playExample/compile;docs/tut")
