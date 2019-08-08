@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package bandit
 import cats.Monoid
-import model._
+import types._
 import simulacrum.typeclass
 
 @typeclass(excludeParents = List("Monoid"))

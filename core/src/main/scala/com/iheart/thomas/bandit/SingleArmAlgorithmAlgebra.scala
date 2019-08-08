@@ -1,10 +1,8 @@
 package com.iheart.thomas
 package bandit
 
-import bandit.model._
-
-trait AlgorithmAlgebra[F[_], RewardStateT] {
-  type State = BanditState[RewardStateT]
+trait SingleArmAlgorithmAlgebra[F[_], RewardStateT] {
+  type State = SingleArmBanditState[RewardStateT]
 
   def chooseArm(state: State): F[State]
 

@@ -2,4 +2,4 @@
 ### NoDocs ###
 GET   /assets/*file                 controllers.Assets.versioned(path="/public", file: Asset)
 
-PUT  /features/:feature/reward_state/    controllers.MyBanditController.updateConversion(feature, total: Long, converted: Long)
+PUT  /features/:feature/reward_state/    controllers.MyBayesianMABController.updateConversion(feature, total: Long, converted: Long)

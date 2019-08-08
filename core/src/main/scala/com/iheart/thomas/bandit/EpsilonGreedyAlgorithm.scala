@@ -5,14 +5,13 @@ import java.time.Instant
 
 import cats.Id
 import breeze.stats.distributions.Bernoulli
-import model._
 import cats.implicits._
 import RewardState.nonInheritedOps._
 import scala.util.Random
 
 class EpsilonGreedyAlgorithm[RewardStateT](initEpsilon: Double)(
     implicit RewardStateT: RewardState[RewardStateT])
-    extends AlgorithmAlgebra[Id, RewardStateT] {
+    extends SingleArmAlgorithmAlgebra[Id, RewardStateT] {
 
   def chooseArm(state: State): State = {
 
@@ -37,7 +36,7 @@ class EpsilonGreedyAlgorithm[RewardStateT](initEpsilon: Double)(
 
   def initialState(spec: BanditSpec): State = {
     val allArms = spec.initArms.toList.map { case (name, er) => ArmState(name, er, 0L) }
-    BanditState[RewardStateT](
+    SingleArmBanditState[RewardStateT](
       spec = spec,
       chosenArm = allArms.head,
       otherArms = allArms.tail,
