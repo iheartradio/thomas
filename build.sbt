@@ -214,7 +214,7 @@ lazy val playExample = project.enablePlugins(PlayScala, SwaggerPlugin)
       guice,
       ws,
       filters,
-      "org.webjars" % "swagger-ui" % "3.22.2"),
+      "org.webjars" % "swagger-ui" % "3.23.4"),
     dockerExposedPorts in Docker := Seq(9000),
     swaggerDomainNameSpaces := Seq("com.iheart.thomas"),
     (stage in Docker) := (stage in Docker).dependsOn(swagger).value
