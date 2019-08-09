@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package bandit
 
-object types {
+object `package` {
   type ArmName = GroupName
   type Reward = Double
   type ExpectedReward = Reward

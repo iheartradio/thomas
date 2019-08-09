@@ -13,7 +13,7 @@ trait BanditStateDAO[F[_], BS] {
 }
 
 object BanditStateDAO {
-  implicit def fromLihua[F[_]: Functor, BS <: BanditState](
+  implicit def fromLihua[F[_]: Functor, BS <: BanditState[_]](
       implicit dao: EntityDAO[F, BS, List[EntityId]]): BanditStateDAO[F, BS] =
     new BanditStateDAO[F, BS] {
 

@@ -10,7 +10,7 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
 lazy val libs =
   org.typelevel.libraries
-  .addJVM(name = "lihua",                 version = "0.21",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo")
+  .addJVM(name = "lihua",                 version = "0.22-SNAPSHOT",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo")
   .addJVM(name = "scanamo",               version = "1.0.0-M10", org ="org.scanamo", "scanamo-testkit")
   .addJVM(name = "rainier",               version = "0.2.2",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
   .addJVM(name = "breeze",                version = "1.0-RC4", org ="org.scalanlp", "breeze", "breeze-viz")
@@ -33,7 +33,7 @@ lazy val libs =
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias("validate", s";clean;test;play/IntegrationTest/test;playExample/compile;docs/tut")
-addCommandAlias("it", s"play/IntegrationTest/test")
+addCommandAlias("it", s"IntegrationTest/test")
 
 lazy val thomas = project.in(file("."))
   .aggregate(playExample, play, client, http4s, cli, mongo, analysis, docs, stress)
@@ -76,18 +76,27 @@ lazy val core = project
     name := "thomas-core",
     rootSettings,
     taglessSettings,
-    libs.testDependencies("scalacheck", "scalatest", "scalatestplus-scalacheck"),
+    libs.testDependencies("scalatestplus-scalacheck"),
     libs.dependencies("cats-core",
       "monocle-macro",
       "monocle-core",
       "lihua-cache",
       "mouse",
       "henkan-convert",
-      "play-json", "breeze"),
-    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
+      "play-json"),
     simulacrumSettings(libs)
   )
 
+lazy val bandit = project
+  .dependsOn(analysis)
+  .settings(
+    name := "thomas-bandit",
+    rootSettings,
+    taglessSettings,
+    libs.testDependencies("scalatestplus-scalacheck"),
+    libs.dependencies("breeze"),
+    simulacrumSettings(libs)
+  )
 
 lazy val analysis = project
   .dependsOn(core)
@@ -132,7 +141,7 @@ lazy val docs = project
 
 
 lazy val mongo = project
-  .dependsOn(analysis)
+  .dependsOn(bandit)
   .settings(name := "thomas-mongo")
   .settings(rootSettings)
   .settings(
@@ -141,7 +150,7 @@ lazy val mongo = project
   )
 
 lazy val dynamo = project
-  .dependsOn(analysis)
+  .dependsOn(bandit)
   .settings(name := "thomas-dynamo")
   .settings(rootSettings)
   .settings(
@@ -181,8 +190,24 @@ lazy val stress = project
     )
   )
 
+lazy val it = project
+  .dependsOn(mongo, dynamo)
+  .configs(IntegrationTest)
+  .settings(rootSettings)
+  .settings(
+    Defaults.itSettings,
+    parallelExecution in IntegrationTest := false,
+    noPublishSettings,
+    libs.dependency("scalatest", Some(IntegrationTest.name)),
+    libs.dependency("log4j-core", Some(IntegrationTest.name)),
+    libs.dependency("akka-slf4j", Some(IntegrationTest.name)),
+    libs.dependency("scanamo-testkit", Some(IntegrationTest.name)),
+    testOptions in IntegrationTest += Tests.Argument(TestFrameworks.ScalaTest, "-oDU")
+  )
+
+
 lazy val play = project
-  .dependsOn(mongo)
+  .dependsOn(mongo, dynamo)
   .aggregate(mongo, core)
   .configs(IntegrationTest)
   .settings(rootSettings)
@@ -195,8 +220,6 @@ lazy val play = project
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
     libs.dependency("scalatestplus-play", Some(IntegrationTest.name)),
     libs.dependencies("scala-java8-compat", "play", "lihua-dynamo"),
-    libraryDependencies +=
-      "org.scalatest" %% "scalatest" % "3.0.7" % IntegrationTest,
   )
 
 lazy val playExample = project.enablePlugins(PlayScala, SwaggerPlugin)
@@ -235,7 +258,8 @@ lazy val commonSettings = addCompilerPlugins(libs, "kind-projector") ++ sharedCo
   scalacOptions in (Compile, console) ~= lessStrictScalaChecks,
   scalacOptions in (Test, compile) ~= lessStrictScalaChecks,
   scalacOptions in (IntegrationTest, compile) ~= lessStrictScalaChecks,
-  scalacOptions += s"-Xlint:-package-object-classes"
+  scalacOptions += s"-Xlint:-package-object-classes",
+  testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
 )
 
 lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =

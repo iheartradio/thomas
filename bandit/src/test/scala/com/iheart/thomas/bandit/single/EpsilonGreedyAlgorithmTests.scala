@@ -1,6 +1,7 @@
-package com.iheart.thomas.bandit
+package com.iheart.thomas
+package bandit
+package single
 
-import com.iheart.thomas.bandit.types.{BanditSpec, Conversion}
 import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuiteLike
 
