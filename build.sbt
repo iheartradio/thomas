@@ -195,6 +195,7 @@ lazy val it = project
   .configs(IntegrationTest)
   .settings(rootSettings)
   .settings(
+    crossScalaVersions := Seq(scalaVersion.value),
     Defaults.itSettings,
     parallelExecution in IntegrationTest := false,
     noPublishSettings,
