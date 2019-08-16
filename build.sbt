@@ -32,11 +32,11 @@ lazy val libs =
   .add   (name = "scalatestplus-play",    version = "4.0.2",  org = "org.scalatestplus.play")
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
-addCommandAlias("validate", s";clean;test;play/IntegrationTest/test;playExample/compile;docs/tut")
+addCommandAlias("validate", s";clean;test;play/IntegrationTest/test;it/IntegrationTest/test;playExample/compile;docs/tut")
 addCommandAlias("it", s"IntegrationTest/test")
 
 lazy val thomas = project.in(file("."))
-  .aggregate(playExample, play, client, http4s, cli, mongo, analysis, docs, stress)
+  .aggregate(playExample, play, client, bandit, it, http4s, cli, mongo, analysis, docs, stress)
   .settings(
     rootSettings,
     crossScalaVersions := Nil,

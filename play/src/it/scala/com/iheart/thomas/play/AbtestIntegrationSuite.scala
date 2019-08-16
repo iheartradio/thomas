@@ -1176,7 +1176,7 @@ class AbtestIntegrationSuiteBase
 
   type F[A] = EitherT[IO, Error, A]
 
-  lazy val provider = app.injector.instanceOf[APIProvider]
+  lazy val provider = app.injector.instanceOf[AbtestAPIProvider]
   lazy val api = provider.api
 
   lazy val controller = new AbtestController(

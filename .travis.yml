@@ -7,8 +7,9 @@ jdk:
 services:
   - mongodb
 
-before_script:
-  - mongo ABTest --eval 'db.createCollection("ABTests"); db.createCollection("feature");'
+before_install:
+  -  docker run -p 8042:8000 amazon/dynamodb-local
+
 
 before_cache:
   - find $HOME/.sbt -name "*.lock" -type f -delete

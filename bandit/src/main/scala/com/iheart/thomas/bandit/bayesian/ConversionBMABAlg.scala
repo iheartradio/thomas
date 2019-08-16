@@ -61,21 +61,22 @@ object ConversionBMABAlg {
            )).tupled
       }
 
-      def reallocate(featureName: FeatureName,
-                     kpiName: KPIName): F[BayesianState[Conversions]] = {
+      def reallocate(
+          featureName: FeatureName,
+          kpiName: KPIName): F[(Entity[Abtest], BayesianState[Conversions])] = {
         for {
           current <- currentState(featureName)
           kpi <- kpiAPI.getSpecific[BetaKPIDistribution](kpiName)
           (abtest, state) = current
           possibilities <- BetaKPIDistribution.basicAssessmentAlg
             .assessOptimumGroup(kpi, state.rewardState)
-          r <- abtestAPI.continue(
+          abtest <- abtestAPI.continue(
             abtest.data
               .to[AbtestSpec]
               .set(start = OffsetDateTime.now, groups = abtest.data.groups.map { g =>
                 g.copy(size = possibilities.get(g.name).fold(g.size)(identity))
               }))
-        } yield state
+        } yield (abtest, state)
 
       }
 

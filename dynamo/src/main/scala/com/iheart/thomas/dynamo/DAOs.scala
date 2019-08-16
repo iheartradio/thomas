@@ -7,10 +7,18 @@ import lihua.{EntityDAO, EntityId}
 import lihua.dynamo.ScanamoEntityDAO
 import DynamoFormats._
 import cats.effect.Async
+import com.iheart.thomas.bandit.BanditStateDAO
 
 object DAOs {
   val banditStateTableName = "BanditState"
-  implicit def stateDAO[F[_]: Async](implicit dynamoClient: AmazonDynamoDBAsync)
+
+  def stateDAO[F[_]: Async](
+      dynamoClient: AmazonDynamoDBAsync): BanditStateDAO[F, BayesianState[Conversions]] =
+    BanditStateDAO.fromLihua(
+      lihuaStateDAO(dynamoClient)
+    )
+
+  def lihuaStateDAO[F[_]: Async](dynamoClient: AmazonDynamoDBAsync)
     : EntityDAO[F, BayesianState[Conversions], List[EntityId]] =
     new ScanamoEntityDAO[F, BayesianState[Conversions]](banditStateTableName,
                                                         dynamoClient)

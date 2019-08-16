@@ -7,6 +7,7 @@ import java.time.Instant
 import cats.Monoid
 import com.iheart.thomas.analysis.Probability
 import cats.implicits._
+
 case class BayesianState[RewardStateT](
     spec: BanditSpec,
     arms: List[ArmState[RewardStateT]],

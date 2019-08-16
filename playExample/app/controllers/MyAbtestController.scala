@@ -13,7 +13,7 @@ import com.iheart.thomas.play._
 
 @Singleton
 class MyAbtestController @Inject()(
-    provider: APIProvider,
+    provider: AbtestAPIProvider,
     components: ControllerComponents,
 )(implicit ec: ExecutionContext)
     extends AbtestController(provider.api, provider.kpiApi, components, None)

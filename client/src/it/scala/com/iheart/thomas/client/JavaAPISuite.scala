@@ -6,17 +6,20 @@
 package com.iheart.thomas
 package client
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.Matchers
 
-class JavaAPISuite extends FunSuite with Matchers {
+class JavaAPISuite extends AnyFunSuite with Matchers {
 
   test("integration") {
     val api = JavaAssignments.create("http://localhost:9000/internal/testsWithFeatures")
 
     println(
-      (1 to 10).map { i =>
-        api.assignments(i.toString)
-      }.mkString("\n")
+      (1 to 10)
+        .map { i =>
+          api.assignments(i.toString)
+        }
+        .mkString("\n")
     )
   }
 }

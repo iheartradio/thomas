@@ -35,7 +35,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
 
   import mongo.idSelector
   implicit val config = ConfigFactory.load()
-  val fk = λ[APIResult[IO, ?] ~> IO](_.leftWiden[Throwable].rethrowT)
+  val fk = abtest.apiResultTo[IO]
 
   lazy val mangoDAOsR = mongo.daosResource[IO].flatMap {
     case daos =>
@@ -50,23 +50,26 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
         }
   }
 
-  lazy val stateDAOR = Resource.make {
-    IO.delay(LocalDynamoDB.client())
-      .flatTap { client =>
-        import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType._
-        IO.delay(LocalDynamoDB.createTable(client)(dynamo.DAOs.banditStateTableName)(
-            lihua.idFieldName -> S))
-          .void
-          .recover {
-            case e: ResourceInUseException => () //happens when table already exisits
+  lazy val stateDAOR =
+    Resource
+      .make {
+        IO.delay(LocalDynamoDB.client())
+          .flatTap { client =>
+            import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType._
+            IO.delay(LocalDynamoDB.createTable(client)(dynamo.DAOs.banditStateTableName)(
+                lihua.idFieldName -> S))
+              .void
+              .recover {
+                case e: ResourceInUseException => () //happens when table already exists
+              }
           }
+          .map { amzClt =>
+            dynamo.DAOs.lihuaStateDAO[IO](amzClt)
+          }
+      } { stateDAO =>
+        stateDAO.removeAll().void
       }
-      .map { implicit amzClt =>
-        dynamo.DAOs.stateDAO[IO]
-      }
-  } { stateDAO =>
-    stateDAO.removeAll().void
-  }
+      .map(sd => BanditStateDAO.fromLihua(sd))
 
   /**
     * An ConversionAPI resource that cleans up after
@@ -79,11 +82,9 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
         lazy val ttl = 0.seconds
 
         implicit val kpi = implicitly[KPIApi[APIResult[IO, ?]]].mapK(fk)
-        implicit val abtestAlg = {
-          val int: AbtestAlg[APIResult[IO, ?]] =
-            new DefaultAbtestAlg[APIResult[IO, ?]](ttl)
-          int.mapK(fk)
-        }
+        implicit val abtestAlg =
+          (new DefaultAbtestAlg[APIResult[IO, ?]](ttl): AbtestAlg[APIResult[IO, ?]])
+            .mapK(fk)
 
         implicit val ss = SampleSettings.default
         implicit val rng = RNG.default
