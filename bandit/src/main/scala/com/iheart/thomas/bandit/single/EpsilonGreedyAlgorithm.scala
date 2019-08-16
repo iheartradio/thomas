@@ -1,18 +1,17 @@
-package com.iheart.thomas
-package bandit
+package com.iheart.thomas.bandit
+package single
 
 import java.time.Instant
 
-import cats.Id
 import breeze.stats.distributions.Bernoulli
-import model._
+import cats.Id
 import cats.implicits._
-import RewardState.nonInheritedOps._
 import scala.util.Random
+import syntax.all._
 
 class EpsilonGreedyAlgorithm[RewardStateT](initEpsilon: Double)(
     implicit RewardStateT: RewardState[RewardStateT])
-    extends AlgorithmAlgebra[Id, RewardStateT] {
+    extends SingleChoiceAlgorithmAlgebra[Id, RewardStateT] {
 
   def chooseArm(state: State): State = {
 
@@ -36,8 +35,8 @@ class EpsilonGreedyAlgorithm[RewardStateT](initEpsilon: Double)(
   }
 
   def initialState(spec: BanditSpec): State = {
-    val allArms = spec.initArms.toList.map { case (name, er) => ArmState(name, er, 0L) }
-    BanditState[RewardStateT](
+    val allArms = spec.arms.map(ArmState(_, 0d, 0L))
+    SingleChoiceBanditState[RewardStateT](
       spec = spec,
       chosenArm = allArms.head,
       otherArms = allArms.tail,

@@ -7,8 +7,6 @@ jdk:
 services:
   - mongodb
 
-before_script:
-  - mongo ABTest --eval 'db.createCollection("ABTests"); db.createCollection("feature");'
 
 before_cache:
   - find $HOME/.sbt -name "*.lock" -type f -delete
