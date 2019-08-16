@@ -202,7 +202,12 @@ lazy val it = project
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
     libs.dependency("akka-slf4j", Some(IntegrationTest.name)),
     libs.dependency("scanamo-testkit", Some(IntegrationTest.name)),
-    testOptions in IntegrationTest += Tests.Argument(TestFrameworks.ScalaTest, "-oDU")
+    dynamoDBLocalPort := 8042,
+    testOptions in IntegrationTest += Tests.Argument(TestFrameworks.ScalaTest, "-oDU"),
+    startDynamoDBLocal := startDynamoDBLocal.dependsOn(compile in Test).value,
+    test in IntegrationTest := (test in IntegrationTest).dependsOn(startDynamoDBLocal).value,
+    testOnly in IntegrationTest := (testOnly in IntegrationTest).dependsOn(startDynamoDBLocal).evaluated,
+    testOptions in IntegrationTest += dynamoDBLocalTestCleanup.value
   )
 
 
