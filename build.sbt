@@ -27,7 +27,7 @@ lazy val libs =
   .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
   .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
   .addJVM(name = "http4s",                version = "0.20.10", org= "org.http4s", "http4s-dsl", "http4s-blaze-server", "http4s-blaze-client", "http4s-play-json")
-  .addJVM(name = "akka-slf4j",            version = "2.5.22", org = "com.typesafe.akka")
+  .addJVM(name = "akka-slf4j",            version = "2.5.24", org = "com.typesafe.akka")
   .add(name    = "scalatestplus-scalacheck", version = "1.0.0-SNAP6",   org = "org.scalatestplus")
   .add   (name = "scalatestplus-play",    version = "4.0.3",  org = "org.scalatestplus.play")
 
