@@ -2,13 +2,11 @@ language: scala
 sudo: false
 
 jdk:
-  - oraclejdk8
+  - openjdk8
 
 services:
   - mongodb
 
-before_script:
-  - mongo ABTest --eval 'db.createCollection("ABTests"); db.createCollection("feature");'
 
 before_cache:
   - find $HOME/.sbt -name "*.lock" -type f -delete

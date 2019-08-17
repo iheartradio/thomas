@@ -1,8 +1,11 @@
 package com.iheart.thomas
 
+package abtest
 import model._
-import _root_.play.api.libs.json.Json.WithDefaultValues
-import _root_.play.api.libs.json._
+
+
+import play.api.libs.json.Json
+import play.api.libs.json.Json.WithDefaultValues
 
 object Formats {
 

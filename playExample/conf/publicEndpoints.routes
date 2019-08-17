@@ -10,7 +10,7 @@
 #        $ref: '#/definitions/com.iheart.abtest.model.UserGroupQueryResult'
 #
 ###
-POST       /users/groups/query            controllers.HttpController.getGroupsWithMeta
+POST       /users/groups/query            controllers.MyAbtestController.getGroupsWithMeta
 
 
 ### NoDocs ###

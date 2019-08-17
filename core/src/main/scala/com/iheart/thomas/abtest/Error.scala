@@ -4,24 +4,36 @@
  */
 
 package com.iheart.thomas
+package abtest
 
 import java.time.OffsetDateTime
 
 import cats.data.NonEmptyList
-import com.iheart.thomas.model.{Abtest, FeatureName, GroupName, GroupSize}
+import model._
 import lihua.Entity
 
 import scala.util.control.NoStackTrace
 
-sealed abstract class Error extends RuntimeException with NoStackTrace with Product with Serializable
+sealed abstract class Error
+    extends RuntimeException
+    with NoStackTrace
+    with Product
+    with Serializable
 
 object Error {
 
   case class FailedToPersist(msg: String) extends Error {
-    override def getMessage: FeatureName = msg
+    override def getMessage: String = msg
   }
 
-  case class ValidationErrors(detail: NonEmptyList[ValidationError]) extends Error
+  case class ValidationErrors(detail: NonEmptyList[ValidationError]) extends Error {
+    override def getMessage: String =
+      s"""
+         |Validation Errors:
+         |$detail
+         |""".stripMargin
+  }
+
   case class NotFound(override val getMessage: String) extends Error
 
   case class DBException(e: Throwable) extends Error
@@ -46,8 +58,10 @@ object Error {
   case object InvalidFeatureName extends ValidationError
   case object InvalidAlternativeIdName extends ValidationError
   case class GroupNameDoesNotExist(name: GroupName) extends ValidationError
-  case class ContinuationGap(lastEnd: OffsetDateTime, scheduledStart: OffsetDateTime) extends ValidationError
-  case class ContinuationBefore(lasStart: OffsetDateTime, scheduledStart: OffsetDateTime) extends ValidationError
+  case class ContinuationGap(lastEnd: OffsetDateTime, scheduledStart: OffsetDateTime)
+      extends ValidationError
+  case class ContinuationBefore(lasStart: OffsetDateTime, scheduledStart: OffsetDateTime)
+      extends ValidationError
 
   case object EmptyGroups extends ValidationError
 }

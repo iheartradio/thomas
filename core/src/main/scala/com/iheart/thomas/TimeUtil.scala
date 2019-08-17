@@ -8,6 +8,7 @@ package com.iheart.thomas
 import java.time._
 import java.time.format.DateTimeFormatter
 import scala.util.Try
+
 object TimeUtil {
 
   def defaultOffset: ZoneOffset = ZoneId.systemDefault().getRules.getOffset(Instant.now())

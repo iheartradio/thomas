@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 
 import cats.data.EitherT
 import cats.effect.IO
-import model._
+import abtest._, model._, Formats._
 import lihua.{Entity, EntityDAO, EntityId}
 import org.scalatest.BeforeAndAfter
 import org.scalatestplus.play.PlaySpec
@@ -14,7 +14,6 @@ import _root_.play.api.mvc.{Action, ControllerComponents, Request, Result}
 import _root_.play.api.test.FakeRequest
 import _root_.play.api.test.Helpers.status
 import org.scalatestplus.play._
-import Formats._
 import com.iheart.thomas.analysis.DistributionSpec.Normal
 import com.iheart.thomas.analysis._
 import _root_.play.api.libs.json.{JsObject, Json, Writes}
@@ -23,7 +22,6 @@ import lihua.mongo.JsonFormats._
 
 import scala.concurrent.Future
 import scala.util.Random
-
 
 class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
@@ -58,19 +56,29 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     "get test by feature name sorted by start and end date" in {
       val startTime = OffsetDateTime.now.plusDays(1)
       val test1 = createAbtestOnServer(fakeAb().copy(start = startTime))
-      val test2 = createAbtestOnServer(Some(fakeAb(feature = test1.data.feature, groups = List(Group("A", 0.2))).copy(start = startTime)), auto = true)
+      val test2 = createAbtestOnServer(
+        Some(
+          fakeAb(feature = test1.data.feature, groups = List(Group("A", 0.2)))
+            .copy(start = startTime)),
+        auto = true)
 
       val found = controller.getByFeature(test1.data.feature)(FakeRequest())
-      contentAsJson(found).as[List[Entity[Abtest]]].map(_._id) mustBe List(test2, test1).map(_._id)
+      contentAsJson(found).as[List[Entity[Abtest]]].map(_._id) mustBe List(test2, test1)
+        .map(_._id)
     }
 
     "get test by feature name sorted by end date missing" in {
       val startTime = OffsetDateTime.now.plusDays(1)
       val test1 = createAbtestOnServer(fakeAb().copy(start = startTime))
-      val test2 = createAbtestOnServer(Some(fakeAb(feature = test1.data.feature, groups = List(Group("A", 0.2))).copy(start = startTime, end = None)), auto = true)
+      val test2 = createAbtestOnServer(
+        Some(
+          fakeAb(feature = test1.data.feature, groups = List(Group("A", 0.2)))
+            .copy(start = startTime, end = None)),
+        auto = true)
 
       val found = controller.getByFeature(test1.data.feature)(FakeRequest())
-      contentAsJson(found).as[List[Entity[Abtest]]].map(_._id) mustBe List(test2, test1).map(_._id)
+      contentAsJson(found).as[List[Entity[Abtest]]].map(_._id) mustBe List(test2, test1)
+        .map(_._id)
     }
   }
 
@@ -136,7 +144,9 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       status(create(first)) mustBe OK
 
       //a test that overlaps with the first test on the same feature
-      val second = fakeAb.copy(feature = first.feature, start = first.end.get.plusDays(1), end = first.end.map(_.plusDays(200)))
+      val second = fakeAb.copy(feature = first.feature,
+                               start = first.end.get.plusDays(1),
+                               end = first.end.map(_.plusDays(200)))
 
       val result = create(second)
       status(result) mustBe OK
@@ -168,12 +178,14 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       updated._id mustBe existing._id
     }
 
-
     "auto continue a test with a conflict when there is a group change" in {
       val featureName = "A_new_big_feature"
       val conflict = createAbtestOnServer(fakeAb(1, 3, feature = featureName))
 
-      val ab = fakeAb(2, 5, feature = featureName, groups= List(Group("A", 0.7), Group("B", 0.3)))
+      val ab = fakeAb(2,
+                      5,
+                      feature = featureName,
+                      groups = List(Group("A", 0.7), Group("B", 0.3)))
 
       val creation = create(ab, true)
 
@@ -188,7 +200,10 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       val conflict1 = createAbtestOnServer(fakeAb(2, 3, feature = featureName))
       val conflict2 = createAbtestOnServer(fakeAb(4, 6, feature = featureName))
 
-      val ab = fakeAb(1, 5, feature = featureName,  groups= List(Group("A", 0.7), Group("B", 0.3)))
+      val ab = fakeAb(1,
+                      5,
+                      feature = featureName,
+                      groups = List(Group("A", 0.7), Group("B", 0.3)))
 
       val attempt1 = create(ab, true)
 
@@ -240,7 +255,10 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
         List(create(ab2, auto = true), create(ab2, auto = true)).map(status)
 
         val r = toServer(controller.getByFeature(ab.feature))
-        contentAsJson(r).as[Vector[Entity[Abtest]]].filter(_.data.end == ab2.end).size mustBe 1
+        contentAsJson(r)
+          .as[Vector[Entity[Abtest]]]
+          .filter(_.data.end == ab2.end)
+          .size mustBe 1
       }
     }
 
@@ -251,7 +269,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
         val ab3 = fakeAb(8, 9, feature = ab.feature)
 
         createAbtestOnServer(ab)
-        List(controller.continue(jsonRequest(ab2)), controller.continue(jsonRequest(ab3))).map(status)
+        List(controller.continue(jsonRequest(ab2)), controller.continue(jsonRequest(ab3)))
+          .map(status)
 
         verifyCount(ab.feature, 2)
       }
@@ -261,19 +280,23 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
   "PUT /tests" should {
     "continue a test" in {
-      val test1 = fakeAb(0, 100, "feature1").copy(groups = List(Group("A", 0.2), Group("B", 0.4)))
+      val test1 =
+        fakeAb(0, 100, "feature1").copy(groups = List(Group("A", 0.2), Group("B", 0.4)))
       val test1Created = createAbtestOnServer(test1)
 
-      val test2 = fakeAb(1, 100, "feature1").copy(groups = List(Group("A", 0.6), Group("B", 0.4)))
+      val test2 =
+        fakeAb(1, 100, "feature1").copy(groups = List(Group("A", 0.6), Group("B", 0.4)))
 
       val r = controller.continue(jsonRequest(test2))
       status(r) mustBe OK
 
       val test2Created = contentAsJson(r).as[Entity[Abtest]]
 
-      val test1Found = contentAsJson(controller.get(test1Created._id)(FakeRequest())).as[Entity[Abtest]]
+      val test1Found =
+        contentAsJson(controller.get(test1Created._id)(FakeRequest())).as[Entity[Abtest]]
       test1Found.data.end mustBe Some(test2.start)
-      val test2Found = contentAsJson(controller.get(test2Created._id)(FakeRequest())).as[Entity[Abtest]]
+      val test2Found =
+        contentAsJson(controller.get(test2Created._id)(FakeRequest())).as[Entity[Abtest]]
 
       test2Found.data.groups mustBe List(Group("A", 0.6), Group("B", 0.4))
 
@@ -362,7 +385,6 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       errors.exists(_.contains("User id cannot be an empty string")) mustBe true
     }
 
-
     "get groups for the test the user is in" in {
 
       val test1 = createAbtestOnServer().data
@@ -383,7 +405,9 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       val test1 = createAbtestOnServer(fakeAb.copy(end = None)).data
       val userId: UserId = randomUserId
 
-      val groups = controller.getGroups(userId, Some(OffsetDateTime.now.plusYears(10).toEpochSecond))(FakeRequest())
+      val groups = controller.getGroups(
+        userId,
+        Some(OffsetDateTime.now.plusYears(10).toEpochSecond))(FakeRequest())
       status(groups) mustBe OK
       val retrieved = contentAsJson(groups).as[Map[FeatureName, GroupName]]
       retrieved.toList.size mustBe 1
@@ -399,7 +423,9 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
       val userId: UserId = randomUserId
 
-      val groups = controller.getGroups(userId, Some(OffsetDateTime.now.plusDays(3).toEpochSecond))(FakeRequest())
+      val groups = controller.getGroups(
+        userId,
+        Some(OffsetDateTime.now.plusDays(3).toEpochSecond))(FakeRequest())
 
       status(groups) mustBe OK
       val retrieved = contentAsJson(groups).as[Map[FeatureName, GroupName]]
@@ -412,7 +438,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
       val userId: UserId = randomUserId
 
-      val groups = controller.getGroups(userId, tomorrow, Some(List("iPad")))(FakeRequest())
+      val groups =
+        controller.getGroups(userId, tomorrow, Some(List("iPad")))(FakeRequest())
 
       status(groups) mustBe OK
       val retrieved = contentAsJson(groups).as[Map[FeatureName, GroupName]]
@@ -425,7 +452,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
       val userId: UserId = randomUserId
 
-      val groups = controller.getGroups(userId, tomorrow, Some(List("English Speaking")))(FakeRequest())
+      val groups = controller.getGroups(userId, tomorrow, Some(List("English Speaking")))(
+        FakeRequest())
 
       status(groups) mustBe OK
       val retrieved = contentAsJson(groups).as[Map[FeatureName, GroupName]]
@@ -438,7 +466,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
       val userId: UserId = randomUserId
 
-      val groups = controller.getGroups(userId, tomorrow, Some(List("iPad")))(FakeRequest())
+      val groups =
+        controller.getGroups(userId, tomorrow, Some(List("iPad")))(FakeRequest())
 
       status(groups) mustBe OK
       val retrieved = contentAsJson(groups).as[Map[FeatureName, GroupName]]
@@ -451,7 +480,10 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
       val userId: UserId = randomUserId
 
-      val groups = controller.getGroups(userId, tomorrow, Some(List("English Speaking", "Feature N")))(FakeRequest())
+      val groups =
+        controller.getGroups(userId,
+                             tomorrow,
+                             Some(List("English Speaking", "Feature N")))(FakeRequest())
 
       status(groups) mustBe OK
       val retrieved = contentAsJson(groups).as[Map[FeatureName, GroupName]]
@@ -464,7 +496,9 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
       val userId: UserId = randomUserId
 
-      val groups = controller.getGroups(userId, tomorrow, Some(List("English Speaking, Feature N")))(FakeRequest())
+      val groups =
+        controller.getGroups(userId, tomorrow, Some(List("English Speaking, Feature N")))(
+          FakeRequest())
 
       status(groups) mustBe OK
       val retrieved = contentAsJson(groups).as[Map[FeatureName, GroupName]]
@@ -490,13 +524,19 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
       val groupsAfterTermination = controller.getGroups(userId, asOf)(FakeRequest())
 
-      val retrievedAfterTermination = contentAsJson(groupsAfterTermination).as[Map[FeatureName, GroupName]]
+      val retrievedAfterTermination =
+        contentAsJson(groupsAfterTermination).as[Map[FeatureName, GroupName]]
 
       retrievedAfterTermination.toList mustBe empty
 
       val result = controller.get(test._id)(FakeRequest())
 
-      contentAsJson(result).as[Entity[Abtest]].data.end.get.isBefore(OffsetDateTime.now.plusSeconds(1)) mustBe true
+      contentAsJson(result)
+        .as[Entity[Abtest]]
+        .data
+        .end
+        .get
+        .isBefore(OffsetDateTime.now.plusSeconds(1)) mustBe true
     }
 
     "delete a test if it has not started yet" in {
@@ -522,7 +562,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
     "do nothing if a test already expired" in {
 
-      val test = createAbtestOnServer(fakeAb.copy(end = Some(OffsetDateTime.now.plusNanos(30000000))))
+      val test = createAbtestOnServer(
+        fakeAb.copy(end = Some(OffsetDateTime.now.plusNanos(30000000))))
 
       Thread.sleep(50) //wait until it expires.
 
@@ -587,7 +628,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     }
 
     "works with overrides" in {
-      val ab = createAbtestOnServer(testUsingAlternativeId.copy(groups = List(Group("A", 1), Group("B", 0))))
+      val ab = createAbtestOnServer(
+        testUsingAlternativeId.copy(groups = List(Group("A", 1), Group("B", 0))))
       val deviceId = randomUserId
       toServer(controller.addOverride(ab.data.feature, deviceId, "B"))
 
@@ -622,13 +664,20 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     }
 
     "Not eligible to test if there is one mismatch meta" in {
-      val ab = createAbtestOnServer(fakeAb(matchingUserMeta = Map("sex" -> "Male|^M$", "age" -> "^2\\d$")))
-      getGroups(Some(randomUserId), Some(ab.data.start), Map("sex" -> "Male", "age" -> "33")) must be(empty)
+      val ab = createAbtestOnServer(
+        fakeAb(matchingUserMeta = Map("sex" -> "Male|^M$", "age" -> "^2\\d$")))
+      getGroups(Some(randomUserId),
+                Some(ab.data.start),
+                Map("sex" -> "Male", "age" -> "33")) must be(empty)
     }
 
     "Eligible to test all criterion are met" in {
-      val ab = createAbtestOnServer(fakeAb(matchingUserMeta = Map("sex" -> "Male|^M$", "age" -> "^2\\d$")))
-      getGroups(Some(randomUserId), Some(ab.data.start), Map("sex" -> "Male", "age" -> "23", "occupation" -> "engineer")).size mustBe 1
+      val ab = createAbtestOnServer(
+        fakeAb(matchingUserMeta = Map("sex" -> "Male|^M$", "age" -> "^2\\d$")))
+      getGroups(
+        Some(randomUserId),
+        Some(ab.data.start),
+        Map("sex" -> "Male", "age" -> "23", "occupation" -> "engineer")).size mustBe 1
     }
   }
 
@@ -658,7 +707,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
         assignment
       }
 
-      val countOfUsersInAb = userAssignments.count(_.headOption.fold(false)(_._1 == ab.data.feature))
+      val countOfUsersInAb =
+        userAssignments.count(_.headOption.fold(false)(_._1 == ab.data.feature))
       countOfUsersInAb.toDouble / 500d mustBe (0.2 +- 0.05)
     }
 
@@ -670,14 +720,18 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       createAbtestOnServer(originalSpec)
 
       val userAssignments = (1 to 200).map(_ => randomUserId).map { userId =>
-        userId -> getGroups(userId = Some(userId), at = Some(originalSpec.start))(originalSpec.feature)
+        userId -> getGroups(userId = Some(userId), at = Some(originalSpec.start))(
+          originalSpec.feature)
       }
 
-      val reshuffled = createAbtestOnServer(Some(originalSpec.copy(start = originalSpec.start.plusDays(1), reshuffle = true)), auto = true)
+      val reshuffled = createAbtestOnServer(
+        Some(originalSpec.copy(start = originalSpec.start.plusDays(1), reshuffle = true)),
+        auto = true)
 
       val changedRatio = userAssignments.count {
         case (userId, group) =>
-          getGroups(userId = Some(userId), at = Some(reshuffled.data.start))(originalSpec.feature) != group
+          getGroups(userId = Some(userId), at = Some(reshuffled.data.start))(
+            originalSpec.feature) != group
       }.toDouble / userAssignments.size.toDouble
 
       changedRatio mustBe >(0.3d)
@@ -687,17 +741,23 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     "do not reassign already reshuffled tests" in {
       val originalSpec = fakeAb()
       createAbtestOnServer(originalSpec)
-      val reshuffled = createAbtestOnServer(Some(originalSpec.copy(start = originalSpec.start.plusDays(1), reshuffle = true)), auto = true)
+      val reshuffled = createAbtestOnServer(
+        Some(originalSpec.copy(start = originalSpec.start.plusDays(1), reshuffle = true)),
+        auto = true)
 
       val userAssignments = (1 to 200).map(_ => randomUserId).map { userId =>
-        userId -> getGroups(userId = Some(userId), at = Some(reshuffled.data.start))(originalSpec.feature)
+        userId -> getGroups(userId = Some(userId), at = Some(reshuffled.data.start))(
+          originalSpec.feature)
       }
 
-      val continued = createAbtestOnServer(Some(originalSpec.copy(start = originalSpec.start.plusDays(2))), auto = true)
+      val continued = createAbtestOnServer(
+        Some(originalSpec.copy(start = originalSpec.start.plusDays(2))),
+        auto = true)
 
       userAssignments.forall {
         case (userId, group) =>
-          getGroups(userId = Some(userId), at = Some(continued.data.start))(originalSpec.feature) == group
+          getGroups(userId = Some(userId), at = Some(continued.data.start))(
+            originalSpec.feature) == group
       } mustBe true
 
     }
@@ -711,9 +771,10 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
       val feature = ab.data.feature
 
-      toServer(controller.addGroupMetas(ab._id, false), jsonRequest(
-        Json.obj("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
-      ))
+      toServer(controller.addGroupMetas(ab._id, false),
+               jsonRequest(
+                 Json.obj("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
+               ))
 
       val userIds = (1 to 20).map(_ => randomUserId)
 
@@ -727,7 +788,9 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
         ).as[UserGroupQueryResult]
         result.groups.keys must contain(feature)
         result.metas.keys must contain(feature)
-        result.metas(feature).value("ff").as[String] mustBe result.groups(feature).toLowerCase
+        result.metas(feature).value("ff").as[String] mustBe result
+          .groups(feature)
+          .toLowerCase
       }
 
     }
@@ -735,7 +798,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     "Cannot change meta for test already started when auto is false" in {
       val ab = createAbtestOnServer(fakeAb.copy(start = OffsetDateTime.now))
       Thread.sleep(100)
-      val r = controller.addGroupMetas(ab._id, false)(jsonRequest(Json.obj("A" -> Json.obj("ff" -> "a"))))
+      val r = controller.addGroupMetas(ab._id, false)(
+        jsonRequest(Json.obj("A" -> Json.obj("ff" -> "a"))))
       status(r) mustBe BAD_REQUEST
     }
 
@@ -744,27 +808,32 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       val feature = ab.data.feature
 
       Thread.sleep(100)
-      toServer(controller.addGroupMetas(ab._id, true),
+      toServer(
+        controller.addGroupMetas(ab._id, true),
         jsonRequest(Json.obj("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))))
 
-      val resultTests = contentAsJson(controller.getByFeature(feature)(FakeRequest())).as[List[Entity[Abtest]]]
+      val resultTests = contentAsJson(controller.getByFeature(feature)(FakeRequest()))
+        .as[List[Entity[Abtest]]]
 
       resultTests.size mustBe 2
 
-
-      val testResult = contentAsJson(controller.get(resultTests.head._id.value)(FakeRequest())).as[Entity[Abtest]]
-      testResult.data.groupMetas mustBe Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
+      val testResult = contentAsJson(
+        controller.get(resultTests.head._id.value)(FakeRequest())).as[Entity[Abtest]]
+      testResult.data.groupMetas mustBe Map("A" -> Json.obj("ff" -> "a"),
+                                            "B" -> Json.obj("ff" -> "b"))
     }
 
     "throw validation error when group name in meta does not exist in test" in {
       val ab = createAbtestOnServer(fakeAb(1))
-      val r = controller.addGroupMetas(ab._id, false)(jsonRequest(Json.obj("NonexistingGroup" -> Json.obj("ff" -> "a"))))
+      val r = controller.addGroupMetas(ab._id, false)(
+        jsonRequest(Json.obj("NonexistingGroup" -> Json.obj("ff" -> "a"))))
       status(r) mustBe BAD_REQUEST
     }
 
     "pass validation when not all the groups in tests are mentioned in meta" in {
       val ab = createAbtestOnServer(fakeAb(1))
-      val r = controller.addGroupMetas(ab._id, false)(jsonRequest(Json.obj("A" -> Json.obj("ff" -> "a"))))
+      val r = controller.addGroupMetas(ab._id, false)(
+        jsonRequest(Json.obj("A" -> Json.obj("ff" -> "a"))))
       status(r) mustBe OK
     }
 
@@ -784,9 +853,10 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     "subsequent tests inherits meta settings" in {
       val ab = createAbtestOnServer(fakeAb(1, 20))
 
-      toServer(controller.addGroupMetas(ab._id, false), jsonRequest(
-        Json.obj("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
-      ))
+      toServer(controller.addGroupMetas(ab._id, false),
+               jsonRequest(
+                 Json.obj("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
+               ))
 
       val subSequent = createAbtestOnServer(fakeAb(21, 25, feature = ab.data.feature))
 
@@ -818,7 +888,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
       val newMetas = Map("A" -> Json.obj("ff" -> "aa"), "B" -> Json.obj("ff" -> "bb"))
 
-      val subSequent = createAbtestOnServer(fakeAb(21, 25, feature = ab.data.feature, groupMetas = newMetas))
+      val subSequent = createAbtestOnServer(
+        fakeAb(21, 25, feature = ab.data.feature, groupMetas = newMetas))
 
       subSequent.data.groupMetas mustBe newMetas
     }
@@ -834,7 +905,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       val overrideGroup = ab.data.groups.last.name
 
       userIds.foreach { userId =>
-        val addResult = controller.addOverride(ab.data.feature, userId, overrideGroup)(FakeRequest())
+        val addResult =
+          controller.addOverride(ab.data.feature, userId, overrideGroup)(FakeRequest())
         status(addResult) mustBe OK
       }
 
@@ -847,7 +919,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
     "override honor eligibility control" in {
 
-      val ab = createAbtestOnServer(fakeAb(groups = List(Group("A", 0)), requiredTags = List("tag1")))
+      val ab = createAbtestOnServer(
+        fakeAb(groups = List(Group("A", 0)), requiredTags = List("tag1")))
 
       val userId = "1"
       toServer(controller.addOverride(ab.data.feature, userId, "A"))
@@ -859,7 +932,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
     "override overrides eligibility control when set so" in {
 
-      val ab = createAbtestOnServer(fakeAb(groups = List(Group("A", 0)), requiredTags = List("tag1")))
+      val ab = createAbtestOnServer(
+        fakeAb(groups = List(Group("A", 0)), requiredTags = List("tag1")))
 
       val userId = "1"
       toServer(controller.addOverride(ab.data.feature, userId, "A"))
@@ -874,11 +948,14 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
       val overrideGroup = "B"
 
-      val ab = createAbtestOnServer(fakeAb(1, 20).copy(groups = List(Group("A", 1), Group(overrideGroup, 0))))
+      val ab = createAbtestOnServer(
+        fakeAb(1, 20).copy(groups = List(Group("A", 1), Group(overrideGroup, 0))))
 
-      toServer(controller.addGroupMetas(ab._id, false), jsonRequest(
-        Json.obj("A" -> Json.obj("ff" -> "a"), overrideGroup -> Json.obj("ff" -> "b"))
-      ))
+      toServer(
+        controller.addGroupMetas(ab._id, false),
+        jsonRequest(
+          Json.obj("A" -> Json.obj("ff" -> "a"), overrideGroup -> Json.obj("ff" -> "b"))
+        ))
 
       val userId = randomUserId
 
@@ -913,7 +990,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
       toServer(controller.removeOverride(ab.data.feature, userId2))
 
-      val retrievedOverridesAfterRemoval = contentAsJson(toServer(controller.getOverrides(ab.data.feature))).as[Feature].overrides
+      val retrievedOverridesAfterRemoval = contentAsJson(
+        toServer(controller.getOverrides(ab.data.feature))).as[Feature].overrides
 
       retrievedOverridesAfterRemoval mustBe Map(userId1 -> overrideGroup)
     }
@@ -935,7 +1013,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
       toServer(controller.removeAllOverrides(ab.data.feature))
 
-      val retrievedOverridesAfterRemoval = contentAsJson(toServer(controller.getOverrides(ab.data.feature))).as[Feature].overrides
+      val retrievedOverridesAfterRemoval = contentAsJson(
+        toServer(controller.getOverrides(ab.data.feature))).as[Feature].overrides
 
       retrievedOverridesAfterRemoval mustBe empty
     }
@@ -943,19 +1022,29 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
   "Continuation integration test" should {
 
-    def getGroupAssignment(test: Entity[Abtest], ids: List[UserId]): Map[GroupName, List[UserId]] =
-      ids.flatMap { uid =>
-        val response = controller.getGroupsWithMeta(jsonRequest(
-          UserGroupQuery(Some(uid.toString), at = Some(test.data.start.plusSeconds(1)))
-        ))
-        val result = contentAsJson(response).as[UserGroupQueryResult]
-        result.groups.get(test.data.feature).map((_, uid))
-      }.groupBy(_._1).mapValues(_.map(_._2))
+    def getGroupAssignment(test: Entity[Abtest],
+                           ids: List[UserId]): Map[GroupName, List[UserId]] =
+      ids
+        .flatMap { uid =>
+          val response = controller.getGroupsWithMeta(jsonRequest(
+            UserGroupQuery(Some(uid.toString), at = Some(test.data.start.plusSeconds(1)))
+          ))
+          val result = contentAsJson(response).as[UserGroupQueryResult]
+          result.groups.get(test.data.feature).map((_, uid))
+        }
+        .groupBy(_._1)
+        .mapValues(_.map(_._2))
 
     "Inherits as many users from previous test as possible" in {
-      val ab1 = createAbtestOnServer(fakeAb(1, 2, "a_feature").copy(groups = List(Group("A", 0.3), Group("B", 0.3), Group("C", 0.2))))
-      val ab2 = createAbtestOnServer(fakeAb(3, 4, "a_feature").copy(groups = List(Group("D", 0.2), Group("A", 0.5), Group("B", 0.2))))
-      val ab3 = createAbtestOnServer(fakeAb(5, 6, "a_feature").copy(groups = List(Group("B", 0.1), Group("A", 0.6), Group("C", 0.2))))
+      val ab1 = createAbtestOnServer(
+        fakeAb(1, 2, "a_feature").copy(
+          groups = List(Group("A", 0.3), Group("B", 0.3), Group("C", 0.2))))
+      val ab2 = createAbtestOnServer(
+        fakeAb(3, 4, "a_feature").copy(
+          groups = List(Group("D", 0.2), Group("A", 0.5), Group("B", 0.2))))
+      val ab3 = createAbtestOnServer(
+        fakeAb(5, 6, "a_feature").copy(
+          groups = List(Group("B", 0.1), Group("A", 0.6), Group("C", 0.2))))
 
       val ids = (0 to 1000).toList.map(_.toString)
       val groupAssignment1 = getGroupAssignment(ab1, ids)
@@ -972,9 +1061,21 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     }
 
     "grouping should be deterministic regardless of time or machine" in {
-      val ab1 = createAbtestOnServer(fakeAb(1, 2, "a_feature", groups = List(Group("A", 0.3), Group("B", 0.3), Group("C", 0.2))))
-      val ab2 = createAbtestOnServer(fakeAb(3, 4, "a_feature", groups = List(Group("D", 0.2), Group("A", 0.5), Group("B", 0.2))))
-      val ab3 = createAbtestOnServer(fakeAb(5, 6, "a_feature", groups = List(Group("B", 0.1), Group("A", 0.6), Group("C", 0.2))))
+      val ab1 = createAbtestOnServer(
+        fakeAb(1,
+               2,
+               "a_feature",
+               groups = List(Group("A", 0.3), Group("B", 0.3), Group("C", 0.2))))
+      val ab2 = createAbtestOnServer(
+        fakeAb(3,
+               4,
+               "a_feature",
+               groups = List(Group("D", 0.2), Group("A", 0.5), Group("B", 0.2))))
+      val ab3 = createAbtestOnServer(
+        fakeAb(5,
+               6,
+               "a_feature",
+               groups = List(Group("B", 0.1), Group("A", 0.6), Group("C", 0.2))))
 
       val ids = (253 until 319).toList.map(_.toString)
 
@@ -983,11 +1084,23 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       val groupAssignment3 = getGroupAssignment(ab3, ids)
 
       //hard coded to make sure that these values do not change for to maintain compatibility.
-      groupAssignment1("A") must be(List(314, 310, 303, 299, 292, 288, 286, 285, 278, 273, 267, 265, 261, 257, 256, 254).sorted.map(_.toString))
-      groupAssignment1("B") must be(List(317, 312, 311, 306, 302, 298, 294, 291, 279, 277, 275, 274, 271, 268, 266, 262, 260).sorted.map(_.toString))
-      groupAssignment2("A") must be(List(316, 315, 314, 313, 310, 307, 304, 303, 299, 297, 296, 293, 292, 289, 288, 286, 285, 284, 283, 282, 281, 278, 276, 273, 267, 265, 264, 261, 259, 257, 256, 254).sorted.map(_.toString))
-      groupAssignment2("B") must be(List(317, 312, 306, 298, 294, 291, 277, 271, 268, 262, 260).sorted.map(_.toString))
-      groupAssignment3("A") must be(List(316, 315, 314, 313, 310, 309, 308, 307, 305, 304, 303, 301, 299, 297, 296, 295, 293, 292, 290, 289, 288, 286, 285, 284, 283, 282, 281, 278, 276, 273, 270, 267, 265, 264, 261, 259, 258, 257, 256, 255, 254, 253).sorted.map(_.toString))
+      groupAssignment1("A") must be(
+        List(314, 310, 303, 299, 292, 288, 286, 285, 278, 273, 267, 265, 261, 257, 256,
+          254).sorted.map(_.toString))
+      groupAssignment1("B") must be(
+        List(317, 312, 311, 306, 302, 298, 294, 291, 279, 277, 275, 274, 271, 268, 266,
+          262, 260).sorted.map(_.toString))
+      groupAssignment2("A") must be(
+        List(316, 315, 314, 313, 310, 307, 304, 303, 299, 297, 296, 293, 292, 289, 288,
+          286, 285, 284, 283, 282, 281, 278, 276, 273, 267, 265, 264, 261, 259, 257, 256,
+          254).sorted.map(_.toString))
+      groupAssignment2("B") must be(
+        List(317, 312, 306, 298, 294, 291, 277, 271, 268, 262,
+          260).sorted.map(_.toString))
+      groupAssignment3("A") must be(
+        List(316, 315, 314, 313, 310, 309, 308, 307, 305, 304, 303, 301, 299, 297, 296,
+          295, 293, 292, 290, 289, 288, 286, 285, 284, 283, 282, 281, 278, 276, 273, 270,
+          267, 265, 264, 261, 259, 258, 257, 256, 255, 254, 253).sorted.map(_.toString))
       groupAssignment3("B") must be(List(312, 298, 277, 268).sorted.map(_.toString))
 
     }
@@ -997,11 +1110,15 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       createAbtestOnServer(originalSpec)
 
       val continued = createAbtestOnServer(
-        Some(fakeAb(feature = originalSpec.feature, start = 2,
-          groups = List(Group("A", 0.1), Group("B", 0.1)))), auto = true
+        Some(
+          fakeAb(feature = originalSpec.feature,
+                 start = 2,
+                 groups = List(Group("A", 0.1), Group("B", 0.1)))),
+        auto = true
       )
 
-      continued.data.ranges mustBe Map("A" -> List(GroupRange(0, 0.1)), "B" -> List(GroupRange(0.1, 0.2)))
+      continued.data.ranges mustBe Map("A" -> List(GroupRange(0, 0.1)),
+                                       "B" -> List(GroupRange(0.1, 0.2)))
     }
 
     "zero sized group has no range" in {
@@ -1011,13 +1128,15 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
         range must be(empty)
       }
 
-      contentAsJson(toServer(controller.getGroups("1234", Some(spec.start.plusMinutes(1).toEpochSecond)))).as[Map[String, String]] must be(empty)
+      contentAsJson(
+        toServer(
+          controller.getGroups("1234", Some(spec.start.plusMinutes(1).toEpochSecond))))
+        .as[Map[String, String]] must be(empty)
     }
   }
 }
 
-
-class AbtestKPIIntegrationSuite extends AbtestIntegrationSuiteBase {
+class AssessmentAlgIntegrationSuite extends AbtestIntegrationSuiteBase {
   "Get KPI" should {
     "return 404 when there is no distribution" in {
       val r = controller.getKPIDistribution("non-exist")(FakeRequest())
@@ -1025,14 +1144,16 @@ class AbtestKPIIntegrationSuite extends AbtestIntegrationSuiteBase {
     }
 
     "create one when there isn't one already" in {
-      val kpi = GammaKPIDistribution(KPIName("new KPI"), Normal(1d, 0.1d), Normal(3d, 0.3d))
+      val kpi =
+        GammaKPIDistribution(KPIName("new KPI"), Normal(1d, 0.1d), Normal(3d, 0.3d))
       val r = controller.updateKPIDistribution(jsonRequest(kpi))
       status(r) mustBe OK
       contentAsJson(r).as[KPIDistribution] mustBe kpi
     }
 
     "update one" in {
-      val kpi = GammaKPIDistribution(KPIName("another KPI"), Normal(1d, 0.1d), Normal(3d, 0.3d))
+      val kpi =
+        GammaKPIDistribution(KPIName("another KPI"), Normal(1d, 0.1d), Normal(3d, 0.3d))
       toServer(controller.updateKPIDistribution, jsonRequest(kpi))
 
       val kpiUpdated = kpi.copy(shapePrior = Normal(1.3, 0.13d))
@@ -1045,29 +1166,38 @@ class AbtestKPIIntegrationSuite extends AbtestIntegrationSuiteBase {
   }
 }
 
-class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with BeforeAndAfter {
+class AbtestIntegrationSuiteBase
+    extends PlaySpec
+    with GuiceOneAppPerSuite
+    with BeforeAndAfter {
+
+  implicit def toEntityId(sid: String): EntityId = EntityId(sid)
+  implicit def toString(eid: EntityId): String = eid.value
 
   type F[A] = EitherT[IO, Error, A]
 
-  lazy val provider = app.injector.instanceOf[APIProvider]
+  lazy val provider = app.injector.instanceOf[AbtestAPIProvider]
   lazy val api = provider.api
 
-  lazy val controller = new AbtestController(api, provider.kpiApi, app.injector.instanceOf[ControllerComponents], None)
-
+  lazy val controller = new AbtestController(
+    api,
+    provider.kpiApi,
+    app.injector.instanceOf[ControllerComponents],
+    None)
 
   def fakeAb: AbtestSpec = fakeAb()
 
   def fakeAb(
-              start:             Int                   = 0,
-              end:               Int                   = 100,
-              feature:           String                = "AMakeUpFeature" + Random.alphanumeric.take(5).mkString,
-              alternativeIdName: Option[MetaFieldName] = None,
-              groups:            List[Group]           = List(Group("A", 0.5), Group("B", 0.5)),
-              matchingUserMeta:  UserMeta              = Map(),
-              segRanges:         List[GroupRange]      = Nil,
-              requiredTags:      List[Tag]             = Nil,
-              groupMetas:        GroupMetas            = Map()
-            ): AbtestSpec = AbtestSpec(
+      start: Int = 0,
+      end: Int = 100,
+      feature: String = "AMakeUpFeature" + Random.alphanumeric.take(5).mkString,
+      alternativeIdName: Option[MetaFieldName] = None,
+      groups: List[Group] = List(Group("A", 0.5), Group("B", 0.5)),
+      matchingUserMeta: UserMeta = Map(),
+      segRanges: List[GroupRange] = Nil,
+      requiredTags: List[Tag] = Nil,
+      groupMetas: GroupMetas = Map()
+  ): AbtestSpec = AbtestSpec(
     name = "test",
     author = "kai",
     feature = feature,
@@ -1079,27 +1209,30 @@ class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with 
     segmentRanges = segRanges,
     requiredTags = requiredTags,
     groupMetas = groupMetas
-
   )
 
   after {
-    val dapi = api.asInstanceOf[DefaultAPI[F]]
-    List[EntityDAO[F, _, JsObject]](provider.daos._1, provider.daos._2, provider.daos._3).foreach(_.removeAll(Json.obj()).value.unsafeRunSync().left.foreach { e =>
-       println("Failed to clean up DB after: " + e.getMessage)
-    })
+    val dapi = api.asInstanceOf[DefaultAbtestAlg[F]]
+    List[EntityDAO[F, _, JsObject]](provider.daos._1, provider.daos._2, provider.daos._3)
+      .foreach(_.removeAll(Json.obj()).value.unsafeRunSync().left.foreach { e =>
+        println("Failed to clean up DB after: " + e.getMessage)
+      })
   }
 
   def randomUserId = Random.alphanumeric.take(10).mkString
 
   lazy val tomorrow = Some(OffsetDateTime.now.plusDays(1).toEpochSecond)
 
-  def create(t: AbtestSpec, auto: Boolean = false) = controller.create(auto)(jsonRequest(t))
+  def create(t: AbtestSpec, auto: Boolean = false) =
+    controller.create(auto)(jsonRequest(t))
 
   def jsonRequest[T: Writes](t: T) = FakeRequest().withBody(Json.toJson(t))
 
   def createAbtestOnServer(): Entity[Abtest] = createAbtestOnServer(None)
-  def createAbtestOnServer(test: AbtestSpec): Entity[Abtest] = createAbtestOnServer(Some(test))
-  def createAbtestOnServer(test: Option[AbtestSpec], auto: Boolean = false): Entity[Abtest] = {
+  def createAbtestOnServer(test: AbtestSpec): Entity[Abtest] =
+    createAbtestOnServer(Some(test))
+  def createAbtestOnServer(test: Option[AbtestSpec],
+                           auto: Boolean = false): Entity[Abtest] = {
     val ab = test.getOrElse(fakeAb)
     val creation = create(ab, auto)
     if (status(creation) != OK)
@@ -1109,7 +1242,8 @@ class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with 
     result
   }
 
-  def toServer[T](action: Action[T], request: Request[T] = FakeRequest()): Future[Result] = {
+  def toServer[T](action: Action[T],
+                  request: Request[T] = FakeRequest()): Future[Result] = {
     val r = action.apply(request)
     val s = status(r)
     if (s != OK)
@@ -1122,10 +1256,10 @@ class AbtestIntegrationSuiteBase extends PlaySpec with GuiceOneAppPerSuite with 
     contentAsJson(controller.get(id)(FakeRequest())).as[Entity[Abtest]]
 
   def getGroups(
-                 userId: Option[UserId]         = None,
-                 at:     Option[OffsetDateTime] = Some(OffsetDateTime.now.plusDays(1)),
-                 meta:   Map[String, String]    = Map()
-               ) = {
+      userId: Option[UserId] = None,
+      at: Option[OffsetDateTime] = Some(OffsetDateTime.now.plusDays(1)),
+      meta: Map[String, String] = Map()
+  ) = {
     contentAsJson(
       controller.getGroupsWithMeta(
         jsonRequest(
