@@ -3,7 +3,7 @@ package com.iheart.thomas.bandit.single
 import java.time.Instant
 
 import cats.Monoid
-import com.iheart.thomas.bandit.{BanditSpec, BanditState}
+import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.bandit.`package`.{ArmName, ExpectedReward, Reward}
 
 import cats.Monoid
@@ -17,7 +17,7 @@ case class SingleChoiceBanditState[RewardStateT](
     rewardStateSoFar: RewardStateT,
     start: Instant,
     epsilon: Double
-) extends BanditState[RewardStateT] {
+) {
 
   def rewardState: Map[ArmName, RewardStateT] =
     Map(chosenArm.name -> rewardStateSoFar)

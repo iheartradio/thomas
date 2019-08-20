@@ -39,7 +39,7 @@ object AnalysisAPI {
   abstract class AnalysisAPIWithClient[F[_], K <: KPIDistribution](
       implicit UK: UpdatableKPI[F, K],
       abtestKPI: AssessmentAlg[F, K],
-      client: Client[F],
+      client: AbtestClient[F],
       F: MonadError[F, Throwable])
       extends AnalysisAPI[F, K] {
 
@@ -80,7 +80,7 @@ object AnalysisAPI {
       G: Measurable[F, Measurements, GammaKPIDistribution],
       sampleSettings: SampleSettings = SampleSettings.default,
       rng: RNG = RNG.default,
-      client: Client[F],
+      client: AbtestClient[F],
       F: MonadError[F, Throwable]): AnalysisAPI[F, GammaKPIDistribution] =
     new AnalysisAPIWithClient[F, GammaKPIDistribution] {
       def narrowToK: PartialFunction[KPIDistribution, GammaKPIDistribution] = {
@@ -93,7 +93,7 @@ object AnalysisAPI {
       G: Measurable[F, Conversions, BetaKPIDistribution],
       sampleSettings: SampleSettings = SampleSettings.default,
       rng: RNG = RNG.default,
-      client: Client[F],
+      client: AbtestClient[F],
       F: MonadError[F, Throwable]): AnalysisAPI[F, BetaKPIDistribution] =
     new AnalysisAPIWithClient[F, BetaKPIDistribution] {
       def narrowToK: PartialFunction[KPIDistribution, BetaKPIDistribution] = {

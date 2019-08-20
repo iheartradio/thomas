@@ -13,11 +13,11 @@ GET   /assets/*file                 controllers.Assets.versioned(path="/public",
 #  parameters:
 #    - name: body
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.AbtestSpec'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.AbtestSpec'
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.Abtest'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.Abtest'
 ###
 POST      /tests                                                controllers.MyAbtestController.create()
 
@@ -26,11 +26,11 @@ POST      /tests                                                controllers.MyAb
 #  parameters:
 #    - name: body
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.AbtestSpec'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.AbtestSpec'
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.Abtest'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.Abtest'
 ###
 POST      /tests/auto                                                controllers.MyAbtestController.createAuto()
 
@@ -39,11 +39,11 @@ POST      /tests/auto                                                controllers
 #  parameters:
 #    - name: body
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.AbtestSpec'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.AbtestSpec'
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.Abtest'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.Abtest'
 ###
 PUT      /tests                                                controllers.MyAbtestController.continue()
 
@@ -113,7 +113,7 @@ GET       /users/:userId/tests/groups            controllers.MyAbtestController.
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.Abtest'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.Abtest'
 ###
 GET       /tests/:testId                                        controllers.MyAbtestController.get(testId)
 
@@ -123,7 +123,7 @@ GET       /tests/:testId                                        controllers.MyAb
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.Abtest'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.Abtest'
 ###
 DELETE       /tests/:testId                                        controllers.MyAbtestController.terminate(testId)
 
@@ -139,7 +139,7 @@ DELETE       /tests/:testId                                        controllers.M
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.Abtest'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.Abtest'
 ###
 PUT       /tests/:testId/groups/metas    controllers.MyAbtestController.addGroupMetas(testId: String, auto: Boolean)
 
@@ -148,7 +148,7 @@ PUT       /tests/:testId/groups/metas    controllers.MyAbtestController.addGroup
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.Abtest'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.Abtest'
 ###
 DELETE       /tests/:testId/groups/metas    controllers.MyAbtestController.removeGroupMetas(testId: String, auto: Boolean)
 
@@ -158,7 +158,7 @@ DELETE       /tests/:testId/groups/metas    controllers.MyAbtestController.remov
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.Feature'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.Feature'
 ###
 PUT       /features/:feature/groups/:groupName/overrides/:userId    controllers.MyAbtestController.addOverride(feature: String, userId: String, groupName: String)
 
@@ -168,7 +168,7 @@ PUT       /features/:feature/groups/:groupName/overrides/:userId    controllers.
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.Feature'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.Feature'
 ###
 PUT       /features/:feature/overridesEligibility    controllers.MyAbtestController.setOverrideEligibilityIn(feature: String, overrideEligibility: Boolean)
 
@@ -178,7 +178,7 @@ PUT       /features/:feature/overridesEligibility    controllers.MyAbtestControl
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.Feature'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.Feature'
 ###
 DELETE    /features/:feature/overrides/:userId                      controllers.MyAbtestController.removeOverride(feature: String, userId: String)
 
@@ -187,7 +187,7 @@ DELETE    /features/:feature/overrides/:userId                      controllers.
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.Feature'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.Feature'
 ###
 DELETE    /features/:feature/overrides                          controllers.MyAbtestController.removeAllOverrides(feature: String)
 
@@ -196,7 +196,7 @@ DELETE    /features/:feature/overrides                          controllers.MyAb
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.Feature'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.Feature'
 ###
 GET    /features/:feature/overrides                      controllers.MyAbtestController.getOverrides(feature: String)
 
@@ -213,7 +213,7 @@ GET    /features/:feature/overrides                      controllers.MyAbtestCon
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.model.Feature'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.Feature'
 ###
 POST    /features/:feature/overrides                      controllers.MyAbtestController.addOverrides(feature: String)
 

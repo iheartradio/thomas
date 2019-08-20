@@ -1,20 +1,19 @@
 package com.iheart.thomas
 package bandit
 package bayesian
-import java.time.{Instant, OffsetDateTime, ZoneOffset}
+import java.time.{OffsetDateTime, ZoneOffset}
 
 import cats.effect.Sync
 import cats.Monoid
 import cats.implicits._
-import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group}
+import com.iheart.thomas.abtest.model.{AbtestSpec, Group}
 import com.iheart.thomas.analysis._
 import com.stripe.rainier.sampler.RNG
-import lihua.Entity
 import henkan.convert.Syntax._
 
 object ConversionBMABAlg {
 
-  def default[F[_]](stateDao: BanditStateDAO[F, BayesianState[Conversions]],
+  def default[F[_]](stateDao: BanditStateDAO[F, BanditState[Conversions]],
                     kpiAPI: KPIApi[F],
                     abtestAPI: abtest.AbtestAlg[F])(implicit
                                                     sampleSettings: SampleSettings,
@@ -24,25 +23,23 @@ object ConversionBMABAlg {
 
       def updateRewardState(
           featureName: FeatureName,
-          rewards: Map[ArmName, Conversions]): F[BayesianState[Conversions]] = {
+          rewards: Map[ArmName, Conversions]): F[BanditState[Conversions]] = {
         implicit val mc: Monoid[Conversions] = RewardState[Conversions]
         for {
           cs <- currentState(featureName)
-          toUpdate = cs._2.updateArms(rewards)
+          toUpdate = cs.state.updateArms(rewards)
           _ <- stateDao.upsert(toUpdate)
         } yield toUpdate
       }
 
-      def init(banditSpec: BanditSpec,
-               author: String,
-               start: Instant): F[(Entity[Abtest], BayesianState[Conversions])] = {
+      def init(banditSpec: BanditSpec): F[BayesianMAB[Conversions]] = {
         (abtestAPI
            .create(
              AbtestSpec(
                name = "Abtest for Bayesian MAB " + banditSpec.feature,
                feature = banditSpec.feature,
-               author = author,
-               start = start.atOffset(ZoneOffset.UTC),
+               author = banditSpec.author,
+               start = banditSpec.start.atOffset(ZoneOffset.UTC),
                end = None,
                groups = banditSpec.arms.map(
                  Group(_, 1d / banditSpec.arms.size.toDouble)
@@ -52,22 +49,23 @@ object ConversionBMABAlg {
            ),
          stateDao
            .upsert(
-             BayesianState[Conversions](
-               spec = banditSpec,
+             BanditState[Conversions](
+               feature = banditSpec.feature,
+               title = banditSpec.title,
+               author = banditSpec.author,
                arms = banditSpec.arms.map(
                  ArmState(_, RewardState[Conversions].empty, Probability(0d))),
-               start = start
+               start = banditSpec.start
              )
-           )).tupled
+           )).mapN(BayesianMAB.apply _)
       }
 
-      def reallocate(
-          featureName: FeatureName,
-          kpiName: KPIName): F[(Entity[Abtest], BayesianState[Conversions])] = {
+      def reallocate(featureName: FeatureName,
+                     kpiName: KPIName): F[BayesianMAB[Conversions]] = {
         for {
           current <- currentState(featureName)
           kpi <- kpiAPI.getSpecific[BetaKPIDistribution](kpiName)
-          (abtest, state) = current
+          BayesianMAB(abtest, state) = current
           possibilities <- BetaKPIDistribution.basicAssessmentAlg
             .assessOptimumGroup(kpi, state.rewardState)
           abtest <- abtestAPI.continue(
@@ -76,16 +74,15 @@ object ConversionBMABAlg {
               .set(start = OffsetDateTime.now, groups = abtest.data.groups.map { g =>
                 g.copy(size = possibilities.get(g.name).fold(g.size)(identity))
               }))
-        } yield (abtest, state)
+        } yield BayesianMAB(abtest, state)
 
       }
 
-      def currentState(
-          featureName: FeatureName): F[(Entity[Abtest], BayesianState[Conversions])] = {
+      def currentState(featureName: FeatureName): F[BayesianMAB[Conversions]] = {
         (abtestAPI
            .getTestsByFeature(featureName)
            .flatMap(_.headOption.liftTo[F](AbtestNotFound(featureName))),
-         stateDao.get(featureName)).tupled
+         stateDao.get(featureName)).mapN(BayesianMAB.apply _)
       }
     }
 }
