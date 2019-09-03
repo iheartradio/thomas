@@ -5,10 +5,13 @@ import _root_.play.api.mvc._
 
 import concurrent._
 import com.iheart.thomas.play._
+import modules.LocalDynamoClientProvider
 
 @Singleton
 class MyBayesianMABController @Inject()(
-    apiProvider: BanditAlgsProvider,
+    provider: AbtestAPIProvider,
     components: ControllerComponents,
 )(implicit ec: ExecutionContext)
-    extends BayesianMABController(apiProvider.conversionBMABAlg, components)
+    extends BayesianMABController(
+      new BanditAlgsProvider(provider, LocalDynamoClientProvider).conversionBMABAlg,
+      components)

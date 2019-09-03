@@ -1,8 +1,6 @@
 package com.iheart.thomas
 package play
 
-import java.time.Instant
-
 import bandit._
 import cats.effect.Effect
 import _root_.play.api.mvc.{AbstractController, ControllerComponents, Result}
@@ -11,10 +9,6 @@ import cats.effect.implicits._
 import com.iheart.thomas.analysis.{Conversions, KPIName}
 import com.iheart.thomas.bandit.bayesian._
 import bandit.Formats._
-import abtest.Formats._
-import com.iheart.thomas.abtest.model.Abtest
-import lihua.Entity
-import cats.implicits._
 
 import scala.concurrent.Future
 import lihua.mongo.JsonFormats._
@@ -26,7 +20,6 @@ class BayesianMABController[F[_]](
     implicit
     F: Effect[F]
 ) extends AbstractController(components) {
-  import BayesianMABStateResp.fromTupple
 
   protected def withJsonReq[ReqT: Reads](f: ReqT => F[Result]) =
     Action.async[JsValue](parse.tolerantJson) { req =>
@@ -56,34 +49,16 @@ class BayesianMABController[F[_]](
     }
 
   def init =
-    withJsonReq[BayesianMABInitReq] { req =>
-      jsonResult(
-        api
-          .init(req.banditSpec, req.author, req.start)
-          .map(fromTupple))
+    withJsonReq[BanditSpec] { req =>
+      jsonResult(api.init(req))
     }
 
   def getState(featureName: FeatureName) = action {
-    api.currentState(featureName).map(fromTupple)
+    api.currentState(featureName)
   }
 
   def reallocate(featureName: FeatureName, kpiName: KPIName) = action {
-    api.reallocate(featureName, kpiName).map(fromTupple)
+    api.reallocate(featureName, kpiName)
   }
 
-}
-
-case class BayesianMABInitReq(banditSpec: BanditSpec, author: String, start: Instant)
-
-object BayesianMABInitReq {
-  implicit val fmt: Format[BayesianMABInitReq] = Json.format[BayesianMABInitReq]
-}
-
-case class BayesianMABStateResp(abtest: Entity[Abtest],
-                                bayesianState: BayesianState[Conversions])
-
-object BayesianMABStateResp {
-  implicit val fmt: Format[BayesianMABStateResp] = Json.format[BayesianMABStateResp]
-
-  def fromTupple = (apply _).tupled
 }

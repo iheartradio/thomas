@@ -16,6 +16,6 @@ object DynamoFormats {
     DynamoFormat[Double].coerce[DynamoFormat[Probability]]
   implicit val dfInstant: DynamoFormat[Instant] =
     DynamoFormat.coercedXmap(Instant.ofEpochMilli)(_.toEpochMilli)
-  implicit val dfc: DynamoFormat[BayesianState[Conversions]] =
-    deriveDynamoFormat[BayesianState[Conversions]]
+  implicit val dfc: DynamoFormat[BanditState[Conversions]] =
+    deriveDynamoFormat[BanditState[Conversions]]
 }

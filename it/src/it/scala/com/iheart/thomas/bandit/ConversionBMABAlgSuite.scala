@@ -12,7 +12,7 @@ import com.iheart.thomas.analysis.{
   KPIApi,
   SampleSettings
 }
-import com.iheart.thomas.bandit.bayesian.{BayesianState, ConversionBMABAlg}
+import com.iheart.thomas.bandit.bayesian.{BanditState, ConversionBMABAlg}
 import com.iheart.thomas.mongo
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Matchers
@@ -27,6 +27,7 @@ import play.api.libs.json.{JsObject, Json}
 import cats.implicits._
 import com.amazonaws.services.dynamodbv2.model.ResourceInUseException
 import com.stripe.rainier.sampler.RNG
+import lihua.dynamo.ScanamoEntityDAO
 
 import concurrent.duration._
 class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
@@ -55,13 +56,8 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       .make {
         IO.delay(LocalDynamoDB.client())
           .flatTap { client =>
-            import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType._
-            IO.delay(LocalDynamoDB.createTable(client)(dynamo.DAOs.banditStateTableName)(
-                lihua.idFieldName -> S))
-              .void
-              .recover {
-                case e: ResourceInUseException => () //happens when table already exists
-              }
+            ScanamoEntityDAO
+              .ensureTable[IO](client, dynamo.DAOs.banditStateTableName)
           }
           .map { amzClt =>
             dynamo.DAOs.lihuaStateDAO[IO](amzClt)
@@ -69,7 +65,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       } { stateDAO =>
         stateDAO.removeAll().void
       }
-      .map(sd => BanditStateDAO.fromLihua(sd))
+      .map(sd => BanditStateDAO.bayesianfromLihua(sd))
 
   /**
     * An ConversionAPI resource that cleans up after
@@ -98,27 +94,35 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
   def withAPI[A](f: ConversionBMABAlg[IO] => IO[A]): A = withAPI((api, _) => f(api))
 
   test("init state") {
-    val spec = BanditSpec(List("A", "B"), "A_new_Feature", "test BMAB")
+    val spec = BanditSpec(feature = "A_new_Feature",
+                          arms = List("A", "B"),
+                          author = "Test Runner",
+                          start = Instant.now,
+                          title = "for initegration tests")
+
     val (init, currentState) = withAPI { api =>
       for {
-        is <- api.init(spec, "Test Runner", Instant.now)
+        is <- api.init(spec)
         current <- api.currentState(spec.feature)
       } yield (is, current)
     }
-    val (_, initState) = init
-    initState.arms.size shouldBe 2
-    initState.arms.map(_.likelihoodOptimum).forall(_.p == 0) shouldBe true
-    initState.spec shouldBe spec
-    val (abtest, newState) = currentState
-    newState shouldBe initState
-    abtest.data.groups.map(_.size) shouldBe List(0.5d, 0.5d)
+    init.state.arms.size shouldBe 2
+    init.state.arms.map(_.likelihoodOptimum).forall(_.p == 0) shouldBe true
+    init.state.title shouldBe spec.title
+    currentState.state shouldBe init.state
+    currentState.abtest.data.groups.map(_.size) shouldBe List(0.5d, 0.5d)
   }
 
   test("update state") {
-    val spec = BanditSpec(List("A", "B"), "A_new_Feature", "test BMAB")
+    val spec = BanditSpec(feature = "A_new_Feature",
+                          arms = List("A", "B"),
+                          author = "Test Runner",
+                          start = Instant.now,
+                          title = "for initegration tests")
+
     val currentState = withAPI { api =>
       for {
-        _ <- api.init(spec, "Test Runner", Instant.now)
+        _ <- api.init(spec)
         _ <- api.updateRewardState(spec.feature,
                                    Map("A" -> Conversions(12, 2),
                                        "B" -> Conversions(43, 6)))
@@ -129,19 +133,24 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       } yield current
     }
 
-    val (_, newState) = currentState
+    val newState = currentState.state
     newState.arms.find(_.name == "A").get.rewardState shouldBe Conversions(25, 7)
     newState.arms.find(_.name == "B").get.rewardState shouldBe Conversions(55, 13)
 
   }
 
-  test("rellocate") {
-    val spec = BanditSpec(List("A", "B"), "A_new_Feature", "test BMAB")
+  test("reallocate") {
+    val spec = BanditSpec(feature = "A_new_Feature",
+                          arms = List("A", "B"),
+                          author = "Test Runner",
+                          start = Instant.now,
+                          title = "for integration tests")
+
     val kpi = BetaKPIDistribution("test kpi", alphaPrior = 1000, betaPrior = 100000)
     val currentState = withAPI { (api, kpiAPI) =>
       for {
         _ <- kpiAPI.upsert(kpi)
-        _ <- api.init(spec, "Test Runner", Instant.now)
+        _ <- api.init(spec)
         _ <- api.updateRewardState(spec.feature,
                                    Map("A" -> Conversions(12, 2),
                                        "B" -> Conversions(43, 10)))
@@ -150,9 +159,8 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       } yield current
     }
 
-    val (abtest, _) = currentState
-
-    abtest.data.getGroup("B").get.size shouldBe >(abtest.data.getGroup("A").get.size)
+    currentState.abtest.data.getGroup("B").get.size shouldBe >(
+      currentState.abtest.data.getGroup("A").get.size)
 
   }
 

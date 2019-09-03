@@ -12,7 +12,7 @@ import cats.tagless.implicits._
 
 @Singleton
 class BanditAlgsProvider @Inject()(abtestAPIProvider: AbtestAPIProvider,
-                                   dcProvider: Provider[AmazonDynamoDBAsync]) {
+                                   dcProvider: DynamoClientProvider) {
 
   lazy val conversionBMABAlg: ConversionBMABAlg[IO] = {
     implicit val (ss, r) = (SampleSettings.default, RNG.default)
@@ -25,3 +25,5 @@ class BanditAlgsProvider @Inject()(abtestAPIProvider: AbtestAPIProvider,
   }
 
 }
+
+trait DynamoClientProvider extends Provider[AmazonDynamoDBAsync]

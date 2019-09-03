@@ -12,7 +12,8 @@ import org.scalatest.Matchers
 class JavaAPISuite extends AnyFunSuite with Matchers {
 
   test("integration") {
-    val api = JavaAssignments.create("http://localhost:9000/internal/testsWithFeatures")
+    val api =
+      JavaAbtestAssignments.create("http://localhost:9000/internal/testsWithFeatures")
 
     println(
       (1 to 10)
