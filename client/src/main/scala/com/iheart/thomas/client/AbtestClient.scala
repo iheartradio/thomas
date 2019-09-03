@@ -107,7 +107,7 @@ object AbtestClient {
   trait HttpServiceUrls {
 
     /**
-      * Service URL corresponding to [[AbtestAlg]].getAllTestsCached
+      * Service URL corresponding to `AbtestAlg.getAllTestsCached`
       */
     def tests: String
 
