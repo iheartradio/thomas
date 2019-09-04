@@ -20,8 +20,6 @@ import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scanamo.LocalDynamoDB
 import cats.tagless.implicits._
 import cats.~>
-import scalacache.CatsEffect.modes._
-import com.iheart.thomas.abtest.`package`.APIResult
 import lihua.EntityDAO
 import play.api.libs.json.{JsObject, Json}
 import cats.implicits._
@@ -36,7 +34,6 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
 
   import mongo.idSelector
   implicit val config = ConfigFactory.load()
-  val fk = abtest.apiResultTo[IO]
 
   lazy val mangoDAOsR = mongo.daosResource[IO].flatMap {
     case daos =>
@@ -45,8 +42,6 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
           case (abtestDAO, featureDAO, kpiDAO) =>
             List(abtestDAO, featureDAO, kpiDAO)
               .traverse(_.removeAll(Json.obj()))
-              .leftWiden[Throwable]
-              .rethrowT
               .void
         }
   }
@@ -71,21 +66,21 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
     * An ConversionAPI resource that cleans up after
     */
   lazy val apiR = (mangoDAOsR, stateDAOR).tupled
-    .map {
+    .flatMap {
       case (daos, sd) =>
         implicit val (abtestDAO, featureDAO, kpiDAO) = daos
-        implicit val stateDAO = sd
-        lazy val ttl = 0.seconds
+        lazy val refreshPeriod = 0.seconds
+        implicit val cs = IO.contextShift(global)
+        implicit val timer = IO.timer(global)
+        val kpi = implicitly[KPIApi[IO]]
 
-        implicit val kpi = implicitly[KPIApi[APIResult[IO, ?]]].mapK(fk)
-        implicit val abtestAlg =
-          (new DefaultAbtestAlg[APIResult[IO, ?]](ttl): AbtestAlg[APIResult[IO, ?]])
-            .mapK(fk)
+        AbtestAlg.defaultResource[IO](refreshPeriod).map { abtestAlg =>
+          implicit val ss = SampleSettings.default
+          implicit val rng = RNG.default
 
-        implicit val ss = SampleSettings.default
-        implicit val rng = RNG.default
+          (ConversionBMABAlg.default[IO](sd, kpi, abtestAlg), kpi)
 
-        (ConversionBMABAlg.default[IO](implicitly, kpi, abtestAlg), kpi)
+        }
 
     }
 
@@ -98,7 +93,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
                           arms = List("A", "B"),
                           author = "Test Runner",
                           start = Instant.now,
-                          title = "for initegration tests")
+                          title = "for integration tests")
 
     val (init, currentState) = withAPI { api =>
       for {

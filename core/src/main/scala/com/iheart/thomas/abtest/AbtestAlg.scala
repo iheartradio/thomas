@@ -14,12 +14,14 @@ import cats.implicits._
 import cats.tagless.FunctorK
 import com.iheart.thomas.TimeUtil
 import Error._
+import cats.effect.{Concurrent, Resource, Timer}
 import model._
 import lihua._
 import monocle.macros.syntax.lens._
 import mouse.all._
-import scalacache.Mode
 import henkan.convert.Syntax._
+import mau.RefreshRef
+
 import scala.concurrent.duration._
 import scala.util.Random
 
@@ -113,19 +115,32 @@ trait AbtestAlg[F[_]] {
 object AbtestAlg {
   implicit val functorKInstance: FunctorK[AbtestAlg] =
     cats.tagless.Derive.functorK[AbtestAlg]
+
+  def defaultResource[F[_]: Timer](refreshPeriod: FiniteDuration)(
+      implicit
+      abTestDao: EntityDAO[F, Abtest, JsObject],
+      featureDao: EntityDAO[F, Feature, JsObject],
+      F: Concurrent[F],
+      eligibilityControl: EligibilityControl[F],
+      idSelector: EntityId => JsObject
+  ): Resource[F, AbtestAlg[F]] =
+    RefreshRef.resource[F, Vector[(lihua.Entity[Abtest], Feature)]].map { implicit rr =>
+      implicit val nowF = F.delay(OffsetDateTime.now)
+      new DefaultAbtestAlg[F](refreshPeriod)
+    }
 }
 
-final class DefaultAbtestAlg[F[_]](cacheTtl: FiniteDuration)(
+final class DefaultAbtestAlg[F[_]](refreshPeriod: FiniteDuration)(
     implicit
     private[thomas] val abTestDao: EntityDAO[F, Abtest, JsObject],
     private[thomas] val featureDao: EntityDAO[F, Feature, JsObject],
-    F: MonadError[F, Error],
+    refreshRef: RefreshRef[F, Vector[(Entity[Abtest], Feature)]],
+    nowF: F[OffsetDateTime],
+    F: MonadThrowable[F],
     eligibilityControl: EligibilityControl[F],
-    idSelector: EntityId => JsObject,
-    mode: Mode[F]
+    idSelector: EntityId => JsObject
 ) extends AbtestAlg[F] {
   import QueryDSL._
-  import lihua.cache.caffeine.implicits._
 
   def create(testSpec: AbtestSpec, auto: Boolean): F[Entity[Abtest]] =
     addTestWithLock(testSpec.feature)(createWithoutLock(testSpec, auto))
@@ -140,16 +155,24 @@ final class DefaultAbtestAlg[F[_]](cacheTtl: FiniteDuration)(
     }
 
   def getAllTestsCached(
-      time: Option[OffsetDateTime]): F[Vector[(Entity[Abtest], Feature)]] = {
-    val ofTime = time.getOrElse(TimeUtil.currentMinute)
+      time: Option[OffsetDateTime]): F[Vector[(Entity[Abtest], Feature)]] =
+    time.fold(
+      refreshRef.getOrFetch(refreshPeriod, 30.minutes)(
+        nowF.flatMap(getAllTestsWithFeatures)) {
+        case e => F.unit
+      })(
+      getAllTestsWithFeatures(_)
+    )
+
+  def getAllTestsWithFeatures(
+      ofTime: OffsetDateTime): F[Vector[(Entity[Abtest], Feature)]] = {
     for {
-      tests <- abTestDao.findCached(abtests.byTime(ofTime), cacheTtl)
-      features <- featureDao.findCached(
+      tests <- abTestDao.find(abtests.byTime(ofTime))
+      features <- featureDao.find(
         Json.obj(
           "name" ->
             Json.obj("$in" ->
-              JsArray(tests.map(t => JsString(t.data.feature))))),
-        cacheTtl
+              JsArray(tests.map(t => JsString(t.data.feature)))))
       )
     } yield
       tests.map(
@@ -171,7 +194,9 @@ final class DefaultAbtestAlg[F[_]](cacheTtl: FiniteDuration)(
   def getTest(id: TestId): F[Entity[Abtest]] = abTestDao.get(id)
 
   def getAllTests(time: Option[OffsetDateTime]): F[Vector[Entity[Abtest]]] =
-    abTestDao.find(abtests.byTime(time.getOrElse(OffsetDateTime.now)))
+    nowF.flatMap { n =>
+      abTestDao.find(abtests.byTime(time.getOrElse(n)))
+    }
 
   def getAllTestsEndAfter(time: OffsetDateTime): F[Vector[Entity[Abtest]]] =
     abTestDao.find(abtests.endTimeAfter(time))
@@ -223,7 +248,8 @@ final class DefaultAbtestAlg[F[_]](cacheTtl: FiniteDuration)(
                 time: Option[OffsetDateTime],
                 userTags: List[Tag]): F[Map[FeatureName, GroupName]] =
     validateUserId(userId) >>
-      getGroupAssignmentsOf(UserGroupQuery(Some(userId), time, userTags))._2.map(toGroups)
+      getGroupAssignmentsOf(UserGroupQuery(Some(userId), time, userTags)).map(p =>
+        toGroups(p._2))
 
   def terminate(testId: TestId): F[Option[Entity[Abtest]]] =
     getTest(testId).flatMap { test =>
@@ -278,14 +304,13 @@ final class DefaultAbtestAlg[F[_]](cacheTtl: FiniteDuration)(
 
   def getGroupsWithMeta(query: UserGroupQuery): F[UserGroupQueryResult] =
     validate(query) >> {
-      val (at, groupAssignmentsF) = getGroupAssignmentsOf(query)
-
-      groupAssignmentsF.map { groupAssignments =>
-        val metas = groupAssignments.mapFilter {
-          case (groupName, test) =>
-            test.data.groupMetas.get(groupName)
-        }
-        UserGroupQueryResult(at, toGroups(groupAssignments), metas)
+      getGroupAssignmentsOf(query).map {
+        case (at, groupAssignments) =>
+          val metas = groupAssignments.mapFilter {
+            case (groupName, test) =>
+              test.data.groupMetas.get(groupName)
+          }
+          UserGroupQueryResult(at, toGroups(groupAssignments), metas)
       }
     }
 
@@ -399,8 +424,11 @@ final class DefaultAbtestAlg[F[_]](cacheTtl: FiniteDuration)(
     assignments.toList.map { case (k, v) => (k, v._1) }.toMap
 
   private def getGroupAssignmentsOf(query: UserGroupQuery)
-    : (OffsetDateTime, F[Map[FeatureName, (GroupName, Entity[Abtest])]]) =
-    AssignGroups.fromDB[F](cacheTtl).assign(query)
+    : F[(OffsetDateTime, Map[FeatureName, (GroupName, Entity[Abtest])])] =
+    for {
+      data <- getAllTestsCached(query.at)
+      r <- AssignGroups.fromTestsFeatures[F](data).assign(query)
+    } yield r
 
   private def doCreate(newSpec: AbtestSpec,
                        inheritFrom: Option[Entity[Abtest]]): F[Entity[Abtest]] = {

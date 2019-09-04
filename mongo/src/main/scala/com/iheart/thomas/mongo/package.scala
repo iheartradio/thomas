@@ -5,7 +5,7 @@
 
 package com.iheart.thomas
 
-import cats.{Functor, MonadError}
+import cats.MonadError
 import cats.arrow.FunctionK
 import cats.effect.{Async, Resource}
 import com.typesafe.config.Config
@@ -25,37 +25,37 @@ import lihua.mongo.AsyncEntityDAO.Result
 
 package object mongo {
 
-  def toApiResult[F[_]: Functor]
-    : FunctionK[AsyncEntityDAO.Result[F, ?], APIResult[F, ?]] =
-    new FunctionK[AsyncEntityDAO.Result[F, ?], APIResult[F, ?]] {
-      override def apply[A](fa: AsyncEntityDAO.Result[F, A]): APIResult[F, A] = {
+  def to[F[_]: MonadError[*[_], Throwable]]: FunctionK[AsyncEntityDAO.Result[F, *], F] =
+    new FunctionK[AsyncEntityDAO.Result[F, *], F] {
+      override def apply[A](fa: AsyncEntityDAO.Result[F, A]): F[A] = {
         fa.leftMap {
-          case DBError.NotFound                  => Error.NotFound("Cannot find in DB")
-          case DBError.DBLastError(msg)          => Error.DBLastError(msg)
-          case DBError.DBException(e, _)         => Error.DBException(e)
-          case e @ UpdatedCountErrorDetail(_, _) => Error.FailedToPersist(e.getMessage())
+          case DBError.NotFound          => Error.NotFound("Cannot find in DB")
+          case DBError.DBLastError(msg)  => Error.DBLastError(msg)
+          case DBError.DBException(e, _) => Error.DBException(e)
+          case e @ UpdatedCountErrorDetail(_, _) =>
+            Error.FailedToPersist(e.getMessage())
           case DBError.WriteError(details) =>
             Error.FailedToPersist(
               details.map(d => s"code: ${d.code}, msg: ${d.msg}").toList.mkString("\n"))
-        }
+        }.rethrowT
       }
     }
 
   def toF[F[_]](
-      implicit F: MonadError[F, Throwable]): FunctionK[AsyncEntityDAO.Result[F, ?], F] =
-    new FunctionK[AsyncEntityDAO.Result[F, ?], F] {
+      implicit F: MonadError[F, Throwable]): FunctionK[AsyncEntityDAO.Result[F, *], F] =
+    new FunctionK[AsyncEntityDAO.Result[F, *], F] {
       override def apply[A](fa: Result[F, A]): F[A] = fa.leftWiden[Throwable].rethrowT
     }
 
   implicit val idSelector: EntityId => JsObject = lihua.mongo.Query.idSelector
 
-  def convert[F[_]: cats.Functor, A](
-      e: F[EntityDAO[AsyncEntityDAO.Result[F, ?], A, Query]])
-    : F[EntityDAO[APIResult[F, ?], A, JsObject]] = {
-    val functorK = implicitly[FunctorK[EntityDAO[?[_], A, JsObject]]]
-    e.map(od => functorK.mapK(od.contramap(Query.fromSelector))(toApiResult[F]))
+  def convert[F[_]: MonadError[*[_], Throwable], A](
+      e: F[EntityDAO[AsyncEntityDAO.Result[F, *], A, Query]])
+    : F[EntityDAO[F, A, JsObject]] = {
+    val functorK = implicitly[FunctorK[EntityDAO[*[_], A, JsObject]]]
+    e.map(od => functorK.mapK(od.contramap(Query.fromSelector))(to[F]))
   }
-  def convertF[F[_], A](e: F[EntityDAO[AsyncEntityDAO.Result[F, ?], A, Query]])(
+  def convertF[F[_], A](e: F[EntityDAO[AsyncEntityDAO.Result[F, *], A, Query]])(
       implicit F: MonadError[F, Throwable]): F[EntityDAO[F, A, JsObject]] = {
     val functorK = implicitly[FunctorK[EntityDAO[?[_], A, JsObject]]]
     e.map(od => functorK.mapK(od.contramap(Query.fromSelector))(toF[F]))
@@ -77,17 +77,18 @@ package object mongo {
       shutdownHook: ShutdownHook,
       config: Config,
       ex: ExecutionContext
-  ): F[(EntityDAO[APIResult[F, ?], Abtest, JsObject],
-        EntityDAO[APIResult[F, ?], Feature, JsObject],
-        EntityDAO[APIResult[F, ?], KPIDistribution, JsObject])] =
+  ): F[(EntityDAO[F, Abtest, JsObject],
+        EntityDAO[F, Feature, JsObject],
+        EntityDAO[F, KPIDistribution, JsObject])] =
     mongodb.flatMap { implicit m =>
       daosFromMongo
     }
 
-  def daosFromMongo[F[_]: Async](implicit mongoDB: MongoDB[F], ex: ExecutionContext)
-    : F[(EntityDAO[APIResult[F, ?], Abtest, JsObject],
-         EntityDAO[APIResult[F, ?], Feature, JsObject],
-         EntityDAO[APIResult[F, ?], KPIDistribution, JsObject])] = {
+  def daosFromMongo[F[_]: Async](
+      implicit mongoDB: MongoDB[F],
+      ex: ExecutionContext): F[(EntityDAO[F, Abtest, JsObject],
+                                EntityDAO[F, Feature, JsObject],
+                                EntityDAO[F, KPIDistribution, JsObject])] = {
     (convert((new AbtestDAOFactory[F]).create),
      convert((new FeatureDAOFactory[F]).create),
      convert((new KPIDistributionDAOFactory[F]).create)).tupled
@@ -98,9 +99,9 @@ package object mongo {
       config: Config,
       ex: ExecutionContext
   ): Resource[F,
-              (EntityDAO[APIResult[F, ?], Abtest, JsObject],
-               EntityDAO[APIResult[F, ?], Feature, JsObject],
-               EntityDAO[APIResult[F, ?], KPIDistribution, JsObject])] =
+              (EntityDAO[F, Abtest, JsObject],
+               EntityDAO[F, Feature, JsObject],
+               EntityDAO[F, KPIDistribution, JsObject])] =
     MongoDB
       .resource[F](
         config,

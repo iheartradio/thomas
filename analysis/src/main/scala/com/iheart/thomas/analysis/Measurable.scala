@@ -17,6 +17,6 @@ trait Measurable[F[_], M, K] {
 
 object Measurable {
   type GammaMeasurable[F[_]] = Measurable[F, Measurements, GammaKPIDistribution]
-  implicit def contravariantInst[F[_], M]: Contravariant[Measurable[F, M, ?]] =
-    cats.tagless.Derive.contravariant[Measurable[F, M, ?]]
+  implicit def contravariantInst[F[_], M]: Contravariant[Measurable[F, M, *]] =
+    cats.tagless.Derive.contravariant[Measurable[F, M, *]]
 }
