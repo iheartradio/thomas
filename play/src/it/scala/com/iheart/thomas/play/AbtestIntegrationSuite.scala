@@ -1177,7 +1177,7 @@ class AbtestIntegrationSuiteBase
   implicit def toEntityId(sid: String): EntityId = EntityId(sid)
   implicit def toString(eid: EntityId): String = eid.value
 
-  type F[A] = EitherT[IO, Error, A]
+  type F[A] = IO[A]
 
   import _root_.play.api.inject.ApplicationLifecycle
   import _root_.play.api.Configuration
@@ -1221,11 +1221,14 @@ class AbtestIntegrationSuiteBase
   )
 
   after {
-    val dapi = api.asInstanceOf[DefaultAbtestAlg[F]]
+    import cats.implicits._
     List[EntityDAO[F, _, JsObject]](provider.daos._1, provider.daos._2, provider.daos._3)
-      .foreach(_.removeAll(Json.obj()).value.unsafeRunSync().left.foreach { e =>
-        println("Failed to clean up DB after: " + e.getMessage)
-      })
+      .traverse(_.removeAll(Json.obj()))
+      .handleErrorWith { e =>
+        IO(println("Failed to clean up DB after: " + e.getMessage))
+      }
+      .unsafeRunSync()
+
   }
 
   def randomUserId = Random.alphanumeric.take(10).mkString

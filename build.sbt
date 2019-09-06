@@ -10,7 +10,7 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
 lazy val libs =
   org.typelevel.libraries
-  .addJVM(name = "lihua",                 version = "0.23",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-play-json")
+  .addJVM(name = "lihua",                 version = "0.24",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-play-json")
   .addJVM(name = "scanamo",               version = "1.0.0-M10", org ="org.scanamo", "scanamo-testkit")
   .addJVM(name = "rainier",               version = "0.2.2",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
   .addJVM(name = "breeze",                version = "1.0", org ="org.scalanlp", "breeze", "breeze-viz")
@@ -21,6 +21,7 @@ lazy val libs =
   .addJVM(name = "play-json-derived-codecs", version = "6.0.0", org = "org.julienrf")
   .addJVM(name = "newtype",               version = "0.4.3",  org = "io.estatico")
   .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
+  .addJVM(name = "mau",                   version = "0.1.0",  org = "com.kailuowang")
   .addJVM(name = "decline",               version = "0.7.0-M0",  org = "com.monovore")
   .addJVM(name = "scala-java8-compat",    version = "0.9.0",  org = "org.scala-lang.modules")
   .addJVM(name = "log4cats",              version = "0.1.1",  org = "io.chrisdavenport", "log4cats-slf4j")
@@ -80,7 +81,8 @@ lazy val core = project
     libs.dependencies("cats-core",
       "monocle-macro",
       "monocle-core",
-      "lihua-cache",
+      "lihua-core",
+      "mau",
       "mouse",
       "henkan-convert",
       "lihua-play-json"),

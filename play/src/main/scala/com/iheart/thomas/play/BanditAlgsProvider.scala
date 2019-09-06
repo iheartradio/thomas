@@ -8,7 +8,6 @@ import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
 import com.iheart.thomas.dynamo.DAOs
 import com.stripe.rainier.sampler.RNG
 import javax.inject._
-import cats.tagless.implicits._
 
 @Singleton
 class BanditAlgsProvider @Inject()(abtestAPIProvider: AbtestAPIProvider,
@@ -19,8 +18,8 @@ class BanditAlgsProvider @Inject()(abtestAPIProvider: AbtestAPIProvider,
 
     ConversionBMABAlg.default[IO](
       DAOs.stateDAO(dcProvider.get()),
-      abtestAPIProvider.kpiApi.mapK(abtest.apiResultTo[IO]),
-      abtestAPIProvider.api.mapK(abtest.apiResultTo[IO])
+      abtestAPIProvider.kpiApi,
+      abtestAPIProvider.api
     )
   }
 
