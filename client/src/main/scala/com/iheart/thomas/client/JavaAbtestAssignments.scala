@@ -38,6 +38,28 @@ class JavaAbtestAssignments private (serviceUrl: String, asOf: Option[Long]) {
   }
 
   def assignments(
+      userIds: java.util.List[UserId],
+      tags: java.util.List[String],
+      meta: java.util.Map[String, String],
+      feature: String
+  ): java.util.Map[UserId, GroupName] = {
+    val tagsL = tags.asScala.toList
+    val metaS = meta.asScala.toMap
+    val features = List(feature)
+    userIds.asScala.toList
+      .flatMap { userId =>
+        assignGroups
+          .assign(UserGroupQuery(Some(userId), time, tagsL, metaS, features))
+          ._2
+          .get(feature)
+          .map(_._1)
+          .map((userId, _))
+      }
+      .toMap
+      .asJava
+  }
+
+  def assignments(
       userId: String
   ): java.util.Map[String, String] =
     assignments(userId,
