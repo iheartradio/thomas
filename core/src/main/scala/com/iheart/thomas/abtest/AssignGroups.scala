@@ -21,6 +21,7 @@ trait AssignGroups[F[_]] {
 
 object AssignGroups {
 
+  //todo: replace this using the static assign methods
   def fromTestsFeatures[F[_]: Monad](
       data: Vector[(Entity[Abtest], Feature)]
   )(implicit eligibilityControl: EligibilityControl[F]): AssignGroups[F] =
@@ -76,6 +77,36 @@ object AssignGroups {
         }.map(_.toMap))
         .map((ofTime, _))
     }
+  }
+
+  def assign[F[_]: Monad](test: Abtest, feature: Feature, query: UserGroupQuery)(
+      implicit eligibilityControl: EligibilityControl[F]): F[Option[GroupName]] = {
+    eligibilityControl.eligible(query, test).map { eligible =>
+      val idToUse = test.idToUse(query)
+      def overriddenGroup = {
+        idToUse.map(uid => feature.overrides.get(uid)).flatten
+      }
+
+      if (eligible)
+        overriddenGroup orElse {
+          idToUse.flatMap(uid => Bucketing.getGroup(uid, test))
+        } else if (feature.overrideEligibility)
+        overriddenGroup
+      else
+        None
+    }
+  }
+
+  def assign[F[_]: Monad](tests: List[(Abtest, Feature)], query: UserGroupQuery)(
+      implicit eligibilityControl: EligibilityControl[F])
+    : F[Map[FeatureName, GroupName]] = {
+    tests
+      .traverseFilter {
+        case (test, feature) =>
+          assign[F](test, feature, query).map(_.map((feature.name, _)))
+      }
+      .map(_.toMap)
+
   }
 
 }
