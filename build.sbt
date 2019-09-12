@@ -284,6 +284,7 @@ lazy val buildSettings = sharedBuildSettings(gh, libs)
 import ReleaseTransformations._
 
 lazy val publishSettings = sharedPublishSettings(gh) ++ credentialSettings ++ sharedReleaseProcess ++ Seq(
+  publishTo := sonatypePublishToBundle.value,
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
@@ -296,7 +297,7 @@ lazy val publishSettings = sharedPublishSettings(gh) ++ credentialSettings ++ sh
     releaseStepCommandAndRemaining("cli/assembly"),
     setNextVersion,
     commitNextVersion,
-    releaseStepCommand("sonatypeReleaseAll"),
+    releaseStepCommand("sonatypeBundleRelease"),
     pushChanges)
  )
 
