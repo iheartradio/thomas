@@ -59,7 +59,7 @@ class JavaAbtestAssignments private (serviceUrl: String, asOf: Option[Long]) {
 
   def assignments(
       userIds: java.util.List[UserId],
-      feature: String,
+      feature: String
   ): java.util.List[(UserId, GroupName)] =
     assignments(userIds,
                 feature,
