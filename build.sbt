@@ -295,9 +295,9 @@ lazy val publishSettings = sharedPublishSettings(gh) ++ credentialSettings ++ sh
     tagRelease,
     releaseStepCommandAndRemaining("+publishSigned"),
     releaseStepCommandAndRemaining("cli/assembly"),
+    releaseStepCommand("sonatypeBundleRelease"),
     setNextVersion,
     commitNextVersion,
-    releaseStepCommand("sonatypeBundleRelease"),
     pushChanges)
  )
 
