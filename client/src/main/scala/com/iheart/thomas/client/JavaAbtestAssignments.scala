@@ -22,7 +22,7 @@ class JavaAbtestAssignments private (serviceUrl: String, asOf: Option[Long]) {
       tags: java.util.ArrayList[String],
       meta: java.util.Map[String, String],
       features: java.util.ArrayList[String]
-  ): java.util.Map[String, String] = {
+  ): java.util.List[(FeatureName, GroupName)] = {
     assignGroups
       .assign(
         UserGroupQuery(Some(userId),
@@ -34,34 +34,41 @@ class JavaAbtestAssignments private (serviceUrl: String, asOf: Option[Long]) {
       .map {
         case (fn, (gn, _)) => (fn, gn)
       }
+      .toList
       .asJava
   }
 
   def assignments(
       userIds: java.util.List[UserId],
+      feature: String,
       tags: java.util.List[String],
-      meta: java.util.Map[String, String],
-      feature: String
-  ): java.util.Map[UserId, GroupName] = {
+      meta: java.util.Map[String, String]
+  ): java.util.List[(UserId, GroupName)] = {
     val tagsL = tags.asScala.toList
     val metaS = meta.asScala.toMap
     val features = List(feature)
-    userIds.asScala.toList
-      .flatMap { userId =>
-        assignGroups
-          .assign(UserGroupQuery(Some(userId), time, tagsL, metaS, features))
-          ._2
-          .get(feature)
-          .map(_._1)
-          .map((userId, _))
-      }
-      .toMap
-      .asJava
+    userIds.asScala.toList.flatMap { userId =>
+      assignGroups
+        .assign(UserGroupQuery(Some(userId), time, tagsL, metaS, features))
+        ._2
+        .get(feature)
+        .map(_._1)
+        .map((userId, _))
+    }.asJava
   }
 
   def assignments(
+      userIds: java.util.List[UserId],
+      feature: String
+  ): java.util.List[(UserId, GroupName)] =
+    assignments(userIds,
+                feature,
+                new java.util.ArrayList[String](),
+                new java.util.HashMap[String, String]())
+
+  def assignments(
       userId: String
-  ): java.util.Map[String, String] =
+  ): java.util.List[(FeatureName, GroupName)] =
     assignments(userId,
                 new java.util.ArrayList[String](),
                 new java.util.HashMap[String, String](),
@@ -70,7 +77,7 @@ class JavaAbtestAssignments private (serviceUrl: String, asOf: Option[Long]) {
   def assignments(
       userId: String,
       features: java.util.ArrayList[String]
-  ): java.util.Map[String, String] =
+  ): java.util.List[(FeatureName, GroupName)] =
     assignments(userId,
                 new java.util.ArrayList[String](),
                 new java.util.HashMap[String, String](),
