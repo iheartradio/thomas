@@ -63,28 +63,61 @@ This solution works fine for pyspark with small amount of data. For large datase
 Thomas also provides a tighter spark integration module `thomas-spark`, which provides an UDF and a function that works directly with 
 DataFrame. The assignment computation is distributed through UDF
 
-Here is an example on how to use this 
+Here is an example on how to use this in pyspark:
 Start spark with the package
 
 `pyspark --packages com.iheart:thomas-spark_2.11:LATEST_VERSION`
  
-Inside pyspark shell
+Inside pyspark shell, first create the instance of an A/B test `Assigner`
+
 
 ```python
+ta = sc._jvm.com.iheart.thomas.spark.Assigner.create("https://MY_ABTEST_SERVICE_HOST/abtest/testsWithFeatures")
+```
+
+Then you can use it add a column to an existing `DataFrame`
+
+```python 
 from pyspark.mllib.common import _py2java
 from pyspark.mllib.common import _java2py
 
 
-ta = sc._jvm.com.iheart.thomas.spark.Assigner.create("https://MY_ABTEST_SERVICE_HOST/abtest/testsWithFeatures")
+mockUserIds = spark.createDataFrame([("232",), ("3609",), ("3423",)], ["uid"])
 
-mockUserIds = [str(i) for i in range(100000)]
-df = _py2java(sc.parallelize(mockUserIds).toDF("profileId"))
-
-result = _java2py(ta.assignments(df, "My_Test_Feature"))
+result = _java2py(sc, ta.assignments(_py2java(sc, mockUserIds), "My_Test_Feature", "uid"))
 
 ```
 Note that some python to java conversion is needed since `thomas-spark` is written in Scala.  
- 
+
+
+The  `Assigner` also provides a Spark UDF `assignUdf`. You can call it with a feature name to 
+get an UDF that returns the assignment for that abtest feature. 
+
+```python
+
+spark._jsparkSession.udf().register("assign", ta.assignUdf("My_TEST_FEATURES"))
+
+sqlContext.registerDataFrameAsTable(mockUserIds, "userIds")
+
+result = sql("select uid, assign(uid) as assignment from userIds")
+
+```
+
+Or instead of registering the udf, you can use it through a python function 
+
+```python
+from pyspark.sql.column import Column
+from pyspark.sql.column import _to_java_column
+from pyspark.sql.column import _to_seq
+from pyspark.sql.functions import col
+
+def assign(col):
+    _javaAssign = ta.assignUdf("My_TEST_FEATURES")
+    return Column(_javaAssign.apply(_to_seq(sc, [col], _to_java_column)))
+
+mockUserIds.withColumn('assignment', assign(col('uid'))).show()
+
+``` 
 
  
 
