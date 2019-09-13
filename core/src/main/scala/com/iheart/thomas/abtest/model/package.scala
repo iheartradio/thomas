@@ -64,8 +64,8 @@ package model {
     def endsAfter(time: OffsetDateTime) =
       end.fold(true)(_.isAfter(time))
 
-    def idToUse(query: UserGroupQuery): Option[String] =
-      alternativeIdName.fold(query.userId)(query.meta.get)
+    def idToUse(ui: UserInfo): Option[String] =
+      alternativeIdName.fold(ui.userId)(ui.meta.get)
   }
 
   /**
@@ -138,8 +138,12 @@ package model {
       features: List[FeatureName] = Nil
   )
 
+  case class UserInfo(
+      userId: Option[UserId],
+      meta: UserMeta = Map()
+  )
+
   case class UserGroupQueryResult(
-      at: OffsetDateTime,
       groups: Map[FeatureName, GroupName],
       metas: Map[FeatureName, GroupMeta]
   )
