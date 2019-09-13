@@ -3,7 +3,7 @@ package bandit
 
 import com.iheart.thomas.analysis.{Conversions, Probability}
 import com.iheart.thomas.bandit.bayesian.{ArmState, BanditState, BayesianMAB}
-import play.api.libs.json.{Format, Json}
+import _root_.play.api.libs.json.{Format, Json}
 import io.estatico.newtype.ops._
 import lihua.playJson.Formats._
 import com.iheart.thomas.abtest.Formats._

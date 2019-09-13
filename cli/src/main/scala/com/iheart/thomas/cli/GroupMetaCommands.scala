@@ -8,7 +8,7 @@ import com.iheart.thomas.client.AbtestClient
 import com.iheart.thomas.abtest.model.TestId
 import com.monovore.decline._
 import lihua.EntityId
-import play.api.libs.json.Json.{prettyPrint, toJson}
+import _root_.play.api.libs.json.Json.{prettyPrint, toJson}
 
 class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
 

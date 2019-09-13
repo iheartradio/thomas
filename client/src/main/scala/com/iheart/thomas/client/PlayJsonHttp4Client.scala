@@ -2,7 +2,7 @@ package com.iheart.thomas.client
 
 import cats.effect.Sync
 import org.http4s.client.dsl.Http4sClientDsl
-import play.api.libs.json.{JsObject, Reads, Writes}
+import _root_.play.api.libs.json.{JsObject, Reads, Writes}
 import cats.implicits._
 
 private[client] abstract class PlayJsonHttp4sClient[F[_]: Sync]

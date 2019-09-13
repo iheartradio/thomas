@@ -21,7 +21,7 @@ import org.scanamo.LocalDynamoDB
 import cats.tagless.implicits._
 import cats.~>
 import lihua.EntityDAO
-import play.api.libs.json.{JsObject, Json}
+import _root_.play.api.libs.json.{JsObject, Json}
 import cats.implicits._
 import com.amazonaws.services.dynamodbv2.model.ResourceInUseException
 import com.stripe.rainier.sampler.RNG
