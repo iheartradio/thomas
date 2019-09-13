@@ -8,14 +8,13 @@ package client
 
 import java.time.OffsetDateTime
 
-import cats.{Functor, Id, MonadError}
+import cats.{Functor, MonadError}
 import cats.effect._
 import com.iheart.thomas.abtest.model._
 import lihua.Entity
 import _root_.play.api.libs.json._
 import cats.implicits._
 import com.iheart.thomas.abtest.Error
-import com.iheart.thomas.abtest.AssignGroups
 import com.iheart.thomas.analysis.KPIDistribution
 import abtest.Formats._
 import scala.concurrent.ExecutionContext
@@ -152,12 +151,13 @@ object AbtestClient {
     * Shortcuts for getting the assigned group only.
     * @param serviceUrl for getting all running tests as of `time`
     */
-  def assignGroups[F[_]: ConcurrentEffect](
-      serviceUrl: String,
-      time: Option[OffsetDateTime])(implicit ec: ExecutionContext): F[AssignGroups[Id]] =
+  def testsWithFeatures[F[_]: ConcurrentEffect](serviceUrl: String,
+                                                time: Option[OffsetDateTime])(
+      implicit ec: ExecutionContext): F[Vector[(Abtest, Feature)]] =
     Http4SAbtestClient
       .resource[F](new HttpServiceUrlsPlay("mock") {
         override val tests: String = serviceUrl
       }, ec)
-      .use(_.tests(time).map(t => AssignGroups.fromTestsFeatures[Id](t)))
+      .use(
+        _.tests(time).map(_.map { case (Entity(_, test), feature) => (test, feature) }))
 }

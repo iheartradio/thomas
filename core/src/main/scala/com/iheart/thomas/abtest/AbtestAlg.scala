@@ -248,8 +248,7 @@ final class DefaultAbtestAlg[F[_]](refreshPeriod: FiniteDuration)(
                 time: Option[OffsetDateTime],
                 userTags: List[Tag]): F[Map[FeatureName, GroupName]] =
     validateUserId(userId) >>
-      getGroupAssignmentsOf(UserGroupQuery(Some(userId), time, userTags)).map(p =>
-        toGroups(p._2))
+      getGroupAssignmentsOf(UserGroupQuery(Some(userId), time, userTags)).map(toGroups)
 
   def terminate(testId: TestId): F[Option[Entity[Abtest]]] =
     getTest(testId).flatMap { test =>
@@ -304,13 +303,12 @@ final class DefaultAbtestAlg[F[_]](refreshPeriod: FiniteDuration)(
 
   def getGroupsWithMeta(query: UserGroupQuery): F[UserGroupQueryResult] =
     validate(query) >> {
-      getGroupAssignmentsOf(query).map {
-        case (at, groupAssignments) =>
-          val metas = groupAssignments.mapFilter {
-            case (groupName, test) =>
-              test.data.groupMetas.get(groupName)
-          }
-          UserGroupQueryResult(at, toGroups(groupAssignments), metas)
+      getGroupAssignmentsOf(query).map { groupAssignments =>
+        val metas = groupAssignments.mapFilter {
+          case (groupName, test) =>
+            test.groupMetas.get(groupName)
+        }
+        UserGroupQueryResult(toGroups(groupAssignments), metas)
       }
     }
 
@@ -419,16 +417,16 @@ final class DefaultAbtestAlg[F[_]](refreshPeriod: FiniteDuration)(
       created <- doCreate(testSpec, Some(updatedContinueFrom))
     } yield created
 
-  private def toGroups(assignments: Map[FeatureName, (GroupName, Entity[Abtest])])
-    : Map[FeatureName, GroupName] =
+  private def toGroups(
+      assignments: Map[FeatureName, (GroupName, _)]): Map[FeatureName, GroupName] =
     assignments.toList.map { case (k, v) => (k, v._1) }.toMap
 
-  private def getGroupAssignmentsOf(query: UserGroupQuery)
-    : F[(OffsetDateTime, Map[FeatureName, (GroupName, Entity[Abtest])])] =
+  private def getGroupAssignmentsOf(
+      query: UserGroupQuery): F[Map[FeatureName, (GroupName, Abtest)]] =
     for {
       data <- getAllTestsCached(query.at)
-      r <- AssignGroups.fromTestsFeatures[F](data).assign(query)
-    } yield r
+      testFeatures = data.map { case (Entity(_, test), feature) => (test, feature) }
+    } yield AssignGroups.assign[Id](testFeatures, query)
 
   private def doCreate(newSpec: AbtestSpec,
                        inheritFrom: Option[Entity[Abtest]]): F[Entity[Abtest]] = {

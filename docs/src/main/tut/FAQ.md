@@ -58,6 +58,36 @@ download all the relevant tests and overrides. So please avoid recreating it unn
 
 `client.assignments(userId, [tags], {user_meta})`  returns a Map (or hashmap if you are in python) of assignments. The keys of this Map will be feature names, and the values are the group names, the second and third arguments `[tags]` and `{user_meta}` are optional, ignore them if your tests don't requirement them. 
 
+This solution works fine for pyspark with small amount of data. For large dataset, Pyspark introp with JVM is not efficient. 
+
+Thomas also provides a tighter spark integration module `thomas-spark`, which provides an UDF and a function that works directly with 
+DataFrame. The assignment computation is distributed through UDF
+
+Here is an example on how to use this 
+Start spark with the package
+
+`pyspark --packages com.iheart:thomas-spark_2.11:LATEST_VERSION`
+ 
+Inside pyspark shell
+
+```python
+from pyspark.mllib.common import _py2java
+from pyspark.mllib.common import _java2py
+
+
+ta = sc._jvm.com.iheart.thomas.spark.Assigner.create("https://MY_ABTEST_SERVICE_HOST/abtest/testsWithFeatures")
+
+mockUserIds = [str(i) for i in range(100000)]
+df = _py2java(sc.parallelize(mockUserIds).toDF("profileId"))
+
+result = _java2py(ta.assignments(df, "My_Test_Feature"))
+
+```
+Note that some python to java conversion is needed since `thomas-spark` is written in Scala.  
+ 
+
+ 
+
 # How to run Bayesian Analysis
 
 Since Thomas does not come with an analytics solution, to analyze the A/B test results using Thomas's Bayesian utility, you need to write integration with your analytics solution. Please refer to [the dedicated page](bayesian.html) for detailed guide on this one.   
