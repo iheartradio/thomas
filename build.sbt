@@ -17,6 +17,7 @@ lazy val libs =
   .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
   .add(   name = "play-json",             version = "2.7.3",  org = "com.typesafe.play")
   .add(   name = "play",                  version = "2.7.3",  org = "com.typesafe.play")
+  .add(   name = "spark",                  version = "2.4.4",  org = "org.apache.spark", "spark-sql", "spark-core")
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
   .addJVM(name = "play-json-derived-codecs", version = "6.0.0", org = "org.julienrf")
   .addJVM(name = "newtype",               version = "0.4.3",  org = "io.estatico")
@@ -37,7 +38,7 @@ addCommandAlias("validate", s";clean;test;play/IntegrationTest/test;it/Integrati
 addCommandAlias("it", s"IntegrationTest/test")
 
 lazy val thomas = project.in(file("."))
-  .aggregate(playExample, play, client, bandit, it, http4s, cli, mongo, analysis, docs, stress, dynamo)
+  .aggregate(playExample, play, client, bandit, it, http4s, cli, mongo, analysis, docs, stress, dynamo, spark)
   .settings(
     rootSettings,
     crossScalaVersions := Nil,
@@ -158,6 +159,14 @@ lazy val dynamo = project
   .settings(
     crossScalaVersions := Seq(scalaVersion.value),
     libs.dependencies("lihua-dynamo")
+  )
+
+lazy val spark = project
+  .dependsOn(client)
+  .settings(name := "thomas-spark")
+  .settings(rootSettings)
+  .settings(
+    libs.dependency("spark-sql", Some("provided"))
   )
 
 
