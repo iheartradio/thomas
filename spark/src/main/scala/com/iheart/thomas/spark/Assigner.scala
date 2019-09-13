@@ -22,9 +22,6 @@ class Assigner(data: Vector[(Abtest, Feature)]) extends Serializable {
   def assignments(userIds: DataFrame,
                   feature: FeatureName,
                   idColumn: String): DataFrame = {
-
-    import userIds.sparkSession.implicits._
-
     userIds.withColumn("assignment", assignUdf(feature)(col(idColumn)))
   }
 }
