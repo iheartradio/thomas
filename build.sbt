@@ -23,7 +23,7 @@ lazy val libs =
   .addJVM(name = "newtype",               version = "0.4.3",  org = "io.estatico")
   .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
   .addJVM(name = "mau",                   version = "0.1.0",  org = "com.kailuowang")
-  .addJVM(name = "decline",               version = "0.7.0-M0",  org = "com.monovore")
+  .addJVM(name = "decline",               version = "1.0.0",  org = "com.monovore")
   .addJVM(name = "scala-java8-compat",    version = "0.9.0",  org = "org.scala-lang.modules")
   .addJVM(name = "log4cats",              version = "0.1.1",  org = "io.chrisdavenport", "log4cats-slf4j")
   .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
