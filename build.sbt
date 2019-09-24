@@ -111,7 +111,7 @@ lazy val analysis = project
     resolvers += Resolver.bintrayRepo("cibotech", "public"),
     libs.testDependencies("scalacheck", "scalatest"),
     libs.dependencies("rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "commons-math3", "play-json-derived-codecs"),
-    libs.dependency("rainier-plot", Some(Optional))
+    libs.dependency("rainier-plot", Some(Optional.name))
   )
 
 lazy val docs = project
