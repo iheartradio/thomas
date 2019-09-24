@@ -110,7 +110,8 @@ lazy val analysis = project
     sources in (Compile, doc) := Nil, //disable scaladoc due to scalameta not working in scaladoc
     resolvers += Resolver.bintrayRepo("cibotech", "public"),
     libs.testDependencies("scalacheck", "scalatest"),
-    libs.dependencies("rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "rainier-plot", "commons-math3", "play-json-derived-codecs"),
+    libs.dependencies("rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "commons-math3", "play-json-derived-codecs"),
+    libs.dependency("rainier-plot", Some(Optional))
   )
 
 lazy val docs = project
