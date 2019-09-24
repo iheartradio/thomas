@@ -16,6 +16,8 @@ trait BayesianBanditClient[F[_], R] {
 
   def reallocate(featureName: FeatureName, kpiName: KPIName): F[BayesianMAB[R]]
 
+  def updateReward(featureName: FeatureName, r: R): F[BanditState[R]]
+
 }
 
 object BayesianBanditClient {
@@ -34,6 +36,13 @@ object BayesianBanditClient {
 
       def currentState(featureName: FeatureName): F[BayesianMAB[Conversions]] =
         c.expect(rootUrl + "/features/" + featureName)
+
+      def updateReward(featureName: FeatureName,
+                       r: Conversions): F[BanditState[Conversions]] =
+        c.expect(
+          PUT(
+            r,
+            Uri.unsafeFromString(rootUrl + "/features/" + featureName + "/reward_state")))
 
       def reallocate(featureName: FeatureName,
                      kpiName: KPIName): F[BayesianMAB[Conversions]] =

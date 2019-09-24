@@ -28,17 +28,20 @@ lazy val libs =
   .addJVM(name = "log4cats",              version = "0.1.1",  org = "io.chrisdavenport", "log4cats-slf4j")
   .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
   .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
-  .addJVM(name = "http4s",                version = "0.20.10", org= "org.http4s", "http4s-dsl", "http4s-blaze-server", "http4s-blaze-client", "http4s-play-json")
+  .addJVM(name = "http4s",                version = "0.20.10",org= "org.http4s", "http4s-dsl", "http4s-blaze-server", "http4s-blaze-client", "http4s-play-json")
   .addJVM(name = "akka-slf4j",            version = "2.5.22", org = "com.typesafe.akka")
+  .addJVM(name = "fs2-kafka",             version =  "0.20.1",org = "com.ovoenergy")
   .add(name    = "scalatestplus-scalacheck", version = "1.0.0-SNAP6",   org = "org.scalatestplus")
   .add   (name = "scalatestplus-play",    version = "4.0.3",  org = "org.scalatestplus.play")
+  .add   (name = "cats-effect-testing-scalatest",    version = "0.2-be4c682",  org = "com.codecommit")
+  .add   (name = "jawn",                  version = "0.14.2", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias("validate", s";clean;test;play/IntegrationTest/test;it/IntegrationTest/test;playExample/compile;docs/tut")
 addCommandAlias("it", s"IntegrationTest/test")
 
 lazy val thomas = project.in(file("."))
-  .aggregate(playExample, play, client, bandit, it, http4s, cli, mongo, analysis, docs, stress, dynamo, spark)
+  .aggregate(playExample, play, client, bandit, it, http4s, cli, mongo, analysis, docs, stress, dynamo, spark, stream)
   .settings(
     rootSettings,
     crossScalaVersions := Nil,
@@ -52,8 +55,7 @@ lazy val client = project
     name := "thomas-client",
     rootSettings,
     Defaults.itSettings,
-    libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % libs.vers("scalatest") % "it, test"),
+    libs.dependency("scalatest", Some("it, test")),
     libs.dependencies( "http4s-blaze-client", "http4s-play-json")
   )
 
@@ -115,7 +117,7 @@ lazy val analysis = project
   )
 
 lazy val docs = project
-  .configure(mkDocConfig(gh, rootSettings, taglessSettings, client, http4s, play, core, analysis, cli, spark))
+  .configure(mkDocConfig(gh, rootSettings, taglessSettings, client, http4s, play, core, analysis, cli, spark, stream))
   .enablePlugins(MicrositesPlugin)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
@@ -160,6 +162,15 @@ lazy val dynamo = project
   .settings(
     crossScalaVersions := Seq(scalaVersion.value),
     libs.dependencies("lihua-dynamo")
+  )
+
+lazy val stream = project
+  .dependsOn(client)
+  .settings(name := "thomas-stream")
+  .settings(rootSettings)
+  .settings(
+    libs.testDependencies("cats-effect-testing-scalatest"),
+    libs.dependencies("fs2-core")
   )
 
 lazy val spark = project
@@ -222,7 +233,6 @@ lazy val it = project
     testOnly in IntegrationTest := (testOnly in IntegrationTest).dependsOn(startDynamoDBLocal).evaluated,
     testOptions in IntegrationTest += dynamoDBLocalTestCleanup.value
   )
-
 
 lazy val play = project
   .dependsOn(mongo, dynamo)
