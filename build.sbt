@@ -166,6 +166,7 @@ lazy val dynamo = project
 
 lazy val stream = project
   .dependsOn(client)
+  .aggregate(client)
   .settings(name := "thomas-stream")
   .settings(rootSettings)
   .settings(
