@@ -13,27 +13,37 @@ import scala.concurrent.ExecutionContext
 
 class AsyncConversionUpdater[F[_]: Async](
     chunkSize: Int,
-    client: BayesianBanditClient[F, Conversions]) {
+    client: BayesianBanditClient[F, Conversions]
+) {
 
-  def updateCount(featureName: FeatureName): Pipe[F, (ArmName, ConversionEvent), Unit] = {
-    input =>
-      input
-        .chunkN(chunkSize, true)
-        .evalMap { chunk =>
-          val isConverted = identity[ConversionEvent] _
-          val r = (chunk.foldMap { case (an, ce) => Map(an -> List(ce)) }).map {
+  def updateCount(
+      featureName: FeatureName
+  ): Pipe[F, (ArmName, ConversionEvent), Unit] = { input =>
+    input
+      .chunkN(chunkSize, true)
+      .evalMap { chunk =>
+        val isConverted = identity[ConversionEvent] _
+        val r = (chunk
+          .foldMap {
+            case (an, ce) =>
+              Map(an -> List(ce))
+          })
+          .map {
             case (an, ces) =>
               val convertedCount = ces.count(isConverted)
               (
                 an,
-                Conversions(converted = convertedCount.toLong, total = ces.size.toLong)
+                Conversions(
+                  converted = convertedCount.toLong,
+                  total = ces.size.toLong
+                )
               )
           }
 
-          client
-            .updateReward(featureName, r)
-            .void
-        }
+        client
+          .updateReward(featureName, r)
+          .void
+      }
   }
 }
 
@@ -45,8 +55,7 @@ object AsyncConversionUpdater {
   def resource[F[_]: ConcurrentEffect](
       rootUrl: String,
       chunkSize: Int
-    )(implicit ec: ExecutionContext
-    ): Resource[F, AsyncConversionUpdater[F]] =
+  )(implicit ec: ExecutionContext): Resource[F, AsyncConversionUpdater[F]] =
     BayesianBanditClient
       .defaultConversionResource[F](rootUrl)
       .map(c => new AsyncConversionUpdater(chunkSize, c))
