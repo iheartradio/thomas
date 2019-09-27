@@ -11,7 +11,7 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 lazy val libs =
   org.typelevel.libraries
   .addJVM(name = "lihua",                 version = "0.24",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-play-json")
-  .addJVM(name = "scanamo",               version = "1.0.0-M10", org ="org.scanamo", "scanamo-testkit")
+  .addJVM(name = "scanamo",               version = "1.0.0-M11", org ="org.scanamo", "scanamo-testkit")
   .addJVM(name = "rainier",               version = "0.2.2",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
   .addJVM(name = "breeze",                version = "1.0", org ="org.scalanlp", "breeze", "breeze-viz")
   .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
@@ -22,8 +22,8 @@ lazy val libs =
   .addJVM(name = "play-json-derived-codecs", version = "6.0.0", org = "org.julienrf")
   .addJVM(name = "newtype",               version = "0.4.3",  org = "io.estatico")
   .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
-  .addJVM(name = "mau",                   version = "0.1.1",  org = "com.kailuowang")
-  .addJVM(name = "decline",               version = "0.7.0-M0",  org = "com.monovore")
+  .addJVM(name = "mau",                   version = "0.1.0",  org = "com.kailuowang")
+  .addJVM(name = "decline",               version = "1.0.0",  org = "com.monovore")
   .addJVM(name = "scala-java8-compat",    version = "0.9.0",  org = "org.scala-lang.modules")
   .addJVM(name = "log4cats",              version = "0.1.1",  org = "io.chrisdavenport", "log4cats-slf4j")
   .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
@@ -110,11 +110,12 @@ lazy val analysis = project
     sources in (Compile, doc) := Nil, //disable scaladoc due to scalameta not working in scaladoc
     resolvers += Resolver.bintrayRepo("cibotech", "public"),
     libs.testDependencies("scalacheck", "scalatest"),
-    libs.dependencies("rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "rainier-plot", "commons-math3", "play-json-derived-codecs"),
+    libs.dependencies("rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "commons-math3", "play-json-derived-codecs"),
+    libs.dependency("rainier-plot", Some(Optional.name))
   )
 
 lazy val docs = project
-  .configure(mkDocConfig(gh, rootSettings, taglessSettings, client, http4s, play, core, analysis, cli))
+  .configure(mkDocConfig(gh, rootSettings, taglessSettings, client, http4s, play, core, analysis, cli, spark))
   .enablePlugins(MicrositesPlugin)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
@@ -284,7 +285,7 @@ lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =
 
 lazy val taglessSettings =  paradiseSettings(libs) ++ Seq(
   libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-tagless-macros" % "0.5"
+    "org.typelevel" %% "cats-tagless-macros" % "0.10"
   )
 )
 
