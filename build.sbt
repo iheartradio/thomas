@@ -22,7 +22,7 @@ lazy val libs =
   .addJVM(name = "play-json-derived-codecs", version = "6.0.0", org = "org.julienrf")
   .addJVM(name = "newtype",               version = "0.4.3",  org = "io.estatico")
   .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
-  .addJVM(name = "mau",                   version = "0.1.0",  org = "com.kailuowang")
+  .addJVM(name = "mau",                   version = "0.1.1",  org = "com.kailuowang")
   .addJVM(name = "decline",               version = "1.0.0",  org = "com.monovore")
   .addJVM(name = "scala-java8-compat",    version = "0.9.0",  org = "org.scala-lang.modules")
   .addJVM(name = "log4cats",              version = "0.1.1",  org = "io.chrisdavenport", "log4cats-slf4j")
