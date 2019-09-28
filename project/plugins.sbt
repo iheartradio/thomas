@@ -12,4 +12,4 @@ addSbtPlugin("org.typelevel" %% "sbt-catalysts" % "0.27")
 
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.9.0")
 
-addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.7")
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.8")
