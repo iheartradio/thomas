@@ -3,33 +3,38 @@ package com.iheart.thomas.stream
 import cats.effect.{ConcurrentEffect, Resource}
 import com.iheart.thomas.client.BayesianBanditClient
 import fs2.Pipe
-import AsyncConversionUpdater._
+import ConversionUpdater._
 import cats.Functor
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.analysis.Conversions
 import cats.implicits._
 import com.iheart.thomas.bandit.`package`.ArmName
+import com.iheart.thomas.bandit.bayesian.BayesianMABAlg
 
 import scala.concurrent.ExecutionContext
 
-class AsyncConversionUpdater[F[_]: Functor](
-    chunkSize: Int,
-    client: BayesianBanditClient[F, Conversions]) {
+//trait ConversionUpdater[F[_], I] {
+//  def updateConversions()
+//}
+
+class ConversionUpdater[F[_]: Functor](
+    client: BayesianMABAlg[F, Conversions]) {
 
   def updateConversion(
+      chunkSize: Int,
       featureName: FeatureName
     ): Pipe[F, (ArmName, ConversionEvent), Unit] =
-    AsyncConversionUpdater.toConversion(chunkSize) andThen {
+    ConversionUpdater.toConversion(chunkSize) andThen {
       input =>
         input.evalMap { r =>
           client
-            .updateReward(featureName, r)
+            .updateRewardState(featureName, r)
             .void
         }
     }
 }
 
-object AsyncConversionUpdater {
+object ConversionUpdater {
   type ConversionEvent = Boolean
   val Converted = true
   val Viewed = false
@@ -64,11 +69,10 @@ object AsyncConversionUpdater {
   }
 
   def resource[F[_]: ConcurrentEffect](
-      rootUrl: String,
-      chunkSize: Int
+      rootUrl: String
     )(implicit ec: ExecutionContext
-    ): Resource[F, AsyncConversionUpdater[F]] =
+    ): Resource[F, ConversionUpdater[F]] =
     BayesianBanditClient
       .defaultConversionResource[F](rootUrl)
-      .map(c => new AsyncConversionUpdater(chunkSize, c))
+      .map(c => new ConversionUpdater(c))
 }

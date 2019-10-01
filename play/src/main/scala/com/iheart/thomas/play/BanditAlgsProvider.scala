@@ -1,6 +1,8 @@
 package com.iheart.thomas
 package play
 
+import java.time.OffsetDateTime
+
 import cats.effect.IO
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.analysis.SampleSettings
@@ -10,12 +12,13 @@ import com.stripe.rainier.sampler.RNG
 import javax.inject._
 
 @Singleton
-class BanditAlgsProvider @Inject()(abtestAPIProvider: AbtestAPIProvider,
-                                   dcProvider: DynamoClientProvider) {
+class BanditAlgsProvider @Inject()(
+    abtestAPIProvider: AbtestAPIProvider,
+    dcProvider: DynamoClientProvider) {
 
   lazy val conversionBMABAlg: ConversionBMABAlg[IO] = {
     implicit val (ss, r) = (SampleSettings.default, RNG.default)
-
+    implicit val nowF = IO.delay(OffsetDateTime.now)
     ConversionBMABAlg.default[IO](
       DAOs.stateDAO(dcProvider.get()),
       abtestAPIProvider.kpiApi,

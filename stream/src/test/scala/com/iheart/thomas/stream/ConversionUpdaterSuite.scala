@@ -4,10 +4,10 @@ import cats.effect.IO
 import cats.effect.scalatest.AsyncIOSpec
 import fs2.Stream
 import org.scalatest.matchers.should.Matchers
-import AsyncConversionUpdater.{Converted, Viewed}
+import ConversionUpdater.{Converted, Viewed}
 import com.iheart.thomas.analysis.Conversions
 
-class AsyncConversionUpdaterSuite
+class ConversionUpdaterSuite
     extends AsyncIOSpec
     with Matchers {
   "toConversion" - {
@@ -22,7 +22,7 @@ class AsyncConversionUpdaterSuite
           "B" -> Converted
         ).iterator
       )
-      AsyncConversionUpdater
+      ConversionUpdater
         .toConversion[IO](10)(input)
         .compile
         .toList
@@ -30,7 +30,7 @@ class AsyncConversionUpdaterSuite
           _ shouldBe List(
             Map(
               "A" -> Conversions(1, 2),
-              "B" -> Conversions(1, 4)
+              "B" -> Conversions(3, 4)
             )
           )
         )

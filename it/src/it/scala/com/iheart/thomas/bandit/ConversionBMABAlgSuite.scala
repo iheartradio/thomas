@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package bandit
 
-import java.time.Instant
+import java.time.OffsetDateTime
 
 import cats.data.EitherT
 import cats.effect.{IO, Resource}
@@ -24,6 +24,8 @@ import lihua.EntityDAO
 import _root_.play.api.libs.json.{JsObject, Json}
 import cats.implicits._
 import com.amazonaws.services.dynamodbv2.model.ResourceInUseException
+import com.iheart.thomas.abtest.model.Abtest.Specialization.MultiArmBandit
+import com.iheart.thomas.abtest.model.{AbtestSpec, Group}
 import com.stripe.rainier.sampler.RNG
 import lihua.dynamo.ScanamoEntityDAO
 
@@ -34,7 +36,8 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
 
   import mongo.idSelector
   implicit val config = ConfigFactory.load()
-
+  implicit val cs = IO.contextShift(global)
+  implicit val timer = IO.timer(global)
   lazy val mangoDAOsR = mongo.daosResource[IO].flatMap {
     case daos =>
       Resource
@@ -70,30 +73,38 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       case (daos, sd) =>
         implicit val (abtestDAO, featureDAO, kpiDAO) = daos
         lazy val refreshPeriod = 0.seconds
-        implicit val cs = IO.contextShift(global)
-        implicit val timer = IO.timer(global)
+
         val kpi = implicitly[KPIApi[IO]]
 
         AbtestAlg.defaultResource[IO](refreshPeriod).map { abtestAlg =>
           implicit val ss = SampleSettings.default
           implicit val rng = RNG.default
+          implicit val nowF = IO.delay(OffsetDateTime.now)
 
-          (ConversionBMABAlg.default[IO](sd, kpi, abtestAlg), kpi)
-
+          (
+            ConversionBMABAlg.default[IO](sd, kpi, abtestAlg),
+            kpi,
+            abtestAlg
+          )
         }
-
     }
 
-  def withAPI[A](f: (ConversionBMABAlg[IO], KPIApi[IO]) => IO[A]): A =
+  def withAPI[A](
+      f: (ConversionBMABAlg[IO], KPIApi[IO], AbtestAlg[IO]) => IO[A]
+    ): A =
     apiR.use(f.tupled).unsafeRunSync()
-  def withAPI[A](f: ConversionBMABAlg[IO] => IO[A]): A = withAPI((api, _) => f(api))
+
+  def withAPI[A](f: ConversionBMABAlg[IO] => IO[A]): A =
+    withAPI((api, _, _) => f(api))
 
   test("init state") {
-    val spec = BanditSpec(feature = "A_new_Feature",
-                          arms = List("A", "B"),
-                          author = "Test Runner",
-                          start = Instant.now,
-                          title = "for integration tests")
+    val spec = BanditSpec(
+      feature = "A_new_Feature",
+      arms = List("A", "B"),
+      author = "Test Runner",
+      start = OffsetDateTime.now,
+      title = "for integration tests"
+    )
 
     val (init, currentState) = withAPI { api =>
       for {
@@ -102,60 +113,136 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       } yield (is, current)
     }
     init.state.arms.size shouldBe 2
-    init.state.arms.map(_.likelihoodOptimum).forall(_.p == 0) shouldBe true
+    init.state.arms
+      .map(_.likelihoodOptimum)
+      .forall(_.p == 0) shouldBe true
     init.state.title shouldBe spec.title
+    init.abtest.data.specialization shouldBe Some(
+      MultiArmBandit
+    )
     currentState.state shouldBe init.state
-    currentState.abtest.data.groups.map(_.size) shouldBe List(0.5d, 0.5d)
+    currentState.abtest.data.groups
+      .map(_.size) shouldBe List(0.5d, 0.5d)
+    currentState.abtest.data.start
+      .isBefore(OffsetDateTime.now.plusSeconds(1))
+  }
+
+  test("running bandits include running bandits") {
+    val spec = BanditSpec(
+      feature = "A_new_Feature",
+      arms = List("A", "B"),
+      author = "Test Runner",
+      start = OffsetDateTime.now,
+      title = "for integration tests"
+    )
+
+    val spec2 = spec.copy(feature = "Another_new_feature")
+    val spec3 = spec.copy(feature = "Yet_Another_new_feature")
+
+    val regularAb = AbtestSpec(
+      name = "test",
+      author = "kai",
+      feature = "regular_abtest",
+      start = OffsetDateTime.now,
+      end = None,
+      groups = List(Group("A", 0.5), Group("B", 0.5))
+    )
+
+    val running = withAPI { (api, _, abtestAlg) =>
+      for {
+        _ <- api.init(spec)
+        _ <- api.init(spec2)
+        b3 <- api.init(spec3)
+        _ <- abtestAlg.create(regularAb, false)
+        _ <- abtestAlg.terminate(b3.abtest._id)
+        _ <- timer.sleep(200.milliseconds)
+        running <- api.runningBandits()
+      } yield running
+    }
+    running.map(_.abtest.data.feature).toSet shouldBe Set(
+      spec.feature,
+      spec2.feature
+    )
   }
 
   test("update state") {
-    val spec = BanditSpec(feature = "A_new_Feature",
-                          arms = List("A", "B"),
-                          author = "Test Runner",
-                          start = Instant.now,
-                          title = "for initegration tests")
+    val spec = BanditSpec(
+      feature = "A_new_Feature",
+      arms = List("A", "B"),
+      author = "Test Runner",
+      start = OffsetDateTime.now,
+      title = "for initegration tests"
+    )
 
     val currentState = withAPI { api =>
       for {
         _ <- api.init(spec)
-        _ <- api.updateRewardState(spec.feature,
-                                   Map("A" -> Conversions(12, 2),
-                                       "B" -> Conversions(43, 6)))
-        _ <- api.updateRewardState(spec.feature,
-                                   Map("A" -> Conversions(13, 5),
-                                       "B" -> Conversions(12, 7)))
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(12, 2),
+            "B" -> Conversions(43, 6)
+          )
+        )
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(13, 5),
+            "B" -> Conversions(12, 7)
+          )
+        )
         current <- api.currentState(spec.feature)
       } yield current
     }
 
     val newState = currentState.state
-    newState.arms.find(_.name == "A").get.rewardState shouldBe Conversions(25, 7)
-    newState.arms.find(_.name == "B").get.rewardState shouldBe Conversions(55, 13)
+    newState.arms
+      .find(_.name == "A")
+      .get
+      .rewardState shouldBe Conversions(25, 7)
+    newState.arms
+      .find(_.name == "B")
+      .get
+      .rewardState shouldBe Conversions(55, 13)
 
   }
 
   test("reallocate") {
-    val spec = BanditSpec(feature = "A_new_Feature",
-                          arms = List("A", "B"),
-                          author = "Test Runner",
-                          start = Instant.now,
-                          title = "for integration tests")
+    val spec = BanditSpec(
+      feature = "A_new_Feature",
+      arms = List("A", "B"),
+      author = "Test Runner",
+      start = OffsetDateTime.now,
+      title = "for integration tests"
+    )
 
-    val kpi = BetaKPIDistribution("test kpi", alphaPrior = 1000, betaPrior = 100000)
-    val currentState = withAPI { (api, kpiAPI) =>
+    val kpi = BetaKPIDistribution(
+      "test kpi",
+      alphaPrior = 1000,
+      betaPrior = 100000
+    )
+    val currentState = withAPI { (api, kpiAPI, _) =>
       for {
         _ <- kpiAPI.upsert(kpi)
         _ <- api.init(spec)
-        _ <- api.updateRewardState(spec.feature,
-                                   Map("A" -> Conversions(12, 2),
-                                       "B" -> Conversions(43, 10)))
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(12, 2),
+            "B" -> Conversions(43, 10)
+          )
+        )
         _ <- api.reallocate(spec.feature, kpi.name)
         current <- api.currentState(spec.feature)
       } yield current
     }
 
-    currentState.abtest.data.getGroup("B").get.size shouldBe >(
-      currentState.abtest.data.getGroup("A").get.size)
+    currentState.abtest.data
+      .getGroup("B")
+      .get
+      .size shouldBe >(
+      currentState.abtest.data.getGroup("A").get.size
+    )
 
   }
 

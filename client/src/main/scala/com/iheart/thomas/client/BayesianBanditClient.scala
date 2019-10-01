@@ -1,6 +1,9 @@
 package com.iheart.thomas
 package client
 
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+
 import bandit._
 import bayesian._
 import cats.effect.{ConcurrentEffect, Sync}
@@ -12,49 +15,42 @@ import org.http4s.client.blaze.BlazeClientBuilder
 
 import scala.concurrent.ExecutionContext
 
-trait BayesianBanditClient[F[_], R] {
-  def init(banditSpec: BanditSpec): F[BayesianMAB[R]]
-
-  def currentState(featureName: FeatureName): F[BayesianMAB[R]]
-
-  def reallocate(
-      featureName: FeatureName,
-      kpiName: KPIName
-    ): F[BayesianMAB[R]]
-
-  def updateReward(
-      featureName: FeatureName,
-      r: Map[ArmName, R]
-    ): F[BanditState[R]]
-
-}
-
 object BayesianBanditClient {
 
-  implicit val te: QueryParamEncoder[KPIName] = KPIName.deriving
+  implicit val te: QueryParamEncoder[KPIName] =
+    KPIName.deriving
 
   def defaultConversion[F[_]: Sync](
       c: HClient[F],
       rootUrl: String
-    ): BayesianBanditClient[F, Conversions] =
-    new PlayJsonHttp4sClient[F] with BayesianBanditClient[F, Conversions] {
+    ): BayesianMABAlg[F, Conversions] =
+    new PlayJsonHttp4sClient[F] with BayesianMABAlg[F, Conversions] {
       import org.http4s.{Method, Uri}
       import Method._
 
       def init(banditSpec: BanditSpec): F[BayesianMAB[Conversions]] =
-        c.expect(POST(banditSpec, Uri.unsafeFromString(rootUrl + "/features/")))
+        c.expect(
+          POST(
+            banditSpec,
+            Uri.unsafeFromString(rootUrl + "/features/")
+          )
+        )
 
-      def currentState(featureName: FeatureName): F[BayesianMAB[Conversions]] =
+      def currentState(
+          featureName: FeatureName
+        ): F[BayesianMAB[Conversions]] =
         c.expect(rootUrl + "/features/" + featureName)
 
-      def updateReward(
+      def updateRewardState(
           featureName: FeatureName,
           r: Map[ArmName, Conversions]
         ): F[BanditState[Conversions]] =
         c.expect(
           PUT(
             r,
-            Uri.unsafeFromString(rootUrl + "/features/" + featureName + "/reward_state")
+            Uri.unsafeFromString(
+              rootUrl + "/features/" + featureName + "/reward_state"
+            )
           )
         )
 
@@ -64,10 +60,22 @@ object BayesianBanditClient {
         ): F[BayesianMAB[Conversions]] =
         c.expect(
           PUT(
-            Uri.unsafeFromString(rootUrl + "/features/" + featureName + "/abtest") +? ("kpiName", kpiName)
+            Uri.unsafeFromString(
+              rootUrl + "/features/" + featureName + "/abtest"
+            ) +? ("kpiName", kpiName)
           )
         )
 
+      def runningBandits(
+          asOf: Option[OffsetDateTime]
+        ): F[Vector[BayesianMAB[Conversions]]] =
+        c.expect(
+          Uri.unsafeFromString(
+            rootUrl + "/features/"
+          ) +?? ("asOf", asOf.map(
+            _.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+          ))
+        )
     }
 
   def defaultConversionResource[F[_]: ConcurrentEffect](

@@ -14,17 +14,28 @@ trait BanditStateDAO[F[_], BS] {
 
 object BanditStateDAO {
   def bayesianfromLihua[F[_]: Functor, R](
-      dao: EntityDAO[F, bayesian.BanditState[R], List[EntityId]])
-    : BanditStateDAO[F, bayesian.BanditState[R]] =
+      dao: EntityDAO[F, bayesian.BanditState[R], List[
+        EntityId
+      ]]
+    ): BanditStateDAO[F, bayesian.BanditState[R]] =
     new BanditStateDAO[F, bayesian.BanditState[R]] {
 
-      private def toEId(featureName: FeatureName): EntityId =
+      private def toEId(
+          featureName: FeatureName
+        ): EntityId =
         EntityId(featureName + "_state")
 
-      def upsert(state: bayesian.BanditState[R]): F[bayesian.BanditState[R]] =
-        dao.upsert(state.toEntity(toEId(state.feature))).map(_.data)
+      def upsert(
+          state: bayesian.BanditState[R]
+        ): F[bayesian.BanditState[R]] =
+        dao
+          .upsert(state.toEntity(toEId(state.feature)))
+          .map(_.data)
 
-      def get(featureName: FeatureName): F[bayesian.BanditState[R]] =
+      def get(
+          featureName: FeatureName
+        ): F[bayesian.BanditState[R]] =
         dao.get(toEId(featureName)).map(_.data)
+
     }
 }
