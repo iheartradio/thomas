@@ -30,7 +30,7 @@ lazy val libs =
   .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
   .addJVM(name = "akka-slf4j",            version = "2.5.22", org = "com.typesafe.akka")
   .add(   name = "scalatest",             version = "3.1.0-RC2")
-  .add(   name = "scalatestplus-scalacheck", version = "1.0.0-SNAP6",   org = "org.scalatestplus")
+  .add(   name = "scalatestplus-scalacheck", version = "3.1.0.0-RC2",   org = "org.scalatestplus")
   .add(   name = "scalatestplus-play",    version = "4.0.3",  org = "org.scalatestplus.play")
   .add(   name = "cats-effect-testing-scalatest",    version = "0.3-c81f97e",  org = "com.codecommit")
   .add(   name = "jawn",                  version = "0.14.2", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
