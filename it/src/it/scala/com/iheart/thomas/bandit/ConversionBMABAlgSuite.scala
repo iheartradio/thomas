@@ -15,7 +15,7 @@ import com.iheart.thomas.analysis.{
 import com.iheart.thomas.bandit.bayesian.{BanditState, ConversionBMABAlg}
 import com.iheart.thomas.mongo
 import com.typesafe.config.ConfigFactory
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scanamo.LocalDynamoDB
 import cats.tagless.implicits._
