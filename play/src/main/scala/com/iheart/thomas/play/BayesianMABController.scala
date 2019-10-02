@@ -1,14 +1,22 @@
 package com.iheart.thomas
 package play
 
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+
 import bandit._
 import cats.effect.Effect
-import _root_.play.api.mvc.{AbstractController, ControllerComponents, Result}
+import _root_.play.api.mvc.{
+  AbstractController,
+  ControllerComponents,
+  Result
+}
 import _root_.play.api.libs.json._
 import cats.effect.implicits._
 import com.iheart.thomas.analysis.{Conversions, KPIName}
 import com.iheart.thomas.bandit.bayesian._
 import bandit.Formats._
+import cats.implicits._
 
 import scala.concurrent.Future
 import lihua.mongo.JsonFormats._
@@ -16,17 +24,21 @@ import lihua.mongo.JsonFormats._
 class BayesianMABController[F[_]](
     api: ConversionBMABAlg[F],
     components: ControllerComponents
-)(
-    implicit
-    F: Effect[F]
-) extends AbstractController(components) {
+  )(implicit
+    F: Effect[F])
+    extends AbstractController(components) {
 
   protected def withJsonReq[ReqT: Reads](f: ReqT => F[Result]) =
     Action.async[JsValue](parse.tolerantJson) { req =>
       req.body
         .validate[ReqT]
         .fold(
-          errs => Future.successful(BadRequest(errs.map(_.toString).mkString("\n"))),
+          errs =>
+            Future.successful(
+              BadRequest(
+                errs.map(_.toString).mkString("\n")
+              )
+            ),
           t => f(t).toIO.unsafeToFuture()
         )
     }
@@ -35,7 +47,9 @@ class BayesianMABController[F[_]](
     ar.toIO.unsafeToFuture()
   }
 
-  implicit protected def jsonResult[Resp: Writes](ar: F[Resp]): F[Result] = {
+  implicit protected def jsonResult[Resp: Writes](
+      ar: F[Resp]
+    ): F[Result] = {
     F.map(ar)(r => Ok(Json.toJson(r)))
   }
 
@@ -57,7 +71,19 @@ class BayesianMABController[F[_]](
     api.currentState(featureName)
   }
 
-  def reallocate(featureName: FeatureName, kpiName: KPIName) = action {
+  def runningBandits(asOf: Option[String] = None) = action {
+    F.delay(
+        asOf.map(
+          OffsetDateTime.parse(_, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+        )
+      )
+      .flatMap(api.runningBandits)
+  }
+
+  def reallocate(
+      featureName: FeatureName,
+      kpiName: KPIName
+    ) = action {
     api.reallocate(featureName, kpiName)
   }
 

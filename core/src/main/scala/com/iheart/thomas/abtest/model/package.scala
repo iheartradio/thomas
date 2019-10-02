@@ -45,8 +45,9 @@ package model {
       matchingUserMeta: UserMeta = Map(),
       salt: Option[String] = None,
       segmentRanges: List[GroupRange] = Nil,
-      groupMetas: GroupMetas = Map()
-  ) {
+      groupMetas: GroupMetas = Map(),
+      specialization: Option[Abtest.Specialization] = None) {
+
     def statusAsOf(time: OffsetDateTime): Abtest.Status =
       if (time isBefore start)
         Abtest.Status.Scheduled
@@ -95,10 +96,16 @@ package model {
       matchingUserMeta: UserMeta = Map(),
       reshuffle: Boolean = false,
       segmentRanges: List[GroupRange] = Nil,
-      groupMetas: GroupMetas = Map()
-  )
+      groupMetas: GroupMetas = Map(),
+      specialization: Option[Abtest.Specialization] = None)
 
   object Abtest {
+    sealed trait Specialization extends Serializable with Product
+
+    object Specialization {
+      case object MultiArmBandit extends Specialization
+    }
+
     sealed trait Status extends Serializable with Product
 
     object Status {
@@ -107,13 +114,20 @@ package model {
       case object Expired extends Status
       implicit val eq: Eq[Status] = Eq.fromUniversalEquals
     }
+
   }
 
-  case class Group(name: GroupName, size: GroupSize)
+  case class Group(
+      name: GroupName,
+      size: GroupSize)
 
-  case class GroupRange(start: Double, end: Double) {
-    assert(start >= 0 && end <= 1 && start <= end,
-           s"Invalid Range $start-$end, must be between 0 and 1")
+  case class GroupRange(
+      start: Double,
+      end: Double) {
+    assert(
+      start >= 0 && end <= 1 && start <= end,
+      s"Invalid Range $start-$end, must be between 0 and 1"
+    )
     val size = end - start
     def contains(that: GroupRange): Boolean =
       start <= that.start && that.end <= end
@@ -127,24 +141,20 @@ package model {
       description: Option[String],
       overrides: Overrides,
       overrideEligibility: Boolean = false,
-      locked: Boolean = false
-  )
+      locked: Boolean = false)
 
   case class UserGroupQuery(
       userId: Option[UserId],
       at: Option[OffsetDateTime] = None,
       tags: List[Tag] = Nil,
       meta: UserMeta = Map(),
-      features: List[FeatureName] = Nil
-  )
+      features: List[FeatureName] = Nil)
 
   case class UserInfo(
       userId: Option[UserId],
-      meta: UserMeta = Map()
-  )
+      meta: UserMeta = Map())
 
   case class UserGroupQueryResult(
       groups: Map[FeatureName, GroupName],
-      metas: Map[FeatureName, GroupMeta]
-  )
+      metas: Map[FeatureName, GroupMeta])
 }

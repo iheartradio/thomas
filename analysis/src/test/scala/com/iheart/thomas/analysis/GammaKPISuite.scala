@@ -12,7 +12,7 @@ import com.iheart.thomas.analysis.DistributionSpec.Normal
 import com.iheart.thomas.abtest.model.Abtest
 import com.stripe.rainier.core.Gamma
 import com.stripe.rainier.sampler._
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuiteLike
 
 import com.stripe.rainier.repl.plot1D
@@ -26,17 +26,21 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
   type F[A] = Either[Throwable, A]
   def mock(
       abTestData: Map[GroupName, Measurements] = Map(),
-      historical: Measurements = Nil): Measurable[F, Measurements, GammaKPIDistribution] =
+      historical: Measurements = Nil
+    ): Measurable[F, Measurements, GammaKPIDistribution] =
     new Measurable[F, Measurements, GammaKPIDistribution] {
       def measureAbtest(
           k: GammaKPIDistribution,
           abtest: Abtest,
           start: Option[OffsetDateTime] = None,
-          end: Option[OffsetDateTime] = None): F[Map[GroupName, Measurements]] =
+          end: Option[OffsetDateTime] = None
+        ): F[Map[GroupName, Measurements]] =
         abTestData.asRight
-      def measureHistory(k: GammaKPIDistribution,
-                         start: OffsetDateTime,
-                         end: OffsetDateTime): F[Measurements] = historical.asRight
+      def measureHistory(
+          k: GammaKPIDistribution,
+          start: OffsetDateTime,
+          end: OffsetDateTime
+        ): F[Measurements] = historical.asRight
     }
 
   val mockAb: Abtest = null
@@ -45,12 +49,17 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
 
     val n = 1000
     implicit val measurable = mock(
-      Map("A" -> Random.shuffle(Gamma(0.55, 3).param.sample()).take(n),
-          "B" -> Random.shuffle(Gamma(0.5, 3).param.sample()).take(n)))
+      Map(
+        "A" -> Random.shuffle(Gamma(0.55, 3).param.sample()).take(n),
+        "B" -> Random.shuffle(Gamma(0.5, 3).param.sample()).take(n)
+      )
+    )
     AssessmentAlg[F, GammaKPIDistribution]
-    val resultEither = GammaKPIDistribution(KPIName("test"),
-                                            Normal(0.5, 0.1),
-                                            Normal(3, 0.1)).assess(mockAb, "B")
+    val resultEither = GammaKPIDistribution(
+      KPIName("test"),
+      Normal(0.5, 0.1),
+      Normal(3, 0.1)
+    ).assess(mockAb, "B")
 
     resultEither.isRight shouldBe true
     val result = resultEither.right.get
@@ -72,11 +81,14 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
         "A" -> Random.shuffle(Gamma(0.5, 3).param.sample()).take(n),
         "B" -> Random.shuffle(Gamma(0.55, 3).param.sample()).take(n),
         "C" -> Random.shuffle(Gamma(0.55, 3).param.sample()).take(n)
-      ))
+      )
+    )
 
-    val resultEither = GammaKPIDistribution(KPIName("test"),
-                                            Normal(0.5, 0.1),
-                                            Normal(3, 0.1)).assess(mockAb, "A")
+    val resultEither = GammaKPIDistribution(
+      KPIName("test"),
+      Normal(0.5, 0.1),
+      Normal(3, 0.1)
+    ).assess(mockAb, "A")
 
     resultEither.isRight shouldBe true
 
@@ -95,9 +107,13 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
       Map(
         "A" -> Random.shuffle(Gamma(0.5, 3).param.sample()).take(n),
         "B" -> Random.shuffle(Gamma(0.55, 3).param.sample()).take(n)
-      ))
-    val result = GammaKPIDistribution(KPIName("test"), Normal(0.5, 0.1), Normal(3, 0.1))
-      .assess(mockAb, "A")
+      )
+    )
+    val result = GammaKPIDistribution(
+      KPIName("test"),
+      Normal(0.5, 0.1),
+      Normal(3, 0.1)
+    ).assess(mockAb, "A")
       .right
       .get
 
@@ -119,7 +135,10 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
 
     val resultEither =
       GammaKPIDistribution(KPIName("test"), Normal(0.8, 0.2), Normal(6, 1))
-        .updateFromData[F](OffsetDateTime.now.minusDays(1), OffsetDateTime.now)
+        .updateFromData[F](
+          OffsetDateTime.now.minusDays(1),
+          OffsetDateTime.now
+        )
 
     resultEither.isRight shouldBe true
 

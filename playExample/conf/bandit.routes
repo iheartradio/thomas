@@ -6,6 +6,8 @@ PUT  /features/:feature/reward_state    controllers.MyBayesianMABController.upda
 
 POST  /features/                        controllers.MyBayesianMABController.init
 
+POST  /features/                        controllers.MyBayesianMABController.runningBandits(asOf: Option[String])
+
 GET /features/:feature                     controllers.MyBayesianMABController.getState(feature)
 
 PUT  /features/:feature/abtest                   controllers.MyBayesianMABController.reallocate(feature, kpiName)
