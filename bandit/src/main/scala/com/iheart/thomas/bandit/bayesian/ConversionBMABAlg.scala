@@ -59,7 +59,8 @@ object ConversionBMABAlg {
                     1d / banditSpec.arms.size.toDouble
                   )
                 ),
-                specialization = Some(Specialization.MultiArmBandit)
+                specialization =
+                  Some(Specialization.MultiArmBanditConversion)
               ),
               false
             ),
@@ -87,7 +88,7 @@ object ConversionBMABAlg {
         ): F[Vector[BayesianMAB[Conversions]]] =
         abtestAPI
           .getAllTestsBySpecialization(
-            Specialization.MultiArmBandit,
+            Specialization.MultiArmBanditConversion,
             time
           )
           .flatMap(_.traverse { abtest =>

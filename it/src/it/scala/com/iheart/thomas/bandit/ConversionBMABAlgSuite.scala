@@ -24,7 +24,7 @@ import lihua.EntityDAO
 import _root_.play.api.libs.json.{JsObject, Json}
 import cats.implicits._
 import com.amazonaws.services.dynamodbv2.model.ResourceInUseException
-import com.iheart.thomas.abtest.model.Abtest.Specialization.MultiArmBandit
+import com.iheart.thomas.abtest.model.Abtest.Specialization.MultiArmBanditConversion
 import com.iheart.thomas.abtest.model.{AbtestSpec, Group}
 import com.stripe.rainier.sampler.RNG
 import lihua.dynamo.ScanamoEntityDAO
@@ -118,7 +118,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       .forall(_.p == 0) shouldBe true
     init.state.title shouldBe spec.title
     init.abtest.data.specialization shouldBe Some(
-      MultiArmBandit
+      MultiArmBanditConversion
     )
     currentState.state shouldBe init.state
     currentState.abtest.data.groups

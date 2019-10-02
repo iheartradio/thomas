@@ -24,13 +24,12 @@ class ConversionUpdater[F[_]: Functor](
       chunkSize: Int,
       featureName: FeatureName
     ): Pipe[F, (ArmName, ConversionEvent), Unit] =
-    ConversionUpdater.toConversion(chunkSize) andThen {
-      input =>
-        input.evalMap { r =>
-          client
-            .updateRewardState(featureName, r)
-            .void
-        }
+    ConversionUpdater.toConversion(chunkSize) andThen { input =>
+      input.evalMap { r =>
+        client
+          .updateRewardState(featureName, r)
+          .void
+      }
     }
 }
 
