@@ -31,7 +31,7 @@ lazy val libs =
   .addJVM(name = "akka-slf4j",            version = "2.5.22", org = "com.typesafe.akka")
   .add(name    = "scalatestplus-scalacheck", version = "1.0.0-SNAP6",   org = "org.scalatestplus")
   .add   (name = "scalatestplus-play",    version = "4.0.3",  org = "org.scalatestplus.play")
-  .add   (name = "cats-effect-testing-scalatest",    version = "0.2-be4c682",  org = "com.codecommit")
+  .add   (name = "cats-effect-testing-scalatest",    version = "0.3-c81f97e",  org = "com.codecommit")
   .add   (name = "jawn",                  version = "0.14.2", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
@@ -168,7 +168,6 @@ lazy val stream = project
   .settings(name := "thomas-stream")
   .settings(rootSettings)
   .settings(
-    libs.testDependencies("cats-effect-testing-scalatest"),
     libs.dependencies("fs2-core")
   )
 

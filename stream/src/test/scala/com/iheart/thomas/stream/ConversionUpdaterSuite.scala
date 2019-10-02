@@ -1,15 +1,12 @@
 package com.iheart.thomas.stream
 
 import cats.effect.IO
-import cats.effect.scalatest.AsyncIOSpec
 import fs2.Stream
 import org.scalatest.matchers.should.Matchers
 import ConversionUpdater.{Converted, Viewed}
 import com.iheart.thomas.analysis.Conversions
 
-class ConversionUpdaterSuite
-    extends AsyncIOSpec
-    with Matchers {
+class ConversionUpdaterSuite extends AsyncIOSpec with Matchers {
   "toConversion" - {
     "count conversions per arm" in {
       val input = Stream.fromIterator[IO](
