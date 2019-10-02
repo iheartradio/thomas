@@ -29,10 +29,11 @@ lazy val libs =
   .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
   .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
   .addJVM(name = "akka-slf4j",            version = "2.5.22", org = "com.typesafe.akka")
-  .add(name    = "scalatestplus-scalacheck", version = "1.0.0-SNAP6",   org = "org.scalatestplus")
-  .add   (name = "scalatestplus-play",    version = "4.0.3",  org = "org.scalatestplus.play")
-  .add   (name = "cats-effect-testing-scalatest",    version = "0.3-c81f97e",  org = "com.codecommit")
-  .add   (name = "jawn",                  version = "0.14.2", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
+  .add(   name = "scalatest",             version = "3.1.0-RC2")
+  .add(   name = "scalatestplus-scalacheck", version = "1.0.0-SNAP6",   org = "org.scalatestplus")
+  .add(   name = "scalatestplus-play",    version = "4.0.3",  org = "org.scalatestplus.play")
+  .add(   name = "cats-effect-testing-scalatest",    version = "0.3-c81f97e",  org = "com.codecommit")
+  .add(   name = "jawn",                  version = "0.14.2", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias("validate", s";clean;test;play/IntegrationTest/test;it/IntegrationTest/test;playExample/compile;docs/tut")
@@ -168,7 +169,8 @@ lazy val stream = project
   .settings(name := "thomas-stream")
   .settings(rootSettings)
   .settings(
-    libs.dependencies("fs2-core")
+    libs.dependencies("fs2-core"),
+    libs.testDependencies("scalatest")
   )
 
 lazy val spark = project

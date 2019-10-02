@@ -4,6 +4,7 @@ import cats.effect.IO
 import fs2.Stream
 import org.scalatest.matchers.should.Matchers
 import ConversionUpdater.{Converted, Viewed}
+import cats.effect.scalatest.AsyncIOSpec
 import com.iheart.thomas.analysis.Conversions
 
 class ConversionUpdaterSuite extends AsyncIOSpec with Matchers {
