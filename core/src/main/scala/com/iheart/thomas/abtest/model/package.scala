@@ -28,7 +28,6 @@ package object model {
 package model {
 
   import cats.Eq
-  import com.iheart.thomas.abtest.model.Abtest.Specialization
 
   /**
     * Internal representation of an A/B test, the public representation is [[Abtest]]
@@ -47,7 +46,7 @@ package model {
       salt: Option[String] = None,
       segmentRanges: List[GroupRange] = Nil,
       groupMetas: GroupMetas = Map(),
-      specialization: Option[Specialization] = None) {
+      specialization: Option[Abtest.Specialization] = None) {
 
     def statusAsOf(time: OffsetDateTime): Abtest.Status =
       if (time isBefore start)
@@ -98,12 +97,10 @@ package model {
       reshuffle: Boolean = false,
       segmentRanges: List[GroupRange] = Nil,
       groupMetas: GroupMetas = Map(),
-      specialization: Option[Specialization] = None)
+      specialization: Option[Abtest.Specialization] = None)
 
   object Abtest {
-    sealed trait Specialization
-        extends Serializable
-        with Product
+    sealed trait Specialization extends Serializable with Product
 
     object Specialization {
       case object MultiArmBandit extends Specialization

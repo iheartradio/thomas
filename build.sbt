@@ -181,7 +181,6 @@ lazy val spark = project
     libs.dependency("spark-sql", Some("provided"))
   )
 
-
 lazy val http4s = project
   .dependsOn(mongo)
   .settings(name := "thomas-http4s")
