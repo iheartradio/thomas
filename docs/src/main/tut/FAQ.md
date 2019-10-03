@@ -58,6 +58,69 @@ download all the relevant tests and overrides. So please avoid recreating it unn
 
 `client.assignments(userId, [tags], {user_meta})`  returns a Map (or hashmap if you are in python) of assignments. The keys of this Map will be feature names, and the values are the group names, the second and third arguments `[tags]` and `{user_meta}` are optional, ignore them if your tests don't requirement them. 
 
+This solution works fine for pyspark with small amount of data. For large dataset, Pyspark introp with JVM is not efficient. 
+
+Thomas also provides a tighter spark integration module `thomas-spark`, which provides an UDF and a function that works directly with 
+DataFrame. The assignment computation is distributed through UDF
+
+Here is an example on how to use this in pyspark:
+Start spark with the package
+
+`pyspark --packages com.iheart:thomas-spark_2.11:LATEST_VERSION`
+ 
+Inside pyspark shell, first create the instance of an A/B test `Assigner`
+
+
+```python
+ta = sc._jvm.com.iheart.thomas.spark.Assigner.create("https://MY_ABTEST_SERVICE_HOST/abtest/testsWithFeatures")
+```
+
+Then you can use it add a column to an existing `DataFrame`
+
+```python 
+from pyspark.mllib.common import _py2java
+from pyspark.mllib.common import _java2py
+
+
+mockUserIds = spark.createDataFrame([("232",), ("3609",), ("3423",)], ["uid"])
+
+result = _java2py(sc, ta.assignments(_py2java(sc, mockUserIds), "My_Test_Feature", "uid"))
+
+```
+Note that some python to java conversion is needed since `thomas-spark` is written in Scala.  
+
+
+The  `Assigner` also provides a Spark UDF `assignUdf`. You can call it with a feature name to 
+get an UDF that returns the assignment for that abtest feature. 
+
+```python
+
+spark._jsparkSession.udf().register("assign", ta.assignUdf("My_TEST_FEATURES"))
+
+sqlContext.registerDataFrameAsTable(mockUserIds, "userIds")
+
+result = sql("select uid, assign(uid) as assignment from userIds")
+
+```
+
+Or instead of registering the udf, you can use it through a python function 
+
+```python
+from pyspark.sql.column import Column
+from pyspark.sql.column import _to_java_column
+from pyspark.sql.column import _to_seq
+from pyspark.sql.functions import col
+
+def assign(col):
+    _javaAssign = ta.assignUdf("My_TEST_FEATURES")
+    return Column(_javaAssign.apply(_to_seq(sc, [col], _to_java_column)))
+
+mockUserIds.withColumn('assignment', assign(col('uid'))).show()
+
+``` 
+
+ 
+
 # How to run Bayesian Analysis
 
 Since Thomas does not come with an analytics solution, to analyze the A/B test results using Thomas's Bayesian utility, you need to write integration with your analytics solution. Please refer to [the dedicated page](bayesian.html) for detailed guide on this one.   

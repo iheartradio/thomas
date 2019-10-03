@@ -5,7 +5,9 @@ import java.time.OffsetDateTime
 
 import cats.data.EitherT
 import cats.effect.IO
-import abtest._, model._, Formats._
+import abtest._
+import model._
+import Formats._
 import lihua.{Entity, EntityDAO, EntityId}
 import org.scalatest.BeforeAndAfter
 import org.scalatestplus.play.PlaySpec
@@ -18,6 +20,7 @@ import com.iheart.thomas.analysis.DistributionSpec.Normal
 import com.iheart.thomas.analysis._
 import _root_.play.api.libs.json.{JsObject, Json, Writes}
 import _root_.play.api.test.Helpers._
+import com.typesafe.config.ConfigFactory
 import lihua.mongo.JsonFormats._
 
 import scala.concurrent.Future
@@ -1174,9 +1177,15 @@ class AbtestIntegrationSuiteBase
   implicit def toEntityId(sid: String): EntityId = EntityId(sid)
   implicit def toString(eid: EntityId): String = eid.value
 
-  type F[A] = EitherT[IO, Error, A]
+  type F[A] = IO[A]
 
-  lazy val provider = app.injector.instanceOf[AbtestAPIProvider]
+  import _root_.play.api.inject.ApplicationLifecycle
+  import _root_.play.api.Configuration
+
+  lazy val al = app.injector.instanceOf[ApplicationLifecycle]
+  implicit val ec = app.injector.instanceOf[concurrent.ExecutionContext]
+
+  lazy val provider = new AbtestAPIProvider(new Configuration(ConfigFactory.load()), al)
   lazy val api = provider.api
 
   lazy val controller = new AbtestController(
@@ -1212,11 +1221,14 @@ class AbtestIntegrationSuiteBase
   )
 
   after {
-    val dapi = api.asInstanceOf[DefaultAbtestAlg[F]]
+    import cats.implicits._
     List[EntityDAO[F, _, JsObject]](provider.daos._1, provider.daos._2, provider.daos._3)
-      .foreach(_.removeAll(Json.obj()).value.unsafeRunSync().left.foreach { e =>
-        println("Failed to clean up DB after: " + e.getMessage)
-      })
+      .traverse(_.removeAll(Json.obj()))
+      .handleErrorWith { e =>
+        IO(println("Failed to clean up DB after: " + e.getMessage))
+      }
+      .unsafeRunSync()
+
   }
 
   def randomUserId = Random.alphanumeric.take(10).mkString

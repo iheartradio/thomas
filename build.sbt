@@ -10,48 +10,51 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
 lazy val libs =
   org.typelevel.libraries
-  .addJVM(name = "lihua",                 version = "0.22",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo")
-  .addJVM(name = "scanamo",               version = "1.0.0-M10", org ="org.scanamo", "scanamo-testkit")
+  .addJVM(name = "lihua",                 version = "0.24",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-play-json")
+  .addJVM(name = "scanamo",               version = "1.0.0-M11", org ="org.scanamo", "scanamo-testkit")
   .addJVM(name = "rainier",               version = "0.2.2",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
   .addJVM(name = "breeze",                version = "1.0", org ="org.scalanlp", "breeze", "breeze-viz")
   .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
   .add(   name = "play-json",             version = "2.7.3",  org = "com.typesafe.play")
-  .add(   name = "play",                  version = "2.7.2",  org = "com.typesafe.play")
+  .add(   name = "play",                  version = "2.7.3",  org = "com.typesafe.play")
+  .add(   name = "spark",                  version = "2.4.4",  org = "org.apache.spark", "spark-sql", "spark-core")
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
   .addJVM(name = "play-json-derived-codecs", version = "6.0.0", org = "org.julienrf")
   .addJVM(name = "newtype",               version = "0.4.3",  org = "io.estatico")
   .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
-  .addJVM(name = "decline",               version = "0.5.1",  org = "com.monovore")
+  .addJVM(name = "decline",               version = "1.0.0",  org = "com.monovore")
+  .addJVM(name = "mau",                   version = "0.1.1",  org = "com.kailuowang")
   .addJVM(name = "scala-java8-compat",    version = "0.9.0",  org = "org.scala-lang.modules")
   .addJVM(name = "log4cats",              version = "0.1.1",  org = "io.chrisdavenport", "log4cats-slf4j")
   .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
   .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
-  .addJVM(name = "http4s",                version = "0.20.10", org= "org.http4s", "http4s-dsl", "http4s-blaze-server", "http4s-blaze-client", "http4s-play-json")
-  .addJVM(name = "akka-slf4j",            version = "2.5.25", org = "com.typesafe.akka")
-  .add(name    = "scalatestplus-scalacheck", version = "1.0.0-SNAP6",   org = "org.scalatestplus")
-  .add   (name = "scalatestplus-play",    version = "4.0.3",  org = "org.scalatestplus.play")
+  .addJVM(name = "akka-slf4j",            version = "2.5.22", org = "com.typesafe.akka")
+  .add(   name = "scalatest",             version = "3.1.0-RC2")
+  .add(   name = "scalatestplus-scalacheck", version = "3.1.0.0-RC2",   org = "org.scalatestplus")
+  .add(   name = "scalatestplus-play",    version = "4.0.3",  org = "org.scalatestplus.play")
+  .add(   name = "cats-effect-testing-scalatest",    version = "0.3-c81f97e",  org = "com.codecommit")
+  .add(   name = "jawn",                  version = "0.14.2", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias("validate", s";clean;test;play/IntegrationTest/test;it/IntegrationTest/test;playExample/compile;docs/tut")
 addCommandAlias("it", s"IntegrationTest/test")
 
 lazy val thomas = project.in(file("."))
-  .aggregate(playExample, play, client, bandit, it, http4s, cli, mongo, analysis, docs, stress)
+  .aggregate(playExample, play, client, bandit, it, http4s, cli, mongo, analysis, docs, stress, dynamo, spark, stream)
   .settings(
     rootSettings,
     crossScalaVersions := Nil,
     noPublishing)
 
 lazy val client = project
-  .dependsOn(analysis)
-  .aggregate(analysis)
+  .dependsOn(bandit)
+  .aggregate(bandit)
   .configs(IntegrationTest)
   .settings(
     name := "thomas-client",
     rootSettings,
     Defaults.itSettings,
-    libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % libs.vers("scalatest") % "it, test"),
+    libs.dependency("scalatest", Some("it, test")),
     libs.dependencies( "http4s-blaze-client", "http4s-play-json")
   )
 
@@ -80,10 +83,11 @@ lazy val core = project
     libs.dependencies("cats-core",
       "monocle-macro",
       "monocle-core",
-      "lihua-cache",
+      "lihua-core",
+      "mau",
       "mouse",
       "henkan-convert",
-      "play-json"),
+      "lihua-play-json"),
     simulacrumSettings(libs)
   )
 
@@ -107,11 +111,12 @@ lazy val analysis = project
     sources in (Compile, doc) := Nil, //disable scaladoc due to scalameta not working in scaladoc
     resolvers += Resolver.bintrayRepo("cibotech", "public"),
     libs.testDependencies("scalacheck", "scalatest"),
-    libs.dependencies("rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "rainier-plot", "commons-math3", "play-json-derived-codecs"),
+    libs.dependencies("rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "commons-math3", "play-json-derived-codecs"),
+    libs.dependency("rainier-plot", Some(Optional.name))
   )
 
 lazy val docs = project
-  .configure(mkDocConfig(gh, rootSettings, taglessSettings, client, http4s, play, core, analysis, cli))
+  .configure(mkDocConfig(gh, rootSettings, taglessSettings, client, http4s, play, core, analysis, cli, spark, stream))
   .enablePlugins(MicrositesPlugin)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
@@ -141,7 +146,7 @@ lazy val docs = project
 
 
 lazy val mongo = project
-  .dependsOn(bandit)
+  .dependsOn(core, bandit)
   .settings(name := "thomas-mongo")
   .settings(rootSettings)
   .settings(
@@ -158,6 +163,23 @@ lazy val dynamo = project
     libs.dependencies("lihua-dynamo")
   )
 
+lazy val stream = project
+  .dependsOn(client)
+  .aggregate(client)
+  .settings(name := "thomas-stream")
+  .settings(rootSettings)
+  .settings(
+    libs.dependencies("fs2-core"),
+    libs.testDependencies("scalatest")
+  )
+
+lazy val spark = project
+  .dependsOn(client)
+  .settings(name := "thomas-spark")
+  .settings(rootSettings)
+  .settings(
+    libs.dependency("spark-sql", Some("provided"))
+  )
 
 lazy val http4s = project
   .dependsOn(mongo)
@@ -204,13 +226,13 @@ lazy val it = project
     libs.dependency("akka-slf4j", Some(IntegrationTest.name)),
     libs.dependency("scanamo-testkit", Some(IntegrationTest.name)),
     dynamoDBLocalPort := 8042,
+    dynamoDBLocalCleanAfterStop := true,
     testOptions in IntegrationTest += Tests.Argument(TestFrameworks.ScalaTest, "-oDU"),
     startDynamoDBLocal := startDynamoDBLocal.dependsOn(compile in Test).value,
     test in IntegrationTest := (test in IntegrationTest).dependsOn(startDynamoDBLocal).value,
     testOnly in IntegrationTest := (testOnly in IntegrationTest).dependsOn(startDynamoDBLocal).evaluated,
     testOptions in IntegrationTest += dynamoDBLocalTestCleanup.value
   )
-
 
 lazy val play = project
   .dependsOn(mongo, dynamo)
@@ -273,7 +295,7 @@ lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =
 
 lazy val taglessSettings =  paradiseSettings(libs) ++ Seq(
   libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-tagless-macros" % "0.5"
+    "org.typelevel" %% "cats-tagless-macros" % "0.10"
   )
 )
 
@@ -282,6 +304,7 @@ lazy val buildSettings = sharedBuildSettings(gh, libs)
 import ReleaseTransformations._
 
 lazy val publishSettings = sharedPublishSettings(gh) ++ credentialSettings ++ sharedReleaseProcess ++ Seq(
+  publishTo := sonatypePublishToBundle.value,
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
@@ -292,9 +315,9 @@ lazy val publishSettings = sharedPublishSettings(gh) ++ credentialSettings ++ sh
     tagRelease,
     releaseStepCommandAndRemaining("+publishSigned"),
     releaseStepCommandAndRemaining("cli/assembly"),
+    releaseStepCommand("sonatypeBundleRelease"),
     setNextVersion,
     commitNextVersion,
-    releaseStepCommand("sonatypeReleaseAll"),
     pushChanges)
  )
 

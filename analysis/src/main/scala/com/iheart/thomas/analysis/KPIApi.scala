@@ -2,7 +2,6 @@ package com.iheart
 package thomas
 package analysis
 
-import cats.MonadError
 import lihua.{Entity, EntityDAO}
 import _root_.play.api.libs.json.JsObject
 import cats.implicits._
@@ -24,7 +23,7 @@ trait KPIApi[F[_]] {
 
 object KPIApi {
   implicit def default[F[_]](implicit dao: EntityDAO[F, KPIDistribution, JsObject],
-                             F: MonadError[F, abtest.Error]): KPIApi[F] = new KPIApi[F] {
+                             F: MonadThrowable[F]): KPIApi[F] = new KPIApi[F] {
     import com.iheart.thomas.abtest.QueryDSL._
     def get(name: KPIName): F[Option[Entity[KPIDistribution]]] =
       dao.findOneOption('name -> name)
