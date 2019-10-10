@@ -10,7 +10,7 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
 lazy val libs =
   org.typelevel.libraries
-  .addJVM(name = "lihua",                 version = "0.24",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-play-json")
+  .addJVM(name = "lihua",                 version = "0.26-SNAPSHOT",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-dynamo-testkit", "lihua-play-json")
   .addJVM(name = "scanamo",               version = "1.0.0-M11", org ="org.scanamo", "scanamo-testkit")
   .addJVM(name = "rainier",               version = "0.2.2",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
   .addJVM(name = "breeze",                version = "1.0", org ="org.scalanlp", "breeze", "breeze-viz")
@@ -25,14 +25,14 @@ lazy val libs =
   .addJVM(name = "decline",               version = "1.0.0",  org = "com.monovore")
   .addJVM(name = "mau",                   version = "0.1.1",  org = "com.kailuowang")
   .addJVM(name = "scala-java8-compat",    version = "0.9.0",  org = "org.scala-lang.modules")
-  .addJVM(name = "log4cats",              version = "0.1.1",  org = "io.chrisdavenport", "log4cats-slf4j")
+  .addJVM(name = "log4cats",              version = "1.0.0",  org = "io.chrisdavenport", "log4cats-slf4j", "log4cats-core")
   .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
   .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
   .addJVM(name = "akka-slf4j",            version = "2.5.22", org = "com.typesafe.akka")
   .add(   name = "scalatest",             version = "3.1.0-RC2")
   .add(   name = "scalatestplus-scalacheck", version = "3.1.0.0-RC2",   org = "org.scalatestplus")
   .add(   name = "scalatestplus-play",    version = "4.0.3",  org = "org.scalatestplus.play")
-  .add(   name = "cats-effect-testing-scalatest",    version = "0.3-c81f97e",  org = "com.codecommit")
+  .add(   name = "cats-effect-testing-scalatest",    version = "0.3.0",  org = "com.codecommit")
   .add(   name = "jawn",                  version = "0.14.2", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
@@ -40,7 +40,7 @@ addCommandAlias("validate", s";clean;test;play/IntegrationTest/test;it/Integrati
 addCommandAlias("it", s"IntegrationTest/test")
 
 lazy val thomas = project.in(file("."))
-  .aggregate(playExample, play, client, bandit, it, http4s, cli, mongo, analysis, docs, stress, dynamo, spark, stream)
+  .aggregate(playExample, play, client, bandit, it, http4s, cli, mongo, analysis, docs, stress, dynamo, spark, stream, testkit)
   .settings(
     rootSettings,
     crossScalaVersions := Nil,
@@ -163,14 +163,22 @@ lazy val dynamo = project
     libs.dependencies("lihua-dynamo")
   )
 
+lazy val testkit = project
+  .dependsOn(dynamo, mongo)
+  .settings(name := "thomas-testkit")
+  .settings(rootSettings)
+  .settings(
+    libs.dependencies("lihua-dynamo-testkit")
+  )
+
 lazy val stream = project
   .dependsOn(client)
   .aggregate(client)
   .settings(name := "thomas-stream")
   .settings(rootSettings)
   .settings(
-    libs.dependencies("fs2-core"),
-    libs.testDependencies("scalatest")
+    libs.dependencies("fs2-core", "log4cats-core"),
+    libs.testDependencies("cats-effect-testing-scalatest")
   )
 
 lazy val spark = project
@@ -213,7 +221,7 @@ lazy val stress = project
   )
 
 lazy val it = project
-  .dependsOn(mongo, dynamo)
+  .dependsOn(testkit)
   .configs(IntegrationTest)
   .settings(rootSettings)
   .settings(
@@ -224,15 +232,20 @@ lazy val it = project
     libs.dependency("scalatest", Some(IntegrationTest.name)),
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
     libs.dependency("akka-slf4j", Some(IntegrationTest.name)),
-    libs.dependency("scanamo-testkit", Some(IntegrationTest.name)),
-    dynamoDBLocalPort := 8042,
-    dynamoDBLocalCleanAfterStop := true,
     testOptions in IntegrationTest += Tests.Argument(TestFrameworks.ScalaTest, "-oDU"),
-    startDynamoDBLocal := startDynamoDBLocal.dependsOn(compile in Test).value,
-    test in IntegrationTest := (test in IntegrationTest).dependsOn(startDynamoDBLocal).value,
-    testOnly in IntegrationTest := (testOnly in IntegrationTest).dependsOn(startDynamoDBLocal).evaluated,
-    testOptions in IntegrationTest += dynamoDBLocalTestCleanup.value
+    dynamoTestSettings
   )
+
+lazy val dynamoTestSettings = Seq(
+  libs.dependency("lihua-dynamo-testkit", Some(IntegrationTest.name)),
+  dynamoDBLocalPort := 8042,
+  dynamoDBLocalCleanAfterStop := true,
+  startDynamoDBLocal := startDynamoDBLocal.dependsOn(compile in Test).value,
+  test in IntegrationTest := (test in IntegrationTest).dependsOn(startDynamoDBLocal).value,
+  testOnly in IntegrationTest := (testOnly in IntegrationTest).dependsOn(startDynamoDBLocal).evaluated,
+  testOptions in IntegrationTest += dynamoDBLocalTestCleanup.value
+)
+
 
 lazy val play = project
   .dependsOn(mongo, dynamo)

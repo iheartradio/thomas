@@ -17,82 +17,22 @@ import com.iheart.thomas.mongo
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuiteLike
-import org.scanamo.LocalDynamoDB
-import cats.tagless.implicits._
-import cats.~>
-import lihua.EntityDAO
 import _root_.play.api.libs.json.{JsObject, Json}
 import cats.implicits._
-import com.amazonaws.services.dynamodbv2.model.ResourceInUseException
 import com.iheart.thomas.abtest.model.Abtest.Specialization.MultiArmBanditConversion
 import com.iheart.thomas.abtest.model.{AbtestSpec, Group}
 import com.stripe.rainier.sampler.RNG
-import lihua.dynamo.ScanamoEntityDAO
-
+import lihua.dynamo.testkit.LocalDynamo
 import concurrent.duration._
+
 class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
 
-  import concurrent.ExecutionContext.Implicits.global
-
-  import mongo.idSelector
-  implicit val config = ConfigFactory.load()
-  implicit val cs = IO.contextShift(global)
-  implicit val timer = IO.timer(global)
-  lazy val mangoDAOsR = mongo.daosResource[IO].flatMap {
-    case daos =>
-      Resource
-        .make(IO.pure(daos)) {
-          case (abtestDAO, featureDAO, kpiDAO) =>
-            List(abtestDAO, featureDAO, kpiDAO)
-              .traverse(_.removeAll(Json.obj()))
-              .void
-        }
-  }
-
-  lazy val stateDAOR =
-    Resource
-      .make {
-        IO.delay(LocalDynamoDB.client())
-          .flatTap { client =>
-            ScanamoEntityDAO
-              .ensureTable[IO](client, dynamo.DAOs.banditStateTableName)
-          }
-          .map { amzClt =>
-            dynamo.DAOs.lihuaStateDAO[IO](amzClt)
-          }
-      } { stateDAO =>
-        stateDAO.removeAll().void
-      }
-      .map(sd => BanditStateDAO.bayesianfromLihua(sd))
-
-  /**
-    * An ConversionAPI resource that cleans up after
-    */
-  lazy val apiR = (mangoDAOsR, stateDAOR).tupled
-    .flatMap {
-      case (daos, sd) =>
-        implicit val (abtestDAO, featureDAO, kpiDAO) = daos
-        lazy val refreshPeriod = 0.seconds
-
-        val kpi = implicitly[KPIApi[IO]]
-
-        AbtestAlg.defaultResource[IO](refreshPeriod).map { abtestAlg =>
-          implicit val ss = SampleSettings.default
-          implicit val rng = RNG.default
-          implicit val nowF = IO.delay(OffsetDateTime.now)
-
-          (
-            ConversionBMABAlg.default[IO](sd, kpi, abtestAlg),
-            kpi,
-            abtestAlg
-          )
-        }
-    }
+  import testkit.Resources._
 
   def withAPI[A](
       f: (ConversionBMABAlg[IO], KPIApi[IO], AbtestAlg[IO]) => IO[A]
     ): A =
-    apiR.use(f.tupled).unsafeRunSync()
+    apis.use(f.tupled).unsafeRunSync()
 
   def withAPI[A](f: ConversionBMABAlg[IO] => IO[A]): A =
     withAPI((api, _, _) => f(api))
