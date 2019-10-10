@@ -4,6 +4,7 @@
 
   <logger name="play" level="INFO" />
   <logger name="application" level="DEBUG" />
+  <logger name="thomas-kafka" level="DEBUG" />
 
   <root level="WARN">
     <!--<appender-ref ref="ASYNCFILE" />-->

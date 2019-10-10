@@ -1,20 +1,19 @@
 package com.iheart.thomas.stream
 
-import cats.effect.{ConcurrentEffect, Resource}
-import com.iheart.thomas.client.BayesianBanditClient
+import cats.effect.{ConcurrentEffect}
 import fs2.{Pipe, Stream}
 import ConversionUpdater._
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.analysis.Conversions
 import cats.implicits._
 import com.iheart.thomas.bandit.`package`.ArmName
-import com.iheart.thomas.bandit.bayesian.BayesianMABAlg
+import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
+
 import io.chrisdavenport.log4cats.Logger
-import scala.concurrent.ExecutionContext
 
 class ConversionUpdater[F[_]: ConcurrentEffect](
     implicit
-    client: BayesianMABAlg[F, Conversions],
+    bmabAlg: ConversionBMABAlg[F],
     logger: Logger[F]) {
 
   def updateAllConversions[I](
@@ -26,7 +25,7 @@ class ConversionUpdater[F[_]: ConcurrentEffect](
       ): Pipe[F, (ArmName, ConversionEvent), Unit] =
       ConversionUpdater.toConversion(chunkSize) andThen { input =>
         input.evalMap { r =>
-          client
+          bmabAlg
             .updateRewardState(featureName, r)
             .void <* logger.debug(
             s"Conversion updated for $featureName $r"
@@ -34,7 +33,7 @@ class ConversionUpdater[F[_]: ConcurrentEffect](
         }
       }
 
-    client.runningBandits(None).flatMap { bandits =>
+    bmabAlg.runningBandits(None).flatMap { bandits =>
       bandits
         .traverse { b =>
           val feature = b.abtest.data.feature
@@ -81,13 +80,4 @@ object ConversionUpdater {
           }
       }
   }
-
-  def resource[F[_]: ConcurrentEffect](
-      rootUrl: String
-    )(implicit ec: ExecutionContext,
-      logger: Logger[F]
-    ): Resource[F, ConversionUpdater[F]] =
-    BayesianBanditClient
-      .defaultConversionResource[F](rootUrl)
-      .map(implicit c => new ConversionUpdater)
 }

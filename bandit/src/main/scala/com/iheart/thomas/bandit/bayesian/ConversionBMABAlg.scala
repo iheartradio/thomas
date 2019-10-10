@@ -13,11 +13,11 @@ import henkan.convert.Syntax._
 
 object ConversionBMABAlg {
 
-  def default[F[_]](
+  implicit def default[F[_]](
+      implicit
       stateDao: BanditStateDAO[F, BanditState[Conversions]],
       kpiAPI: KPIApi[F],
-      abtestAPI: abtest.AbtestAlg[F]
-    )(implicit
+      abtestAPI: abtest.AbtestAlg[F],
       sampleSettings: SampleSettings,
       rng: RNG,
       F: MonadThrowable[F],
