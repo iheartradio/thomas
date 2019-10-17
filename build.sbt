@@ -169,6 +169,7 @@ lazy val testkit = project
   .settings(name := "thomas-testkit")
   .settings(rootSettings)
   .settings(
+    crossScalaVersions := Seq(scalaVersion.value),
     libs.dependencies("lihua-dynamo-testkit")
   )
 
@@ -178,6 +179,7 @@ lazy val stream = project
   .settings(name := "thomas-stream")
   .settings(rootSettings)
   .settings(
+    crossScalaVersions := Seq(scalaVersion.value),
     libs.dependencies("fs2-core", "log4cats-core"),
     libs.testDependencies("cats-effect-testing-scalatest")
   )
@@ -188,6 +190,7 @@ lazy val kafka = project
   .settings(name := "thomas-kafka")
   .settings(rootSettings)
   .settings(
+    crossScalaVersions := Seq(scalaVersion.value),
     libs.dependencies("fs2-kafka", "log4cats-slf4j", "logback-classic", "akka-slf4j"),
     libs.testDependencies("cats-effect-testing-scalatest")
   )
@@ -249,6 +252,7 @@ lazy val it = project
   )
 
 lazy val dynamoTestSettings = Seq(
+  crossScalaVersions := Seq(scalaVersion.value),
   libs.dependency("lihua-dynamo-testkit", Some(IntegrationTest.name)),
   dynamoDBLocalPort := 8042,
   dynamoDBLocalCleanAfterStop := true,
