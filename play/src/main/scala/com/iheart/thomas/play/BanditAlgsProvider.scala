@@ -19,11 +19,13 @@ class BanditAlgsProvider @Inject()(
   lazy val conversionBMABAlg: ConversionBMABAlg[IO] = {
     implicit val (ss, r) = (SampleSettings.default, RNG.default)
     implicit val nowF = IO.delay(OffsetDateTime.now)
-    ConversionBMABAlg.default[IO](
-      DAOs.stateDAO(dcProvider.get()),
+    implicit val (sd, kpiApi, api) = (
+      DAOs.stateDAO[IO](dcProvider.get()),
       abtestAPIProvider.kpiApi,
       abtestAPIProvider.api
     )
+    ConversionBMABAlg.default[IO]
+
   }
 
 }

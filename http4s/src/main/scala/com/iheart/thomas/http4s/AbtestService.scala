@@ -21,10 +21,15 @@ import _root_.play.api.libs.json.Json.toJson
 import cats.implicits._
 import Error.{NotFound => APINotFound, _}
 import lihua.EntityId
-import org.http4s.dsl.impl.{OptionalQueryParamDecoderMatcher, QueryParamDecoderMatcher}
+import org.http4s.dsl.impl.{
+  OptionalQueryParamDecoderMatcher,
+  QueryParamDecoderMatcher
+}
 import scala.compat.java8.DurationConverters._
 
-class AbtestService[F[_]: Async](api: AbtestAlg[F], kpiAPI: KPIApi[F])
+class AbtestService[F[_]: Async](
+    api: AbtestAlg[F],
+    kpiAPI: KPIApi[F])
     extends Http4sDsl[F] {
 
   implicit val jsonObjectEncoder: EntityEncoder[F, JsObject] =
@@ -34,8 +39,10 @@ class AbtestService[F[_]: Async](api: AbtestAlg[F], kpiAPI: KPIApi[F])
 
   import AbtestService.QueryParamDecoderMatchers._
 
-  def respondOption[T: Format](result: F[Option[T]],
-                               notFoundMsg: String): F[Response[F]] =
+  def respondOption[T: Format](
+      result: F[Option[T]],
+      notFoundMsg: String
+    ): F[Response[F]] =
     respond(
       result.flatMap(_.liftTo[F](Error.NotFound(notFoundMsg)))
     )
@@ -79,19 +86,28 @@ class AbtestService[F[_]: Async](api: AbtestAlg[F], kpiAPI: KPIApi[F])
       error match {
         case ValidationErrors(detail) =>
           BadRequest(errorsJson(detail.toList.map(validationErrorMsg)))
-        case APINotFound(_)       => NotFound()
-        case FailedToPersist(msg) => serverError("Failed to save to DB: " + msg)
-        case DBException(t)       => serverError("DB Error" + t.getMessage)
-        case DBLastError(t)       => serverError("DB Operation Rejected" + t)
+        case APINotFound(_) => NotFound()
+        case FailedToPersist(msg) =>
+          serverError("Failed to save to DB: " + msg)
+        case DBException(t) => serverError("DB Error" + t.getMessage)
+        case DBLastError(t) => serverError("DB Operation Rejected" + t)
         case CannotToChangePastTest(start) =>
-          BadRequest(errorJson(s"Cannot change a test that already started at $start"))
+          BadRequest(
+            errorJson(
+              s"Cannot change a test that already started at $start"
+            )
+          )
         case ConflictCreation(fn) =>
-          Conflict(errorJson(
-            s"There is another test being created right now, could this one be a duplicate? $fn"))
+          Conflict(
+            errorJson(
+              s"There is another test being created right now, could this one be a duplicate? $fn"
+            )
+          )
         case ConflictTest(existing) =>
           Conflict(
             errorJson(
-              s"Cannot start a test on ${existing.data.feature} yet before an existing test") ++
+              s"Cannot start a test on ${existing.data.feature} yet before an existing test"
+            ) ++
               Json.obj(
                 "testInConflict" -> Json.obj(
                   "id" -> existing._id.value,
@@ -115,13 +131,17 @@ class AbtestService[F[_]: Async](api: AbtestAlg[F], kpiAPI: KPIApi[F])
 
   def public = HttpRoutes.of[F] {
     case req @ POST -> Root / "users" / "groups" / "query" =>
-      req.as[UserGroupQuery] >>= (ugq => respond(api.getGroupsWithMeta(ugq)))
+      req.as[UserGroupQuery] >>= (
+          ugq => respond(api.getGroupsWithMeta(ugq))
+      )
   }
 
   def internal = HttpRoutes.of[F] {
 
     case req @ POST -> Root / "tests" :? auto(a) =>
-      req.as[AbtestSpec] >>= (t => respond(api.create(t, a.getOrElse(false))))
+      req.as[AbtestSpec] >>= (
+          t => respond(api.create(t, a.getOrElse(false)))
+      )
 
     case req @ PUT -> Root / "tests" =>
       req.as[AbtestSpec] >>= (t => respond(api.continue(t)))
@@ -139,11 +159,20 @@ class AbtestService[F[_]: Async](api: AbtestAlg[F], kpiAPI: KPIApi[F])
       respond(api.getTest(EntityId(testId)))
 
     case DELETE -> Root / "tests" / testId =>
-      respondOption(api.terminate(EntityId(testId)), s"No test with id $testId")
+      respondOption(
+        api.terminate(EntityId(testId)),
+        s"No test with id $testId"
+      )
 
-    case req @ PUT -> Root / "tests" / testId / "groups" / "metas" :? auto(a) =>
-      req.as[Map[GroupName, GroupMeta]] >>= (m =>
-        respond(api.addGroupMetas(EntityId(testId), m, a.getOrElse(false))))
+    case req @ PUT -> Root / "tests" / testId / "groups" / "metas" :? auto(
+          a
+        ) =>
+      req.as[Map[GroupName, GroupMeta]] >>= (
+          m =>
+            respond(
+              api.addGroupMetas(EntityId(testId), m, a.getOrElse(false))
+            )
+        )
 
     case GET -> Root / "tests" / "cache" :? at(a) =>
       respond(api.getAllTestsCachedEpoch(a))
@@ -157,7 +186,9 @@ class AbtestService[F[_]: Async](api: AbtestAlg[F], kpiAPI: KPIApi[F])
     case PUT -> Root / "features" / feature / "groups" / groupName / "overrides" / userId =>
       respond(api.addOverrides(feature, Map(userId -> groupName)))
 
-    case PUT -> Root / "features" / feature / "overridesEligibility" :? ovrrd(o) =>
+    case PUT -> Root / "features" / feature / "overridesEligibility" :? ovrrd(
+          o
+        ) =>
       respond(api.setOverrideEligibilityIn(feature, o))
 
     case DELETE -> Root / "features" / feature / "overrides" / userId =>
@@ -170,7 +201,9 @@ class AbtestService[F[_]: Async](api: AbtestAlg[F], kpiAPI: KPIApi[F])
       respond(api.getOverrides(feature))
 
     case req @ POST -> Root / "features" / feature / "overrides" =>
-      req.as[Map[UserId, GroupName]] >>= (m => respond(api.addOverrides(feature, m)))
+      req.as[Map[UserId, GroupName]] >>= (
+          m => respond(api.addOverrides(feature, m))
+      )
 
     case GET -> Root / "KPIs" / name =>
       respondOption(kpiAPI.get(name), s"No Kpi under name $name")
@@ -183,19 +216,22 @@ class AbtestService[F[_]: Async](api: AbtestAlg[F], kpiAPI: KPIApi[F])
 
 object AbtestService {
 
-  def mongo[F[_]: Timer](implicit F: Concurrent[F],
-                         ex: ExecutionContext): Resource[F, AbtestService[F]] = {
+  def mongo[F[_]: Timer](
+      implicit F: Concurrent[F],
+      ex: ExecutionContext
+    ): Resource[F, AbtestService[F]] = {
 
     import thomas.mongo.idSelector
     for {
       cfg <- Resource.liftF(F.delay(ConfigFactory.load))
       daos <- {
         implicit val c = cfg
-        thomas.mongo.daosResource[F]
+        thomas.mongo.daosResource[F](cfg)
       }
       alg <- {
         implicit val (abtestDAO, featureDAO, _) = daos
-        val refreshPeriod = cfg.getDuration("iheart.abtest.get-groups.ttl").toScala
+        val refreshPeriod =
+          cfg.getDuration("iheart.abtest.get-groups.ttl").toScala
         AbtestAlg.defaultResource[F](refreshPeriod)
       }
     } yield {

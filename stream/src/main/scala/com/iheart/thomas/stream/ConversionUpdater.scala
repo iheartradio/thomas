@@ -1,37 +1,50 @@
 package com.iheart.thomas.stream
 
-import cats.effect.{ConcurrentEffect, Resource}
-import com.iheart.thomas.client.BayesianBanditClient
-import fs2.Pipe
+import cats.effect.{ConcurrentEffect}
+import fs2.{Pipe, Stream}
 import ConversionUpdater._
-import cats.Functor
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.analysis.Conversions
 import cats.implicits._
 import com.iheart.thomas.bandit.`package`.ArmName
-import com.iheart.thomas.bandit.bayesian.BayesianMABAlg
+import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
 
-import scala.concurrent.ExecutionContext
+import io.chrisdavenport.log4cats.Logger
 
-//trait ConversionUpdater[F[_], I] {
-//  def updateConversions()
-//}
+class ConversionUpdater[F[_]: ConcurrentEffect](
+    implicit
+    bmabAlg: ConversionBMABAlg[F],
+    logger: Logger[F]) {
 
-class ConversionUpdater[F[_]: Functor](
-    client: BayesianMABAlg[F, Conversions]) {
-
-  def updateConversion(
+  def updateAllConversions[I](
       chunkSize: Int,
-      featureName: FeatureName
-    ): Pipe[F, (ArmName, ConversionEvent), Unit] =
-    ConversionUpdater.toConversion(chunkSize) andThen {
-      input =>
+      toEvent: FeatureName => F[Pipe[F, I, (ArmName, ConversionEvent)]]
+    ): F[Pipe[F, I, Unit]] = {
+    def updateConversion(
+        featureName: FeatureName
+      ): Pipe[F, (ArmName, ConversionEvent), Unit] =
+      ConversionUpdater.toConversion(chunkSize) andThen { input =>
         input.evalMap { r =>
-          client
+          bmabAlg
             .updateRewardState(featureName, r)
-            .void
+            .void <* logger.debug(
+            s"Conversion updated for $featureName $r"
+          )
+        }
+      }
+
+    bmabAlg.runningBandits(None).flatMap { bandits =>
+      bandits
+        .traverse { b =>
+          val feature = b.abtest.data.feature
+          toEvent(feature).map(_ andThen updateConversion(feature))
+        }
+        .map { featurePipes => input: Stream[F, I] =>
+          input.broadcastThrough(featurePipes: _*)
         }
     }
+  }
+
 }
 
 object ConversionUpdater {
@@ -39,7 +52,7 @@ object ConversionUpdater {
   val Converted = true
   val Viewed = false
 
-  def toConversion[F[_]](
+  private[stream] def toConversion[F[_]](
       chunkSize: Int
     ): Pipe[F, (ArmName, ConversionEvent), Map[
     ArmName,
@@ -67,12 +80,4 @@ object ConversionUpdater {
           }
       }
   }
-
-  def resource[F[_]: ConcurrentEffect](
-      rootUrl: String
-    )(implicit ec: ExecutionContext
-    ): Resource[F, ConversionUpdater[F]] =
-    BayesianBanditClient
-      .defaultConversionResource[F](rootUrl)
-      .map(c => new ConversionUpdater(c))
 }

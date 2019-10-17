@@ -24,13 +24,14 @@ class JavaAPISuite extends AnyFunSuite with Matchers {
     val begin = LocalDateTime.now
     println(begin + " --- Begin")
     val n = 1000000
-    val userIds = (1 to n).map(_.toString).toList.asJava
-    val _ = api.assignments(
-      userIds,
-      new java.util.ArrayList[String](),
-      new java.util.HashMap[String, String](),
-      new java.util.ArrayList[String]("Radio_Model")
-    )
+    val userIds = (1 to n).map { uid =>
+      val _ = api.assignments(
+        uid.toString,
+        new java.util.ArrayList[String](),
+        new java.util.HashMap[String, String](),
+        List("Radio_Model").asJava
+      )
+    }
 
     val span = Duration.between(begin, LocalDateTime.now)
 

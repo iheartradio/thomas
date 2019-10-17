@@ -13,11 +13,11 @@ import henkan.convert.Syntax._
 
 object ConversionBMABAlg {
 
-  def default[F[_]](
+  implicit def default[F[_]](
+      implicit
       stateDao: BanditStateDAO[F, BanditState[Conversions]],
       kpiAPI: KPIApi[F],
-      abtestAPI: abtest.AbtestAlg[F]
-    )(implicit
+      abtestAPI: abtest.AbtestAlg[F],
       sampleSettings: SampleSettings,
       rng: RNG,
       F: MonadThrowable[F],
@@ -59,7 +59,8 @@ object ConversionBMABAlg {
                     1d / banditSpec.arms.size.toDouble
                   )
                 ),
-                specialization = Some(Specialization.MultiArmBandit)
+                specialization =
+                  Some(Specialization.MultiArmBanditConversion)
               ),
               false
             ),
@@ -87,7 +88,7 @@ object ConversionBMABAlg {
         ): F[Vector[BayesianMAB[Conversions]]] =
         abtestAPI
           .getAllTestsBySpecialization(
-            Specialization.MultiArmBandit,
+            Specialization.MultiArmBanditConversion,
             time
           )
           .flatMap(_.traverse { abtest =>

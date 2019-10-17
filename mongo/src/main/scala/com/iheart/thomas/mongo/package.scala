@@ -24,8 +24,15 @@ import abtest._
 import lihua.mongo.AsyncEntityDAO.Result
 
 package object mongo {
+  type DAOs[F[_]] = (
+      EntityDAO[F, Abtest, JsObject],
+      EntityDAO[F, Feature, JsObject],
+      EntityDAO[F, KPIDistribution, JsObject]
+  )
 
-  def to[F[_]: MonadError[*[_], Throwable]]: FunctionK[AsyncEntityDAO.Result[F, *], F] =
+  def to[
+      F[_]: MonadError[*[_], Throwable]
+    ]: FunctionK[AsyncEntityDAO.Result[F, *], F] =
     new FunctionK[AsyncEntityDAO.Result[F, *], F] {
       override def apply[A](fa: AsyncEntityDAO.Result[F, A]): F[A] = {
         fa.leftMap {
@@ -36,76 +43,83 @@ package object mongo {
             Error.FailedToPersist(e.getMessage())
           case DBError.WriteError(details) =>
             Error.FailedToPersist(
-              details.map(d => s"code: ${d.code}, msg: ${d.msg}").toList.mkString("\n"))
+              details
+                .map(d => s"code: ${d.code}, msg: ${d.msg}")
+                .toList
+                .mkString("\n")
+            )
         }.rethrowT
       }
     }
 
   def toF[F[_]](
-      implicit F: MonadError[F, Throwable]): FunctionK[AsyncEntityDAO.Result[F, *], F] =
+      implicit F: MonadError[F, Throwable]
+    ): FunctionK[AsyncEntityDAO.Result[F, *], F] =
     new FunctionK[AsyncEntityDAO.Result[F, *], F] {
-      override def apply[A](fa: Result[F, A]): F[A] = fa.leftWiden[Throwable].rethrowT
+      override def apply[A](fa: Result[F, A]): F[A] =
+        fa.leftWiden[Throwable].rethrowT
     }
 
-  implicit val idSelector: EntityId => JsObject = lihua.mongo.Query.idSelector
+  implicit val idSelector: EntityId => JsObject =
+    lihua.mongo.Query.idSelector
 
   def convert[F[_]: MonadError[*[_], Throwable], A](
-      e: F[EntityDAO[AsyncEntityDAO.Result[F, *], A, Query]])
-    : F[EntityDAO[F, A, JsObject]] = {
+      e: F[EntityDAO[AsyncEntityDAO.Result[F, *], A, Query]]
+    ): F[EntityDAO[F, A, JsObject]] = {
     val functorK = implicitly[FunctorK[EntityDAO[*[_], A, JsObject]]]
     e.map(od => functorK.mapK(od.contramap(Query.fromSelector))(to[F]))
   }
-  def convertF[F[_], A](e: F[EntityDAO[AsyncEntityDAO.Result[F, *], A, Query]])(
-      implicit F: MonadError[F, Throwable]): F[EntityDAO[F, A, JsObject]] = {
+  def convertF[F[_], A](
+      e: F[EntityDAO[AsyncEntityDAO.Result[F, *], A, Query]]
+    )(implicit F: MonadError[F, Throwable]
+    ): F[EntityDAO[F, A, JsObject]] = {
     val functorK = implicitly[FunctorK[EntityDAO[?[_], A, JsObject]]]
     e.map(od => functorK.mapK(od.contramap(Query.fromSelector))(toF[F]))
   }
 
-  def crypt[F[_]: Async](implicit config: Config): Option[Crypt[F]] = {
+  def crypt[F[_]: Async](config: Config): Option[Crypt[F]] = {
     import net.ceedubs.ficus.Ficus._
     config.as[Option[String]]("mongoDB.secret").map(new CryptTsec[F](_))
   }
 
-  def mongodb[F[_]: Async](implicit
-                           shutdownHook: ShutdownHook,
-                           config: Config,
-                           ex: ExecutionContext): F[MongoDB[F]] =
-    MongoDB[F](config, crypt)
+  def mongodb[F[_]: Async](
+      implicit
+      shutdownHook: ShutdownHook,
+      config: Config,
+      ex: ExecutionContext
+    ): F[MongoDB[F]] =
+    MongoDB[F](config, crypt(config))
 
   def daos[F[_]: Async](
       implicit
       shutdownHook: ShutdownHook,
       config: Config,
       ex: ExecutionContext
-  ): F[(EntityDAO[F, Abtest, JsObject],
-        EntityDAO[F, Feature, JsObject],
-        EntityDAO[F, KPIDistribution, JsObject])] =
+    ): F[DAOs[F]] =
     mongodb.flatMap { implicit m =>
       daosFromMongo
     }
 
   def daosFromMongo[F[_]: Async](
       implicit mongoDB: MongoDB[F],
-      ex: ExecutionContext): F[(EntityDAO[F, Abtest, JsObject],
-                                EntityDAO[F, Feature, JsObject],
-                                EntityDAO[F, KPIDistribution, JsObject])] = {
-    (convert((new AbtestDAOFactory[F]).create),
-     convert((new FeatureDAOFactory[F]).create),
-     convert((new KPIDistributionDAOFactory[F]).create)).tupled
+      ex: ExecutionContext
+    ): F[DAOs[F]] = {
+    (
+      convert((new AbtestDAOFactory[F]).create),
+      convert((new FeatureDAOFactory[F]).create),
+      convert((new KPIDistributionDAOFactory[F]).create)
+    ).tupled
   }
 
   def daosResource[F[_]: Async](
-      implicit
-      config: Config,
+      config: Config
+    )(implicit
       ex: ExecutionContext
-  ): Resource[F,
-              (EntityDAO[F, Abtest, JsObject],
-               EntityDAO[F, Feature, JsObject],
-               EntityDAO[F, KPIDistribution, JsObject])] =
+    ): Resource[F, DAOs[F]] =
     MongoDB
       .resource[F](
         config,
-        crypt
+        crypt(config)
       )
       .evalMap { implicit m =>
         daosFromMongo
@@ -115,18 +129,17 @@ package object mongo {
       implicit
       config: Config,
       ex: ExecutionContext
-  ): Resource[F,
-              (EntityDAO[F, Abtest, JsObject],
-               EntityDAO[F, Feature, JsObject],
-               EntityDAO[F, KPIDistribution, JsObject])] =
+    ): Resource[F, DAOs[F]] =
     MongoDB
       .resource[F](
         config,
-        crypt
+        crypt(config)
       )
       .evalMap { implicit m =>
-        (convertF((new AbtestDAOFactory[F]).create),
-         convertF((new FeatureDAOFactory[F]).create),
-         convertF((new KPIDistributionDAOFactory[F]).create)).tupled
+        (
+          convertF((new AbtestDAOFactory[F]).create),
+          convertF((new FeatureDAOFactory[F]).create),
+          convertF((new KPIDistributionDAOFactory[F]).create)
+        ).tupled
       }
 }

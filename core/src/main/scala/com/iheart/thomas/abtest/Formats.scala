@@ -10,8 +10,9 @@ object Formats {
     new Format[Specialization] {
       def reads(json: JsValue): JsResult[Specialization] =
         json match {
-          case JsString("MultiArmBandit") =>
-            JsSuccess(Specialization.MultiArmBandit)
+          case JsString(name)
+              if name == Specialization.MultiArmBanditConversion.toString =>
+            JsSuccess(Specialization.MultiArmBanditConversion)
           case _ => JsError("Unrecognized Specialization")
         }
 
