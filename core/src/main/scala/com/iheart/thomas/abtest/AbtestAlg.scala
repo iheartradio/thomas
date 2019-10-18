@@ -253,16 +253,12 @@ final class DefaultAbtestAlg[F[_]](
   def getTest(id: TestId): F[Entity[Abtest]] =
     abTestDao.get(id)
 
-  def getAllTests(
-      time: Option[OffsetDateTime]
-    ): F[Vector[Entity[Abtest]]] =
+  def getAllTests(time: Option[OffsetDateTime]): F[Vector[Entity[Abtest]]] =
     nowF.flatMap { n =>
       abTestDao.find(abtests.byTime(time.getOrElse(n)))
     }
 
-  def getAllTestsEndAfter(
-      time: OffsetDateTime
-    ): F[Vector[Entity[Abtest]]] =
+  def getAllTestsEndAfter(time: OffsetDateTime): F[Vector[Entity[Abtest]]] =
     abTestDao.find(abtests.endTimeAfter(time))
 
   def getTestsByFeature(feature: FeatureName): F[Vector[Entity[Abtest]]] =
@@ -684,9 +680,7 @@ final class DefaultAbtestAlg[F[_]](
         featureDao.insert(Feature(name, None, Map()))
     }
 
-  private implicit def errorsToF(
-      possibleErrors: List[ValidationError]
-    ): F[Unit] =
+  private implicit def errorsToF(possibleErrors: List[ValidationError]): F[Unit] =
     possibleErrors.toNel
       .map[Error](ValidationErrors)
       .fold(F.pure(()))(F.raiseError)
@@ -696,9 +690,7 @@ final class DefaultAbtestAlg[F[_]](
     ): F[Unit] =
     errorsToF(possibleErrors.flatten)
 
-  private implicit def errorToF(
-      possibleError: Option[ValidationError]
-    ): F[Unit] =
+  private implicit def errorToF(possibleError: Option[ValidationError]): F[Unit] =
     List(possibleError)
 
   private def lastTest(testSpec: AbtestSpec): F[Option[Entity[Abtest]]] =

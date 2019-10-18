@@ -22,12 +22,16 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AbtestAPIProvider @Inject()(config: Configuration, lifecycle: ApplicationLifecycle)(
-    implicit ex: ExecutionContext)
+class AbtestAPIProvider @Inject()(
+    config: Configuration,
+    lifecycle: ApplicationLifecycle
+  )(implicit ex: ExecutionContext)
     extends APIProviderBase(config, lifecycle)
 
-class APIProviderBase(config: Configuration, lifecycle: ApplicationLifecycle)(
-    implicit ex: ExecutionContext) {
+class APIProviderBase(
+    config: Configuration,
+    lifecycle: ApplicationLifecycle
+  )(implicit ex: ExecutionContext) {
 
   implicit val shutdownHook = new ShutdownHook {
     override def onShutdown[T](code: => T): Unit =
@@ -40,7 +44,9 @@ class APIProviderBase(config: Configuration, lifecycle: ApplicationLifecycle)(
   lazy val daos = mongo
     .daos[IO]
     .unsafeRunTimed(10.seconds)
-    .getOrElse(throw new FailedToStartApplicationException("Cannot start application"))
+    .getOrElse(
+      throw new FailedToStartApplicationException("Cannot start application")
+    )
 
   lazy val ttl = {
     import scala.compat.java8.DurationConverters._

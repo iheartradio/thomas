@@ -11,13 +11,16 @@ object Main extends IOApp {
       Opts.subcommands(
         new GroupMetaCommands[IO].groupMetaCommand,
         BayesianMABCommands.conversionBMABCommand[IO]
-      ))
+      )
+    )
 
     IO(
       System.out.print(
         util.Random
           .shuffle(logos)
-          .head + s"\n${BuildInfo.name} v${BuildInfo.version}\n\n")) *>
+          .head + s"\n${BuildInfo.name} v${BuildInfo.version}\n\n"
+      )
+    ) *>
       cmd
         .parse(args)
         .fold(

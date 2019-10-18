@@ -12,7 +12,8 @@ object Formats {
     implicitly[Format[Double]].coerce[Format[Probability]]
 
   implicit val jfC: Format[Conversions] = Json.format[Conversions]
-  implicit val jfAS: Format[ArmState[Conversions]] = Json.format[ArmState[Conversions]]
+  implicit val jfAS: Format[ArmState[Conversions]] =
+    Json.format[ArmState[Conversions]]
   implicit val jfBS: Format[BanditSpec] = Json.format[BanditSpec]
   implicit val jfBSC: Format[BanditState[Conversions]] =
     Json.format[BanditState[Conversions]]

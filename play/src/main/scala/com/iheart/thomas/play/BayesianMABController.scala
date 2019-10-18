@@ -6,11 +6,7 @@ import java.time.format.DateTimeFormatter
 
 import bandit._
 import cats.effect.Effect
-import _root_.play.api.mvc.{
-  AbstractController,
-  ControllerComponents,
-  Result
-}
+import _root_.play.api.mvc.{AbstractController, ControllerComponents, Result}
 import _root_.play.api.libs.json._
 import cats.effect.implicits._
 import com.iheart.thomas.analysis.{Conversions, KPIName}
@@ -47,9 +43,7 @@ class BayesianMABController[F[_]](
     ar.toIO.unsafeToFuture()
   }
 
-  implicit protected def jsonResult[Resp: Writes](
-      ar: F[Resp]
-    ): F[Result] = {
+  implicit protected def jsonResult[Resp: Writes](ar: F[Resp]): F[Result] = {
     F.map(ar)(r => Ok(Json.toJson(r)))
   }
 

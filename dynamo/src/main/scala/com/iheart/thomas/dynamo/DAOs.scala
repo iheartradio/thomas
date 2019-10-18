@@ -13,13 +13,18 @@ object DAOs {
   val banditStateTableName = "BanditState"
 
   def stateDAO[F[_]: Async](
-      dynamoClient: AmazonDynamoDBAsync): BanditStateDAO[F, BanditState[Conversions]] =
+      dynamoClient: AmazonDynamoDBAsync
+    ): BanditStateDAO[F, BanditState[Conversions]] =
     BanditStateDAO.bayesianfromLihua(
       lihuaStateDAO(dynamoClient)
     )
 
-  def lihuaStateDAO[F[_]: Async](dynamoClient: AmazonDynamoDBAsync)
-    : EntityDAO[F, BanditState[Conversions], List[EntityId]] =
-    new ScanamoEntityDAO[F, BanditState[Conversions]](banditStateTableName, dynamoClient)
+  def lihuaStateDAO[F[_]: Async](
+      dynamoClient: AmazonDynamoDBAsync
+    ): EntityDAO[F, BanditState[Conversions], List[EntityId]] =
+    new ScanamoEntityDAO[F, BanditState[Conversions]](
+      banditStateTableName,
+      dynamoClient
+    )
 
 }

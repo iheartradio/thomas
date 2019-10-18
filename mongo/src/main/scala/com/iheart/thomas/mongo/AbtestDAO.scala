@@ -28,12 +28,19 @@ class AbtestDAOFactory[F[_]: Async](implicit ec: ExecutionContext)
               Seq(
                 ("start", IndexType.Descending),
                 ("end", IndexType.Descending)
-              ))
+              )
+            )
           ) *> collection.indexesManager
-            .ensure(Index(Seq(
-              ("feature", IndexType.Ascending)
-            )))
-            .void))
+            .ensure(
+              Index(
+                Seq(
+                  ("feature", IndexType.Ascending)
+                )
+              )
+            )
+            .void
+        )
+      )
       .to[F]
 
   }

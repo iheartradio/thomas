@@ -36,9 +36,7 @@ object BayesianBanditClient {
           )
         )
 
-      def currentState(
-          featureName: FeatureName
-        ): F[BayesianMAB[Conversions]] =
+      def currentState(featureName: FeatureName): F[BayesianMAB[Conversions]] =
         c.expect(rootUrl + "/features/" + featureName)
 
       def updateRewardState(

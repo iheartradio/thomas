@@ -19,18 +19,26 @@ class Assigner(data: Vector[(Abtest, Feature)]) extends Serializable {
       .getOrElse(null)
   }
 
-  def assignments(userIds: DataFrame,
-                  feature: FeatureName,
-                  idColumn: String): DataFrame = {
+  def assignments(
+      userIds: DataFrame,
+      feature: FeatureName,
+      idColumn: String
+    ): DataFrame = {
     userIds.withColumn("assignment", assignUdf(feature)(col(idColumn)))
   }
 }
 
 object Assigner {
   def create(url: String): Assigner = create(url, None)
-  def create(url: String, asOf: Long): Assigner = create(url, Some(asOf))
+  def create(
+      url: String,
+      asOf: Long
+    ): Assigner = create(url, Some(asOf))
 
-  def create(url: String, asOf: Option[Long]): Assigner = {
+  def create(
+      url: String,
+      asOf: Option[Long]
+    ): Assigner = {
     import scala.concurrent.ExecutionContext.Implicits.global
     val time = asOf.map(TimeUtil.toDateTime)
     implicit val csIo: ContextShift[IO] = IO.contextShift(global)

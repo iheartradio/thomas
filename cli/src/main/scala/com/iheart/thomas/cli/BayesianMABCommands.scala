@@ -34,11 +34,10 @@ object BayesianMABCommands {
     )(
       Opts.subcommands(
         Command("init", "init a new conversion KPI Bayesian MAB") {
-          (banditSpecOpts, conversionClientOpts[F]).mapN {
-            (spec, clientR) =>
-              clientR.use { client =>
-                client.init(spec)
-              }
+          (banditSpecOpts, conversionClientOpts[F]).mapN { (spec, clientR) =>
+            clientR.use { client =>
+              client.init(spec)
+            }
           }
         },
         Command(
@@ -68,11 +67,10 @@ object BayesianMABCommands {
           "reallocate",
           "show an existing conversion KPI based Bayesian MAB"
         ) {
-          (fnOpts, knOpts, conversionClientOpts[F]).mapN {
-            (feature, kpi, clientR) =>
-              clientR.use { client =>
-                client.reallocate(feature, kpi)
-              }
+          (fnOpts, knOpts, conversionClientOpts[F]).mapN { (feature, kpi, clientR) =>
+            clientR.use { client =>
+              client.reallocate(feature, kpi)
+            }
           }
         }
       )

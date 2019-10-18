@@ -8,7 +8,10 @@ sealed trait DistributionSpec[T] extends Serializable with Product {
 }
 
 object DistributionSpec {
-  case class Normal(location: Double, scale: Double) extends DistributionSpec[Double] {
+  case class Normal(
+      location: Double,
+      scale: Double)
+      extends DistributionSpec[Double] {
     val distribution = rainier.core.Normal(location, scale)
   }
 
@@ -20,16 +23,25 @@ object DistributionSpec {
     }
   }
 
-  case class LogNormal(location: Double, scale: Double) extends DistributionSpec[Double] {
+  case class LogNormal(
+      location: Double,
+      scale: Double)
+      extends DistributionSpec[Double] {
     val distribution = rainier.core.LogNormal(location, scale)
 
   }
 
-  case class Gamma(shape: Double, scale: Double) extends DistributionSpec[Double] {
+  case class Gamma(
+      shape: Double,
+      scale: Double)
+      extends DistributionSpec[Double] {
     val distribution = rainier.core.Gamma(shape, scale)
   }
 
-  case class Uniform(from: Double, to: Double) extends DistributionSpec[Double] {
+  case class Uniform(
+      from: Double,
+      to: Double)
+      extends DistributionSpec[Double] {
     val distribution = rainier.core.Uniform(from, to)
   }
 

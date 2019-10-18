@@ -24,26 +24,41 @@ import org.http4s.Status
 import org.http4s.client.UnexpectedStatus
 
 trait AbtestClient[F[_]] {
-  def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]]
+  def tests(
+      asOf: Option[OffsetDateTime] = None
+    ): F[Vector[(Entity[Abtest], Feature)]]
 
-  def test(feature: FeatureName, asOf: Option[OffsetDateTime] = None)(
-      implicit F: Functor[F]): F[Option[Entity[Abtest]]] =
+  def test(
+      feature: FeatureName,
+      asOf: Option[OffsetDateTime] = None
+    )(implicit F: Functor[F]
+    ): F[Option[Entity[Abtest]]] =
     tests(asOf).map(_.collectFirst {
       case (test, Feature(`feature`, _, _, _, _)) => test
     })
 
   def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]]
 
-  def featureLatestTest(feature: FeatureName)(
-      implicit F: MonadError[F, Throwable]): F[Entity[Abtest]] =
+  def featureLatestTest(
+      feature: FeatureName
+    )(implicit F: MonadError[F, Throwable]
+    ): F[Entity[Abtest]] =
     featureTests(feature).flatMap(
-      _.headOption.liftTo[F](Error.NotFound(s"No tests found under $feature")))
+      _.headOption.liftTo[F](Error.NotFound(s"No tests found under $feature"))
+    )
 
   def getGroupMeta(tid: TestId): F[Map[GroupName, GroupMeta]]
 
-  def addGroupMeta(tid: TestId, gm: JsObject, auto: Boolean): F[Entity[Abtest]]
+  def addGroupMeta(
+      tid: TestId,
+      gm: JsObject,
+      auto: Boolean
+    ): F[Entity[Abtest]]
 
-  def removeGroupMetas(tid: TestId, auto: Boolean): F[Entity[Abtest]]
+  def removeGroupMetas(
+      tid: TestId,
+      auto: Boolean
+    ): F[Entity[Abtest]]
 
   def getKPI(name: String): F[KPIDistribution]
 
@@ -53,7 +68,9 @@ trait AbtestClient[F[_]] {
 
 import org.http4s.client.{Client => HClient}
 
-class Http4SAbtestClient[F[_]: Sync](c: HClient[F], urls: HttpServiceUrls)
+class Http4SAbtestClient[F[_]: Sync](
+    c: HClient[F],
+    urls: HttpServiceUrls)
     extends PlayJsonHttp4sClient[F]
     with AbtestClient[F] {
   import org.http4s.{Method, Uri}
@@ -68,7 +85,9 @@ class Http4SAbtestClient[F[_]: Sync](c: HClient[F], urls: HttpServiceUrls)
   def saveKPI(kd: KPIDistribution): F[KPIDistribution] =
     c.expect(POST(kd, Uri.unsafeFromString(urls.kPIs)))
 
-  def tests(asOf: Option[OffsetDateTime] = None): F[Vector[(Entity[Abtest], Feature)]] = {
+  def tests(
+      asOf: Option[OffsetDateTime] = None
+    ): F[Vector[(Entity[Abtest], Feature)]] = {
     val baseUrl: Uri = Uri.unsafeFromString(urls.tests)
     c.expect(asOf.fold(baseUrl) { ao =>
       baseUrl +? ("at", (ao.toInstant.toEpochMilli / 1000).toString)
@@ -81,10 +100,17 @@ class Http4SAbtestClient[F[_]: Sync](c: HClient[F], urls: HttpServiceUrls)
       test <- c.expect[Entity[Abtest]](req)
     } yield test.data.groupMetas
 
-  def addGroupMeta(tid: TestId, gm: JsObject, auto: Boolean): F[Entity[Abtest]] =
+  def addGroupMeta(
+      tid: TestId,
+      gm: JsObject,
+      auto: Boolean
+    ): F[Entity[Abtest]] =
     c.expect(PUT(gm, Uri.unsafeFromString(urls.groupMeta(tid)) +? ("auto", auto)))
 
-  def removeGroupMetas(tid: TestId, auto: Boolean): F[Entity[Abtest]] =
+  def removeGroupMetas(
+      tid: TestId,
+      auto: Boolean
+    ): F[Entity[Abtest]] =
     c.expect(DELETE(Uri.unsafeFromString(urls.groupMeta(tid)) +? ("auto", auto)))
 
   def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]] =
@@ -96,7 +122,8 @@ object Http4SAbtestClient {
   import org.http4s.client.blaze.BlazeClientBuilder
   def resource[F[_]: ConcurrentEffect](
       urls: HttpServiceUrls,
-      ec: ExecutionContext): Resource[F, AbtestClient[F]] = {
+      ec: ExecutionContext
+    ): Resource[F, AbtestClient[F]] = {
     BlazeClientBuilder[F](ec).resource.map(cl => new Http4SAbtestClient[F](cl, urls))
   }
 }
@@ -140,7 +167,9 @@ object AbtestClient {
       s"$root/features/$featureName/tests"
   }
 
-  case class ErrorParseJson(errs: Seq[(JsPath, Seq[JsonValidationError])], body: JsValue)
+  case class ErrorParseJson(
+      errs: Seq[(JsPath, Seq[JsonValidationError])],
+      body: JsValue)
       extends RuntimeException
       with NoStackTrace {
     override def getMessage: String =
@@ -151,13 +180,16 @@ object AbtestClient {
     * Shortcuts for getting the assigned group only.
     * @param serviceUrl for getting all running tests as of `time`
     */
-  def testsWithFeatures[F[_]: ConcurrentEffect](serviceUrl: String,
-                                                time: Option[OffsetDateTime])(
-      implicit ec: ExecutionContext): F[Vector[(Abtest, Feature)]] =
+  def testsWithFeatures[F[_]: ConcurrentEffect](
+      serviceUrl: String,
+      time: Option[OffsetDateTime]
+    )(implicit ec: ExecutionContext
+    ): F[Vector[(Abtest, Feature)]] =
     Http4SAbtestClient
       .resource[F](new HttpServiceUrlsPlay("mock") {
         override val tests: String = serviceUrl
       }, ec)
-      .use(
-        _.tests(time).map(_.map { case (Entity(_, test), feature) => (test, feature) }))
+      .use(_.tests(time).map(_.map {
+        case (Entity(_, test), feature) => (test, feature)
+      }))
 }

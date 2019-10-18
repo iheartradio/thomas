@@ -13,21 +13,29 @@ import com.iheart.thomas.abtest.Error.NotFound
 import scala.util.control.NoStackTrace
 
 trait AnalysisAPI[F[_], K <: KPIDistribution] {
-  def updateKPI(name: KPIName, start: OffsetDateTime, end: OffsetDateTime): F[(K, Double)]
+  def updateKPI(
+      name: KPIName,
+      start: OffsetDateTime,
+      end: OffsetDateTime
+    ): F[(K, Double)]
 
   def saveKPI(kpi: K): F[K]
 
-  def assess(feature: FeatureName,
-             kpi: KPIName,
-             baseline: GroupName,
-             start: Option[OffsetDateTime] = None,
-             end: Option[OffsetDateTime] = None): F[Map[GroupName, NumericGroupResult]]
+  def assess(
+      feature: FeatureName,
+      kpi: KPIName,
+      baseline: GroupName,
+      start: Option[OffsetDateTime] = None,
+      end: Option[OffsetDateTime] = None
+    ): F[Map[GroupName, NumericGroupResult]]
 
   def updateOrInitKPI(
       name: KPIName,
       start: OffsetDateTime,
       end: OffsetDateTime,
-      init: => K)(implicit F: MonadError[F, Throwable]): F[(K, Double)] = {
+      init: => K
+    )(implicit F: MonadError[F, Throwable]
+    ): F[(K, Double)] = {
     updateKPI(name, start, end).recoverWith {
       case NotFound(_) => saveKPI(init).flatMap(k => updateKPI(k.name, start, end))
     }
@@ -48,9 +56,11 @@ object AnalysisAPI {
 
     def narrowToK: PartialFunction[KPIDistribution, K]
 
-    def updateKPI(name: KPIName,
-                  start: OffsetDateTime,
-                  end: OffsetDateTime): F[(K, Double)] = {
+    def updateKPI(
+        name: KPIName,
+        start: OffsetDateTime,
+        end: OffsetDateTime
+      ): F[(K, Double)] = {
       for {
         kpi <- client.getKPI(name.n).flatMap(validateKPIType)
         p <- kpi.updateFromData[F](start, end)
@@ -64,7 +74,8 @@ object AnalysisAPI {
         kpi: KPIName,
         baseline: GroupName,
         start: Option[OffsetDateTime] = None,
-        end: Option[OffsetDateTime] = None): F[Map[GroupName, NumericGroupResult]] =
+        end: Option[OffsetDateTime] = None
+      ): F[Map[GroupName, NumericGroupResult]] =
       for {
         kpi <- client.getKPI(kpi.n).flatMap(validateKPIType)
         abtestO <- client.test(feature, start)
@@ -81,7 +92,8 @@ object AnalysisAPI {
       sampleSettings: SampleSettings = SampleSettings.default,
       rng: RNG = RNG.default,
       client: AbtestClient[F],
-      F: MonadError[F, Throwable]): AnalysisAPI[F, GammaKPIDistribution] =
+      F: MonadError[F, Throwable]
+    ): AnalysisAPI[F, GammaKPIDistribution] =
     new AnalysisAPIWithClient[F, GammaKPIDistribution] {
       def narrowToK: PartialFunction[KPIDistribution, GammaKPIDistribution] = {
         case g: GammaKPIDistribution => g
@@ -94,7 +106,8 @@ object AnalysisAPI {
       sampleSettings: SampleSettings = SampleSettings.default,
       rng: RNG = RNG.default,
       client: AbtestClient[F],
-      F: MonadError[F, Throwable]): AnalysisAPI[F, BetaKPIDistribution] =
+      F: MonadError[F, Throwable]
+    ): AnalysisAPI[F, BetaKPIDistribution] =
     new AnalysisAPIWithClient[F, BetaKPIDistribution] {
       def narrowToK: PartialFunction[KPIDistribution, BetaKPIDistribution] = {
         case b: BetaKPIDistribution => b

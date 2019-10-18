@@ -18,10 +18,7 @@ case class BanditState[R](
   def rewardState: Map[ArmName, R] =
     arms.map(as => (as.name, as.rewardState)).toMap
 
-  def updateArms(
-      rewards: Map[ArmName, R]
-    )(implicit RS: Monoid[R]
-    ): BanditState[R] =
+  def updateArms(rewards: Map[ArmName, R])(implicit RS: Monoid[R]): BanditState[R] =
     copy(arms = arms.map { arm =>
       arm.copy(
         rewardState = rewards
