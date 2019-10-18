@@ -113,9 +113,7 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
       KPIName("test"),
       Normal(0.5, 0.1),
       Normal(3, 0.1)
-    ).assess(mockAb, "A")
-      .right
-      .get
+    ).assess(mockAb, "A").right.get
 
     val path = "plots/diagnosticTraceTest.png"
     new File(path).delete()

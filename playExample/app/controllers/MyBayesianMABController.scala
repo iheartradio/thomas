@@ -10,8 +10,9 @@ import modules.LocalDynamoClientProvider
 @Singleton
 class MyBayesianMABController @Inject()(
     provider: AbtestAPIProvider,
-    components: ControllerComponents,
-)(implicit ec: ExecutionContext)
+    components: ControllerComponents
+  )(implicit ec: ExecutionContext)
     extends BayesianMABController(
       new BanditAlgsProvider(provider, LocalDynamoClientProvider).conversionBMABAlg,
-      components)
+      components
+    )
