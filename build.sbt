@@ -3,20 +3,26 @@ import microsites._
 import sbtassembly.AssemblyPlugin.defaultUniversalScript
 val apache2 = "Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")
 
-val gh = GitHubSettings(org = "iheartradio", proj = "thomas", publishOrg = "com.iheart", license = apache2)
+val gh = GitHubSettings(
+  org = "iheartradio",
+  proj = "thomas",
+  publishOrg = "com.iheart",
+  license = apache2
+)
 
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
+// format: off
 lazy val libs =
   org.typelevel.libraries
   .addJVM(name = "lihua",                 version = "0.28",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-dynamo-testkit", "lihua-play-json")
   .addJVM(name = "scanamo",               version = "1.0.0-M11", org ="org.scanamo", "scanamo-testkit")
   .addJVM(name = "rainier",               version = "0.2.3",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
-  .addJVM(name = "breeze",                version = "1.0", org ="org.scalanlp", "breeze", "breeze-viz")
+  .addJVM(name = "breeze",                version = "1.0",    org ="org.scalanlp", "breeze", "breeze-viz")
   .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
   .add(   name = "play-json",             version = "2.7.3",  org = "com.typesafe.play")
   .add(   name = "play",                  version = "2.7.3",  org = "com.typesafe.play")
-  .add(   name = "spark",                  version = "2.4.4",  org = "org.apache.spark", "spark-sql", "spark-core")
+  .add(   name = "spark",                  version = "2.4.4", org = "org.apache.spark", "spark-sql", "spark-core")
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
   .addJVM(name = "play-json-derived-codecs", version = "6.0.0", org = "org.julienrf")
   .addJVM(name = "newtype",               version = "0.4.3",  org = "io.estatico")
@@ -28,24 +34,42 @@ lazy val libs =
   .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
   .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
   .addJVM(name = "akka-slf4j",            version = "2.5.22", org = "com.typesafe.akka")
-  .add(   name = "scalatest",             version = "3.1.0-RC3")
   .add(   name = "scalatestplus-scalacheck", version = "3.1.0.0-RC2",   org = "org.scalatestplus")
   .add(   name = "scalatestplus-play",    version = "4.0.3",  org = "org.scalatestplus.play")
   .add(   name = "cats-effect-testing-scalatest",    version = "0.3.0",  org = "com.codecommit")
   .addJVM(name = "fs2-kafka",             version = "0.20.1", org = "com.ovoenergy")
   .add(   name = "jawn",                  version = "0.14.2", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
-  .addJVM( name = "embedded-kafka",     version = "2.3.0", org = "io.github.embeddedkafka")
+  .addJVM( name = "embedded-kafka",       version = "2.3.0",  org = "io.github.embeddedkafka")
+// format: on
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
-addCommandAlias("validate", s";clean;test;play/IntegrationTest/test;it/IntegrationTest/test;playExample/compile;docs/tut")
+addCommandAlias(
+  "validate",
+  s";clean;test;play/IntegrationTest/test;it/IntegrationTest/test;playExample/compile;docs/tut"
+)
 addCommandAlias("it", s"IntegrationTest/test")
 
-lazy val thomas = project.in(file("."))
-  .aggregate(playExample, play, client, bandit, it, http4s, cli, mongo, analysis, docs, stress, dynamo, spark, stream, testkit, kafka)
-  .settings(
-    rootSettings,
-    crossScalaVersions := Nil,
-    noPublishing)
+lazy val thomas = project
+  .in(file("."))
+  .aggregate(
+    playExample,
+    play,
+    client,
+    bandit,
+    it,
+    http4s,
+    cli,
+    mongo,
+    analysis,
+    docs,
+    stress,
+    dynamo,
+    spark,
+    stream,
+    testkit,
+    kafka
+  )
+  .settings(rootSettings, crossScalaVersions := Nil, noPublishing)
 
 lazy val client = project
   .dependsOn(bandit)
@@ -56,7 +80,7 @@ lazy val client = project
     rootSettings,
     Defaults.itSettings,
     libs.dependency("scalatest", Some("it, test")),
-    libs.dependencies( "http4s-blaze-client", "http4s-play-json")
+    libs.dependencies("http4s-blaze-client", "http4s-play-json")
   )
 
 lazy val cli = project
@@ -68,9 +92,13 @@ lazy val cli = project
     libs.dependencies("decline", "logback-classic"),
     releasePublishArtifactsAction := {
       (assembly in assembly).value
-      releasePublishArtifactsAction.value },
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(prependShellScript = Some(defaultUniversalScript(shebang = false))),
-    assemblyOutputPath in assembly := file(s"release/thomas-cli_${version.value}.jar"),
+      releasePublishArtifactsAction.value
+    },
+    assemblyOption in assembly := (assemblyOption in assembly).value
+      .copy(prependShellScript = Some(defaultUniversalScript(shebang = false))),
+    assemblyOutputPath in assembly := file(
+      s"release/thomas-cli_${version.value}.jar"
+    ),
     buildInfoKeys := BuildInfoKey.ofN(name, version),
     buildInfoPackage := "com.iheart.thomas"
   )
@@ -81,14 +109,16 @@ lazy val core = project
     rootSettings,
     taglessSettings,
     libs.testDependencies("scalatestplus-scalacheck"),
-    libs.dependencies("cats-core",
+    libs.dependencies(
+      "cats-core",
       "monocle-macro",
       "monocle-core",
       "lihua-core",
       "mau",
       "mouse",
       "henkan-convert",
-      "lihua-play-json"),
+      "lihua-play-json"
+    ),
     simulacrumSettings(libs)
   )
 
@@ -112,18 +142,40 @@ lazy val analysis = project
     sources in (Compile, doc) := Nil, //disable scaladoc due to scalameta not working in scaladoc
     resolvers += Resolver.bintrayRepo("cibotech", "public"),
     libs.testDependencies("scalacheck", "scalatest"),
-    libs.dependencies("rainier-core", "cats-effect", "rainier-cats", "newtype", "breeze", "commons-math3", "play-json-derived-codecs"),
+    libs.dependencies(
+      "rainier-core",
+      "cats-effect",
+      "rainier-cats",
+      "newtype",
+      "breeze",
+      "commons-math3",
+      "play-json-derived-codecs"
+    ),
     libs.dependency("rainier-plot", Some(Optional.name))
   )
 
 lazy val docs = project
-  .configure(mkDocConfig(gh, rootSettings, taglessSettings, client, http4s, play, core, analysis, cli, spark, stream))
+  .configure(
+    mkDocConfig(
+      gh,
+      rootSettings,
+      taglessSettings,
+      client,
+      http4s,
+      play,
+      core,
+      analysis,
+      cli,
+      spark,
+      stream
+    )
+  )
   .enablePlugins(MicrositesPlugin)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
     crossScalaVersions := Seq(scalaVersion.value),
     scalacOptions in Tut ~= (_.filterNot(Set("-Ywarn-unused:imports"))),
-    micrositeSettings(gh, developerKai,  "Thomas, a library for A/B tests"),
+    micrositeSettings(gh, developerKai, "Thomas, a library for A/B tests"),
     micrositeDocumentationUrl := "/thomas/api/com/iheart/thomas/index.html",
     micrositeDocumentationLabelDescription := "API Documentation",
     micrositeGithubOwner := "iheartradio",
@@ -135,16 +187,16 @@ lazy val docs = project
       )
     ),
     micrositePalette := Map(
-      "brand-primary"     -> "#51839A",
-      "brand-secondary"   -> "#EDAF79",
-      "brand-tertiary"    -> "#96A694",
-      "gray-dark"         -> "#192946",
-      "gray"              -> "#424F67",
-      "gray-light"        -> "#E3E2E3",
-      "gray-lighter"      -> "#F4F3F4",
-      "white-color"       -> "#FFFFFF")
+      "brand-primary" -> "#51839A",
+      "brand-secondary" -> "#EDAF79",
+      "brand-tertiary" -> "#96A694",
+      "gray-dark" -> "#192946",
+      "gray" -> "#424F67",
+      "gray-light" -> "#E3E2E3",
+      "gray-lighter" -> "#F4F3F4",
+      "white-color" -> "#FFFFFF"
+    )
   )
-
 
 lazy val mongo = project
   .dependsOn(core, bandit)
@@ -191,7 +243,8 @@ lazy val kafka = project
   .settings(rootSettings)
   .settings(
     crossScalaVersions := Seq(scalaVersion.value),
-    libs.dependencies("fs2-kafka", "log4cats-slf4j", "logback-classic", "akka-slf4j"),
+    libs
+      .dependencies("fs2-kafka", "log4cats-slf4j", "logback-classic", "akka-slf4j"),
     libs.testDependencies("cats-effect-testing-scalatest")
   )
 
@@ -217,7 +270,8 @@ lazy val http4s = project
       "http4s-dsl",
       "http4s-play-json",
       "scala-java8-compat",
-      "log4cats-slf4j")
+      "log4cats-slf4j"
+    )
   )
 
 lazy val stress = project
@@ -230,7 +284,7 @@ lazy val stress = project
     crossScalaVersions := Seq(scalaVersion.value),
     libraryDependencies ++= Seq(
       "io.gatling.highcharts" % "gatling-charts-highcharts" % "2.3.1" % Test,
-      "io.gatling"            % "gatling-test-framework"    % "2.3.1" % Test
+      "io.gatling" % "gatling-test-framework" % "2.3.1" % Test
     )
   )
 
@@ -247,7 +301,8 @@ lazy val it = project
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
     libs.dependency("akka-slf4j", Some(IntegrationTest.name)),
     libs.dependency("embedded-kafka", Some(IntegrationTest.name)),
-    testOptions in IntegrationTest += Tests.Argument(TestFrameworks.ScalaTest, "-oFDU"),
+    testOptions in IntegrationTest += Tests
+      .Argument(TestFrameworks.ScalaTest, "-oFDU"),
     dynamoTestSettings
   )
 
@@ -257,11 +312,14 @@ lazy val dynamoTestSettings = Seq(
   dynamoDBLocalPort := 8042,
   dynamoDBLocalCleanAfterStop := true,
   startDynamoDBLocal := startDynamoDBLocal.dependsOn(compile in Test).value,
-  test in IntegrationTest := (test in IntegrationTest).dependsOn(startDynamoDBLocal).value,
-  testOnly in IntegrationTest := (testOnly in IntegrationTest).dependsOn(startDynamoDBLocal).evaluated,
+  test in IntegrationTest := (test in IntegrationTest)
+    .dependsOn(startDynamoDBLocal)
+    .value,
+  testOnly in IntegrationTest := (testOnly in IntegrationTest)
+    .dependsOn(startDynamoDBLocal)
+    .evaluated,
   testOptions in IntegrationTest += dynamoDBLocalTestCleanup.value
 )
-
 
 lazy val play = project
   .dependsOn(mongo, dynamo)
@@ -276,10 +334,11 @@ lazy val play = project
     crossScalaVersions := Seq(scalaVersion.value),
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
     libs.dependency("scalatestplus-play", Some(IntegrationTest.name)),
-    libs.dependencies("scala-java8-compat", "play", "lihua-dynamo"),
+    libs.dependencies("scala-java8-compat", "play", "lihua-dynamo")
   )
 
-lazy val playExample = project.enablePlugins(PlayScala, SwaggerPlugin)
+lazy val playExample = project
+  .enablePlugins(PlayScala, SwaggerPlugin)
   .dependsOn(play)
   .aggregate(play)
   .settings(
@@ -294,17 +353,22 @@ lazy val playExample = project.enablePlugins(PlayScala, SwaggerPlugin)
       guice,
       ws,
       filters,
-      "org.webjars" % "swagger-ui" % "3.24.0"),
+      "org.webjars" % "swagger-ui" % "3.24.0"
+    ),
     dockerExposedPorts in Docker := Seq(9000),
     swaggerDomainNameSpaces := Seq("com.iheart.thomas"),
     (stage in Docker) := (stage in Docker).dependsOn(swagger).value
   )
 
-
 lazy val noPublishing = Seq(skip in publish := true)
 lazy val defaultScalaVer = libs.vers("scalac_2.12")
 
-lazy val developerKai = Developer("Kailuo Wang", "@kailuowang", "kailuo.wang@gmail.com", new java.net.URL("http://kailuowang.com"))
+lazy val developerKai = Developer(
+  "Kailuo Wang",
+  "@kailuowang",
+  "kailuo.wang@gmail.com",
+  new java.net.URL("http://kailuowang.com")
+)
 lazy val commonSettings = addCompilerPlugins(libs, "kind-projector") ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := defaultScalaVer,
@@ -320,9 +384,11 @@ lazy val commonSettings = addCompilerPlugins(libs, "kind-projector") ++ sharedCo
 )
 
 lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =
-  _.filterNot(Set("-Ywarn-unused-import", "-Ywarn-unused:imports",  "-Ywarn-dead-code"))
+  _.filterNot(
+    Set("-Ywarn-unused-import", "-Ywarn-unused:imports", "-Ywarn-dead-code")
+  )
 
-lazy val taglessSettings =  paradiseSettings(libs) ++ Seq(
+lazy val taglessSettings = paradiseSettings(libs) ++ Seq(
   libraryDependencies ++= Seq(
     "org.typelevel" %% "cats-tagless-macros" % "0.10"
   )
@@ -347,10 +413,8 @@ lazy val publishSettings = sharedPublishSettings(gh) ++ credentialSettings ++ sh
     releaseStepCommand("sonatypeBundleRelease"),
     setNextVersion,
     commitNextVersion,
-    pushChanges)
- )
-
+    pushChanges
+  )
+)
 
 lazy val disciplineDependencies = libs.dependencies("discipline", "scalacheck")
-
-

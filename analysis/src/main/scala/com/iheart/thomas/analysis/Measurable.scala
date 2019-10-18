@@ -7,12 +7,18 @@ import cats.Contravariant
 import com.iheart.thomas.abtest.model.Abtest
 
 trait Measurable[F[_], M, K] {
-  def measureAbtest(k: K,
-                    abtest: Abtest,
-                    start: Option[OffsetDateTime],
-                    end: Option[OffsetDateTime]): F[Map[GroupName, M]]
+  def measureAbtest(
+      k: K,
+      abtest: Abtest,
+      start: Option[OffsetDateTime],
+      end: Option[OffsetDateTime]
+    ): F[Map[GroupName, M]]
 
-  def measureHistory(k: K, start: OffsetDateTime, end: OffsetDateTime): F[M]
+  def measureHistory(
+      k: K,
+      start: OffsetDateTime,
+      end: OffsetDateTime
+    ): F[M]
 }
 
 object Measurable {

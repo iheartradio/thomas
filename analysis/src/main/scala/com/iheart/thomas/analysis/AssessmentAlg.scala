@@ -13,17 +13,21 @@ import cats.effect.Sync
 import com.stripe.rainier.cats.rainierMonadRandomVariable
 import com.stripe.rainier.core.{Generator, ToGenerator}
 trait AssessmentAlg[F[_], K] {
-  def assess(k: K,
-             abtest: Abtest,
-             baselineGroup: GroupName,
-             start: Option[OffsetDateTime] = None,
-             end: Option[OffsetDateTime] = None): F[Map[GroupName, NumericGroupResult]]
+  def assess(
+      k: K,
+      abtest: Abtest,
+      baselineGroup: GroupName,
+      start: Option[OffsetDateTime] = None,
+      end: Option[OffsetDateTime] = None
+    ): F[Map[GroupName, NumericGroupResult]]
 
 }
 
 trait BasicAssessmentAlg[F[_], K, M] {
-  def assessOptimumGroup(k: K,
-                         measurements: Map[GroupName, M]): F[Map[GroupName, Probability]]
+  def assessOptimumGroup(
+      k: K,
+      measurements: Map[GroupName, M]
+    ): F[Map[GroupName, Probability]]
 }
 
 trait UpdatableKPI[F[_], K] {
@@ -32,7 +36,11 @@ trait UpdatableKPI[F[_], K] {
     * replace the prior of the KPI with a new prior based on new data
     * @param kpi
     */
-  def updateFromData(kpi: K, start: OffsetDateTime, end: OffsetDateTime): F[(K, Double)]
+  def updateFromData(
+      kpi: K,
+      start: OffsetDateTime,
+      end: OffsetDateTime
+    ): F[(K, Double)]
 }
 
 object UpdatableKPI {
@@ -46,13 +54,17 @@ trait KPISyntax {
         abtest: Abtest,
         baselineGroup: GroupName,
         start: Option[OffsetDateTime] = None,
-        end: Option[OffsetDateTime] = None): F[Map[GroupName, NumericGroupResult]] =
+        end: Option[OffsetDateTime] = None
+      ): F[Map[GroupName, NumericGroupResult]] =
       K.assess(k, abtest, baselineGroup, start, end)
   }
 
   implicit class updatableKPIOps[K](k: K) {
-    def updateFromData[F[_]](start: OffsetDateTime, end: OffsetDateTime)(
-        implicit K: UpdatableKPI[F, K]): F[(K, Double)] =
+    def updateFromData[F[_]](
+        start: OffsetDateTime,
+        end: OffsetDateTime
+      )(implicit K: UpdatableKPI[F, K]
+      ): F[(K, Double)] =
       K.updateFromData(k, start, end)
   }
 }
@@ -65,19 +77,26 @@ object AssessmentAlg {
       override def apply(t: GroupName): Generator[GroupName] = Generator.constant(t)
     }
 
-  case object ControlGroupMeasurementMissing extends RuntimeException with NoStackTrace
+  case object ControlGroupMeasurementMissing
+      extends RuntimeException
+      with NoStackTrace
 
-  abstract class BayesianBasicAssessmentAlg[F[_], K, M](implicit
-                                                        samplerSettings: SampleSettings,
-                                                        rng: RNG,
-                                                        F: Sync[F])
+  abstract class BayesianBasicAssessmentAlg[F[_], K, M](
+      implicit
+      samplerSettings: SampleSettings,
+      rng: RNG,
+      F: Sync[F])
       extends BasicAssessmentAlg[F, K, M] {
 
-    protected def sampleIndicator(k: K, data: M): Indicator
+    protected def sampleIndicator(
+        k: K,
+        data: M
+      ): Indicator
 
     def assessOptimumGroup(
         k: K,
-        allMeasurement: Map[GroupName, M]): F[Map[GroupName, Probability]] = F.delay {
+        allMeasurement: Map[GroupName, M]
+      ): F[Map[GroupName, Probability]] = F.delay {
       val rvGroupResults = allMeasurement.toList
         .traverse {
           case (gn, ms) => sampleIndicator(k, ms).map((gn, _))
@@ -87,10 +106,12 @@ object AssessmentAlg {
       import samplerSettings._
       val numericGroupResult =
         rvGroupResults
-          .sample[Seq[(GroupName, Double)]](sampler,
-                                            warmupIterations,
-                                            iterations,
-                                            keepEvery)
+          .sample[Seq[(GroupName, Double)]](
+            sampler,
+            warmupIterations,
+            iterations,
+            keepEvery
+          )
       val initCounts = allMeasurement.map { case (gn, _) => (gn, 0L) }
 
       val winnerCounts = numericGroupResult.foldLeft(initCounts) {
@@ -106,20 +127,25 @@ object AssessmentAlg {
     }
   }
 
-  abstract class BayesianAssessmentAlg[F[_], K, M](implicit
-                                                   samplerSettings: SampleSettings,
-                                                   rng: RNG,
-                                                   K: Measurable[F, M, K],
-                                                   F: MonadError[F, Throwable])
+  abstract class BayesianAssessmentAlg[F[_], K, M](
+      implicit
+      samplerSettings: SampleSettings,
+      rng: RNG,
+      K: Measurable[F, M, K],
+      F: MonadError[F, Throwable])
       extends AssessmentAlg[F, K] {
-    protected def sampleIndicator(k: K, data: M): Indicator
+    protected def sampleIndicator(
+        k: K,
+        data: M
+      ): Indicator
 
     def assess(
         k: K,
         abtest: Abtest,
         baselineGroup: GroupName,
         start: Option[OffsetDateTime] = None,
-        end: Option[OffsetDateTime] = None): F[Map[GroupName, NumericGroupResult]] = {
+        end: Option[OffsetDateTime] = None
+      ): F[Map[GroupName, NumericGroupResult]] = {
 
       for {
         allMeasurement <- K.measureAbtest(k, abtest, start, end)
@@ -145,7 +171,9 @@ object AssessmentAlg {
 
   }
 
-  case class BaselineGroupNameNotFound(n: GroupName, groups: Iterable[GroupName])
+  case class BaselineGroupNameNotFound(
+      n: GroupName,
+      groups: Iterable[GroupName])
       extends RuntimeException
       with NoStackTrace {
     override def getMessage: String =
