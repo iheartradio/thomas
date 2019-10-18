@@ -1,9 +1,8 @@
 package com.iheart.thomas.analysis
 
 import syntax.AllSyntax
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuiteLike
-
 
 class NumericGroupResultSuite extends AnyFunSuiteLike with Matchers with AllSyntax {
   test("probability of Improvement") {

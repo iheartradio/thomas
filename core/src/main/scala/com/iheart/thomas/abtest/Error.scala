@@ -58,9 +58,13 @@ object Error {
   case object InvalidFeatureName extends ValidationError
   case object InvalidAlternativeIdName extends ValidationError
   case class GroupNameDoesNotExist(name: GroupName) extends ValidationError
-  case class ContinuationGap(lastEnd: OffsetDateTime, scheduledStart: OffsetDateTime)
+  case class ContinuationGap(
+      lastEnd: OffsetDateTime,
+      scheduledStart: OffsetDateTime)
       extends ValidationError
-  case class ContinuationBefore(lasStart: OffsetDateTime, scheduledStart: OffsetDateTime)
+  case class ContinuationBefore(
+      lasStart: OffsetDateTime,
+      scheduledStart: OffsetDateTime)
       extends ValidationError
 
   case object EmptyGroups extends ValidationError

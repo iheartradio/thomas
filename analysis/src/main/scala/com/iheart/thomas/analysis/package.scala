@@ -14,9 +14,10 @@ object `package` {
     implicit def fromString(n: String): KPIName = KPIName(n)
   }
 
-
   type Indicator = RandomVariable[Real]
   type Measurements = List[Double]
 }
 
-case class Conversions(converted: Long, total: Long)
+case class Conversions(
+    converted: Long,
+    total: Long)

@@ -7,7 +7,7 @@ import cats.effect._
 import org.http4s.server.blaze._
 import scala.concurrent.ExecutionContext.Implicits.global
 import cats.implicits._
-import scalacache.CatsEffect.modes._
+
 object Main extends ExampleHtt4sApp
 
 trait ExampleHtt4sApp extends IOApp {
@@ -22,6 +22,3 @@ trait ExampleHtt4sApp extends IOApp {
         .as(ExitCode.Success)
     }
 }
-
-
-

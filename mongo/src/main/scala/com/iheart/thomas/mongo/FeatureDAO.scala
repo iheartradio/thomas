@@ -17,14 +17,25 @@ import reactivemongo.play.json.collection.JSONCollection
 
 import scala.concurrent.ExecutionContext
 
-class FeatureDAOFactory[F[_]: Async](implicit ec: ExecutionContext) extends EitherTDAOFactory[Feature, F]("abtest", "feature") {
+class FeatureDAOFactory[F[_]: Async](implicit ec: ExecutionContext)
+    extends EitherTDAOFactory[Feature, F]("abtest", "feature") {
   def ensure(collection: JSONCollection): F[Unit] = {
-    implicit val contextShiftIO= IO.contextShift(ec)
+    implicit val contextShiftIO = IO.contextShift(ec)
 
-    IO.fromFuture(IO(collection.indexesManager.ensure(
-      Index(Seq(
-        ("name", IndexType.Ascending)
-      ), unique = true)
-    ).void)).to[F]
+    IO.fromFuture(
+        IO(
+          collection.indexesManager
+            .ensure(
+              Index(
+                Seq(
+                  ("name", IndexType.Ascending)
+                ),
+                unique = true
+              )
+            )
+            .void
+        )
+      )
+      .to[F]
   }
 }

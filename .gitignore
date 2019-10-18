@@ -1,4 +1,6 @@
 dynamodb-local
+derby.log
+metastore_db
 logs
 release
 plots
