@@ -12,7 +12,8 @@ private[client] abstract class PlayJsonHttp4sClient[F[_]: Sync]
   import org.http4s.{EntityDecoder, EntityEncoder}
 
   implicit def autoEntityEncoderFromJsonWrites[A: Writes](
-      implicit af: EntityEncoder[F, String]): EntityEncoder[F, A] =
+      implicit af: EntityEncoder[F, String]
+    ): EntityEncoder[F, A] =
     jsonEncoderOf[F, A]
 
   implicit def jsObjectEncoder: EntityEncoder[F, JsObject] = jsonEncoder[F].narrow

@@ -32,7 +32,8 @@ object QueryDSL {
     Json.obj(tp._1.name -> Json.toJson(tp._2))
 
   implicit def fromFields2[A: Writes, B: Writes](
-      p: ((Symbol, A), (Symbol, B))): JsObject = p match {
+      p: ((Symbol, A), (Symbol, B))
+    ): JsObject = p match {
     case ((s1, a), (s2, b)) => Json.obj(s1.name -> a, s2.name -> b)
   }
 }

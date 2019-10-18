@@ -48,8 +48,7 @@ class ThomasController[F[_]](
       req.body
         .validate[Req]
         .fold(
-          errs =>
-            badRequest(errs.map(_.toString): _*).toIO.unsafeToFuture(),
+          errs => badRequest(errs.map(_.toString): _*).toIO.unsafeToFuture(),
           rq => toResult(f(rq))
         )
     }
@@ -62,9 +61,7 @@ class ThomasController[F[_]](
 
 }
 
-class HttpResults[F[_]](
-    alerter: Option[Alerter[F]]
-  )(implicit F: Async[F]) {
+class HttpResults[F[_]](alerter: Option[Alerter[F]])(implicit F: Async[F]) {
 
   def errorJson(msgs: Seq[String]): JsObject =
     Json.obj("errors" -> JsArray(msgs.map(JsString)))
@@ -149,9 +146,7 @@ class HttpResults[F[_]](
 
 object ThomasController {
 
-  case class InvalidRequest(msg: String)
-      extends RuntimeException
-      with NoStackTrace
+  case class InvalidRequest(msg: String) extends RuntimeException with NoStackTrace
   trait Alerter[F[_]] {
     def alert(msg: String): F[Unit]
   }

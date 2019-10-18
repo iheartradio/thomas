@@ -13,8 +13,12 @@ import henkan.convert.Syntax._
 
 object AssignGroups {
 
-  def assign[F[_]: Monad](test: Abtest, feature: Feature, query: UserGroupQuery)(
-      implicit eligibilityControl: EligibilityControl[F]): F[Option[GroupName]] = {
+  def assign[F[_]: Monad](
+      test: Abtest,
+      feature: Feature,
+      query: UserGroupQuery
+    )(implicit eligibilityControl: EligibilityControl[F]
+    ): F[Option[GroupName]] = {
     eligibilityControl.eligible(query, test).map { eligible =>
       val idToUse = test.idToUse(query.to[UserInfo]())
       def overriddenGroup = {
@@ -31,13 +35,17 @@ object AssignGroups {
     }
   }
 
-  def assign[F[_]: Monad](tests: Vector[(Abtest, Feature)], query: UserGroupQuery)(
-      implicit eligibilityControl: EligibilityControl[F])
-    : F[Map[FeatureName, (GroupName, Abtest)]] = {
+  def assign[F[_]: Monad](
+      tests: Vector[(Abtest, Feature)],
+      query: UserGroupQuery
+    )(implicit eligibilityControl: EligibilityControl[F]
+    ): F[Map[FeatureName, (GroupName, Abtest)]] = {
     tests
       .traverseFilter {
         case (test, feature) =>
-          assign[F](test, feature, query).map(_.map(gn => (feature.name, (gn, test))))
+          assign[F](test, feature, query).map(
+            _.map(gn => (feature.name, (gn, test)))
+          )
       }
       .map(_.toMap)
 

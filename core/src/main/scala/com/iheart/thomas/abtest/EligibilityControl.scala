@@ -23,27 +23,34 @@ trait EligibilityControl[F[_]] {
   def eligible(
       query: UserGroupQuery,
       test: Abtest
-  ): F[Boolean]
+    ): F[Boolean]
 
 }
 
 object EligibilityControl extends EligibilityControlInstances0 {
   def apply[F[_]](f: (UserGroupQuery, Abtest) => F[Boolean]): EligibilityControl[F] =
     new EligibilityControl[F] {
-      def eligible(userInfo: UserGroupQuery, test: Abtest): F[Boolean] =
+      def eligible(
+          userInfo: UserGroupQuery,
+          test: Abtest
+        ): F[Boolean] =
         f(userInfo, test)
     }
 
   implicit def semigroupAnd[F[_]: Monad]: Semigroup[EligibilityControl[F]] =
     new Semigroup[EligibilityControl[F]] {
-      override def combine(x: EligibilityControl[F],
-                           y: EligibilityControl[F]): EligibilityControl[F] =
-        apply[F]((userInfo: UserGroupQuery, test: Abtest) =>
-          x.eligible(userInfo, test).flatMap { a =>
-            if (a) {
-              y.eligible(userInfo, test)
-            } else false.pure[F]
-        })
+      override def combine(
+          x: EligibilityControl[F],
+          y: EligibilityControl[F]
+        ): EligibilityControl[F] =
+        apply[F](
+          (userInfo: UserGroupQuery, test: Abtest) =>
+            x.eligible(userInfo, test).flatMap { a =>
+              if (a) {
+                y.eligible(userInfo, test)
+              } else false.pure[F]
+            }
+        )
     }
 }
 
@@ -54,19 +61,27 @@ private[thomas] sealed abstract class EligibilityControlInstances0
     byGroupMeta |+| byRequiredTags |+| bySegRanges |+| byTestEffectiveRange
 
   lazy val byGroupMeta: EligibilityControl[Id] =
-    abtest.EligibilityControl[Id]((query, test) =>
-      test.matchingUserMeta.forall {
-        case (k, r) =>
-          query.meta.get(k).fold(false)(v => new Regex(r).findFirstMatchIn(v).isDefined)
-    })
+    abtest.EligibilityControl[Id](
+      (query, test) =>
+        test.matchingUserMeta.forall {
+          case (k, r) =>
+            query.meta
+              .get(k)
+              .fold(false)(v => new Regex(r).findFirstMatchIn(v).isDefined)
+        }
+    )
 
   lazy val byRequiredTags: EligibilityControl[Id] =
-    abtest.EligibilityControl[Id]((query: UserGroupQuery, test: Abtest) =>
-      test.requiredTags.forall(query.tags.contains))
+    abtest.EligibilityControl[Id](
+      (query: UserGroupQuery, test: Abtest) =>
+        test.requiredTags.forall(query.tags.contains)
+    )
 
   lazy val byTestEffectiveRange: EligibilityControl[Id] =
-    abtest.EligibilityControl[Id]((query: UserGroupQuery, test: Abtest) =>
-      test.statusAsOf(query.at.getOrElse(OffsetDateTime.now)) === InProgress)
+    abtest.EligibilityControl[Id](
+      (query: UserGroupQuery, test: Abtest) =>
+        test.statusAsOf(query.at.getOrElse(OffsetDateTime.now)) === InProgress
+    )
 
   lazy val bySegRanges: EligibilityControl[Id] = abtest.EligibilityControl[Id](
     (query: UserGroupQuery, test: Abtest) =>
@@ -76,14 +91,16 @@ private[thomas] sealed abstract class EligibilityControlInstances0
           test.idToUse(query.to[UserInfo]()).fold(false) { id =>
             range.contains(Bucketing.md5Double(id))
           }
-      })
+        }
+  )
 
 }
 
 private[thomas] sealed abstract class EligibilityControlInstances1 {
 
   implicit def fromIdEControl[F[_]: Applicative](
-      implicit idec: EligibilityControl[Id]): EligibilityControl[F] =
+      implicit idec: EligibilityControl[Id]
+    ): EligibilityControl[F] =
     EligibilityControl[F](
       (u, t) => idec.eligible(u, t).pure[F]
     )

@@ -20,13 +20,9 @@ trait BayesianMABAlg[F[_], R] {
 
   def init(banditSpec: BanditSpec): F[BayesianMAB[R]]
 
-  def currentState(
-      featureName: FeatureName
-    ): F[BayesianMAB[R]]
+  def currentState(featureName: FeatureName): F[BayesianMAB[R]]
 
-  def runningBandits(
-      time: Option[OffsetDateTime] = None
-    ): F[Vector[BayesianMAB[R]]]
+  def runningBandits(time: Option[OffsetDateTime] = None): F[Vector[BayesianMAB[R]]]
 
   def reallocate(
       featureName: FeatureName,

@@ -59,8 +59,7 @@ object ConversionBMABAlg {
                     1d / banditSpec.arms.size.toDouble
                   )
                 ),
-                specialization =
-                  Some(Specialization.MultiArmBanditConversion)
+                specialization = Some(Specialization.MultiArmBanditConversion)
               ),
               false
             ),
@@ -130,9 +129,7 @@ object ConversionBMABAlg {
 
       }
 
-      def currentState(
-          featureName: FeatureName
-        ): F[BayesianMAB[Conversions]] = {
+      def currentState(featureName: FeatureName): F[BayesianMAB[Conversions]] = {
         (
           abtestAPI
             .getTestsByFeature(featureName)
