@@ -11,13 +11,21 @@ import scala.util.Try
 
 object TimeUtil {
 
-  def defaultOffset: ZoneOffset = ZoneId.systemDefault().getRules.getOffset(Instant.now())
+  def defaultOffset: ZoneOffset =
+    ZoneId.systemDefault().getRules.getOffset(Instant.now())
 
   def toDateTime(epochSecond: Long): OffsetDateTime =
-    OffsetDateTime.ofInstant(Instant.ofEpochSecond(epochSecond), ZoneId.systemDefault())
+    OffsetDateTime.ofInstant(
+      Instant.ofEpochSecond(epochSecond),
+      ZoneId.systemDefault()
+    )
 
   def parse(value: String): Option[OffsetDateTime] =
-    Try(ZonedDateTime.parse(value, DateTimeFormatter.ISO_ZONED_DATE_TIME).toOffsetDateTime).toOption orElse
+    Try(
+      ZonedDateTime
+        .parse(value, DateTimeFormatter.ISO_ZONED_DATE_TIME)
+        .toOffsetDateTime
+    ).toOption orElse
       Try(OffsetDateTime.parse(value, DateTimeFormatter.ISO_OFFSET_DATE_TIME)).toOption orElse
       Try(OffsetDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME)).toOption orElse
       List(
@@ -26,7 +34,8 @@ object TimeUtil {
         DateTimeFormatter.ofPattern("M/d/yyyy H:m")
       ).collectFirst(Function.unlift { (tf: DateTimeFormatter) =>
           Try(LocalDateTime.parse(value, tf)).toOption
-        }).orElse(
+        })
+        .orElse(
           List(
             DateTimeFormatter.ISO_OFFSET_DATE,
             DateTimeFormatter.ISO_DATE,
@@ -35,12 +44,22 @@ object TimeUtil {
             DateTimeFormatter.ofPattern("M/d/yyyy"),
             DateTimeFormatter.ofPattern("yyyy/M/d")
           ).collectFirst(Function.unlift { (tf: DateTimeFormatter) =>
-              Try(LocalDate.parse(value, tf).atStartOfDay()).toOption
-            })
-        ).map(_.atOffset(defaultOffset))
+            Try(LocalDate.parse(value, tf).atStartOfDay()).toOption
+          })
+        )
+        .map(_.atOffset(defaultOffset))
 
   def currentMinute: OffsetDateTime = {
     val now = OffsetDateTime.now
-    OffsetDateTime.of(now.getYear, now.getMonthValue, now.getDayOfMonth, now.getHour, now.getMinute, 0, 0, TimeUtil.defaultOffset)
+    OffsetDateTime.of(
+      now.getYear,
+      now.getMonthValue,
+      now.getDayOfMonth,
+      now.getHour,
+      now.getMinute,
+      0,
+      0,
+      TimeUtil.defaultOffset
+    )
   }
 }

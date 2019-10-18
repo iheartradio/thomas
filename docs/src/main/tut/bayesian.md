@@ -61,7 +61,7 @@ Thus depending on which type of KPI you are analyzing, you need to instantiate d
 
 ```tut:silent
 import com.iheart.thomas.client._
-import com.iheart.thomas.client.Client.HttpServiceUrlsPlay
+import com.iheart.thomas.client.AbtestClient.HttpServiceUrlsPlay
 import cats.effect.IO
 import com.iheart.thomas.analysis.Measurable.GammaMeasurable
 import concurrent.ExecutionContext.Implicits.global
@@ -71,7 +71,7 @@ import concurrent.ExecutionContext.Implicits.global
 val httpServiceUrl = new HttpServiceUrlsPlay("http://localhost/internal")
 implicit val conextShift = IO.contextShift(global)
 
-Http4sClient.resource[IO](httpServiceUrl, global).use { implicit client =>
+Http4SAbtestClient.resource[IO](httpServiceUrl, global).use { implicit client =>
   implicit val measurable: GammaMeasurable[IO] = null  //user needs to implement a GammaMeasurable, null used here so that code compiles 
   val analysisAPI = AnalysisAPI.defaultGamma[IO]
   //do something with analysisAPI

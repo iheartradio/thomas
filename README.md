@@ -27,6 +27,7 @@ Still here? Ok, here is the set of features that differentiate Thomas from other
 * [Distributed group assignment with Spark (and Pyspark) support](#distributed-assignment--spark-support)
 * [High Performance](#high-performance)
 * [Modular and lightweight](#modular-and-lightweight)
+* [Resilient](#resilient)
 
 
 ### Real-time hash-based assignment
@@ -118,7 +119,7 @@ Thomas provides an easy way to support mutually exclusive A/B test experiments, 
 
 ### Distributed assignment / Spark support
 
-Thomas provides a thomas-client that can pull down experiments metadata and calculate user assignments in parallel on local CPUs. It also provides a native Java API usable in Spark and Pyspark. This would allow users to efficiently batch process data according to A/B test group assignment without any extra workload to a centralized A/B test service.
+Thomas provides a `thomas-client` that can pull down experiments metadata and calculate user assignments in parallel on local CPUs. It also provides a Java API in `thomas-spark` usable in Spark and Pyspark. This would allow users to efficiently batch process data according to A/B test group assignment without any extra workload to a centralized A/B test service.
 
 ### High Performance 
 
@@ -136,12 +137,23 @@ Thomas is developed in small modules so that users can pick what they need.
  - **thomas-client**: the distributed client that provides assignment by running the algorithm locally
  - **thomas-analysis**: Bayesian analysis utilities
  - **thomas-cli**: Command line interface using `thomas-client`
+ - **thomas-bandit**: WIP core logic for Bayesian multi-arm bandit
+ - **thomas-spark**: Integration with Spark for distributed batch assignment
+ - **thomas-dynamo**: WIP dynamo DB based Data access layer for multi-arm bandit related data
+ - **thomas-stream**: WIP streaming process of analytics data
+ - **thomas-kafka**: WIP integration of thomas stream and kafka for bandit
+ - **thomas-testkit**: Supports for testing systems built on Thomas
+ - **thomas-stress**: Stress tests for Thomas web services
+ 
+### Resilient
+
+Thomas is built to be resilient when serving assignment requests. Using [Mau](https://github.com/kailuowang/mau), Thomas web service can withstand a relatively long backend DB downtime, during which the assignments requests continue to be served using last retrieved tests data. 
 
 
 ## What's not included / still lacking in Thomas
 
 * #### No built-in analytics
-  Users of Thomas have to pick and implement their own analytics system. We took the approach that A/B test solution is decoupled from the analytics solution. 
+  Users of Thomas have to pick and implement their own analytics system. We took the approach that A/B test solution should be decoupled from the analytics solution. 
   
 * #### No Admin UI
   The HTTP service lib from Thomas makes it easier to set up a REST HTTP API service. The example play app also includes integration with Swagger-UI to make the API services more accessible with a rough Web UI automatically generated from the API service. If a fully functional web UI is needed for less technical persons to administrate A/B tests, it will have to be developed from scratch on top of the API service.

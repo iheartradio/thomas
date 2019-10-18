@@ -2,7 +2,6 @@
  * Copyright [2018] [iHeartMedia Inc]
  * All rights reserved
  */
-
 package com.iheart
 package thomas
 package mongo
@@ -17,19 +16,32 @@ import abtest.Formats._
 
 import scala.concurrent.ExecutionContext
 
-  class AbtestDAOFactory[F[_]: Async](implicit ec: ExecutionContext) extends EitherTDAOFactory[Abtest, F]("abtest", "tests") {
+class AbtestDAOFactory[F[_]: Async](implicit ec: ExecutionContext)
+    extends EitherTDAOFactory[Abtest, F]("abtest", "tests") {
 
-    def ensure(collection: JSONCollection): F[Unit] = {
-      implicit val contextShiftIO = IO.contextShift(ec)
-      IO.fromFuture(IO(collection.indexesManager.ensure(
-        Index(Seq(
-          ("start", IndexType.Descending),
-          ("end", IndexType.Descending)
-        ))
-      ) *> collection.indexesManager.ensure(
-        Index(Seq(
-          ("feature", IndexType.Ascending)
-        ))).void)).to[F]
+  def ensure(collection: JSONCollection): F[Unit] = {
+    implicit val contextShiftIO = IO.contextShift(ec)
+    IO.fromFuture(
+        IO(
+          collection.indexesManager.ensure(
+            Index(
+              Seq(
+                ("start", IndexType.Descending),
+                ("end", IndexType.Descending)
+              )
+            )
+          ) *> collection.indexesManager
+            .ensure(
+              Index(
+                Seq(
+                  ("feature", IndexType.Ascending)
+                )
+              )
+            )
+            .void
+        )
+      )
+      .to[F]
 
-    }
+  }
 }
