@@ -38,8 +38,11 @@ class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
             f =>
               for {
                 t <- c.featureLatestTest(f)
-                _ <- F.delay(println(
-                  s"Latest test under $f is ${t._id.value} \nstart: ${t.data.start}"))
+                _ <- F.delay(
+                  println(
+                    s"Latest test under $f is ${t._id.value} \nstart: ${t.data.start}"
+                  )
+                )
                 r <- getGMForTest(t._id)
               } yield r
           )
@@ -81,7 +84,9 @@ class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
   def updateGroupMeta(
       tidOrFeature: F[Either[TestId, FeatureName]],
       client: Resource[F, AbtestClient[F]],
-      auto: Boolean)(op: (AbtestClient[F], TestId) => F[String]): F[Unit] =
+      auto: Boolean
+    )(op: (AbtestClient[F], TestId) => F[String]
+    ): F[Unit] =
     tidOrFeature.flatMap { tidOrF =>
       client.use { c =>
         tidOrF
@@ -92,7 +97,8 @@ class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
                 t <- c.featureLatestTest(f)
                 r <- if (!t.data.canChange && !auto)
                   F.pure(
-                    "The latest test is already started, if you want to automatically create a new revision, please run the command again with \"--new\" flag")
+                    "The latest test is already started, if you want to automatically create a new revision, please run the command again with \"--new\" flag"
+                  )
                 else
                   op(c, t._id)
               } yield r

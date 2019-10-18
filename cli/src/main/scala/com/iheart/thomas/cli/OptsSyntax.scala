@@ -23,11 +23,15 @@ object OptsSyntax {
               s =>
                 Validated.Invalid(
                   NonEmptyList.fromListUnsafe(
-                    s.map(p =>
-                        "groupMeta Json format error: " + p._1 + " -> " + p._2
-                          .map(_.message)
-                          .mkString)
-                      .toList)),
+                    s.map(
+                        p =>
+                          "groupMeta Json format error: " + p._1 + " -> " + p._2
+                            .map(_.message)
+                            .mkString
+                      )
+                      .toList
+                  )
+                ),
               _.validNel
             )
       }
@@ -35,8 +39,10 @@ object OptsSyntax {
   }
 
   private[cli] final class eitherPartial[F[_], A](val self: Opts[A]) extends AnyVal {
-    def apply[B](that: Opts[B])(
-        implicit F: ApplicativeError[F, Throwable]): Opts[F[Either[A, B]]] =
+    def apply[B](
+        that: Opts[B]
+      )(implicit F: ApplicativeError[F, Throwable]
+      ): Opts[F[Either[A, B]]] =
       (self.orNone, that.orNone).mapN { (sO, tO) =>
         (sO, tO) match {
           case (Some(_), Some(_)) =>

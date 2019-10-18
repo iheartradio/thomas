@@ -2,14 +2,14 @@
 <configuration>
 
 
-  <logger name="play" level="INFO" />
-  <logger name="application" level="DEBUG" />
-  <logger name="thomas-kafka" level="DEBUG" />
+    <logger name="play" level="INFO"/>
+    <logger name="application" level="DEBUG"/>
+    <logger name="thomas-kafka" level="DEBUG"/>
 
-  <root level="WARN">
-    <!--<appender-ref ref="ASYNCFILE" />-->
-    <appender-ref ref="ASYNCSTDOUT" />
-  </root>
+    <root level="WARN">
+        <!--<appender-ref ref="ASYNCFILE" />-->
+        <appender-ref ref="ASYNCSTDOUT"/>
+    </root>
 
 </configuration>
 

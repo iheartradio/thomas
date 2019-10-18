@@ -148,13 +148,12 @@ class BucketingTests extends BucketingTestsBase {
   test(
     "newRanges return the same ranges back if they are consistent with the group sizes"
   ) {
-    forAll(groupRangeGen(None)) {
-      groupRanges: (GroupRanges, List[Group]) =>
-        val (oldRanges, groups) = groupRanges
-        oldRanges.values.toList.flatten.foldMap(_.size) should be(
-          1d +- 0.000001
-        )
-        Bucketing.newRanges(groups, oldRanges) should be(oldRanges)
+    forAll(groupRangeGen(None)) { groupRanges: (GroupRanges, List[Group]) =>
+      val (oldRanges, groups) = groupRanges
+      oldRanges.values.toList.flatten.foldMap(_.size) should be(
+        1d +- 0.000001
+      )
+      Bucketing.newRanges(groups, oldRanges) should be(oldRanges)
     }
   }
 
@@ -266,9 +265,7 @@ object BucketingTests {
       idx: Int
     ) = Group(s"group$idx", size)
   lazy val userIdGen = choose(10000, 400000).map(_.toString)
-  def rangesToGroups(
-      ranges: List[GroupRange]
-    ): (GroupRanges, List[Group]) = {
+  def rangesToGroups(ranges: List[GroupRange]): (GroupRanges, List[Group]) = {
     val groupsWithRange = ranges.mapWithIndex { (range, idx) =>
       (createGroup(range.size, idx), range)
     }

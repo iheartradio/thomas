@@ -9,8 +9,9 @@ import cats.implicits._
 import scala.util.Random
 import syntax.all._
 
-class EpsilonGreedyAlgorithm[RewardStateT](initEpsilon: Double)(
-    implicit RewardStateT: RewardState[RewardStateT])
+class EpsilonGreedyAlgorithm[RewardStateT](
+    initEpsilon: Double
+  )(implicit RewardStateT: RewardState[RewardStateT])
     extends SingleChoiceAlgorithmAlgebra[Id, RewardStateT] {
 
   def chooseArm(state: State): State = {

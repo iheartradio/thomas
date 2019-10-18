@@ -15,7 +15,10 @@ object RewardState {
     new RewardState[Conversions] {
       def toReward(a: Conversions): Reward = a.converted.toDouble / a.total.toDouble
 
-      def combine(x: Conversions, y: Conversions): Conversions =
+      def combine(
+          x: Conversions,
+          y: Conversions
+        ): Conversions =
         Conversions(total = x.total + y.total, converted = x.converted + y.converted)
 
       def empty: Conversions = Conversions(0L, 0L)

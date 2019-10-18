@@ -29,9 +29,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
 
   import testkit.Resources._
 
-  def withAPI[A](
-      f: (ConversionBMABAlg[IO], KPIApi[IO], AbtestAlg[IO]) => IO[A]
-    ): A =
+  def withAPI[A](f: (ConversionBMABAlg[IO], KPIApi[IO], AbtestAlg[IO]) => IO[A]): A =
     apis.use(f.tupled).unsafeRunSync()
 
   def withAPI[A](f: ConversionBMABAlg[IO] => IO[A]): A =

@@ -16,8 +16,7 @@ case class SingleChoiceBanditState[RewardStateT](
     otherArms: List[ArmState],
     rewardStateSoFar: RewardStateT,
     start: Instant,
-    epsilon: Double
-) {
+    epsilon: Double) {
 
   def rewardState: Map[ArmName, RewardStateT] =
     Map(chosenArm.name -> rewardStateSoFar)
@@ -28,9 +27,10 @@ case class SingleChoiceBanditState[RewardStateT](
   def expectedRewards: Map[ArmName, Reward] =
     allArms.map(h => (h.name, h.expectedReward)).toMap
 
-  private[bandit] def pickNewArm(armName: ArmName)(
-      implicit RewardStateT: Monoid[RewardStateT])
-    : SingleChoiceBanditState[RewardStateT] =
+  private[bandit] def pickNewArm(
+      armName: ArmName
+    )(implicit RewardStateT: Monoid[RewardStateT]
+    ): SingleChoiceBanditState[RewardStateT] =
     copy(
       chosenArm = {
         allArms.find(_.name == armName).get.lens(_.chosenCount).modify(_ + 1)
@@ -40,13 +40,15 @@ case class SingleChoiceBanditState[RewardStateT](
       start = Instant.now
     )
 
-  private[bandit] def updateRewardState(newReward: RewardStateT)(
-      implicit RewardStateT: Monoid[RewardStateT])
-    : SingleChoiceBanditState[RewardStateT] =
+  private[bandit] def updateRewardState(
+      newReward: RewardStateT
+    )(implicit RewardStateT: Monoid[RewardStateT]
+    ): SingleChoiceBanditState[RewardStateT] =
     copy(rewardStateSoFar = rewardStateSoFar |+| newReward)
 
   private[bandit] def updateChosenArmExpectedReward(
-      newReward: Reward): SingleChoiceBanditState[RewardStateT] =
+      newReward: Reward
+    ): SingleChoiceBanditState[RewardStateT] =
     this.lens(_.chosenArm.expectedReward).set(newReward)
 
 }
@@ -54,5 +56,4 @@ case class SingleChoiceBanditState[RewardStateT](
 case class ArmState(
     name: ArmName,
     expectedReward: ExpectedReward,
-    chosenCount: Long
-)
+    chosenCount: Long)
