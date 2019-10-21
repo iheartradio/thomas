@@ -87,6 +87,8 @@ mockUserIds = spark.createDataFrame([("232",), ("3609",), ("3423",)], ["uid"])
 result = _java2py(sc, ta.assignments(_py2java(sc, mockUserIds), "My_Test_Feature", "uid"))
 
 ```
+
+
 Note that some python to java conversion is needed since `thomas-spark` is written in Scala.  
 
 
@@ -119,7 +121,38 @@ mockUserIds.withColumn('assignment', assign(col('uid'))).show()
 
 ``` 
 
- 
+In scala, it's more straightforward. 
+
+```scala
+import spark.implicits._
+import org.apache.spark.sql.functions.col
+
+val mockUserIds = (1 to 10000).map(_.toString).toDF("userId")
+
+val assigner = com.iheart.thomas.spark.Assigner.create("https://MY_ABTEST_SERVICE_HOST/abtest/testsWithFeatures")
+
+
+mockUserIds.withColumn("assignment", assigner.assignUdf(col("userId")))
+
+```
+
+`assigner.assignUdf` assigns based on the test data it retrieves when it's created from `Assigner.create`. 
+If you have a long running job, e.g. in Spark stream, you might want a `udf` that keeps test data updated, 
+so that over a longer period of time it keeps assigning based on latest test data from server. 
+In that case, you can use the `com.iheart.thomas.AutoRefreshAssigner` 
+  
+```scala
+
+val autoRefreshAssigner = com.iheart.thomas.spark.AutoRefreshAssigner(
+  url = "https://MY_ABTEST_SERVICE_HOST/abtest/testsWithFeatures", 
+  refreshPeriod = 10.minutes 
+)
+
+mockUserIds.withColumn("assignment", assigner.assignUdf(col("userId")))
+
+```
+The `refreshPeriod` dictates how often the test data is retrieved from the A/B test service per spark partition.  
+   
 
 # How to run Bayesian Analysis
 
