@@ -132,7 +132,7 @@ val mockUserIds = (1 to 10000).map(_.toString).toDF("userId")
 val assigner = com.iheart.thomas.spark.Assigner.create("https://MY_ABTEST_SERVICE_HOST/abtest/testsWithFeatures")
 
 
-mockUserIds.withColumn("assignment", assigner.assignUdf(col("userId")))
+mockUserIds.withColumn("assignment", assigner.assignUdf("My_TEST_FEATURES")(col("userId")))
 
 ```
 
@@ -149,7 +149,7 @@ val assigner = com.iheart.thomas.spark.AutoRefreshAssigner(
   refreshPeriod = 10.minutes 
 )
 
-mockUserIds.withColumn("assignment", assigner.assignUdf(col("userId")))
+mockUserIds.withColumn("assignment", assigner.assignUdf("My_TEST_FEATURES")(col("userId")))
 
 ```
 The `refreshPeriod` dictates how often the test data is retrieved from the A/B test service per spark partition.  
