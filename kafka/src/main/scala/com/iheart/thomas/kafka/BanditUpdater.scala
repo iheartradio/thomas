@@ -100,7 +100,7 @@ object BanditUpdater {
                 .withEnableAutoCommit(true)
                 .withAutoOffsetReset(AutoOffsetReset.Earliest)
                 .withBootstrapServers(kafkaConfig.kafkaServers)
-                .withGroupId("group")
+                .withGroupId("thomas-kpi-monitor")
 
             Stream
               .eval(updater.updateAllConversions(kafkaConfig.chunkSize, toEvent))

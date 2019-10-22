@@ -120,7 +120,8 @@ object ConversionBMABAlg {
                   g.copy(
                     size = possibilities
                       .get(g.name)
-                      .fold(g.size)(identity)
+                      .map(_.p)
+                      .getOrElse(g.size)
                   )
                 }
               )
