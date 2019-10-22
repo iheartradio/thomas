@@ -144,7 +144,7 @@ In that case, you can use the `com.iheart.thomas.AutoRefreshAssigner`
 ```scala
 import concurrent.duration._
 
-val autoRefreshAssigner = com.iheart.thomas.spark.AutoRefreshAssigner(
+val assigner = com.iheart.thomas.spark.AutoRefreshAssigner(
   url = "https://MY_ABTEST_SERVICE_HOST/abtest/testsWithFeatures", 
   refreshPeriod = 10.minutes 
 )
