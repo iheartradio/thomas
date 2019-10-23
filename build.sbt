@@ -286,7 +286,7 @@ lazy val stress = project
     crossScalaVersions := Seq(scalaVersion.value),
     libraryDependencies ++= Seq(
       "io.gatling.highcharts" % "gatling-charts-highcharts" % "2.3.1" % Test,
-      "io.gatling" % "gatling-test-framework" % "2.3.1" % Test
+      "io.gatling" % "gatling-test-framework" % "3.3.0" % Test
     )
   )
 
