@@ -29,8 +29,19 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
 
   import testkit.Resources._
 
+  val kpi = BetaKPIDistribution(
+    "test kpi",
+    alphaPrior = 1000,
+    betaPrior = 100000
+  )
+
   def withAPI[A](f: (ConversionBMABAlg[IO], KPIApi[IO], AbtestAlg[IO]) => IO[A]): A =
-    apis.use(f.tupled).unsafeRunSync()
+    apis
+      .use {
+        case (conversionBMABAlg, kPIApi, abtestAlg) =>
+          kPIApi.upsert(kpi) >> f(conversionBMABAlg, kPIApi, abtestAlg)
+      }
+      .unsafeRunSync()
 
   def withAPI[A](f: ConversionBMABAlg[IO] => IO[A]): A =
     withAPI((api, _, _) => f(api))
@@ -41,7 +52,8 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       arms = List("A", "B"),
       author = "Test Runner",
       start = OffsetDateTime.now,
-      title = "for integration tests"
+      title = "for integration tests",
+      kpiName = kpi.name
     )
 
     val (init, currentState) = withAPI { api =>
@@ -71,7 +83,8 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       arms = List("A", "B"),
       author = "Test Runner",
       start = OffsetDateTime.now,
-      title = "for integration tests"
+      title = "for integration tests",
+      kpiName = kpi.name
     )
 
     val spec2 = spec.copy(feature = "Another_new_feature")
@@ -109,7 +122,8 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       arms = List("A", "B"),
       author = "Test Runner",
       start = OffsetDateTime.now,
-      title = "for initegration tests"
+      title = "for initegration tests",
+      kpiName = kpi.name
     )
 
     val currentState = withAPI { api =>
@@ -151,17 +165,12 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       arms = List("A", "B"),
       author = "Test Runner",
       start = OffsetDateTime.now,
-      title = "for integration tests"
+      title = "for integration tests",
+      kpiName = kpi.name
     )
 
-    val kpi = BetaKPIDistribution(
-      "test kpi",
-      alphaPrior = 1000,
-      betaPrior = 100000
-    )
-    val currentState = withAPI { (api, kpiAPI, _) =>
+    val currentState = withAPI { api =>
       for {
-        _ <- kpiAPI.upsert(kpi)
         _ <- api.init(spec)
         _ <- api.updateRewardState(
           spec.feature,
@@ -170,7 +179,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
             "B" -> Conversions(43, 10)
           )
         )
-        _ <- api.reallocate(spec.feature, kpi.name)
+        _ <- api.reallocate(spec.feature)
         current <- api.currentState(spec.feature)
       } yield current
     }
