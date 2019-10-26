@@ -259,7 +259,8 @@ lazy val spark = project
   )
 
 lazy val http4s = project
-  .dependsOn(mongo)
+  .dependsOn(kafka)
+  .dependsOn(testkit % Test)
   .settings(name := "thomas-http4s")
   .settings(rootSettings)
   .settings(taglessSettings)
@@ -371,6 +372,7 @@ lazy val developerKai = Developer(
   "kailuo.wang@gmail.com",
   new java.net.URL("http://kailuowang.com")
 )
+
 lazy val commonSettings = addCompilerPlugins(libs, "kind-projector") ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := defaultScalaVer,
