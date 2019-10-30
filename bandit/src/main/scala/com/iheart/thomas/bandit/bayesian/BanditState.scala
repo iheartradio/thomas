@@ -5,7 +5,7 @@ package bayesian
 import java.time.OffsetDateTime
 
 import cats.Monoid
-import com.iheart.thomas.analysis.Probability
+import com.iheart.thomas.analysis.{KPIName, Probability}
 import cats.implicits._
 
 case class BanditState[R](
@@ -13,7 +13,8 @@ case class BanditState[R](
     title: String,
     author: String,
     arms: List[ArmState[R]],
-    start: OffsetDateTime) {
+    start: OffsetDateTime,
+    kpiName: KPIName) {
 
   def rewardState: Map[ArmName, R] =
     arms.map(as => (as.name, as.rewardState)).toMap

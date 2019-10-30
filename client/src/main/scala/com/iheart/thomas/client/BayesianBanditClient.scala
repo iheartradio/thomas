@@ -52,15 +52,12 @@ object BayesianBanditClient {
           )
         )
 
-      def reallocate(
-          featureName: FeatureName,
-          kpiName: KPIName
-        ): F[BayesianMAB[Conversions]] =
+      def reallocate(featureName: FeatureName): F[BayesianMAB[Conversions]] =
         c.expect(
           PUT(
             Uri.unsafeFromString(
               rootUrl + "/features/" + featureName + "/abtest"
-            ) +? ("kpiName", kpiName)
+            )
           )
         )
 

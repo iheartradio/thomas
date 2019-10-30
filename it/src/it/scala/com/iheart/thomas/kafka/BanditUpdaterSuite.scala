@@ -17,7 +17,13 @@ import fs2.Stream
 import fs2.kafka._
 import cats.implicits._
 import com.iheart.thomas.abtest.AbtestAlg
-import com.iheart.thomas.analysis.{Conversions, Probability, SampleSettings}
+import com.iheart.thomas.analysis.{
+  BetaKPIDistribution,
+  Conversions,
+  KPIApi,
+  Probability,
+  SampleSettings
+}
 import com.iheart.thomas.bandit.{BanditSpec, BanditStateDAO}
 import com.iheart.thomas.bandit.bayesian.{ArmState, ConversionBMABAlg}
 import com.iheart.thomas.stream.ConversionUpdater
@@ -63,18 +69,29 @@ class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
       }
     }
 
+  val kpi = BetaKPIDistribution(
+    "test kpi",
+    alphaPrior = 1000,
+    betaPrior = 100000
+  )
+
   val updaterR =
     Resources.mangoDAOs.flatMap { implicit daos =>
-      Resources.localDynamoR.flatMap { implicit dynamoClient =>
-        BanditUpdater.resource[IO, (FeatureName, ArmName, ConversionEvent)](
-          kafkaConfig = KafkaConfig(
-            server,
-            topic,
-            2
-          ),
-          toEvent
-        )
-      }
+      Resources.localDynamoR
+        .flatMap { implicit dynamoClient =>
+          BanditUpdater.resource[IO, (FeatureName, ArmName, ConversionEvent)](
+            kafkaConfig = KafkaConfig(
+              server,
+              topic,
+              2
+            ),
+            toEvent
+          )
+        }
+        .evalTap { _ =>
+          implicit val kpiDAO = daos._3
+          KPIApi.default.upsert(kpi)
+        }
     }
 
   val spec = BanditSpec(
@@ -82,8 +99,10 @@ class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
     arms = List("A", "B"),
     author = "Test Runner",
     start = OffsetDateTime.now,
-    title = "for integration tests"
+    title = "for integration tests",
+    kpiName = kpi.name
   )
+
   "Can update an bandit" in {
     withRunningKafka {
       createCustomTopic(topic)
@@ -92,14 +111,6 @@ class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
         m =>
           publishToKafka(topic, s"feature1|$m")
       }
-
-      val spec = BanditSpec(
-        feature = "feature1",
-        arms = List("A", "B"),
-        author = "Test Runner",
-        start = OffsetDateTime.now,
-        title = "for integration tests"
-      )
 
       val resultState =
         updaterR

@@ -28,7 +28,7 @@ object ConversionBMABAlg {
       ],
       nowF: F[OffsetDateTime]
     ): ConversionBMABAlg[F] =
-    new ConversionBMABAlg[F] {
+    new BayesianMABAlg[F, Conversions] {
 
       def updateRewardState(
           featureName: FeatureName,
@@ -44,42 +44,44 @@ object ConversionBMABAlg {
       }
 
       def init(banditSpec: BanditSpec): F[BayesianMAB[Conversions]] = {
-        (
-          abtestAPI
-            .create(
-              AbtestSpec(
-                name = "Abtest for Bayesian MAB " + banditSpec.feature,
-                feature = banditSpec.feature,
-                author = banditSpec.author,
-                start = banditSpec.start,
-                end = None,
-                groups = banditSpec.arms.map(
-                  Group(
-                    _,
-                    1d / banditSpec.arms.size.toDouble
-                  )
+        kpiAPI.getSpecific[BetaKPIDistribution](banditSpec.kpiName) >>
+          (
+            abtestAPI
+              .create(
+                AbtestSpec(
+                  name = "Abtest for Bayesian MAB " + banditSpec.feature,
+                  feature = banditSpec.feature,
+                  author = banditSpec.author,
+                  start = banditSpec.start,
+                  end = None,
+                  groups = banditSpec.arms.map(
+                    Group(
+                      _,
+                      1d / banditSpec.arms.size.toDouble
+                    )
+                  ),
+                  specialization = Some(Specialization.MultiArmBanditConversion)
                 ),
-                specialization = Some(Specialization.MultiArmBanditConversion)
+                false
               ),
-              false
-            ),
-          stateDao
-            .upsert(
-              BanditState[Conversions](
-                feature = banditSpec.feature,
-                title = banditSpec.title,
-                author = banditSpec.author,
-                arms = banditSpec.arms.map(
-                  ArmState(
-                    _,
-                    RewardState[Conversions].empty,
-                    Probability(0d)
-                  )
-                ),
-                start = banditSpec.start
+            stateDao
+              .upsert(
+                BanditState[Conversions](
+                  feature = banditSpec.feature,
+                  title = banditSpec.title,
+                  author = banditSpec.author,
+                  arms = banditSpec.arms.map(
+                    ArmState(
+                      _,
+                      RewardState[Conversions].empty,
+                      Probability(0d)
+                    )
+                  ),
+                  start = banditSpec.start,
+                  kpiName = banditSpec.kpiName
+                )
               )
-            )
-        ).mapN(BayesianMAB.apply _)
+          ).mapN(BayesianMAB.apply _)
       }
 
       def runningBandits(
@@ -96,14 +98,11 @@ object ConversionBMABAlg {
               .map(s => BayesianMAB(abtest, s))
           })
 
-      def reallocate(
-          featureName: FeatureName,
-          kpiName: KPIName
-        ): F[BayesianMAB[Conversions]] = {
+      def reallocate(featureName: FeatureName): F[BayesianMAB[Conversions]] = {
         for {
           current <- currentState(featureName)
           kpi <- kpiAPI.getSpecific[BetaKPIDistribution](
-            kpiName
+            current.state.kpiName
           )
           BayesianMAB(abtest, state) = current
           possibilities <- assessmentAlg.assessOptimumGroup(
@@ -120,7 +119,8 @@ object ConversionBMABAlg {
                   g.copy(
                     size = possibilities
                       .get(g.name)
-                      .fold(g.size)(identity)
+                      .map(_.p)
+                      .getOrElse(g.size)
                   )
                 }
               )

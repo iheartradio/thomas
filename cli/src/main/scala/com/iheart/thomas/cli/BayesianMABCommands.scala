@@ -8,12 +8,12 @@ import cats.implicits._
 import com.iheart.thomas.bandit.BanditSpec
 import com.monovore.decline.time._
 import BayesianBanditHttpClientOpts.conversionClientOpts
-
+import com.iheart.thomas.analysis.KPIName
+import io.estatico.newtype.ops._
 import scala.concurrent.ExecutionContext
 
 object BayesianMABCommands {
   val fnOpts = Opts.option[String]("feature", "feature name", "f")
-  val knOpts = Opts.option[String]("kpi", "KPI name", "k")
 
   private val banditSpecOpts =
     (
@@ -21,7 +21,8 @@ object BayesianMABCommands {
       Opts.options[String]("arms", "list of arms", "a").map(_.toList),
       Opts.option[String]("author", "author name", "u"),
       Opts.option[OffsetDateTime]("start", "start time of the MAB"),
-      Opts.option[String]("title", "author name", "u")
+      Opts.option[String]("title", "author name", "u"),
+      Opts.option[String]("kpi", "KPI name", "k").coerce[Opts[KPIName]]
     ).mapN(BanditSpec.apply)
 
   def conversionBMABCommand[F[_]](
@@ -67,9 +68,9 @@ object BayesianMABCommands {
           "reallocate",
           "show an existing conversion KPI based Bayesian MAB"
         ) {
-          (fnOpts, knOpts, conversionClientOpts[F]).mapN { (feature, kpi, clientR) =>
+          (fnOpts, conversionClientOpts[F]).mapN { (feature, clientR) =>
             clientR.use { client =>
-              client.reallocate(feature, kpi)
+              client.reallocate(feature)
             }
           }
         }

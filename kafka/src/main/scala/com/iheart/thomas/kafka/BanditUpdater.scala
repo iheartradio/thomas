@@ -1,28 +1,42 @@
 package com.iheart.thomas
 package kafka
 
-import java.time.OffsetDateTime
-
 import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
-import abtest.AbtestAlg
-import analysis.SampleSettings
-import bandit.BanditStateDAO
-import bandit.`package`.ArmName
-import bandit.bayesian.ConversionBMABAlg
-import stream.ConversionUpdater
-import stream.ConversionUpdater.ConversionEvent
-import com.stripe.rainier.sampler.RNG
-import fs2.Pipe
+import com.iheart.thomas.FeatureName
+import com.iheart.thomas.bandit.`package`.ArmName
+import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
+import com.iheart.thomas.stream.ConversionUpdater
+import com.iheart.thomas.stream.ConversionUpdater.ConversionEvent
+import fs2.{Pipe, Stream}
 import fs2.kafka.{AutoOffsetReset, ConsumerSettings, Deserializer, consumerStream}
-import fs2.Stream
+import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
 
 trait BanditUpdater[F[_]] {
   def consumeKafka: Stream[F, Unit]
+}
+
+trait MessageProcessor[F[_], RawMessage, PreprocessedMessage] {
+  def preprocessor: Pipe[F, RawMessage, PreprocessedMessage]
+  def toConversionEvent(featureName: FeatureName): F[
+    Pipe[F, PreprocessedMessage, (ArmName, ConversionEvent)]
+  ]
+}
+
+object MessageProcessor {
+  def apply[F[_], Message](
+      toEvent: FeatureName => F[Pipe[F, Message, (ArmName, ConversionEvent)]]
+    ): MessageProcessor[F, Message, Message] =
+    new MessageProcessor[F, Message, Message] {
+      def preprocessor: Pipe[F, Message, Message] = identity
+
+      def toConversionEvent(
+          featureName: FeatureName
+        ): F[Pipe[F, Message, (ArmName, ConversionEvent)]] = toEvent(featureName)
+    }
 }
 
 /**
@@ -34,92 +48,90 @@ private[kafka] trait WithConversionBMABAlg[F[_]] {
 
 object BanditUpdater {
 
-  def resource[F[_]: Timer: ContextShift, Message](
+  def resource[F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs, Message](
       kafkaConfig: KafkaConfig,
       toEvent: FeatureName => F[
         Pipe[F, Message, (ArmName, ConversionEvent)]
       ]
     )(implicit ex: ExecutionContext,
-      F: ConcurrentEffect[F],
-      mongoDAOs: mongo.DAOs[F],
       amazonClient: AmazonDynamoDBAsync,
       deserializer: Deserializer.Record[F, Message]
     ): Resource[F, BanditUpdater[F]] =
     resource[F, Message, Message](
       kafkaConfig,
-      identity,
-      toEvent: FeatureName => F[
-        Pipe[F, Message, (ArmName, ConversionEvent)]
-      ]
+      MessageProcessor(toEvent)
     )
 
-  def resource[F[_]: Timer: ContextShift, RawMessage, Processed](
-      kafkaConfig: KafkaConfig,
+  def resource[
+      F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs,
+      RawMessage,
+      Preprocessed
+    ](kafkaConfig: KafkaConfig,
+      messageProcessor: MessageProcessor[F, RawMessage, Preprocessed]
+    )(implicit ex: ExecutionContext,
+      amazonClient: AmazonDynamoDBAsync,
+      deserializer: Deserializer.Record[F, RawMessage]
+    ): Resource[F, BanditUpdater[F]] = {
+    for {
+      conversionBMAB <- ConversionBMABAlgResource[F]
+      logger <- Resource.liftF(Slf4jLogger.fromName[F]("thomas-kafka"))
+    } yield {
+      implicit val (c, l) = (conversionBMAB, logger)
+      apply[F, RawMessage, Preprocessed](kafkaConfig, messageProcessor)
+    }
+  }
+
+  def apply[
+      F[_]: Timer: ConcurrentEffect: Logger: ContextShift: ConversionBMABAlg,
+      RawMessage,
+      Preprocessed
+    ](kafkaConfig: KafkaConfig,
+      messageProcessor: MessageProcessor[F, RawMessage, Preprocessed]
+    )(implicit
+      deserializer: Deserializer.Record[F, RawMessage]
+    ): BanditUpdater[F] =
+    apply[F, RawMessage, Preprocessed](
+      kafkaConfig,
+      messageProcessor.preprocessor,
+      messageProcessor.toConversionEvent _
+    )
+
+  def apply[
+      F[_]: Timer: ConcurrentEffect: Logger: ContextShift,
+      RawMessage,
+      Processed
+    ](kafkaConfig: KafkaConfig,
       preprocessor: Pipe[F, RawMessage, Processed],
       toEvent: FeatureName => F[
         Pipe[F, Processed, (ArmName, ConversionEvent)]
       ]
-    )(implicit ex: ExecutionContext,
-      F: ConcurrentEffect[F],
-      mongoDAOs: mongo.DAOs[F],
-      amazonClient: AmazonDynamoDBAsync,
+    )(implicit
+      cbm: ConversionBMABAlg[F],
       deserializer: Deserializer.Record[F, RawMessage]
-    ): Resource[F, BanditUpdater[F]] = {
+    ): BanditUpdater[F] = new BanditUpdater[F] with WithConversionBMABAlg[F] {
+    val updater = new ConversionUpdater[F]
+    def consumeKafka: Stream[F, Unit] = {
+      val consumerSettings =
+        ConsumerSettings[F, Unit, RawMessage]
+          .withEnableAutoCommit(true)
+          .withAutoOffsetReset(AutoOffsetReset.Earliest)
+          .withBootstrapServers(kafkaConfig.kafkaServers)
+          .withGroupId("thomas-kpi-monitor")
 
-    import mongo.idSelector
-
-    val updaterR: Resource[F, (ConversionUpdater[F], ConversionBMABAlg[F])] =
-      for {
-        conversionBMAB <- {
-          implicit val stateDAO =
-            BanditStateDAO.bayesianfromLihua(
-              dynamo.DAOs.lihuaStateDAO[F](amazonClient)
-            )
-          implicit val (abtestDAO, featureDAO, kpiDAO) = mongoDAOs
-          lazy val refreshPeriod = 0.seconds
-
-          AbtestAlg.defaultResource[F](refreshPeriod).map { implicit abtestAlg =>
-            implicit val ss = SampleSettings.default
-            implicit val rng = RNG.default
-            implicit val nowF = F.delay(OffsetDateTime.now)
-            ConversionBMABAlg.default[F]
-          }
-        }
-        logger <- Resource.liftF(Slf4jLogger.fromName[F]("thomas-kafka"))
-      } yield {
-        implicit val (c, l) = (conversionBMAB, logger)
-        (new ConversionUpdater[F], conversionBMAB)
-      }
-
-    updaterR.map {
-      case (updater, cba) =>
-        new BanditUpdater[F] with WithConversionBMABAlg[F] {
-          def consumeKafka: Stream[F, Unit] = {
-            val consumerSettings =
-              ConsumerSettings[F, Unit, RawMessage]
-                .withEnableAutoCommit(true)
-                .withAutoOffsetReset(AutoOffsetReset.Earliest)
-                .withBootstrapServers(kafkaConfig.kafkaServers)
-                .withGroupId("group")
-
-            Stream
-              .eval(updater.updateAllConversions(kafkaConfig.chunkSize, toEvent))
-              .flatMap { updatePipe =>
-                consumerStream[F]
-                  .using(consumerSettings)
-                  .evalTap(_.subscribeTo(kafkaConfig.topic))
-                  .flatMap(_.stream)
-                  .map(r => r.record.value)
-                  .through(preprocessor)
-                  .through(updatePipe)
-              }
-
-          }
-
-          override def conversionBMABAlg: ConversionBMABAlg[F] = cba
+      Stream
+        .eval(updater.updateAllConversions(kafkaConfig.chunkSize, toEvent))
+        .flatMap { updatePipe =>
+          consumerStream[F]
+            .using(consumerSettings)
+            .evalTap(_.subscribeTo(kafkaConfig.topic))
+            .flatMap(_.stream)
+            .map(r => r.record.value)
+            .through(preprocessor)
+            .through(updatePipe)
         }
     }
 
+    def conversionBMABAlg: ConversionBMABAlg[F] = cbm
   }
 
   case class KafkaConfig(

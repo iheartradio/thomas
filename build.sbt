@@ -29,7 +29,7 @@ lazy val libs =
   .addJVM(name = "newtype",               version = "0.4.3",  org = "io.estatico")
   .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
   .addJVM(name = "decline",               version = "1.0.0",  org = "com.monovore")
-  .addJVM(name = "mau",                   version = "0.1.1",  org = "com.kailuowang")
+  .addJVM(name = "mau",                   version = "0.2.1",  org = "com.kailuowang")
   .addJVM(name = "scala-java8-compat",    version = "0.9.0",  org = "org.scala-lang.modules")
   .addJVM(name = "log4cats",              version = "1.0.1",  org = "io.chrisdavenport", "log4cats-slf4j", "log4cats-core")
   .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
@@ -223,7 +223,7 @@ lazy val testkit = project
   .settings(rootSettings)
   .settings(
     crossScalaVersions := Seq(scalaVersion.value),
-    libs.dependencies("lihua-dynamo-testkit")
+    libs.dependencies("lihua-dynamo-testkit", "cats-effect-testing-scalatest")
   )
 
 lazy val stream = project
@@ -259,7 +259,8 @@ lazy val spark = project
   )
 
 lazy val http4s = project
-  .dependsOn(mongo)
+  .dependsOn(kafka)
+  .dependsOn(testkit % Test)
   .settings(name := "thomas-http4s")
   .settings(rootSettings)
   .settings(taglessSettings)
@@ -371,6 +372,7 @@ lazy val developerKai = Developer(
   "kailuo.wang@gmail.com",
   new java.net.URL("http://kailuowang.com")
 )
+
 lazy val commonSettings = addCompilerPlugins(libs, "kind-projector") ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := defaultScalaVer,
