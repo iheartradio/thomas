@@ -5,7 +5,7 @@ addSbtPlugin("com.typesafe.play" %% "sbt-plugin" % "2.7.3")
 addSbtPlugin("io.gatling" %% "gatling-sbt" % "2.2.2")
 
 addSbtPlugin(
-  "com.iheart" % "sbt-play-swagger" % "0.9.0-PLAY2.7"
+  "com.iheart" % "sbt-play-swagger" % "0.9.1-PLAY2.7"
 )
 
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.10")
