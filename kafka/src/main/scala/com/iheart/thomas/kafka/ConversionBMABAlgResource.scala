@@ -2,7 +2,7 @@ package com.iheart.thomas.kafka
 
 import java.time.OffsetDateTime
 
-import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
+import cats.effect._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.analysis.SampleSettings
@@ -16,10 +16,9 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 object ConversionBMABAlgResource {
-
-  def apply[F[_]: Timer: ContextShift](
+  def apply[F[_]: Timer](
       implicit ex: ExecutionContext,
-      F: ConcurrentEffect[F],
+      F: Concurrent[F],
       mongoDAOs: mongo.DAOs[F],
       amazonClient: AmazonDynamoDBAsync
     ): Resource[F, ConversionBMABAlg[F]] = {
@@ -39,7 +38,7 @@ object ConversionBMABAlgResource {
     }
   }
 
-  def apply[F[_]: Timer: ContextShift: ConcurrentEffect](
+  def apply[F[_]: Timer: Concurrent](
       mongoConfig: Config
     )(implicit ex: ExecutionContext,
       amazonClient: AmazonDynamoDBAsync

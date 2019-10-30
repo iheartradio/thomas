@@ -2,6 +2,8 @@ package com.iheart.thomas.bandit.bayesian
 
 import java.time.OffsetDateTime
 
+import cats.Monad
+import cats.implicits._
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.bandit.`package`.ArmName
@@ -25,4 +27,14 @@ trait BayesianMABAlg[F[_], R] {
 
   def reallocate(featureName: FeatureName): F[BayesianMAB[R]]
 
+}
+
+object BayesianMABAlg {
+  implicit class BayesianMABAlgExtension[F[_]: Monad, R](
+      private val alg: BayesianMABAlg[F, R]) {
+    def reallocateAllRunning: F[Vector[BayesianMAB[R]]] =
+      alg.runningBandits(None).flatMap { bandits =>
+        bandits.traverse(b => alg.reallocate(b.feature))
+      }
+  }
 }

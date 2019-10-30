@@ -28,7 +28,7 @@ object ConversionBMABAlg {
       ],
       nowF: F[OffsetDateTime]
     ): ConversionBMABAlg[F] =
-    new ConversionBMABAlg[F] {
+    new BayesianMABAlg[F, Conversions] {
 
       def updateRewardState(
           featureName: FeatureName,

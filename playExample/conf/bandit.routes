@@ -10,4 +10,4 @@ POST  /features/                        controllers.MyBayesianMABController.runn
 
 GET /features/:feature                     controllers.MyBayesianMABController.getState(feature)
 
-PUT  /features/:feature/abtest                   controllers.MyBayesianMABController.reallocate(feature, kpiName)
+PUT  /features/:feature/abtest                   controllers.MyBayesianMABController.reallocate(feature)
