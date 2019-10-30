@@ -4,6 +4,7 @@ package kafka
 import cats.effect.{ConcurrentEffect, ContextShift, Resource, Timer}
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.FeatureName
+import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
 import com.iheart.thomas.stream.ConversionUpdater
@@ -21,21 +22,27 @@ trait BanditUpdater[F[_]] {
 
 trait MessageProcessor[F[_], RawMessage, PreprocessedMessage] {
   def preprocessor: Pipe[F, RawMessage, PreprocessedMessage]
-  def toConversionEvent(featureName: FeatureName): F[
+  def toConversionEvent(
+      featureName: FeatureName,
+      KPIName: KPIName
+    ): F[
     Pipe[F, PreprocessedMessage, (ArmName, ConversionEvent)]
   ]
 }
 
 object MessageProcessor {
   def apply[F[_], Message](
-      toEvent: FeatureName => F[Pipe[F, Message, (ArmName, ConversionEvent)]]
+      toEvent: (FeatureName,
+          KPIName) => F[Pipe[F, Message, (ArmName, ConversionEvent)]]
     ): MessageProcessor[F, Message, Message] =
     new MessageProcessor[F, Message, Message] {
       def preprocessor: Pipe[F, Message, Message] = identity
 
       def toConversionEvent(
-          featureName: FeatureName
-        ): F[Pipe[F, Message, (ArmName, ConversionEvent)]] = toEvent(featureName)
+          featureName: FeatureName,
+          kpiName: KPIName
+        ): F[Pipe[F, Message, (ArmName, ConversionEvent)]] =
+        toEvent(featureName, kpiName)
     }
 }
 
@@ -50,7 +57,7 @@ object BanditUpdater {
 
   def resource[F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs, Message](
       kafkaConfig: KafkaConfig,
-      toEvent: FeatureName => F[
+      toEvent: (FeatureName, KPIName) => F[
         Pipe[F, Message, (ArmName, ConversionEvent)]
       ]
     )(implicit ex: ExecutionContext,
@@ -102,7 +109,7 @@ object BanditUpdater {
       Processed
     ](kafkaConfig: KafkaConfig,
       preprocessor: Pipe[F, RawMessage, Processed],
-      toEvent: FeatureName => F[
+      toEvent: (FeatureName, KPIName) => F[
         Pipe[F, Processed, (ArmName, ConversionEvent)]
       ]
     )(implicit

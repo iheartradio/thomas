@@ -21,6 +21,7 @@ import com.iheart.thomas.analysis.{
   BetaKPIDistribution,
   Conversions,
   KPIApi,
+  KPIName,
   Probability,
   SampleSettings
 }
@@ -62,7 +63,7 @@ class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
 
   val server = "localhost:" + embeddedKafkaConfig.kafkaPort
 
-  val toEvent = (fn: FeatureName) =>
+  val toEvent = (fn: FeatureName, _: KPIName) =>
     IO.pure { (input: Stream[IO, (FeatureName, ArmName, ConversionEvent)]) =>
       input.collect {
         case (`fn`, am, ce) => (am, ce)

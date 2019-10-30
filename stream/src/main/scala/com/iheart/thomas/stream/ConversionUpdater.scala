@@ -1,14 +1,13 @@
 package com.iheart.thomas.stream
 
-import cats.effect.{ConcurrentEffect}
+import cats.effect.ConcurrentEffect
 import fs2.{Pipe, Stream}
 import ConversionUpdater._
 import com.iheart.thomas.FeatureName
-import com.iheart.thomas.analysis.Conversions
+import com.iheart.thomas.analysis.{Conversions, KPIName}
 import cats.implicits._
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
-
 import io.chrisdavenport.log4cats.Logger
 
 class ConversionUpdater[F[_]: ConcurrentEffect](
@@ -18,7 +17,7 @@ class ConversionUpdater[F[_]: ConcurrentEffect](
 
   def updateAllConversions[I](
       chunkSize: Int,
-      toEvent: FeatureName => F[Pipe[F, I, (ArmName, ConversionEvent)]]
+      toEvent: (FeatureName, KPIName) => F[Pipe[F, I, (ArmName, ConversionEvent)]]
     ): F[Pipe[F, I, Unit]] = {
     def updateConversion(
         featureName: FeatureName
@@ -36,8 +35,7 @@ class ConversionUpdater[F[_]: ConcurrentEffect](
     bmabAlg.runningBandits(None).flatMap { bandits =>
       bandits
         .traverse { b =>
-          val feature = b.abtest.data.feature
-          toEvent(feature).map(_ andThen updateConversion(feature))
+          toEvent(b.feature, b.kpiName).map(_ andThen updateConversion(b.feature))
         }
         .map { featurePipes => input: Stream[F, I] =>
           input.broadcastThrough(featurePipes: _*)
