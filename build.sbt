@@ -40,7 +40,7 @@ lazy val libs =
   .add(   name = "cats-effect-testing-scalatest",    version = "0.3.0",  org = "com.codecommit")
   .addJVM(name = "fs2-kafka",             version = "0.20.1", org = "com.ovoenergy")
   .add(   name = "jawn",                  version = "0.14.2", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
-  .addJVM( name = "embedded-kafka",       version = "2.3.0",  org = "io.github.embeddedkafka")
+  .addJVM( name = "embedded-kafka",       version = "2.3.1",  org = "io.github.embeddedkafka")
 // format: on
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
