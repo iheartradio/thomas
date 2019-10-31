@@ -29,6 +29,7 @@
   <li><a href="#distributed-assignment--spark-support">Distributed group assignment with Spark (and Pyspark) support</a></li>
   <li><a href="#high-performance">High Performance</a></li>
   <li><a href="#modular-and-lightweight">Modular and lightweight</a></li>
+  <li><a href="#resilient">Resilient</a></li>
 </ul>
 
 <h3 id="real-time-hash-based-assignment">Real-time hash-based assignment</h3>
@@ -121,7 +122,7 @@ In this scenario, Thomas will reassign part of the users in group B to the new g
 
 <h3 id="distributed-assignment--spark-support">Distributed assignment / Spark support</h3>
 
-<p>Thomas provides a thomas-client that can pull down experiments metadata and calculate user assignments in parallel on local CPUs. It also provides a native Java API usable in Spark and Pyspark. This would allow users to efficiently batch process data according to A/B test group assignment without any extra workload to a centralized A/B test service.</p>
+<p>Thomas provides a <code class="highlighter-rouge">thomas-client</code> that can pull down experiments metadata and calculate user assignments in parallel on local CPUs. It also provides a Java API in <code class="highlighter-rouge">thomas-spark</code> usable in Spark and Pyspark. This would allow users to efficiently batch process data according to A/B test group assignment without any extra workload to a centralized A/B test service.</p>
 
 <h3 id="high-performance">High Performance</h3>
 
@@ -140,14 +141,25 @@ When running on a MacBook Pro, with about two dozens of ongoing experiments, ser
   <li><strong>thomas-client</strong>: the distributed client that provides assignment by running the algorithm locally</li>
   <li><strong>thomas-analysis</strong>: Bayesian analysis utilities</li>
   <li><strong>thomas-cli</strong>: Command line interface using <code class="highlighter-rouge">thomas-client</code></li>
+  <li><strong>thomas-bandit</strong>: WIP core logic for Bayesian multi-arm bandit</li>
+  <li><strong>thomas-spark</strong>: Integration with Spark for distributed batch assignment</li>
+  <li><strong>thomas-dynamo</strong>: WIP dynamo DB based Data access layer for multi-arm bandit related data</li>
+  <li><strong>thomas-stream</strong>: WIP streaming process of analytics data</li>
+  <li><strong>thomas-kafka</strong>: WIP integration of thomas stream and kafka for bandit</li>
+  <li><strong>thomas-testkit</strong>: Supports for testing systems built on Thomas</li>
+  <li><strong>thomas-stress</strong>: Stress tests for Thomas web services</li>
 </ul>
+
+<h3 id="resilient">Resilient</h3>
+
+<p>Thomas is built to be resilient when serving assignment requests. Using <a href="https://github.com/kailuowang/mau">Mau</a>, Thomas web service can withstand a relatively long backend DB downtime, during which the assignments requests continue to be served using last retrieved tests data.</p>
 
 <h2 id="whats-not-included--still-lacking-in-thomas">What’s not included / still lacking in Thomas</h2>
 
 <ul>
   <li>
     <h4 id="no-built-in-analytics">No built-in analytics</h4>
-    <p>Users of Thomas have to pick and implement their own analytics system. We took the approach that A/B test solution is decoupled from the analytics solution.</p>
+    <p>Users of Thomas have to pick and implement their own analytics system. We took the approach that A/B test solution should be decoupled from the analytics solution.</p>
   </li>
   <li>
     <h4 id="no-admin-ui">No Admin UI</h4>
@@ -186,5 +198,5 @@ Any contribution, big or small, are truly appreciated. We open source Thomas bec
 
 <p>Copyright iHeartMedia + Entertainment, Inc., 2018-2019.</p>
 
-</div></div></section><section class="technologies"><div class="container"><div class="row"></div></div></section></main><footer id="site-footer"><div class="container"><div class="row"><div class="col-xs-6"><p>thomas is designed and developed by <a href="https://github.com/iheartradio/thomas" target="_blank">@kailuowang</a></p></div><div class="col-xs-6"><p class="text-right"><a href="https://github.com/iheartradio/thomas"><span class="fa fa-github"></span>View on GitHub</a></p></div></div><div class="row"><div class="col-xs-6"><p>Website built with <a href="https://47deg.github.io/sbt-microsites/" target="_blank">Sbt-microsites</a> - © 2016 <a href="https://www.47deg.com/" target="_blank">47 Degrees</a></p></div></div><script src="/thomas/highlight/highlight.pack.js"></script><script>hljs.initHighlighting();
+</div></div></section><section class="technologies"><div class="container"><div class="row"></div></div></section></main><footer id="site-footer"><div class="container"><div class="row"><div class="col-xs-6"><p>thomas is designed and developed by <a href="https://github.com/iheartradio/thomas" target="_blank" rel="noopener noreferrer">@kailuowang</a></p></div><div class="col-xs-6"><p class="text-right"><a href="https://github.com/iheartradio/thomas"><span class="fa fa-github"></span>View on GitHub</a></p></div></div><div class="row"><div class="col-xs-6"><p>Website built with <a href="https://47deg.github.io/sbt-microsites/" target="_blank" rel="noopener noreferrer">sbt-microsites</a> - © 2019 <a href="https://www.47deg.com/" target="_blank" rel="noopener noreferrer">47 Degrees</a></p></div></div><script src="/thomas/highlight/highlight.pack.js"></script><script>hljs.initHighlighting();
               </script></div></footer></body></html>

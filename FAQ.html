@@ -77,6 +77,7 @@ Start spark with the package</p>
 
 </code></pre>
 </div>
+
 <p>Note that some python to java conversion is needed since <code class="highlighter-rouge">thomas-spark</code> is written in Scala.</p>
 
 <p>The  <code class="highlighter-rouge">Assigner</code> also provides a Spark UDF <code class="highlighter-rouge">assignUdf</code>. You can call it with a feature name to 
@@ -108,10 +109,43 @@ get an UDF that returns the assignment for that abtest feature.</p>
 </code></pre>
 </div>
 
+<p>In scala, it’s more straightforward.</p>
+
+<div class="language-scala highlighter-rouge"><pre class="highlight"><code><span class="k">import</span> <span class="nn">spark.implicits._</span>
+<span class="k">import</span> <span class="nn">org.apache.spark.sql.functions.col</span>
+
+<span class="k">val</span> <span class="n">mockUserIds</span> <span class="k">=</span> <span class="o">(</span><span class="mi">1</span> <span class="n">to</span> <span class="mi">10000</span><span class="o">).</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">toString</span><span class="o">).</span><span class="n">toDF</span><span class="o">(</span><span class="s">"userId"</span><span class="o">)</span>
+
+<span class="k">val</span> <span class="n">assigner</span> <span class="k">=</span> <span class="n">com</span><span class="o">.</span><span class="n">iheart</span><span class="o">.</span><span class="n">thomas</span><span class="o">.</span><span class="n">spark</span><span class="o">.</span><span class="nc">Assigner</span><span class="o">.</span><span class="n">create</span><span class="o">(</span><span class="s">"https://MY_ABTEST_SERVICE_HOST/abtest/testsWithFeatures"</span><span class="o">)</span>
+
+
+<span class="n">mockUserIds</span><span class="o">.</span><span class="n">withColumn</span><span class="o">(</span><span class="s">"assignment"</span><span class="o">,</span> <span class="n">assigner</span><span class="o">.</span><span class="n">assignUdf</span><span class="o">(</span><span class="s">"My_TEST_FEATURES"</span><span class="o">)(</span><span class="n">col</span><span class="o">(</span><span class="s">"userId"</span><span class="o">)))</span>
+
+</code></pre>
+</div>
+
+<p><code class="highlighter-rouge">assigner.assignUdf</code> assigns based on the test data it retrieves when it’s created from <code class="highlighter-rouge">Assigner.create</code>. 
+If you have a long running job, e.g. in Spark stream, you might want a <code class="highlighter-rouge">udf</code> that keeps test data updated, 
+so that over a longer period of time it keeps assigning based on latest test data from server. 
+In that case, you can use the <code class="highlighter-rouge">com.iheart.thomas.AutoRefreshAssigner</code></p>
+
+<div class="language-scala highlighter-rouge"><pre class="highlight"><code><span class="k">import</span> <span class="nn">concurrent.duration._</span>
+
+<span class="k">val</span> <span class="n">assigner</span> <span class="k">=</span> <span class="n">com</span><span class="o">.</span><span class="n">iheart</span><span class="o">.</span><span class="n">thomas</span><span class="o">.</span><span class="n">spark</span><span class="o">.</span><span class="nc">AutoRefreshAssigner</span><span class="o">(</span>
+  <span class="n">url</span> <span class="k">=</span> <span class="s">"https://MY_ABTEST_SERVICE_HOST/abtest/testsWithFeatures"</span><span class="o">,</span> 
+  <span class="n">refreshPeriod</span> <span class="k">=</span> <span class="mf">10.</span><span class="n">minutes</span> 
+<span class="o">)</span>
+
+<span class="n">mockUserIds</span><span class="o">.</span><span class="n">withColumn</span><span class="o">(</span><span class="s">"assignment"</span><span class="o">,</span> <span class="n">assigner</span><span class="o">.</span><span class="n">assignUdf</span><span class="o">(</span><span class="s">"My_TEST_FEATURES"</span><span class="o">)(</span><span class="n">col</span><span class="o">(</span><span class="s">"userId"</span><span class="o">)))</span>
+
+</code></pre>
+</div>
+<p>The <code class="highlighter-rouge">refreshPeriod</code> dictates how often the test data is retrieved from the A/B test service per spark partition.</p>
+
 <h1 id="how-to-run-bayesian-analysis">How to run Bayesian Analysis</h1>
 
 <p>Since Thomas does not come with an analytics solution, to analyze the A/B test results using Thomas’s Bayesian utility, you need to write integration with your analytics solution. Please refer to <a href="bayesian.html">the dedicated page</a> for detailed guide on this one.</p>
-</div></div></section></main><footer id="site-footer"><div class="container"><div class="row"><div class="col-xs-6"><p>thomas is designed and developed by <a href="https://github.com/iheartradio/thomas" target="_blank">@kailuowang</a></p></div><div class="col-xs-6"><p class="text-right"><a href="https://github.com/iheartradio/thomas"><span class="fa fa-github"></span>View on GitHub</a></p></div></div><div class="row"><div class="col-xs-6"><p>Website built with <a href="https://47deg.github.io/sbt-microsites/" target="_blank">Sbt-microsites</a> - © 2016 <a href="https://www.47deg.com/" target="_blank">47 Degrees</a></p></div></div><script src="/thomas/highlight/highlight.pack.js"></script><script>hljs.initHighlighting();
+</div></div></section></main><footer id="site-footer"><div class="container"><div class="row"><div class="col-xs-6"><p>thomas is designed and developed by <a href="https://github.com/iheartradio/thomas" target="_blank" rel="noopener noreferrer">@kailuowang</a></p></div><div class="col-xs-6"><p class="text-right"><a href="https://github.com/iheartradio/thomas"><span class="fa fa-github"></span>View on GitHub</a></p></div></div><div class="row"><div class="col-xs-6"><p>Website built with <a href="https://47deg.github.io/sbt-microsites/" target="_blank" rel="noopener noreferrer">sbt-microsites</a> - © 2019 <a href="https://www.47deg.com/" target="_blank" rel="noopener noreferrer">47 Degrees</a></p></div></div><script src="/thomas/highlight/highlight.pack.js"></script><script>hljs.initHighlighting();
               </script></div></footer><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script><script src="/thomas/highlight/highlight.pack.js"></script><script>hljs.configure({languages:['scala','java','bash']});
 hljs.initHighlighting();
               </script><script>((window.gitter = {}).chat = {}).options = {
