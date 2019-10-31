@@ -10,7 +10,6 @@ import com.typesafe.config.Config
 import mau.Repeating
 import org.http4s.{EntityDecoder, HttpRoutes, Request, Response}
 import org.http4s.dsl.Http4sDsl
-import org.http4s.server.Router
 import org.http4s.play._
 import bandit.Formats._
 import lihua.mongo.JsonFormats._
@@ -32,15 +31,19 @@ class BanditService[F[_]: Async] private (
   implicit def decoder[A: Reads]: EntityDecoder[F, A] = jsonOf
 
   def routes =
-    Router(
-      "internal/bandits" -> HttpRoutes.of[F](managementRoutes orElse runnerRoutes)
-    )
+    HttpRoutes.of[F](managementRoutes orElse runnerRoutes)
 
   def runnerRoutes = {
     case PUT -> Root / "conversions" / "run" =>
       conversionsRunner.resume.ifA(
         Ok("all bandits resumed"),
         Conflict("bandits already running")
+      )
+
+    case GET -> Root / "conversions" / "run" =>
+      conversionsRunner.running.ifA(
+        Ok("all bandits are running"),
+        Ok("all bandits are paused")
       )
     case DELETE -> Root / "conversions" / "run" =>
       conversionsRunner.pause.ifA(

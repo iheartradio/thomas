@@ -32,7 +32,7 @@ object BayesianBanditClient {
         c.expect(
           POST(
             banditSpec,
-            Uri.unsafeFromString(rootUrl + "/features/")
+            Uri.unsafeFromString(rootUrl + "/features")
           )
         )
 
@@ -56,7 +56,7 @@ object BayesianBanditClient {
         c.expect(
           PUT(
             Uri.unsafeFromString(
-              rootUrl + "/features/" + featureName + "/abtest"
+              rootUrl + "/features/" + featureName + "/reallocate"
             )
           )
         )
@@ -66,7 +66,7 @@ object BayesianBanditClient {
         ): F[Vector[BayesianMAB[Conversions]]] =
         c.expect(
           Uri.unsafeFromString(
-            rootUrl + "/features/"
+            rootUrl + "/features/running"
           ) +?? ("asOf", asOf.map(
             _.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
           ))
