@@ -123,7 +123,7 @@ class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
             for {
               _ <- updater.conversionBMABAlg.init(spec)
               _ <- ioTimer.sleep(1.second) //wait for spec to start
-              _ <- updater.consumeKafka
+              _ <- updater.consumer
                 .interruptAfter(10.seconds)
                 .compile
                 .toVector
