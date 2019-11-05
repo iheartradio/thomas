@@ -39,13 +39,7 @@ Create a new Scala project and in build.sbt add
 ```
 libraryDependencies += "com.iheart" %% "thomas-http4s" % ThomasVersion
 ``` 
-Then add a `Main` object 
-
-```tut:silent
-import com.iheart.thomas.http4s.ExampleHtt4sApp
-
-object Main extends ExampleHtt4sApp 
-```
+Then add a `Main` object by following the example of `com.iheart.thomas.http4s.ExampleAbtestServerApp`
 
 Then assuming you have a local MongoDB instance already up and running
  

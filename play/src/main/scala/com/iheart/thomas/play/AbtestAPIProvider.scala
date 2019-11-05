@@ -48,10 +48,10 @@ class APIProviderBase(
       throw new FailedToStartApplicationException("Cannot start application")
     )
 
-  lazy val ttl = {
+  lazy val refreshRate = {
     import scala.compat.java8.DurationConverters._
     //this is safe because it's in reference config
-    cfg.getDuration("iheart.abtest.get-groups.ttl").toScala
+    cfg.getDuration("iheart.thomas.abtests.refresh.rate").toScala
   }
   implicit val cs = IO.contextShift(ex)
   implicit val timer = IO.timer(ex)
@@ -66,7 +66,7 @@ class APIProviderBase(
   implicit val nowF = IO.delay(OffsetDateTime.now)
   lazy val (api: AbtestAlg[IO], kpiApi: KPIApi[IO]) = {
     implicit val (abtestDAO, featureDAO, kpiDAO) = daos
-    (new DefaultAbtestAlg[IO](ttl), KPIApi.default)
+    (new DefaultAbtestAlg[IO](refreshRate), KPIApi.default)
   }
 }
 

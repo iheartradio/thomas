@@ -25,6 +25,7 @@ object BayesianBanditClient {
       rootUrl: String
     ): BayesianMABAlg[F, Conversions] =
     new PlayJsonHttp4sClient[F] with BayesianMABAlg[F, Conversions] {
+
       import org.http4s.{Method, Uri}
       import Method._
 

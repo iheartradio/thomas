@@ -10,7 +10,7 @@ import cats.effect.Async
 import com.iheart.thomas.bandit.BanditStateDAO
 
 object DAOs {
-  val banditStateTableName = "BanditState"
+  val banditStateTableName = "ds-bandit-state"
 
   def stateDAO[F[_]: Async](
       dynamoClient: AmazonDynamoDBAsync

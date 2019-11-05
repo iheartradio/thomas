@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package http4s
 
-import cats.effect.{Async, ConcurrentEffect, ContextShift, Resource, Timer}
+import cats.effect.{Async, ConcurrentEffect, ContextShift, Resource, Sync, Timer}
 import cats.implicits._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
@@ -19,9 +19,13 @@ import lihua.mongo.JsonFormats._
 import com.iheart.thomas.analysis.Conversions
 import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.bandit.`package`.ArmName
+import com.iheart.thomas.bandit.tracking.EventLogger
+import com.iheart.thomas.dynamo.ClientConfig
 import com.iheart.thomas.kafka.BanditUpdater.KafkaConfig
+import com.typesafe.config.Config
 import play.api.libs.json._
 import fs2.Stream
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import play.api.libs.json.Json.toJson
@@ -104,20 +108,64 @@ class BanditService[F[_]: Async] private (
 }
 
 object BanditService {
-//  def create[F[_]: Concurrent: Timer](
-//      mongoConfig: Config,
-//      dynamoConfig: dynamo.ClientConfig,
-//      reallocationRepeatDuration: FiniteDuration
-//    )(implicit ex: ExecutionContext
-//    ): Resource[F, BanditService[F]] =
-//    dynamo.client[F](dynamoConfig).flatMap { implicit dc =>
-//      mongo.daosResource(mongoConfig).flatMap { implicit daos =>
-//        create[F](reallocationRepeatDuration)
-//      }
-//    }
+
+  case class BanditRunnerConfig(repeat: FiniteDuration)
+  case class BanditServiceConfig(
+      kafka: KafkaConfig,
+      dynamo: ClientConfig,
+      runner: BanditRunnerConfig)
+
+  object BanditServiceConfig {
+
+    def load[F[_]: Sync](configResource: String): F[(BanditServiceConfig, Config)] =
+      load(Some(configResource))
+
+    def load[F[_]: Sync](
+        configResource: Option[String] = None
+      ): F[(BanditServiceConfig, Config)] = {
+      import pureconfig._
+      import pureconfig.generic.auto._
+      import pureconfig.module.catseffect._
+      val configSource =
+        configResource.fold(ConfigSource.default)(ConfigSource.resources)
+      (
+        configSource.at("thomas.bandits").loadF[F, BanditServiceConfig],
+        configSource.loadF[F, Config]
+      ).tupled
+    }
+
+  }
 
   def create[
-      F[_]: ConcurrentEffect: Timer: ContextShift: mongo.DAOs: MessageProcessor
+      F[_]: ConcurrentEffect: Timer: ContextShift: MessageProcessor: EventLogger
+    ](configResource: Option[String] = None
+    )(implicit ex: ExecutionContext
+    ): Resource[F, BanditService[F]] = {
+    Resource
+      .liftF(BanditServiceConfig.load(configResource))
+      .flatMap {
+        case (bsc, root) =>
+          create[F](bsc.kafka, root, bsc.dynamo, bsc.runner.repeat)
+      }
+
+  }
+
+  def create[
+      F[_]: ConcurrentEffect: Timer: ContextShift: MessageProcessor: EventLogger
+    ](kafkaConfig: KafkaConfig,
+      mongoConfig: Config,
+      dynamoConfig: dynamo.ClientConfig,
+      reallocationRepeatDuration: FiniteDuration
+    )(implicit ex: ExecutionContext
+    ): Resource[F, BanditService[F]] =
+    dynamo.client[F](dynamoConfig).flatMap { implicit dc =>
+      mongo.daosResource(mongoConfig).flatMap { implicit daos =>
+        create[F](kafkaConfig, reallocationRepeatDuration)
+      }
+    }
+
+  def create[
+      F[_]: ConcurrentEffect: Timer: ContextShift: mongo.DAOs: MessageProcessor: EventLogger
     ](kafkaConfig: KafkaConfig,
       reallocationRepeatDuration: FiniteDuration
     )(implicit ex: ExecutionContext,

@@ -7,14 +7,13 @@ import com.iheart.thomas.FeatureName
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
-import com.iheart.thomas.stream.ConversionUpdater
-import com.iheart.thomas.stream.ConversionUpdater.ConversionEvent
+import com.iheart.thomas.stream.ConversionBanditKPITracker
+import com.iheart.thomas.stream.ConversionBanditKPITracker.ConversionEvent
 import fs2.concurrent.SignallingRef
 import fs2.{Pipe, Stream}
 import fs2.kafka.{AutoOffsetReset, ConsumerSettings, Deserializer, consumerStream}
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import cats.implicits._
+import com.iheart.thomas.bandit.tracking.EventLogger
 
 import scala.concurrent.ExecutionContext
 
@@ -68,8 +67,10 @@ private[kafka] trait WithConversionBMABAlg[F[_]] {
 
 object BanditUpdater {
 
-  def resource[F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs, Message](
-      kafkaConfig: KafkaConfig,
+  def resource[
+      F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs: EventLogger,
+      Message
+    ](kafkaConfig: KafkaConfig,
       toEvent: (FeatureName, KPIName) => F[
         Pipe[F, Message, (ArmName, ConversionEvent)]
       ]
@@ -84,7 +85,7 @@ object BanditUpdater {
   }
 
   def resource[
-      F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs: MessageProcessor
+      F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs: MessageProcessor: EventLogger
     ](kafkaConfig: KafkaConfig
     )(implicit ex: ExecutionContext,
       amazonClient: AmazonDynamoDBAsync
@@ -94,26 +95,24 @@ object BanditUpdater {
     )
 
   def create[
-      F[_]: Timer: ContextShift: ConcurrentEffect: MessageProcessor: ConversionBMABAlg
+      F[_]: Timer: ContextShift: ConcurrentEffect: MessageProcessor: ConversionBMABAlg: EventLogger
     ](kafkaConfig: KafkaConfig
     ): F[BanditUpdater[F]] =
-    Slf4jLogger.fromName[F]("thomas-kafka").flatMap { implicit logger =>
-      SignallingRef[F, Boolean](false).map { pauseSignal =>
-        apply[F](
-          kafkaConfig,
-          pauseSignal
-        )
-      }
+    SignallingRef[F, Boolean](false).map { pauseSignal =>
+      apply[F](
+        kafkaConfig,
+        pauseSignal
+      )
     }
 
-  def apply[F[_]: Timer: ConcurrentEffect: Logger: ContextShift](
+  def apply[F[_]: Timer: ConcurrentEffect: EventLogger: ContextShift](
       kafkaConfig: KafkaConfig,
       pauseSignal: SignallingRef[F, Boolean]
     )(implicit mp: MessageProcessor[F],
       cbm: ConversionBMABAlg[F]
     ): BanditUpdater[F] = new BanditUpdater[F] with WithConversionBMABAlg[F] {
     import mp.deserializer
-    val updater = new ConversionUpdater[F]
+    val updater = new ConversionBanditKPITracker[F]
     val consumer: Stream[F, Unit] = {
       val consumerSettings =
         ConsumerSettings[F, Unit, mp.RawMessage]

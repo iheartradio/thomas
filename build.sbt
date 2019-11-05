@@ -41,6 +41,8 @@ lazy val libs =
   .addJVM(name = "fs2-kafka",             version = "0.20.2", org = "com.ovoenergy")
   .add(   name = "jawn",                  version = "0.14.2", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
   .addJVM( name = "embedded-kafka",       version = "2.3.1",  org = "io.github.embeddedkafka")
+  .add(   name = "pureconfig",       version = "0.12.1",  org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
+  .add(   name = "circe",       version = "0.12.1",  org = "io.circe", "circe-core", "circe-generic")
 // format: on
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
@@ -125,17 +127,19 @@ lazy val core = project
 
 lazy val bandit = project
   .dependsOn(analysis)
+  .aggregate(analysis)
   .settings(
     name := "thomas-bandit",
     rootSettings,
     taglessSettings,
     libs.testDependencies("scalatestplus-scalacheck"),
-    libs.dependencies("breeze"),
+    libs.dependencies("breeze", "log4cats-core"),
     simulacrumSettings(libs)
   )
 
 lazy val analysis = project
   .dependsOn(core)
+  .aggregate(core)
   .settings(name := "thomas-analysis")
   .settings(rootSettings)
   .settings(taglessSettings)
@@ -233,13 +237,13 @@ lazy val stream = project
   .settings(rootSettings)
   .settings(
     crossScalaVersions := Seq(scalaVersion.value),
-    libs.dependencies("fs2-core", "log4cats-core"),
+    libs.dependencies("fs2-core"),
     libs.testDependencies("cats-effect-testing-scalatest")
   )
 
 lazy val kafka = project
   .dependsOn(stream, dynamo, mongo)
-  .aggregate(stream)
+  .aggregate(stream, dynamo, mongo)
   .settings(name := "thomas-kafka")
   .settings(rootSettings)
   .settings(
@@ -260,6 +264,7 @@ lazy val spark = project
 
 lazy val http4s = project
   .dependsOn(kafka)
+  .aggregate(kafka)
   .dependsOn(testkit % Test)
   .settings(name := "thomas-http4s")
   .settings(rootSettings)
@@ -273,7 +278,9 @@ lazy val http4s = project
       "http4s-dsl",
       "http4s-play-json",
       "scala-java8-compat",
-      "log4cats-slf4j"
+      "log4cats-slf4j",
+      "pureconfig-cats-effect",
+      "pureconfig-generic"
     )
   )
 

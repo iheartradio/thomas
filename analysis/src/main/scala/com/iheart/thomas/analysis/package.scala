@@ -20,4 +20,6 @@ object `package` {
 
 case class Conversions(
     converted: Long,
-    total: Long)
+    total: Long) {
+  def rate = converted.toDouble / total.toDouble
+}

@@ -159,7 +159,37 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
 
   }
 
-  test("reallocate") {
+  test("reallocate update the state with latest possibilities") {
+    val spec = BanditSpec(
+      feature = "A_new_Feature",
+      arms = List("A", "B"),
+      author = "Test Runner",
+      start = OffsetDateTime.now,
+      title = "for integration tests",
+      kpiName = kpi.name
+    )
+
+    val currentState = withAPI { api =>
+      for {
+        _ <- api.init(spec)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(12, 2),
+            "B" -> Conversions(43, 10)
+          )
+        )
+        _ <- api.reallocate(spec.feature)
+        current <- api.currentState(spec.feature)
+      } yield current
+    }
+
+    currentState.state.getArm("B").get.likelihoodOptimum.p shouldBe >(
+      currentState.state.getArm("A").get.likelihoodOptimum.p
+    )
+
+  }
+  test("reallocate reallocate the size of the abtest groups") {
     val spec = BanditSpec(
       feature = "A_new_Feature",
       arms = List("A", "B"),

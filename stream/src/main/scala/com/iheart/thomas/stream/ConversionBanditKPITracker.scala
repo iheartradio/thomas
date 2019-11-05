@@ -2,18 +2,18 @@ package com.iheart.thomas.stream
 
 import cats.effect.ConcurrentEffect
 import fs2.{Pipe, Stream}
-import ConversionUpdater._
+import ConversionBanditKPITracker._
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.analysis.{Conversions, KPIName}
 import cats.implicits._
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
-import io.chrisdavenport.log4cats.Logger
+import com.iheart.thomas.bandit.tracking.EventLogger
 
-class ConversionUpdater[F[_]: ConcurrentEffect](
+class ConversionBanditKPITracker[F[_]: ConcurrentEffect](
     implicit
     bmabAlg: ConversionBMABAlg[F],
-    logger: Logger[F]) {
+    log: EventLogger[F]) {
 
   def updateAllConversions[I](
       chunkSize: Int,
@@ -22,13 +22,11 @@ class ConversionUpdater[F[_]: ConcurrentEffect](
     def updateConversion(
         featureName: FeatureName
       ): Pipe[F, (ArmName, ConversionEvent), Unit] =
-      ConversionUpdater.toConversion(chunkSize) andThen { input =>
+      ConversionBanditKPITracker.toConversion(chunkSize) andThen { input =>
         input.evalMap { r =>
           bmabAlg
             .updateRewardState(featureName, r)
-            .void <* logger.debug(
-            s"Conversion updated for $featureName $r"
-          )
+            .void
         }
       }
 
@@ -45,7 +43,7 @@ class ConversionUpdater[F[_]: ConcurrentEffect](
 
 }
 
-object ConversionUpdater {
+object ConversionBanditKPITracker {
   type ConversionEvent = Boolean
   val Converted = true
   val Viewed = false

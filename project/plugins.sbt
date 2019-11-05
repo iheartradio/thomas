@@ -11,7 +11,7 @@ addSbtPlugin(
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.10")
 
 addSbtPlugin(
-  "org.typelevel" %% "sbt-catalysts" % "0.32"
+  "org.typelevel" %% "sbt-catalysts" % "0.33"
 )
 
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.9.0")
