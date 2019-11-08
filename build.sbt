@@ -130,6 +130,7 @@ lazy val bandit = project
   .aggregate(analysis)
   .settings(
     name := "thomas-bandit",
+    crossScalaVersions := Seq(scalaVersion.value),
     rootSettings,
     taglessSettings,
     libs.testDependencies("scalatestplus-scalacheck"),
