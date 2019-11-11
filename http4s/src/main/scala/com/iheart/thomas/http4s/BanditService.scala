@@ -16,7 +16,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.play._
 import bandit.Formats._
 import lihua.mongo.JsonFormats._
-import com.iheart.thomas.analysis.Conversions
+import com.iheart.thomas.analysis.{Conversions, KPIApi, KPIDistribution}
 import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.tracking.EventLogger
@@ -25,6 +25,7 @@ import com.iheart.thomas.kafka.BanditUpdater.KafkaConfig
 import com.typesafe.config.Config
 import play.api.libs.json._
 import fs2.Stream
+import org.http4s.server.Router
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -33,6 +34,7 @@ import play.api.libs.json.Json.toJson
 class BanditService[F[_]: Async] private (
     conversionsRunner: Repeating[F],
     apiAlg: ConversionBMABAlg[F],
+    kpiAlg: KPIApi[F],
     banditUpdater: BanditUpdater[F])
     extends Http4sDsl[F] {
   private type PartialRoutes = PartialFunction[Request[F], F[Response[F]]]
@@ -42,7 +44,12 @@ class BanditService[F[_]: Async] private (
   private implicit def decoder[A: Reads]: EntityDecoder[F, A] = jsonOf
 
   def routes =
-    HttpRoutes.of[F](managementRoutes orElse runnerRoutes orElse updaterRoutes)
+    Router(
+      "/bandits" -> HttpRoutes
+        .of[F](managementRoutes orElse runnerRoutes orElse updaterRoutes),
+      "/kpis" -> HttpRoutes
+        .of[F](kpiRoutes)
+    )
 
   private def runnerRoutes = {
     case PUT -> Root / "conversions" / "run" =>
@@ -77,6 +84,18 @@ class BanditService[F[_]: Async] private (
       banditUpdater
         .pauseResume(false) *>
         Ok("conversions update are paused now")
+
+  }: PartialRoutes
+
+  private def kpiRoutes = {
+    case GET -> Root =>
+      kpiAlg.getAll
+
+    case GET -> Root / kpiName =>
+      kpiAlg.get(kpiName)
+
+    case req @ POST -> Root =>
+      req.as[KPIDistribution].flatMap(kpiAlg.upsert _)
 
   }: PartialRoutes
 
@@ -171,7 +190,7 @@ object BanditService {
     )(implicit ex: ExecutionContext,
       amazonClient: AmazonDynamoDBAsync
     ): Resource[F, BanditService[F]] = {
-
+    import mongo.extracKPIDistDAO
     ConversionBMABAlgResource[F].flatMap { implicit conversionBMAB =>
       mau.Repeating
         .resource[F](
@@ -181,7 +200,7 @@ object BanditService {
         )
         .evalMap { repeating =>
           BanditUpdater.create[F](kafkaConfig).map { bu =>
-            new BanditService[F](repeating, conversionBMAB, bu)
+            new BanditService[F](repeating, conversionBMAB, KPIApi.default[F], bu)
           }
         }
     }

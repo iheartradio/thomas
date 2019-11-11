@@ -3,7 +3,6 @@ package kafka
 
 import cats.effect._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
-import com.iheart.thomas.FeatureName
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
@@ -21,41 +20,6 @@ trait BanditUpdater[F[_]] {
   def consumer: Stream[F, Unit]
   def pauseResume(pause: Boolean): F[Unit]
   def isPaused: F[Boolean]
-}
-
-trait MessageProcessor[F[_]] {
-  type RawMessage
-  type PreprocessedMessage
-
-  implicit def deserializer: Deserializer.Record[F, RawMessage]
-  def preprocessor: Pipe[F, RawMessage, PreprocessedMessage]
-  def toConversionEvent(
-      featureName: FeatureName,
-      KPIName: KPIName
-    ): F[
-    Pipe[F, PreprocessedMessage, (ArmName, ConversionEvent)]
-  ]
-}
-
-object MessageProcessor {
-  def apply[F[_], Message](
-      toEvent: (FeatureName,
-          KPIName) => F[Pipe[F, Message, (ArmName, ConversionEvent)]]
-    )(implicit ev: Deserializer.Record[F, Message]
-    ) =
-    new MessageProcessor[F] {
-
-      type RawMessage = Message
-      type PreprocessedMessage = Message
-      implicit def deserializer: Deserializer.Record[F, Message] = ev
-      def preprocessor: Pipe[F, Message, Message] = identity
-
-      def toConversionEvent(
-          featureName: FeatureName,
-          kpiName: KPIName
-        ): F[Pipe[F, Message, (ArmName, ConversionEvent)]] =
-        toEvent(featureName, kpiName)
-    }
 }
 
 /**

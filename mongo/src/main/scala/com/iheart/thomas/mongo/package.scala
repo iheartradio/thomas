@@ -30,7 +30,9 @@ package object mongo {
       EntityDAO[F, KPIDistribution, JsObject]
   )
 
-  def to[
+  implicit def extracKPIDistDAO[F[_]](implicit daos: DAOs[F]) = daos._3
+
+  private def to[
       F[_]: MonadError[*[_], Throwable]
     ]: FunctionK[AsyncEntityDAO.Result[F, *], F] =
     new FunctionK[AsyncEntityDAO.Result[F, *], F] {
@@ -52,7 +54,7 @@ package object mongo {
       }
     }
 
-  def toF[F[_]](
+  private def toF[F[_]](
       implicit F: MonadError[F, Throwable]
     ): FunctionK[AsyncEntityDAO.Result[F, *], F] =
     new FunctionK[AsyncEntityDAO.Result[F, *], F] {
@@ -63,13 +65,13 @@ package object mongo {
   implicit val idSelector: EntityId => JsObject =
     lihua.mongo.Query.idSelector
 
-  def convert[F[_]: MonadError[*[_], Throwable], A](
+  private def convert[F[_]: MonadError[*[_], Throwable], A](
       e: F[EntityDAO[AsyncEntityDAO.Result[F, *], A, Query]]
     ): F[EntityDAO[F, A, JsObject]] = {
     val functorK = implicitly[FunctorK[EntityDAO[*[_], A, JsObject]]]
     e.map(od => functorK.mapK(od.contramap(Query.fromSelector))(to[F]))
   }
-  def convertF[F[_], A](
+  private def convertF[F[_], A](
       e: F[EntityDAO[AsyncEntityDAO.Result[F, *], A, Query]]
     )(implicit F: MonadError[F, Throwable]
     ): F[EntityDAO[F, A, JsObject]] = {

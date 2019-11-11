@@ -189,6 +189,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
     )
 
   }
+
   test("reallocate reallocate the size of the abtest groups") {
     val spec = BanditSpec(
       feature = "A_new_Feature",
