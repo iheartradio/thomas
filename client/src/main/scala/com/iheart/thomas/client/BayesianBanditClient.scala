@@ -62,6 +62,9 @@ object BayesianBanditClient {
           )
         )
 
+      def getAll: F[Vector[BayesianMAB[Conversions]]] =
+        c.expect(rootUrl + "/features")
+
       def runningBandits(
           asOf: Option[OffsetDateTime]
         ): F[Vector[BayesianMAB[Conversions]]] =

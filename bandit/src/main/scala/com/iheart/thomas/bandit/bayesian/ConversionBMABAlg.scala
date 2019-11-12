@@ -86,7 +86,17 @@ object ConversionBMABAlg {
           ).mapN(BayesianMAB.apply _)
       }
 
+      def getAll: F[Vector[BayesianMAB[Conversions]]] =
+        findAll(None)
+
       def runningBandits(
+          at: Option[OffsetDateTime]
+        ): F[Vector[BayesianMAB[Conversions]]] =
+        nowF.flatMap { now =>
+          findAll(at.orElse(Some(now)))
+        }
+
+      def findAll(
           time: Option[OffsetDateTime]
         ): F[Vector[BayesianMAB[Conversions]]] =
         abtestAPI

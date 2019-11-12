@@ -330,9 +330,10 @@ final class DefaultAbtestAlg[F[_]](
   def getAllTestsBySpecialization(
       specialization: Specialization,
       time: Option[OffsetDateTime]
-    ): F[Vector[Entity[Abtest]]] = nowF.flatMap { n =>
+    ): F[Vector[Entity[Abtest]]] = {
+    val timeQuery = time.fold(Json.obj())(abtests.byTime)
     abTestDao.find(
-      abtests.byTime(time.getOrElse(n))
+      timeQuery
         ++ Json.obj(
           "specialization" -> specialization.toString
         )

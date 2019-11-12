@@ -23,6 +23,8 @@ trait BayesianMABAlg[F[_], R] {
 
   def currentState(featureName: FeatureName): F[BayesianMAB[R]]
 
+  def getAll: F[Vector[BayesianMAB[R]]]
+
   def runningBandits(time: Option[OffsetDateTime] = None): F[Vector[BayesianMAB[R]]]
 
   def reallocate(featureName: FeatureName): F[BayesianMAB[R]]

@@ -114,12 +114,15 @@ class BanditService[F[_]: Async] private (
     case GET -> Root / "conversions" / "features" / feature =>
       apiAlg.currentState(feature)
 
+    case GET -> Root / "conversions" / "features" =>
+      apiAlg.getAll
+
     case req @ POST -> Root / "conversions" / "features" =>
       req.as[BanditSpec].flatMap { bs =>
         apiAlg.init(bs)
       }
 
-    case GET -> Root / "conversions" / "features" / "running" =>
+    case GET -> Root / "conversions" / "running" =>
       apiAlg.runningBandits(None)
 
   }: PartialRoutes
