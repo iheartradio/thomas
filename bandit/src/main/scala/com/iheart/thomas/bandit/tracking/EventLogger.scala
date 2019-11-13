@@ -13,10 +13,12 @@ trait EventLogger[F[_]] {
 }
 
 object EventLogger {
-  def noop[F[_]: Applicative]: EventLogger[F] =
-    (e: Event) => Applicative[F].unit
+  def noop[F[_]: Applicative]: EventLogger[F] = new EventLogger[F] {
+    def apply(e: Event): F[Unit] = Applicative[F].unit
+  }
 
-  def stdout[F[_]: Sync]: EventLogger[F] =
-    (e: Event) => Sync[F].delay(println(e))
+  def stdout[F[_]: Sync]: EventLogger[F] = new EventLogger[F] {
+    def apply(e: Event): F[Unit] = Sync[F].delay(println(e))
+  }
 
 }
