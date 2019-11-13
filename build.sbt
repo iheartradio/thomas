@@ -135,7 +135,7 @@ lazy val bandit = project
     rootSettings,
     taglessSettings,
     libs.testDependencies("scalatestplus-scalacheck"),
-    libs.dependencies("breeze", "log4cats-core"),
+    libs.dependencies("breeze"),
     simulacrumSettings(libs)
   )
 

@@ -2,7 +2,6 @@ package com.iheart.thomas.bandit.tracking
 
 import cats.Applicative
 import cats.effect.Sync
-import io.chrisdavenport.log4cats.Logger
 
 import scala.annotation.implicitNotFound
 
@@ -20,7 +19,4 @@ object EventLogger {
   def stdout[F[_]: Sync]: EventLogger[F] =
     (e: Event) => Sync[F].delay(println(e))
 
-  def debug[F[_]](logger: Logger[F]) = { (e: Event) =>
-    logger.debug(e.toString)
-  }
 }
