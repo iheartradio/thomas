@@ -1,4 +1,5 @@
-package com.iheart.thomas.kafka
+package com.iheart.thomas
+package kafka
 
 import java.time.OffsetDateTime
 
@@ -8,6 +9,7 @@ import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.analysis.SampleSettings
 import com.iheart.thomas.bandit.BanditStateDAO
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
+import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.{dynamo, mongo}
 import com.stripe.rainier.sampler.RNG
 import com.typesafe.config.Config
@@ -16,7 +18,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 object ConversionBMABAlgResource {
-  def apply[F[_]: Timer](
+  def apply[F[_]: Timer: EventLogger](
       implicit ex: ExecutionContext,
       F: Concurrent[F],
       mongoDAOs: mongo.DAOs[F],
@@ -28,7 +30,7 @@ object ConversionBMABAlgResource {
         dynamo.DAOs.lihuaStateDAO[F](amazonClient)
       )
     implicit val (abtestDAO, featureDAO, kpiDAO) = mongoDAOs
-    lazy val refreshPeriod = 0.seconds
+    lazy val refreshPeriod = 0.seconds //No cache is needed for abtests in Conversion API
 
     AbtestAlg.defaultResource[F](refreshPeriod).map { implicit abtestAlg =>
       implicit val ss = SampleSettings.default
@@ -38,7 +40,7 @@ object ConversionBMABAlgResource {
     }
   }
 
-  def apply[F[_]: Timer: Concurrent](
+  def apply[F[_]: Timer: Concurrent: EventLogger](
       mongoConfig: Config
     )(implicit ex: ExecutionContext,
       amazonClient: AmazonDynamoDBAsync

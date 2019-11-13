@@ -3,7 +3,7 @@ package thomas
 package analysis
 
 import lihua.{Entity, EntityDAO}
-import _root_.play.api.libs.json.JsObject
+import _root_.play.api.libs.json.{JsObject, Json}
 import cats.implicits._
 import abtest.Error
 import cats.tagless.autoFunctorK
@@ -15,6 +15,8 @@ import scala.reflect.ClassTag
 trait KPIApi[F[_]] {
   def get(name: KPIName): F[Option[Entity[KPIDistribution]]]
 
+  def getAll: F[Vector[Entity[KPIDistribution]]]
+
   def getSpecific[K <: KPIDistribution](
       name: KPIName
     )(implicit classTag: ClassTag[K]
@@ -24,6 +26,7 @@ trait KPIApi[F[_]] {
 }
 
 object KPIApi {
+
   implicit def default[F[_]](
       implicit dao: EntityDAO[F, KPIDistribution, JsObject],
       F: MonadThrowable[F]
@@ -31,6 +34,9 @@ object KPIApi {
     import com.iheart.thomas.abtest.QueryDSL._
     def get(name: KPIName): F[Option[Entity[KPIDistribution]]] =
       dao.findOneOption('name -> name)
+
+    def getAll: F[Vector[Entity[KPIDistribution]]] =
+      dao.find(Json.obj())
 
     def getSpecific[K <: KPIDistribution](
         name: KPIName

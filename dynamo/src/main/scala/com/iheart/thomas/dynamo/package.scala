@@ -2,7 +2,6 @@ package com.iheart.thomas.dynamo
 
 import cats.effect.{Resource, Sync}
 import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.dynamodbv2.{
   AmazonDynamoDBAsync,
   AmazonDynamoDBAsyncClient
@@ -24,9 +23,10 @@ object `package` {
               new BasicAWSCredentials(accessKey, secretKey)
             )
           )
-          .withEndpointConfiguration(
-            new EndpointConfiguration(serviceEndpoint, signingRegion)
-          )
+          .withRegion(region)
+//          .withEndpointConfiguration(
+//            new EndpointConfiguration(serviceEndpoint, signingRegion)
+//          )
           .build()
       )
     )(c => F.delay(c.shutdown()))
@@ -37,5 +37,4 @@ object `package` {
 case class ClientConfig(
     accessKey: String,
     secretKey: String,
-    serviceEndpoint: String,
-    signingRegion: String)
+    region: String)

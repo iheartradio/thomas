@@ -1,43 +1,39 @@
 package com.iheart.thomas.stream
 
-import cats.effect.{ConcurrentEffect}
+import cats.effect.ConcurrentEffect
 import fs2.{Pipe, Stream}
-import ConversionUpdater._
+import ConversionBanditKPITracker._
 import com.iheart.thomas.FeatureName
-import com.iheart.thomas.analysis.Conversions
+import com.iheart.thomas.analysis.{Conversions, KPIName}
 import cats.implicits._
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
+import com.iheart.thomas.bandit.tracking.EventLogger
 
-import io.chrisdavenport.log4cats.Logger
-
-class ConversionUpdater[F[_]: ConcurrentEffect](
+class ConversionBanditKPITracker[F[_]: ConcurrentEffect](
     implicit
     bmabAlg: ConversionBMABAlg[F],
-    logger: Logger[F]) {
+    log: EventLogger[F]) {
 
   def updateAllConversions[I](
       chunkSize: Int,
-      toEvent: FeatureName => F[Pipe[F, I, (ArmName, ConversionEvent)]]
+      toEvent: (FeatureName, KPIName) => F[Pipe[F, I, (ArmName, ConversionEvent)]]
     ): F[Pipe[F, I, Unit]] = {
     def updateConversion(
         featureName: FeatureName
       ): Pipe[F, (ArmName, ConversionEvent), Unit] =
-      ConversionUpdater.toConversion(chunkSize) andThen { input =>
+      ConversionBanditKPITracker.toConversion(chunkSize) andThen { input =>
         input.evalMap { r =>
           bmabAlg
             .updateRewardState(featureName, r)
-            .void <* logger.debug(
-            s"Conversion updated for $featureName $r"
-          )
+            .void
         }
       }
 
     bmabAlg.runningBandits(None).flatMap { bandits =>
       bandits
         .traverse { b =>
-          val feature = b.abtest.data.feature
-          toEvent(feature).map(_ andThen updateConversion(feature))
+          toEvent(b.feature, b.kpiName).map(_ andThen updateConversion(b.feature))
         }
         .map { featurePipes => input: Stream[F, I] =>
           input.broadcastThrough(featurePipes: _*)
@@ -47,7 +43,7 @@ class ConversionUpdater[F[_]: ConcurrentEffect](
 
 }
 
-object ConversionUpdater {
+object ConversionBanditKPITracker {
   type ConversionEvent = Boolean
   val Converted = true
   val Viewed = false

@@ -13,6 +13,7 @@ import com.typesafe.config.ConfigFactory
 import lihua.dynamo.testkit.LocalDynamo
 import play.api.libs.json.Json
 import cats.implicits._
+import com.iheart.thomas.bandit.tracking.EventLogger
 
 import concurrent.duration._
 
@@ -61,6 +62,7 @@ object Resources {
           implicit val (abtestDAO, featureDAO, kpiDAO) = daos
           lazy val refreshPeriod = 0.seconds
           implicit val isd = sd
+          implicit val logger = EventLogger.noop[IO]
           AbtestAlg.defaultResource[IO](refreshPeriod).map { implicit abtestAlg =>
             implicit val ss = SampleSettings.default
             implicit val rng = RNG.default

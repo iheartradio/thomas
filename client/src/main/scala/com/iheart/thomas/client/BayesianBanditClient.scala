@@ -25,6 +25,7 @@ object BayesianBanditClient {
       rootUrl: String
     ): BayesianMABAlg[F, Conversions] =
     new PlayJsonHttp4sClient[F] with BayesianMABAlg[F, Conversions] {
+
       import org.http4s.{Method, Uri}
       import Method._
 
@@ -32,7 +33,7 @@ object BayesianBanditClient {
         c.expect(
           POST(
             banditSpec,
-            Uri.unsafeFromString(rootUrl + "/features/")
+            Uri.unsafeFromString(rootUrl + "/features")
           )
         )
 
@@ -56,17 +57,20 @@ object BayesianBanditClient {
         c.expect(
           PUT(
             Uri.unsafeFromString(
-              rootUrl + "/features/" + featureName + "/abtest"
+              rootUrl + "/features/" + featureName + "/reallocate"
             )
           )
         )
+
+      def getAll: F[Vector[BayesianMAB[Conversions]]] =
+        c.expect(rootUrl + "/features")
 
       def runningBandits(
           asOf: Option[OffsetDateTime]
         ): F[Vector[BayesianMAB[Conversions]]] =
         c.expect(
           Uri.unsafeFromString(
-            rootUrl + "/features/"
+            rootUrl + "/features/running"
           ) +?? ("asOf", asOf.map(
             _.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
           ))

@@ -8,7 +8,7 @@ import cats.effect.scalatest.AsyncIOSpec
 import com.iheart.thomas.{FeatureName, dynamo, mongo}
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.kafka.BanditUpdater.KafkaConfig
-import com.iheart.thomas.stream.ConversionUpdater.ConversionEvent
+import com.iheart.thomas.stream.ConversionBanditKPITracker.ConversionEvent
 import com.iheart.thomas.testkit.Resources
 import com.typesafe.config.{ConfigFactory, ConfigResolveOptions}
 import org.scalatest.matchers.should.Matchers
@@ -21,12 +21,14 @@ import com.iheart.thomas.analysis.{
   BetaKPIDistribution,
   Conversions,
   KPIApi,
+  KPIName,
   Probability,
   SampleSettings
 }
 import com.iheart.thomas.bandit.{BanditSpec, BanditStateDAO}
 import com.iheart.thomas.bandit.bayesian.{ArmState, ConversionBMABAlg}
-import com.iheart.thomas.stream.ConversionUpdater
+import com.iheart.thomas.bandit.tracking.EventLogger
+import com.iheart.thomas.stream.ConversionBanditKPITracker
 import com.stripe.rainier.sampler.RNG
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -62,7 +64,7 @@ class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
 
   val server = "localhost:" + embeddedKafkaConfig.kafkaPort
 
-  val toEvent = (fn: FeatureName) =>
+  val toEvent = (fn: FeatureName, _: KPIName) =>
     IO.pure { (input: Stream[IO, (FeatureName, ArmName, ConversionEvent)]) =>
       input.collect {
         case (`fn`, am, ce) => (am, ce)
@@ -75,6 +77,7 @@ class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
     betaPrior = 100000
   )
 
+  implicit val logger = EventLogger.noop[IO]
   val updaterR =
     Resources.mangoDAOs.flatMap { implicit daos =>
       Resources.localDynamoR
@@ -122,7 +125,7 @@ class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
             for {
               _ <- updater.conversionBMABAlg.init(spec)
               _ <- ioTimer.sleep(1.second) //wait for spec to start
-              _ <- updater.consumeKafka
+              _ <- updater.consumer
                 .interruptAfter(10.seconds)
                 .compile
                 .toVector

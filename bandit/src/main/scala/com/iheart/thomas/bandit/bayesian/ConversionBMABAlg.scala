@@ -10,7 +10,7 @@ import com.iheart.thomas.abtest.model.{AbtestSpec, Group}
 import com.iheart.thomas.analysis._
 import com.stripe.rainier.sampler.RNG
 import henkan.convert.Syntax._
-
+import tracking._
 object ConversionBMABAlg {
 
   implicit def default[F[_]](
@@ -26,7 +26,8 @@ object ConversionBMABAlg {
         BetaKPIDistribution,
         Conversions
       ],
-      nowF: F[OffsetDateTime]
+      nowF: F[OffsetDateTime],
+      log: EventLogger[F]
     ): ConversionBMABAlg[F] =
     new BayesianMABAlg[F, Conversions] {
 
@@ -39,8 +40,9 @@ object ConversionBMABAlg {
         for {
           cs <- currentState(featureName)
           toUpdate = cs.state.updateArms(rewards)
-          _ <- stateDao.upsert(toUpdate)
-        } yield toUpdate
+          updated <- stateDao.upsert(toUpdate)
+          _ <- log(Event.BanditKPIUpdated(updated))
+        } yield updated
       }
 
       def init(banditSpec: BanditSpec): F[BayesianMAB[Conversions]] = {
@@ -84,7 +86,17 @@ object ConversionBMABAlg {
           ).mapN(BayesianMAB.apply _)
       }
 
+      def getAll: F[Vector[BayesianMAB[Conversions]]] =
+        findAll(None)
+
       def runningBandits(
+          at: Option[OffsetDateTime]
+        ): F[Vector[BayesianMAB[Conversions]]] =
+        nowF.flatMap { now =>
+          findAll(at.orElse(Some(now)))
+        }
+
+      def findAll(
           time: Option[OffsetDateTime]
         ): F[Vector[BayesianMAB[Conversions]]] =
         abtestAPI
@@ -99,16 +111,30 @@ object ConversionBMABAlg {
           })
 
       def reallocate(featureName: FeatureName): F[BayesianMAB[Conversions]] = {
+        import Event.ConversionBanditReallocation._
         for {
           current <- currentState(featureName)
           kpi <- kpiAPI.getSpecific[BetaKPIDistribution](
             current.state.kpiName
           )
           BayesianMAB(abtest, state) = current
+          _ <- log(Initiated(state))
           possibilities <- assessmentAlg.assessOptimumGroup(
             kpi,
             state.rewardState
           )
+          newState <- stateDao.upsert(
+            state.copy(
+              arms = state.arms.map(
+                arm =>
+                  arm.copy(
+                    likelihoodOptimum =
+                      possibilities.getOrElse(arm.name, arm.likelihoodOptimum)
+                  )
+              )
+            )
+          )
+          _ <- log(Calculated(state))
           now <- nowF
           abtest <- abtestAPI.continue(
             abtest.data
@@ -125,7 +151,8 @@ object ConversionBMABAlg {
                 }
               )
           )
-        } yield BayesianMAB(abtest, state)
+          _ <- log(Reallocated(abtest.data))
+        } yield BayesianMAB(abtest, newState)
 
       }
 

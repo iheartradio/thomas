@@ -28,6 +28,9 @@ case class BanditState[R](
       )
     })
 
+  def getArm(armName: ArmName): Option[ArmState[R]] =
+    arms.find(_.name === armName)
+
 }
 
 case class ArmState[R](

@@ -3,11 +3,11 @@ package com.iheart.thomas.stream
 import cats.effect.IO
 import fs2.Stream
 import org.scalatest.matchers.should.Matchers
-import ConversionUpdater.{Converted, Viewed}
+import ConversionBanditKPITracker.{Converted, Viewed}
 import cats.effect.scalatest.AsyncIOSpec
 import com.iheart.thomas.analysis.Conversions
 
-class ConversionUpdaterSuite extends AsyncIOSpec with Matchers {
+class ConversionBanditKPITrackerSuite extends AsyncIOSpec with Matchers {
   "toConversion" - {
     "count conversions per arm" in {
       val input = Stream.fromIterator[IO](
@@ -20,7 +20,7 @@ class ConversionUpdaterSuite extends AsyncIOSpec with Matchers {
           "B" -> Converted
         ).iterator
       )
-      ConversionUpdater
+      ConversionBanditKPITracker
         .toConversion[IO](10)(input)
         .compile
         .toList
