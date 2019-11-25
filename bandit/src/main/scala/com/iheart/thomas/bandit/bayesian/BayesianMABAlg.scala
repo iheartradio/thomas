@@ -7,6 +7,8 @@ import cats.implicits._
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.bandit.`package`.ArmName
+import com.iheart.thomas.bandit.tracking.Event.ConversionBanditReallocation.ReallocationAllRunningTriggered
+import com.iheart.thomas.bandit.tracking.EventLogger
 
 /**
   * Abtest based Bayesian Multi Arm Bandit Algebra
@@ -33,10 +35,12 @@ trait BayesianMABAlg[F[_], R] {
 
 object BayesianMABAlg {
   implicit class BayesianMABAlgExtension[F[_]: Monad, R](
-      private val alg: BayesianMABAlg[F, R]) {
+      private val alg: BayesianMABAlg[F, R]
+    )(implicit log: EventLogger[F]) {
     def reallocateAllRunning: F[Vector[BayesianMAB[R]]] =
-      alg.runningBandits(None).flatMap { bandits =>
-        bandits.traverse(b => alg.reallocate(b.feature))
-      }
+      log(ReallocationAllRunningTriggered) *>
+        alg.runningBandits(None).flatMap { bandits =>
+          bandits.traverse(b => alg.reallocate(b.feature))
+        }
   }
 }
