@@ -14,6 +14,8 @@ object Event {
     case class Calculated(newState: BanditState[Conversions]) extends Event
 
     case class Reallocated(test: Abtest) extends Event
+
+    case object ReallocationAllRunningTriggered extends Event
   }
 
   case class BanditKPIUpdated[R](state: BanditState[R]) extends Event
