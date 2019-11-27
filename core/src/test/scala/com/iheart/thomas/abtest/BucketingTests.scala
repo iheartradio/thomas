@@ -164,6 +164,28 @@ class BucketingTests extends BucketingTestsBase {
     }
   }
 
+  test("update ranges avoids fragmentation") {
+    val oldRanges = Map(
+      "A" -> List(
+        GroupRange(0, 0.2),
+        GroupRange(0.21, 0.52),
+        GroupRange(0.78, 0.81)
+      ),
+      "B" -> List(
+        GroupRange(0.2, 0.21),
+        GroupRange(0.52, 0.78),
+        GroupRange(0.81, 1)
+      )
+    )
+
+    val newGroups = List(Group("A", 0.3), Group("B", 0.7))
+
+    Bucketing.newRanges(newGroups, oldRanges) shouldBe Map(
+      "A" -> List(GroupRange(0.21, 0.51)),
+      "B" -> List(GroupRange(0, 0.21), GroupRange(0.51, 1))
+    )
+  }
+
   test("update ranges that is a consistent continuation") {
     implicit val groupTransitionGen
         : Gen[(GroupRanges, List[Group], List[Group], List[Group])] = for {
