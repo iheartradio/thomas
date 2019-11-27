@@ -17,6 +17,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
+import scala.math.BigDecimal
+import scala.math.BigDecimal.RoundingMode
 import scala.util.Random
 
 trait BucketingTestsBase
@@ -29,7 +31,7 @@ trait BucketingTestsBase
       groups: List[Group]
     ): Unit =
     groups.foreach { group =>
-      sizeOf(ranges(group.name)) should be(group.size +- 0.001)
+      sizeOf(ranges(group.name)) should be(group.size +- 0.000001)
     }
 
   def assertGroupDistribution(
@@ -279,6 +281,7 @@ class BucketingRegression extends BucketingTestsBase {
 }
 
 object BucketingTests {
+  import Bucketing.{defaultPrecision, roundUpToAvoidAccidentalDecimals}
 
   def sizeOf(ranges: List[GroupRange]): GroupSize = ranges.foldMap(_.size)
 
@@ -309,9 +312,12 @@ object BucketingTests {
       if (length == 1) const(List(GroupRange(start, 1d)))
       else
         for {
-          end <- choose(start, 0.9999999)
+          endRaw <- choose(start + 0.0001, 0.9999)
+          end = if (endRaw > 0.9995) 1d
+          else roundUpToAvoidAccidentalDecimals(endRaw, 4)
           head = GroupRange(start, end)
-          tail <- loop(end, length - 1)
+          tail <- if (end == 1) Gen.const[List[GroupRange]](Nil)
+          else loop(end, length - 1)
         } yield head :: tail
     loop(0, length)
   }

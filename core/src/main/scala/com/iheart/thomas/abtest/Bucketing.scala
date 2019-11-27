@@ -52,7 +52,22 @@ private[thomas] object Bucketing {
       }
       .reverse
       .filter(_.size > 0)
+      .map(
+        r =>
+          GroupRange(
+            roundUpToAvoidAccidentalDecimals(r.start),
+            roundUpToAvoidAccidentalDecimals(r.end)
+          )
+      )
   }
+
+  val defaultPrecision = 7
+
+  def roundUpToAvoidAccidentalDecimals(
+      d: Double,
+      scale: Int = defaultPrecision
+    ) =
+    BigDecimal(d).setScale(scale, BigDecimal.RoundingMode.CEILING).toDouble
 
   def newRanges(
       groups: List[Group],
@@ -111,7 +126,8 @@ private[thomas] object Bucketing {
               rest: GroupSize,
               rangesLeft: List[GroupRange]
             ): List[GroupRange] = {
-            if (rest < 1e-10) Nil //needed due to double accuracy
+            if (rest < 1d / Math.pow(10d, defaultPrecision.toDouble - 1))
+              Nil //needed due to double accuracy
             else
               rangesLeft match {
                 case head :: tail =>
