@@ -190,6 +190,33 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
 
   }
 
+  test("reallocate clean up last tests") {
+    val spec = BanditSpec(
+      feature = "A_new_Feature",
+      arms = List("A", "B"),
+      author = "Test Runner",
+      start = OffsetDateTime.now,
+      title = "for integration tests",
+      kpiName = kpi.name
+    )
+
+    val currentTests = withAPI { (api, _, abtestAlg) =>
+      for {
+        _ <- api.init(spec)
+        _ <- api.reallocate(spec.feature)
+        _ <- api.reallocate(spec.feature)
+        _ <- api.reallocate(spec.feature)
+        _ <- timer.sleep(300.milliseconds)
+        _ <- api.reallocate(spec.feature, Some(50.milliseconds))
+        tests <- abtestAlg.getTestsByFeature(spec.feature)
+
+      } yield tests
+    }
+
+    currentTests.size should be < (3)
+
+  }
+
   test("reallocate reallocate the size of the abtest groups") {
     val spec = BanditSpec(
       feature = "A_new_Feature",

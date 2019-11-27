@@ -9,13 +9,15 @@ import cats.effect.Effect
 import _root_.play.api.mvc.{AbstractController, ControllerComponents, Result}
 import _root_.play.api.libs.json._
 import cats.effect.implicits._
-import com.iheart.thomas.analysis.{Conversions}
+import com.iheart.thomas.analysis.Conversions
 import com.iheart.thomas.bandit.bayesian._
 import bandit.Formats._
 import cats.implicits._
 
 import scala.concurrent.Future
 import lihua.mongo.JsonFormats._
+
+import scala.concurrent.duration.FiniteDuration
 
 class BayesianMABController[F[_]](
     api: ConversionBMABAlg[F],
@@ -74,8 +76,16 @@ class BayesianMABController[F[_]](
       .flatMap(api.runningBandits)
   }
 
-  def reallocate(featureName: FeatureName) = action {
-    api.reallocate(featureName)
+  def reallocate(
+      featureName: FeatureName,
+      historyRetentionSeconds: Option[Long]
+    ) = action {
+    api.reallocate(
+      featureName,
+      historyRetentionSeconds.map(
+        s => FiniteDuration(s, concurrent.duration.SECONDS)
+      )
+    )
   }
 
 }

@@ -131,7 +131,9 @@ class BanditService[F[_]: Async] private (
 
 object BanditService {
 
-  case class BanditRunnerConfig(repeat: FiniteDuration)
+  case class BanditRunnerConfig(
+      repeat: FiniteDuration,
+      historyRetention: Option[FiniteDuration])
   case class BanditServiceConfig(
       kafka: KafkaConfig,
       dynamo: ClientConfig,
@@ -167,7 +169,7 @@ object BanditService {
       .liftF(BanditServiceConfig.load(configResource))
       .flatMap {
         case (bsc, root) =>
-          create[F](bsc.kafka, root, bsc.dynamo, bsc.runner.repeat)
+          create[F](bsc.kafka, root, bsc.dynamo, bsc.runner)
       }
 
   }
@@ -177,19 +179,19 @@ object BanditService {
     ](kafkaConfig: KafkaConfig,
       mongoConfig: Config,
       dynamoConfig: dynamo.ClientConfig,
-      reallocationRepeatDuration: FiniteDuration
+      bcs: BanditRunnerConfig
     )(implicit ex: ExecutionContext
     ): Resource[F, BanditService[F]] =
     dynamo.client[F](dynamoConfig).flatMap { implicit dc =>
       mongo.daosResource(mongoConfig).flatMap { implicit daos =>
-        create[F](kafkaConfig, reallocationRepeatDuration)
+        create[F](kafkaConfig, bcs)
       }
     }
 
   def create[
       F[_]: ConcurrentEffect: Timer: ContextShift: mongo.DAOs: MessageProcessor: EventLogger
     ](kafkaConfig: KafkaConfig,
-      reallocationRepeatDuration: FiniteDuration
+      bcs: BanditRunnerConfig
     )(implicit ex: ExecutionContext,
       amazonClient: AmazonDynamoDBAsync
     ): Resource[F, BanditService[F]] = {
@@ -197,13 +199,18 @@ object BanditService {
     ConversionBMABAlgResource[F].flatMap { implicit conversionBMAB =>
       mau.Repeating
         .resource[F](
-          conversionBMAB.reallocateAllRunning.void,
-          reallocationRepeatDuration,
+          conversionBMAB.reallocateAllRunning(bcs.historyRetention).void,
+          bcs.repeat,
           true
         )
         .evalMap { repeating =>
           BanditUpdater.create[F](kafkaConfig).map { bu =>
-            new BanditService[F](repeating, conversionBMAB, KPIApi.default[F], bu)
+            new BanditService[F](
+              repeating,
+              conversionBMAB,
+              KPIApi.default[F],
+              bu
+            )
           }
         }
     }
