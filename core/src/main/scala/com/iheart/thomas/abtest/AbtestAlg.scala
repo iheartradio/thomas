@@ -118,6 +118,11 @@ trait AbtestAlg[F[_]] {
       tags: List[Tag]
     ): F[Map[FeatureName, GroupName]]
 
+  def cleanUp(
+      featureName: FeatureName,
+      historyBefore: OffsetDateTime
+    ): F[Int]
+
   def getGroupsWithMeta(query: UserGroupQuery): F[UserGroupQueryResult]
 
   def addGroupMetas(
@@ -444,6 +449,15 @@ final class DefaultAbtestAlg[F[_]](
           metas
         )
       }
+    }
+
+  def cleanUp(
+      featureName: FeatureName,
+      before: OffsetDateTime
+    ): F[Int] =
+    getTestsByFeature(featureName).flatMap { tests =>
+      val toRemove = tests.filter(_.data.end.fold(false)(_.isBefore(before)))
+      toRemove.traverse(t => delete(t._id)).map(_.size)
     }
 
   /**

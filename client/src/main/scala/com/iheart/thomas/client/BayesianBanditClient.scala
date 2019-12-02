@@ -14,6 +14,7 @@ import org.http4s.QueryParamEncoder
 import org.http4s.client.blaze.BlazeClientBuilder
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 
 object BayesianBanditClient {
 
@@ -53,12 +54,15 @@ object BayesianBanditClient {
           )
         )
 
-      def reallocate(featureName: FeatureName): F[BayesianMAB[Conversions]] =
+      def reallocate(
+          featureName: FeatureName,
+          historyRetention: Option[FiniteDuration]
+        ): F[BayesianMAB[Conversions]] =
         c.expect(
           PUT(
             Uri.unsafeFromString(
               rootUrl + "/features/" + featureName + "/reallocate"
-            )
+            ) +?? ("historyRetentionSeconds", historyRetention.map(_.toSeconds))
           )
         )
 
