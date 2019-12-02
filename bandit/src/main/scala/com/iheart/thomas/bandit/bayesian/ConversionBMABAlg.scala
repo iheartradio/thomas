@@ -11,6 +11,8 @@ import com.iheart.thomas.analysis._
 import com.stripe.rainier.sampler.RNG
 import henkan.convert.Syntax._
 import tracking._
+
+import scala.concurrent.duration.FiniteDuration
 object ConversionBMABAlg {
 
   implicit def default[F[_]](
@@ -110,7 +112,10 @@ object ConversionBMABAlg {
               .map(s => BayesianMAB(abtest, s))
           })
 
-      def reallocate(featureName: FeatureName): F[BayesianMAB[Conversions]] = {
+      def reallocate(
+          featureName: FeatureName,
+          cleanUpBefore: Option[FiniteDuration]
+        ): F[BayesianMAB[Conversions]] = {
         import Event.ConversionBanditReallocation._
         for {
           current <- currentState(featureName)
@@ -150,6 +155,15 @@ object ConversionBMABAlg {
                   )
                 }
               )
+          )
+          _ <- cleanUpBefore.fold(F.unit)(
+            before =>
+              abtestAPI
+                .cleanUp(
+                  featureName,
+                  now.minus(java.time.Duration.ofMillis(before.toMillis))
+                )
+                .void
           )
           _ <- log(Reallocated(abtest.data))
         } yield BayesianMAB(abtest, newState)

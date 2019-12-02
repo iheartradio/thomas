@@ -10,6 +10,8 @@ import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.tracking.Event.ConversionBanditReallocation.ReallocationAllRunningTriggered
 import com.iheart.thomas.bandit.tracking.EventLogger
 
+import scala.concurrent.duration.FiniteDuration
+
 /**
   * Abtest based Bayesian Multi Arm Bandit Algebra
   * @tparam F
@@ -29,7 +31,10 @@ trait BayesianMABAlg[F[_], R] {
 
   def runningBandits(time: Option[OffsetDateTime] = None): F[Vector[BayesianMAB[R]]]
 
-  def reallocate(featureName: FeatureName): F[BayesianMAB[R]]
+  def reallocate(
+      featureName: FeatureName,
+      historyRetention: Option[FiniteDuration] = None
+    ): F[BayesianMAB[R]]
 
 }
 
@@ -37,10 +42,12 @@ object BayesianMABAlg {
   implicit class BayesianMABAlgExtension[F[_]: Monad, R](
       private val alg: BayesianMABAlg[F, R]
     )(implicit log: EventLogger[F]) {
-    def reallocateAllRunning: F[Vector[BayesianMAB[R]]] =
+    def reallocateAllRunning(
+        historyRetention: Option[FiniteDuration]
+      ): F[Vector[BayesianMAB[R]]] =
       log(ReallocationAllRunningTriggered) *>
         alg.runningBandits(None).flatMap { bandits =>
-          bandits.traverse(b => alg.reallocate(b.feature))
+          bandits.traverse(b => alg.reallocate(b.feature, historyRetention))
         }
   }
 }
