@@ -3,7 +3,7 @@ package mongo
 
 import cats.effect.{Async, IO}
 import lihua.mongo.EitherTDAOFactory
-import reactivemongo.api.indexes.{Index, IndexType}
+import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.collection.JSONCollection
 import cats.implicits._
 import com.iheart.thomas.analysis.KPIDistribution
@@ -18,7 +18,7 @@ class KPIDistributionDAOFactory[F[_]: Async](implicit ec: ExecutionContext)
         IO(
           collection.indexesManager
             .ensure(
-              Index(
+              index(
                 Seq(
                   ("name", IndexType.Descending)
                 )
