@@ -6,11 +6,11 @@ package com.iheart
 package thomas
 package mongo
 
-import cats.effect.{IO, Async}
+import cats.effect.{Async, IO}
 import cats.implicits._
 import com.iheart.thomas.abtest.model._
 import lihua.mongo.EitherTDAOFactory
-import reactivemongo.api.indexes.{Index, IndexType}
+import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.collection.JSONCollection
 import abtest.Formats._
 
@@ -24,7 +24,7 @@ class AbtestDAOFactory[F[_]: Async](implicit ec: ExecutionContext)
     IO.fromFuture(
         IO(
           collection.indexesManager.ensure(
-            Index(
+            index(
               Seq(
                 ("start", IndexType.Descending),
                 ("end", IndexType.Descending)
@@ -32,7 +32,7 @@ class AbtestDAOFactory[F[_]: Async](implicit ec: ExecutionContext)
             )
           ) *> collection.indexesManager
             .ensure(
-              Index(
+              index(
                 Seq(
                   ("feature", IndexType.Ascending)
                 )

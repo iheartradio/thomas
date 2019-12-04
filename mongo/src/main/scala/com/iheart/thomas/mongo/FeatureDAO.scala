@@ -7,12 +7,12 @@ package com.iheart
 package thomas
 package mongo
 
-import cats.effect.{IO, Async}
+import cats.effect.{Async, IO}
 import cats.implicits._
 import com.iheart.thomas.abtest.model._
 import abtest.Formats._
 import lihua.mongo.EitherTDAOFactory
-import reactivemongo.api.indexes.{Index, IndexType}
+import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.collection.JSONCollection
 
 import scala.concurrent.ExecutionContext
@@ -26,7 +26,7 @@ class FeatureDAOFactory[F[_]: Async](implicit ec: ExecutionContext)
         IO(
           collection.indexesManager
             .ensure(
-              Index(
+              index(
                 Seq(
                   ("name", IndexType.Ascending)
                 ),
