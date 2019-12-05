@@ -11,6 +11,7 @@ import java.time.OffsetDateTime
 import cats.implicits._
 import _root_.play.api.libs.json.JsObject
 import lihua.EntityId
+import java.time.Instant
 
 package object model {
   type TestId = EntityId
@@ -26,8 +27,6 @@ package object model {
 }
 
 package model {
-
-  import java.time.Instant
 
   import cats.Eq
 
