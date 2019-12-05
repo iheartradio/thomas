@@ -68,7 +68,7 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
     plot1D(result("A").indicatorSample.coerce[List[Double]])
 
     result("A").expectedEffect.d shouldBe (0.15 +- 0.2)
-    result("A").probabilityOfImprovement.p shouldBe (0.9 +- 0.4)
+    result("A").probabilityOfImprovement.p shouldBe (0.9 +- 0.5)
     result("A").riskOfUsing.d shouldBe (0.1 +- 0.3)
 
   }

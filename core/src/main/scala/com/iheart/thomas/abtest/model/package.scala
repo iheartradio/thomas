@@ -27,6 +27,8 @@ package object model {
 
 package model {
 
+  import java.time.Instant
+
   import cats.Eq
 
   /**
@@ -155,6 +157,7 @@ package model {
       meta: UserMeta = Map())
 
   case class UserGroupQueryResult(
+      at: Instant,
       groups: Map[FeatureName, GroupName],
       metas: Map[FeatureName, GroupMeta])
 }
