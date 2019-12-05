@@ -11,6 +11,7 @@ import java.time.OffsetDateTime
 import cats.implicits._
 import _root_.play.api.libs.json.JsObject
 import lihua.EntityId
+import java.time.Instant
 
 package object model {
   type TestId = EntityId
@@ -155,6 +156,7 @@ package model {
       meta: UserMeta = Map())
 
   case class UserGroupQueryResult(
+      at: Instant,
       groups: Map[FeatureName, GroupName],
       metas: Map[FeatureName, GroupMeta])
 }

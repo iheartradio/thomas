@@ -5,7 +5,7 @@
 
 package com.iheart.thomas
 package play
-import java.time.OffsetDateTime
+import java.time.{Instant, OffsetDateTime}
 
 import abtest._
 import javax.inject._
@@ -58,7 +58,7 @@ class APIProviderBase(
 
   implicit val refreshRef =
     RefreshRef
-      .create[IO, Vector[(lihua.Entity[Abtest], Feature)]](_ => IO.unit)
+      .create[IO, (Vector[(lihua.Entity[Abtest], Feature)], Instant)](_ => IO.unit)
       .unsafeRunSync()
 
   lifecycle.addStopHook(() => refreshRef.cancel.unsafeToFuture())

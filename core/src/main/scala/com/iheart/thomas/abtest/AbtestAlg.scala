@@ -6,7 +6,7 @@
 package com.iheart.thomas
 package abtest
 
-import java.time.OffsetDateTime
+import java.time.{Instant, OffsetDateTime}
 
 import _root_.play.api.libs.json._
 import cats._
@@ -160,7 +160,7 @@ object AbtestAlg {
       idSelector: EntityId => JsObject
     ): Resource[F, AbtestAlg[F]] =
     RefreshRef
-      .resource[F, Vector[(lihua.Entity[Abtest], Feature)]]
+      .resource[F, (Vector[(lihua.Entity[Abtest], Feature)], Instant)]
       .map { implicit rr =>
         implicit val nowF = F.delay(OffsetDateTime.now)
         new DefaultAbtestAlg[F](refreshPeriod)
@@ -180,9 +180,9 @@ final class DefaultAbtestAlg[F[_]](
       Feature,
       JsObject
     ],
-    refreshRef: RefreshRef[F, Vector[
-      (Entity[Abtest], Feature)
-    ]],
+    refreshRef: RefreshRef[F, (Vector[
+          (Entity[Abtest], Feature)
+        ], Instant)],
     nowF: F[OffsetDateTime],
     F: MonadThrowable[F],
     eligibilityControl: EligibilityControl[F],
@@ -207,18 +207,20 @@ final class DefaultAbtestAlg[F[_]](
       } yield created
     }
 
-  def getAllTestsCached(
+  def getAllTestsCachedWithAt(
       time: Option[OffsetDateTime]
-    ): F[Vector[(Entity[Abtest], Feature)]] =
+    ): F[(Vector[(Entity[Abtest], Feature)], Instant)] =
     time.fold(
       refreshRef.getOrFetch(refreshPeriod, 30.minutes)(
-        nowF.flatMap(getAllTestsWithFeatures)
+        nowF.flatMap(t => getAllTestsWithFeatures(t).map((_, t.toInstant)))
       ) {
-        case e => F.unit
+        case e => F.unit //todo: add logging here for Abtest retrieval failure
       }
-    )(
-      getAllTestsWithFeatures(_)
-    )
+    )(t => getAllTestsWithFeatures(t).map((_, t.toInstant)))
+
+  def getAllTestsCached(
+      time: Option[OffsetDateTime]
+    ): F[Vector[(Entity[Abtest], Feature)]] = getAllTestsCachedWithAt(time).map(_._1)
 
   def getAllTestsWithFeatures(
       ofTime: OffsetDateTime
@@ -439,15 +441,17 @@ final class DefaultAbtestAlg[F[_]](
 
   def getGroupsWithMeta(query: UserGroupQuery): F[UserGroupQueryResult] =
     validate(query) >> {
-      getGroupAssignmentsOf(query).map { groupAssignments =>
-        val metas = groupAssignments.mapFilter {
-          case (groupName, test) =>
-            test.groupMetas.get(groupName)
-        }
-        UserGroupQueryResult(
-          toGroups(groupAssignments),
-          metas
-        )
+      getGroupAssignmentsOfWithAt(query).map {
+        case (groupAssignments, at) =>
+          val metas = groupAssignments.mapFilter {
+            case (groupName, test) =>
+              test.groupMetas.get(groupName)
+          }
+          UserGroupQueryResult(
+            at,
+            toGroups(groupAssignments),
+            metas
+          )
       }
     }
 
@@ -616,12 +620,18 @@ final class DefaultAbtestAlg[F[_]](
   private def getGroupAssignmentsOf(
       query: UserGroupQuery
     ): F[Map[FeatureName, (GroupName, Abtest)]] =
+    getGroupAssignmentsOfWithAt(query).map(_._1)
+
+  private def getGroupAssignmentsOfWithAt(
+      query: UserGroupQuery
+    ): F[(Map[FeatureName, (GroupName, Abtest)], Instant)] =
     for {
-      data <- getAllTestsCached(query.at)
+      p <- getAllTestsCachedWithAt(query.at)
+      (data, at) = p
       testFeatures = data.map {
         case (Entity(_, test), feature) => (test, feature)
       }
-    } yield AssignGroups.assign[Id](testFeatures, query)
+    } yield (AssignGroups.assign[Id](testFeatures, query), at)
 
   private def doCreate(
       newSpec: AbtestSpec,
