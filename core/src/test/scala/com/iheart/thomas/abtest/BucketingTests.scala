@@ -356,8 +356,8 @@ object BucketingTests {
       name,
       "author",
       feature,
-      tenDayAgo,
-      Some(tenDayAfter),
+      tenDayAgo.toInstant,
+      Some(tenDayAfter.toInstant),
       groups,
       ranges
     )

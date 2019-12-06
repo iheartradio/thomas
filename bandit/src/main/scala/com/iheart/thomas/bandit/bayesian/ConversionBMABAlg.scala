@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package bandit
 package bayesian
-import java.time.OffsetDateTime
+import java.time.{Instant, OffsetDateTime, ZoneOffset}
 
 import cats.Monoid
 import cats.implicits._
@@ -28,7 +28,7 @@ object ConversionBMABAlg {
         BetaKPIDistribution,
         Conversions
       ],
-      nowF: F[OffsetDateTime],
+      nowF: F[Instant],
       log: EventLogger[F]
     ): ConversionBMABAlg[F] =
     new BayesianMABAlg[F, Conversions] {
@@ -95,7 +95,7 @@ object ConversionBMABAlg {
           at: Option[OffsetDateTime]
         ): F[Vector[BayesianMAB[Conversions]]] =
         nowF.flatMap { now =>
-          findAll(at.orElse(Some(now)))
+          findAll(at.orElse(Some(now.atOffset(ZoneOffset.UTC))))
         }
 
       def findAll(
@@ -140,12 +140,13 @@ object ConversionBMABAlg {
             )
           )
           _ <- log(Calculated(state))
-          now <- nowF
+          now <- nowF.map(_.atOffset(ZoneOffset.UTC))
           abtest <- abtestAPI.continue(
             abtest.data
               .to[AbtestSpec]
               .set(
                 start = now,
+                end = abtest.data.end.map(_.atOffset(ZoneOffset.UTC)),
                 groups = abtest.data.groups.map { g =>
                   g.copy(
                     size = possibilities
@@ -161,7 +162,8 @@ object ConversionBMABAlg {
               abtestAPI
                 .cleanUp(
                   featureName,
-                  now.minus(java.time.Duration.ofMillis(before.toMillis))
+                  now
+                    .minus(java.time.Duration.ofMillis(before.toMillis))
                 )
                 .void
           )

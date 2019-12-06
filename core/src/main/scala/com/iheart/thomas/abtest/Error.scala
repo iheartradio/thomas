@@ -6,7 +6,7 @@
 package com.iheart.thomas
 package abtest
 
-import java.time.OffsetDateTime
+import java.time.Instant
 
 import cats.data.NonEmptyList
 import model._
@@ -39,7 +39,7 @@ object Error {
   case class DBException(e: Throwable) extends Error
   case class DBLastError(override val getMessage: String) extends Error
 
-  case class CannotToChangePastTest(start: OffsetDateTime) extends Error {
+  case class CannotToChangePastTest(start: Instant) extends Error {
     override def getMessage = s"Cannot change tests that are already started $start"
   }
 
@@ -59,12 +59,12 @@ object Error {
   case object InvalidAlternativeIdName extends ValidationError
   case class GroupNameDoesNotExist(name: GroupName) extends ValidationError
   case class ContinuationGap(
-      lastEnd: OffsetDateTime,
-      scheduledStart: OffsetDateTime)
+      lastEnd: Instant,
+      scheduledStart: Instant)
       extends ValidationError
   case class ContinuationBefore(
-      lasStart: OffsetDateTime,
-      scheduledStart: OffsetDateTime)
+      lasStart: Instant,
+      scheduledStart: Instant)
       extends ValidationError
 
   case object EmptyGroups extends ValidationError

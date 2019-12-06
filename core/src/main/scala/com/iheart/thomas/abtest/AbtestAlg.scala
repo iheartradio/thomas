@@ -6,7 +6,7 @@
 package com.iheart.thomas
 package abtest
 
-import java.time.{Instant, OffsetDateTime}
+import java.time.{Instant, OffsetDateTime, ZoneOffset}
 
 import _root_.play.api.libs.json._
 import cats._
@@ -162,7 +162,7 @@ object AbtestAlg {
     RefreshRef
       .resource[F, (Vector[(lihua.Entity[Abtest], Feature)], Instant)]
       .map { implicit rr =>
-        implicit val nowF = F.delay(OffsetDateTime.now)
+        implicit val nowF = F.delay(Instant.now)
         new DefaultAbtestAlg[F](refreshPeriod)
       }
 }
@@ -183,7 +183,7 @@ final class DefaultAbtestAlg[F[_]](
     refreshRef: RefreshRef[F, (Vector[
           (Entity[Abtest], Feature)
         ], Instant)],
-    nowF: F[OffsetDateTime],
+    nowF: F[Instant],
     F: MonadThrowable[F],
     eligibilityControl: EligibilityControl[F],
     idSelector: EntityId => JsObject)
@@ -208,22 +208,23 @@ final class DefaultAbtestAlg[F[_]](
     }
 
   def getAllTestsCachedWithAt(
-      time: Option[OffsetDateTime]
+      time: Option[Instant]
     ): F[(Vector[(Entity[Abtest], Feature)], Instant)] =
     time.fold(
       refreshRef.getOrFetch(refreshPeriod, 30.minutes)(
-        nowF.flatMap(t => getAllTestsWithFeatures(t).map((_, t.toInstant)))
+        nowF.flatMap(t => getAllTestsWithFeatures(t).map((_, t)))
       ) {
         case e => F.unit //todo: add logging here for Abtest retrieval failure
       }
-    )(t => getAllTestsWithFeatures(t).map((_, t.toInstant)))
+    )(t => getAllTestsWithFeatures(t).map((_, t)))
 
   def getAllTestsCached(
       time: Option[OffsetDateTime]
-    ): F[Vector[(Entity[Abtest], Feature)]] = getAllTestsCachedWithAt(time).map(_._1)
+    ): F[Vector[(Entity[Abtest], Feature)]] =
+    getAllTestsCachedWithAt(time.map(_.toInstant)).map(_._1)
 
   def getAllTestsWithFeatures(
-      ofTime: OffsetDateTime
+      ofTime: Instant
     ): F[Vector[(Entity[Abtest], Feature)]] = {
     for {
       tests <- abTestDao.find(abtests.byTime(ofTime))
@@ -262,11 +263,11 @@ final class DefaultAbtestAlg[F[_]](
 
   def getAllTests(time: Option[OffsetDateTime]): F[Vector[Entity[Abtest]]] =
     nowF.flatMap { n =>
-      abTestDao.find(abtests.byTime(time.getOrElse(n)))
+      abTestDao.find(abtests.byTime(time.map(_.toInstant).getOrElse(n)))
     }
 
   def getAllTestsEndAfter(time: OffsetDateTime): F[Vector[Entity[Abtest]]] =
-    abTestDao.find(abtests.endTimeAfter(time))
+    abTestDao.find(abtests.endTimeAfter(time.toInstant))
 
   def getTestsByFeature(feature: FeatureName): F[Vector[Entity[Abtest]]] =
     abTestDao
@@ -276,7 +277,7 @@ final class DefaultAbtestAlg[F[_]](
           t =>
             (
               t.data.start,
-              t.data.end.getOrElse(OffsetDateTime.MAX)
+              t.data.end.getOrElse(Instant.MAX)
             )
         ).reverse
       )
@@ -369,22 +370,27 @@ final class DefaultAbtestAlg[F[_]](
       ).map(toGroups)
 
   def terminate(testId: TestId): F[Option[Entity[Abtest]]] =
-    getTest(testId).flatMap { test =>
-      test.data.statusAsOf(OffsetDateTime.now) match {
+    for {
+      now <- nowF
+      test <- getTest(testId)
+      r <- test.data.statusAsOf(now) match {
         case Abtest.Status.Scheduled =>
           delete(testId).as(None)
         case Abtest.Status.InProgress =>
-          abTestDao
-            .update(
-              test
-                .lens(_.data.end)
-                .set(Some(OffsetDateTime.now))
-            )
+          nowF
+            .flatMap { now =>
+              abTestDao
+                .update(
+                  test
+                    .lens(_.data.end)
+                    .set(Some(now))
+                )
+            }
             .map(Option.apply)
         case Abtest.Status.Expired =>
           F.pure(Some(test))
       }
-    }
+    } yield r
 
   private def delete(testId: TestId): F[Unit] =
     abTestDao.remove(testId)
@@ -403,6 +409,7 @@ final class DefaultAbtestAlg[F[_]](
       auto: Boolean
     ): F[Entity[Abtest]] =
     for {
+      now <- nowF
       candidate <- abTestDao.get(testId)
       test <- candidate.data.canChange.fold(
         F.pure(candidate),
@@ -410,7 +417,10 @@ final class DefaultAbtestAlg[F[_]](
           create(
             candidate.data
               .to[AbtestSpec]
-              .set(start = OffsetDateTime.now),
+              .set(
+                start = now.atOffset(ZoneOffset.UTC),
+                end = candidate.data.end.map(_.atOffset(ZoneOffset.UTC))
+              ),
             auto = true
           )
         else
@@ -460,7 +470,8 @@ final class DefaultAbtestAlg[F[_]](
       before: OffsetDateTime
     ): F[Int] =
     getTestsByFeature(featureName).flatMap { tests =>
-      val toRemove = tests.filter(_.data.end.fold(false)(_.isBefore(before)))
+      val toRemove =
+        tests.filter(_.data.end.fold(false)(_.isBefore(before.toInstant)))
       toRemove.traverse(t => delete(t._id)).map(_.size)
     }
 
@@ -568,6 +579,8 @@ final class DefaultAbtestAlg[F[_]](
             data = updateWith
               .to[Abtest]
               .set(
+                start = updateWith.start.toInstant,
+                end = updateWith.end.map(_.toInstant),
                 ranges = toUpdate.data.ranges,
                 salt =
                   (if (updateWith.reshuffle) Option(newSalt)
@@ -588,23 +601,23 @@ final class DefaultAbtestAlg[F[_]](
     for {
       _ <- errorToF(
         continueFrom.data.end
-          .filter(_.isBefore(testSpec.start))
-          .map(ContinuationGap(_, testSpec.start))
+          .filter(_.isBefore(testSpec.start.toInstant))
+          .map(ContinuationGap(_, testSpec.start.toInstant))
       )
       _ <- errorToF(
         continueFrom.data.start
-          .isAfter(testSpec.start)
+          .isAfter(testSpec.start.toInstant)
           .option(
             ContinuationBefore(
               continueFrom.data.start,
-              testSpec.start
+              testSpec.start.toInstant
             )
           )
       )
       updatedContinueFrom <- abTestDao.update(
         continueFrom
           .lens(_.data.end)
-          .set(Some(testSpec.start))
+          .set(Some(testSpec.start.toInstant))
       )
       created <- doCreate(
         testSpec,
@@ -626,7 +639,7 @@ final class DefaultAbtestAlg[F[_]](
       query: UserGroupQuery
     ): F[(Map[FeatureName, (GroupName, Abtest)], Instant)] =
     for {
-      p <- getAllTestsCachedWithAt(query.at)
+      p <- getAllTestsCachedWithAt(query.at.map(_.toInstant))
       (data, at) = p
       testFeatures = data.map {
         case (Entity(_, test), feature) => (test, feature)
@@ -642,6 +655,8 @@ final class DefaultAbtestAlg[F[_]](
         newSpec
           .to[Abtest]
           .set(
+            start = newSpec.start.toInstant,
+            end = newSpec.end.map(_.toInstant),
             ranges = Bucketing.newRanges(
               newSpec.groups,
               inheritFrom
@@ -664,35 +679,40 @@ final class DefaultAbtestAlg[F[_]](
   }
 
   private def validateForCreation(testSpec: AbtestSpec): F[Unit] =
-    List(
-      (testSpec.groups.isEmpty).option(Error.EmptyGroups),
-      (testSpec.groups.map(_.size).sum > 1.000000001)
-        .option(
-          Error.InconsistentGroupSizes(
-            testSpec.groups.map(_.size)
+    errorsOFFToF(
+      nowF.map(
+        now =>
+          List(
+            testSpec.groups.isEmpty
+              .option(Error.EmptyGroups),
+            (testSpec.groups.map(_.size).sum > 1.000000001)
+              .option(
+                Error.InconsistentGroupSizes(
+                  testSpec.groups.map(_.size)
+                )
+              ),
+            testSpec.end
+              .filter(_.isBefore(testSpec.start))
+              .as(Error.InconsistentTimeRange),
+            testSpec.start.toInstant
+              .isBefore(now.minusSeconds(60))
+              .option(Error.CannotScheduleTestBeforeNow),
+            (testSpec.groups
+              .map(_.name)
+              .distinct
+              .length != testSpec.groups.length)
+              .option(Error.DuplicatedGroupName),
+            testSpec.groups
+              .exists(_.name.length >= 256)
+              .option(Error.GroupNameTooLong),
+            (!testSpec.feature.matches("[-_.A-Za-z0-9]+"))
+              .option(Error.InvalidFeatureName),
+            (!testSpec.alternativeIdName
+              .fold(true)(_.matches("[-_.A-Za-z0-9]+")))
+              .option(Error.InvalidAlternativeIdName)
           )
-        ),
-      testSpec.end
-        .filter(_.isBefore(testSpec.start))
-        .as(Error.InconsistentTimeRange),
-      (testSpec.start
-        .isBefore(OffsetDateTime.now.minusMinutes(1)))
-        .option(Error.CannotScheduleTestBeforeNow),
-      (testSpec.groups
-        .map(_.name)
-        .distinct
-        .length != testSpec.groups.length)
-        .option(Error.DuplicatedGroupName),
-      (testSpec.groups
-        .exists(_.name.length >= 256))
-        .option(Error.GroupNameTooLong),
-      (!testSpec.feature.matches("[-_.A-Za-z0-9]+"))
-        .option(Error.InvalidFeatureName),
-      (!testSpec.alternativeIdName
-        .fold(true)(_.matches("[-_.A-Za-z0-9]+")))
-        .option(Error.InvalidAlternativeIdName)
+      )
     )
-
   private def validate(userGroupQuery: UserGroupQuery): F[Unit] =
     userGroupQuery.userId.fold(F.unit)(validateUserId)
 
@@ -709,6 +729,11 @@ final class DefaultAbtestAlg[F[_]](
     possibleErrors.toNel
       .map[Error](ValidationErrors)
       .fold(F.pure(()))(F.raiseError)
+
+  private implicit def errorsOFFToF(
+      possibleErrorsF: F[List[Option[ValidationError]]]
+    ): F[Unit] =
+    possibleErrorsF.flatMap(errorsOToF)
 
   private implicit def errorsOToF(
       possibleErrors: List[Option[ValidationError]]

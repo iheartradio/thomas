@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package abtest
 
-import java.time.OffsetDateTime
+import java.time.{Instant, OffsetDateTime}
 
 import model._
 import lihua.{Entity, EntityDAO}
@@ -10,12 +10,15 @@ import _root_.play.api.libs.json.{JsObject, Json, Writes}
 object QueryDSL {
 
   object abtests {
-    def byTime(time: OffsetDateTime): JsObject =
+
+    def byTime(time: OffsetDateTime): JsObject = byTime(time.toInstant)
+
+    def byTime(time: Instant): JsObject =
       Json.obj(
         "start" → Json.obj("$lte" → time)
       ) ++ endTimeAfter(time)
 
-    def endTimeAfter(time: OffsetDateTime): JsObject =
+    def endTimeAfter(time: Instant): JsObject =
       Json.obj(
         "$or" -> Json.arr(
           Json.obj("end" → Json.obj("$gt" → time)),
