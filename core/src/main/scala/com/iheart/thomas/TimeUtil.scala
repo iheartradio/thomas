@@ -20,6 +20,10 @@ object TimeUtil {
       ZoneId.systemDefault()
     )
 
+  implicit class InstantOps(private val instant: Instant) extends AnyVal {
+    def toODT = instant.atOffset(ZoneOffset.UTC)
+  }
+
   def parse(value: String): Option[OffsetDateTime] =
     Try(
       ZonedDateTime

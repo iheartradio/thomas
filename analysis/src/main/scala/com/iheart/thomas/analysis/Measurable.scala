@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package analysis
 
-import java.time.OffsetDateTime
+import java.time.Instant
 
 import cats.Contravariant
 import com.iheart.thomas.abtest.model.Abtest
@@ -10,14 +10,14 @@ trait Measurable[F[_], M, K] {
   def measureAbtest(
       k: K,
       abtest: Abtest,
-      start: Option[OffsetDateTime],
-      end: Option[OffsetDateTime]
+      start: Option[Instant],
+      end: Option[Instant]
     ): F[Map[GroupName, M]]
 
   def measureHistory(
       k: K,
-      start: OffsetDateTime,
-      end: OffsetDateTime
+      start: Instant,
+      end: Instant
     ): F[M]
 }
 

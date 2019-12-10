@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package bandit
 
-import java.time.OffsetDateTime
+import java.time.{Instant, OffsetDateTime}
 
 import cats.data.EitherT
 import cats.effect.{IO, Resource}
@@ -23,6 +23,7 @@ import com.iheart.thomas.abtest.model.Abtest.Specialization.MultiArmBanditConver
 import com.iheart.thomas.abtest.model.{AbtestSpec, Group}
 import com.stripe.rainier.sampler.RNG
 import lihua.dynamo.testkit.LocalDynamo
+
 import concurrent.duration._
 
 class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
@@ -74,7 +75,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
     currentState.abtest.data.groups
       .map(_.size) shouldBe List(0.5d, 0.5d)
     currentState.abtest.data.start
-      .isBefore(OffsetDateTime.now.plusSeconds(1))
+      .isBefore(Instant.now.plusSeconds(1))
   }
 
   test("running bandits include running bandits") {

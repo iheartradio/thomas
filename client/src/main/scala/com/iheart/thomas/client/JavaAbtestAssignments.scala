@@ -6,6 +6,8 @@
 package com.iheart.thomas
 package client
 
+import java.time.{Instant, ZoneOffset}
+
 import cats.Id
 import cats.effect.{ContextShift, IO}
 import com.iheart.thomas.abtest.AssignGroups
@@ -16,7 +18,7 @@ import collection.JavaConverters._
 class JavaAbtestAssignments private (
     serviceUrl: String,
     asOf: Option[Long]) {
-  private val time = asOf.map(TimeUtil.toDateTime)
+  private val time = asOf.map(Instant.ofEpochSecond)
   import scala.concurrent.ExecutionContext.Implicits.global
   implicit val csIo: ContextShift[IO] = IO.contextShift(global)
   val testData =
@@ -33,7 +35,7 @@ class JavaAbtestAssignments private (
         testData,
         UserGroupQuery(
           Some(userId),
-          time,
+          time.map(_.atOffset(ZoneOffset.UTC)),
           tags.asScala.toList,
           meta.asScala.toMap,
           features = features.asScala.toList

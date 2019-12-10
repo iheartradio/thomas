@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package analysis
 
-import java.time.OffsetDateTime
+import java.time.Instant
 
 import cats.MonadError
 import com.iheart.thomas.abtest.Formats.j
@@ -76,8 +76,8 @@ object BetaKPIDistribution {
 
       def updateFromData(
           kpi: BetaKPIDistribution,
-          start: OffsetDateTime,
-          end: OffsetDateTime
+          start: Instant,
+          end: Instant
         ): F[(BetaKPIDistribution, Double)] =
         B.measureHistory(kpi, start, end).map { conversions =>
           (
@@ -149,8 +149,8 @@ object GammaKPIDistribution {
 
       def updateFromData(
           k: GammaKPIDistribution,
-          start: OffsetDateTime,
-          end: OffsetDateTime
+          start: Instant,
+          end: Instant
         ): F[(GammaKPIDistribution, Double)] =
         K.measureHistory(k, start, end).map { data =>
           val model = fitModel(k, data)

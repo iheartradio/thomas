@@ -1,6 +1,8 @@
 package com.iheart.thomas
 package spark
 
+import java.time.Instant
+
 import cats.Id
 import cats.effect.{ConcurrentEffect, ContextShift, IO}
 import com.iheart.thomas.abtest.AssignGroups
@@ -9,6 +11,7 @@ import com.iheart.thomas.client.AbtestClient
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{col, udf}
 import cats.implicits._
+
 import scala.concurrent.ExecutionContext
 
 class Assigner(data: Vector[(Abtest, Feature)]) extends Serializable {
@@ -62,7 +65,7 @@ object Assigner {
       asOf: Option[Long]
     )(implicit ec: ExecutionContext
     ): F[Assigner] = {
-    val time = asOf.map(TimeUtil.toDateTime)
+    val time = asOf.map(Instant.ofEpochSecond)
 
     AbtestClient.testsWithFeatures[F](url, time).map {
       new Assigner(_)

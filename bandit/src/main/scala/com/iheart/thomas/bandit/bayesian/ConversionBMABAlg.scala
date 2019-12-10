@@ -81,7 +81,7 @@ object ConversionBMABAlg {
                       Probability(0d)
                     )
                   ),
-                  start = banditSpec.start,
+                  start = banditSpec.start.toInstant,
                   kpiName = banditSpec.kpiName
                 )
               )

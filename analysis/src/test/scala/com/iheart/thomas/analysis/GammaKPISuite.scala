@@ -2,7 +2,8 @@ package com.iheart.thomas
 package analysis
 
 import java.io.File
-import java.time.OffsetDateTime
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 import cats.{Applicative, Id}
 import cats.effect.IO
@@ -14,7 +15,6 @@ import com.stripe.rainier.core.Gamma
 import com.stripe.rainier.sampler._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuiteLike
-
 import com.stripe.rainier.repl.plot1D
 import cats.implicits._
 
@@ -32,14 +32,14 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
       def measureAbtest(
           k: GammaKPIDistribution,
           abtest: Abtest,
-          start: Option[OffsetDateTime] = None,
-          end: Option[OffsetDateTime] = None
+          start: Option[Instant] = None,
+          end: Option[Instant] = None
         ): F[Map[GroupName, Measurements]] =
         abTestData.asRight
       def measureHistory(
           k: GammaKPIDistribution,
-          start: OffsetDateTime,
-          end: OffsetDateTime
+          start: Instant,
+          end: Instant
         ): F[Measurements] = historical.asRight
     }
 
@@ -134,8 +134,8 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
     val resultEither =
       GammaKPIDistribution(KPIName("test"), Normal(0.8, 0.2), Normal(6, 1))
         .updateFromData[F](
-          OffsetDateTime.now.minusDays(1),
-          OffsetDateTime.now
+          Instant.now.minus(1, ChronoUnit.DAYS),
+          Instant.now
         )
 
     resultEither.isRight shouldBe true

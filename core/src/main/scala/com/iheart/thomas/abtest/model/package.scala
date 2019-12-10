@@ -100,7 +100,11 @@ package model {
       reshuffle: Boolean = false,
       segmentRanges: List[GroupRange] = Nil,
       groupMetas: GroupMetas = Map(),
-      specialization: Option[Abtest.Specialization] = None)
+      specialization: Option[Abtest.Specialization] = None) {
+
+    val startI = start.toInstant
+    val endI = end.map(_.toInstant)
+  }
 
   object Abtest {
     sealed trait Specialization extends Serializable with Product

@@ -579,8 +579,8 @@ final class DefaultAbtestAlg[F[_]](
             data = updateWith
               .to[Abtest]
               .set(
-                start = updateWith.start.toInstant,
-                end = updateWith.end.map(_.toInstant),
+                start = updateWith.startI,
+                end = updateWith.endI,
                 ranges = toUpdate.data.ranges,
                 salt =
                   (if (updateWith.reshuffle) Option(newSalt)
@@ -601,16 +601,16 @@ final class DefaultAbtestAlg[F[_]](
     for {
       _ <- errorToF(
         continueFrom.data.end
-          .filter(_.isBefore(testSpec.start.toInstant))
-          .map(ContinuationGap(_, testSpec.start.toInstant))
+          .filter(_.isBefore(testSpec.startI))
+          .map(ContinuationGap(_, testSpec.startI))
       )
       _ <- errorToF(
         continueFrom.data.start
-          .isAfter(testSpec.start.toInstant)
+          .isAfter(testSpec.startI)
           .option(
             ContinuationBefore(
               continueFrom.data.start,
-              testSpec.start.toInstant
+              testSpec.startI
             )
           )
       )

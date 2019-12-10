@@ -2,7 +2,7 @@ package com.iheart.thomas
 package bandit
 package bayesian
 
-import java.time.OffsetDateTime
+import java.time.Instant
 
 import cats.Monoid
 import com.iheart.thomas.analysis.{KPIName, Probability}
@@ -13,7 +13,7 @@ case class BanditState[R](
     title: String,
     author: String,
     arms: List[ArmState[R]],
-    start: OffsetDateTime,
+    start: Instant,
     kpiName: KPIName) {
 
   def rewardState: Map[ArmName, R] =
