@@ -37,8 +37,8 @@ package model {
       name: TestName,
       feature: FeatureName,
       author: String,
-      start: OffsetDateTime,
-      end: Option[OffsetDateTime],
+      start: Instant,
+      end: Option[Instant],
       groups: List[Group],
       ranges: GroupRanges,
       requiredTags: List[Tag] = Nil,
@@ -49,7 +49,9 @@ package model {
       groupMetas: GroupMetas = Map(),
       specialization: Option[Abtest.Specialization] = None) {
 
-    def statusAsOf(time: OffsetDateTime): Abtest.Status =
+    def statusAsOf(time: OffsetDateTime): Abtest.Status = statusAsOf(time.toInstant)
+
+    def statusAsOf(time: Instant): Abtest.Status =
       if (time isBefore start)
         Abtest.Status.Scheduled
       else if (end.fold(false)(_.isBefore(time)))
@@ -64,7 +66,7 @@ package model {
       statusAsOf(OffsetDateTime.now) === Abtest.Status.Scheduled
 
     def endsAfter(time: OffsetDateTime) =
-      end.fold(true)(_.isAfter(time))
+      end.fold(true)(_.isAfter(time.toInstant))
 
     def idToUse(ui: UserInfo): Option[String] =
       alternativeIdName.fold(ui.userId)(ui.meta.get)
@@ -98,7 +100,11 @@ package model {
       reshuffle: Boolean = false,
       segmentRanges: List[GroupRange] = Nil,
       groupMetas: GroupMetas = Map(),
-      specialization: Option[Abtest.Specialization] = None)
+      specialization: Option[Abtest.Specialization] = None) {
+
+    val startI = start.toInstant
+    val endI = end.map(_.toInstant)
+  }
 
   object Abtest {
     sealed trait Specialization extends Serializable with Product

@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package client
 
-import java.time.OffsetDateTime
+import java.time.Instant
 
 import cats.MonadError
 import com.iheart.thomas.analysis._
@@ -15,8 +15,8 @@ import scala.util.control.NoStackTrace
 trait AnalysisAPI[F[_], K <: KPIDistribution] {
   def updateKPI(
       name: KPIName,
-      start: OffsetDateTime,
-      end: OffsetDateTime
+      start: Instant,
+      end: Instant
     ): F[(K, Double)]
 
   def saveKPI(kpi: K): F[K]
@@ -25,14 +25,14 @@ trait AnalysisAPI[F[_], K <: KPIDistribution] {
       feature: FeatureName,
       kpi: KPIName,
       baseline: GroupName,
-      start: Option[OffsetDateTime] = None,
-      end: Option[OffsetDateTime] = None
+      start: Option[Instant] = None,
+      end: Option[Instant] = None
     ): F[Map[GroupName, NumericGroupResult]]
 
   def updateOrInitKPI(
       name: KPIName,
-      start: OffsetDateTime,
-      end: OffsetDateTime,
+      start: Instant,
+      end: Instant,
       init: => K
     )(implicit F: MonadError[F, Throwable]
     ): F[(K, Double)] = {
@@ -58,8 +58,8 @@ object AnalysisAPI {
 
     def updateKPI(
         name: KPIName,
-        start: OffsetDateTime,
-        end: OffsetDateTime
+        start: Instant,
+        end: Instant
       ): F[(K, Double)] = {
       for {
         kpi <- client.getKPI(name.n).flatMap(validateKPIType)
@@ -73,8 +73,8 @@ object AnalysisAPI {
         feature: FeatureName,
         kpi: KPIName,
         baseline: GroupName,
-        start: Option[OffsetDateTime] = None,
-        end: Option[OffsetDateTime] = None
+        start: Option[Instant] = None,
+        end: Option[Instant] = None
       ): F[Map[GroupName, NumericGroupResult]] =
       for {
         kpi <- client.getKPI(kpi.n).flatMap(validateKPIType)

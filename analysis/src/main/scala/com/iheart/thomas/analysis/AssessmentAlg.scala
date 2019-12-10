@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package analysis
 
-import java.time.OffsetDateTime
+import java.time.Instant
 
 import com.iheart.thomas.abtest.model.Abtest
 import com.stripe.rainier.sampler.RNG
@@ -17,8 +17,8 @@ trait AssessmentAlg[F[_], K] {
       k: K,
       abtest: Abtest,
       baselineGroup: GroupName,
-      start: Option[OffsetDateTime] = None,
-      end: Option[OffsetDateTime] = None
+      start: Option[Instant] = None,
+      end: Option[Instant] = None
     ): F[Map[GroupName, NumericGroupResult]]
 
 }
@@ -38,8 +38,8 @@ trait UpdatableKPI[F[_], K] {
     */
   def updateFromData(
       kpi: K,
-      start: OffsetDateTime,
-      end: OffsetDateTime
+      start: Instant,
+      end: Instant
     ): F[(K, Double)]
 }
 
@@ -53,16 +53,16 @@ trait KPISyntax {
     def assess(
         abtest: Abtest,
         baselineGroup: GroupName,
-        start: Option[OffsetDateTime] = None,
-        end: Option[OffsetDateTime] = None
+        start: Option[Instant] = None,
+        end: Option[Instant] = None
       ): F[Map[GroupName, NumericGroupResult]] =
       K.assess(k, abtest, baselineGroup, start, end)
   }
 
   implicit class updatableKPIOps[K](k: K) {
     def updateFromData[F[_]](
-        start: OffsetDateTime,
-        end: OffsetDateTime
+        start: Instant,
+        end: Instant
       )(implicit K: UpdatableKPI[F, K]
       ): F[(K, Double)] =
       K.updateFromData(k, start, end)
@@ -143,8 +143,8 @@ object AssessmentAlg {
         k: K,
         abtest: Abtest,
         baselineGroup: GroupName,
-        start: Option[OffsetDateTime] = None,
-        end: Option[OffsetDateTime] = None
+        start: Option[Instant] = None,
+        end: Option[Instant] = None
       ): F[Map[GroupName, NumericGroupResult]] = {
 
       for {

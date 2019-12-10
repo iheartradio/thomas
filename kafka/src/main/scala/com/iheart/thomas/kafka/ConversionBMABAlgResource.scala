@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package kafka
 
-import java.time.OffsetDateTime
+import java.time.Instant
 
 import cats.effect._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
@@ -35,7 +35,7 @@ object ConversionBMABAlgResource {
     AbtestAlg.defaultResource[F](refreshPeriod).map { implicit abtestAlg =>
       implicit val ss = SampleSettings.default
       implicit val rng = RNG.default
-      implicit val nowF = F.delay(OffsetDateTime.now)
+      implicit val nowF = F.delay(Instant.now)
       ConversionBMABAlg.default[F]
     }
   }

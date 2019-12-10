@@ -5,7 +5,7 @@
 
 package com.iheart.thomas
 package play
-import java.time.{Instant, OffsetDateTime}
+import java.time.Instant
 
 import abtest._
 import javax.inject._
@@ -63,7 +63,7 @@ class APIProviderBase(
 
   lifecycle.addStopHook(() => refreshRef.cancel.unsafeToFuture())
 
-  implicit val nowF = IO.delay(OffsetDateTime.now)
+  implicit val nowF = IO.delay(Instant.now)
   lazy val (api: AbtestAlg[IO], kpiApi: KPIApi[IO]) = {
     implicit val (abtestDAO, featureDAO, kpiDAO) = daos
     (new DefaultAbtestAlg[IO](refreshRate), KPIApi.default)

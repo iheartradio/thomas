@@ -1,7 +1,8 @@
 package com.iheart.thomas
 package play
 
-import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
+import java.time.{Instant, OffsetDateTime, ZoneOffset}
 
 import cats.data.EitherT
 import cats.effect.IO
@@ -187,7 +188,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       status(result) mustBe OK
       val updated = contentAsJson(result).as[Entity[Abtest]]
 
-      updated.data mustBe existing.data.copy(start = ab.start, end = ab.end)
+      updated.data mustBe existing.data.copy(start = ab.startI, end = ab.endI)
       updated._id mustBe existing._id
     }
 
@@ -207,7 +208,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       status(creation) mustBe OK
 
       val old = getTestFromServer(conflict._id)
-      old.data.end mustBe Some(ab.start)
+      old.data.end mustBe Some(ab.startI)
     }
 
     "auto delete all tests that scheduled after this one if group is different" in {
@@ -277,7 +278,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
         val r = toServer(controller.getByFeature(ab.feature))
         contentAsJson(r)
           .as[Vector[Entity[Abtest]]]
-          .filter(_.data.end == ab2.end)
+          .filter(_.data.end == ab2.endI)
           .size mustBe 1
       }
     }
@@ -321,7 +322,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       val test1Found =
         contentAsJson(controller.get(test1Created._id)(FakeRequest()))
           .as[Entity[Abtest]]
-      test1Found.data.end mustBe Some(test2.start)
+      test1Found.data.end mustBe Some(test2.startI)
       val test2Found =
         contentAsJson(controller.get(test2Created._id)(FakeRequest()))
           .as[Entity[Abtest]]
@@ -573,7 +574,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
         .data
         .end
         .get
-        .isBefore(OffsetDateTime.now.plusSeconds(1)) mustBe true
+        .isBefore(Instant.now.plusSeconds(1)) mustBe true
     }
 
     "delete a test if it has not started yet" in {
@@ -1406,7 +1407,7 @@ class AbtestIntegrationSuiteBase
       userId: Option[UserId] = None,
       at: Option[OffsetDateTime] = Some(OffsetDateTime.now.plusDays(1)),
       meta: Map[String, String] = Map()
-    ) = {
+    ): Map[FeatureName, GroupName] = {
     contentAsJson(
       controller.getGroupsWithMeta(
         jsonRequest(
@@ -1420,4 +1421,19 @@ class AbtestIntegrationSuiteBase
     ).as[UserGroupQueryResult].groups
   }
 
+  implicit def fromInstantToOffset(instant: Instant): OffsetDateTime =
+    instant.atOffset(ZoneOffset.UTC)
+
+  implicit def fromInstantOToOffset(
+      instant: Option[Instant]
+    ): Option[OffsetDateTime] =
+    instant.map(fromInstantToOffset)
+
+  implicit def fromOffsetDateTimeToInstant(offsetDateTime: OffsetDateTime): Instant =
+    offsetDateTime.toInstant
+
+  implicit def fromOffsetDateTimeOToInstant(
+      offsetDateTime: Option[OffsetDateTime]
+    ): Option[Instant] =
+    offsetDateTime.map(fromOffsetDateTimeToInstant)
 }

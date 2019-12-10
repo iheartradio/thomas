@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package play
 
-import java.time.OffsetDateTime
+import java.time.Instant
 
 import cats.effect.IO
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
@@ -19,7 +19,7 @@ class BanditAlgsProvider @Inject()(
 
   lazy val conversionBMABAlg: ConversionBMABAlg[IO] = {
     implicit val (ss, r) = (SampleSettings.default, RNG.default)
-    implicit val nowF = IO.delay(OffsetDateTime.now)
+    implicit val nowF = IO.delay(Instant.now)
     implicit val (sd, kpiApi, api, logger) = (
       DAOs.stateDAO[IO](dcProvider.get()),
       abtestAPIProvider.kpiApi,

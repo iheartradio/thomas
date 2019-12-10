@@ -6,7 +6,7 @@
 package com.iheart.thomas
 package client
 
-import java.time.OffsetDateTime
+import java.time.Instant
 
 import cats.{Functor, MonadError}
 import cats.effect._
@@ -24,13 +24,11 @@ import org.http4s.Status
 import org.http4s.client.UnexpectedStatus
 
 trait AbtestClient[F[_]] {
-  def tests(
-      asOf: Option[OffsetDateTime] = None
-    ): F[Vector[(Entity[Abtest], Feature)]]
+  def tests(asOf: Option[Instant] = None): F[Vector[(Entity[Abtest], Feature)]]
 
   def test(
       feature: FeatureName,
-      asOf: Option[OffsetDateTime] = None
+      asOf: Option[Instant] = None
     )(implicit F: Functor[F]
     ): F[Option[Entity[Abtest]]] =
     tests(asOf).map(_.collectFirst {
@@ -85,12 +83,10 @@ class Http4SAbtestClient[F[_]: Sync](
   def saveKPI(kd: KPIDistribution): F[KPIDistribution] =
     c.expect(POST(kd, Uri.unsafeFromString(urls.kPIs)))
 
-  def tests(
-      asOf: Option[OffsetDateTime] = None
-    ): F[Vector[(Entity[Abtest], Feature)]] = {
+  def tests(asOf: Option[Instant] = None): F[Vector[(Entity[Abtest], Feature)]] = {
     val baseUrl: Uri = Uri.unsafeFromString(urls.tests)
     c.expect(asOf.fold(baseUrl) { ao =>
-      baseUrl +? ("at", (ao.toInstant.toEpochMilli / 1000).toString)
+      baseUrl +? ("at", (ao.toEpochMilli / 1000).toString)
     })
   }
 
@@ -182,7 +178,7 @@ object AbtestClient {
     */
   def testsWithFeatures[F[_]: ConcurrentEffect](
       serviceUrl: String,
-      time: Option[OffsetDateTime]
+      time: Option[Instant]
     )(implicit ec: ExecutionContext
     ): F[Vector[(Abtest, Feature)]] =
     Http4SAbtestClient
