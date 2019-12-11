@@ -6,12 +6,13 @@ import java.time.{Instant, OffsetDateTime, ZoneOffset}
 import cats.Monoid
 import cats.implicits._
 import com.iheart.thomas.abtest.model.Abtest.Specialization
-import com.iheart.thomas.abtest.model.{AbtestSpec, Group}
+import com.iheart.thomas.abtest.model.{AbtestSpec, Group, GroupSize}
 import com.iheart.thomas.analysis._
 import com.stripe.rainier.sampler.RNG
 import henkan.convert.Syntax._
 import tracking._
 
+import scala.annotation.tailrec
 import scala.concurrent.duration.FiniteDuration
 object ConversionBMABAlg {
 
@@ -82,7 +83,8 @@ object ConversionBMABAlg {
                     )
                   ),
                   start = banditSpec.start.toInstant,
-                  kpiName = banditSpec.kpiName
+                  kpiName = banditSpec.kpiName,
+                  minimumSizeChange = banditSpec.minimumSizeChange
                 )
               )
           ).mapN(BayesianMAB.apply _)
@@ -124,7 +126,7 @@ object ConversionBMABAlg {
           )
           BayesianMAB(abtest, state) = current
           _ <- log(Initiated(state))
-          possibilities <- assessmentAlg.assessOptimumGroup(
+          distribution <- assessmentAlg.assessOptimumGroup(
             kpi,
             state.rewardState
           )
@@ -134,7 +136,7 @@ object ConversionBMABAlg {
                 arm =>
                   arm.copy(
                     likelihoodOptimum =
-                      possibilities.getOrElse(arm.name, arm.likelihoodOptimum)
+                      distribution.getOrElse(arm.name, arm.likelihoodOptimum)
                   )
               )
             )
@@ -147,14 +149,7 @@ object ConversionBMABAlg {
               .set(
                 start = now,
                 end = abtest.data.end.map(_.atOffset(ZoneOffset.UTC)),
-                groups = abtest.data.groups.map { g =>
-                  g.copy(
-                    size = possibilities
-                      .get(g.name)
-                      .map(_.p)
-                      .getOrElse(g.size)
-                  )
-                }
+                groups = allocateGroupSize(distribution, state.minimumSizeChange)
               )
           )
           _ <- cleanUpBefore.fold(F.unit)(
@@ -184,4 +179,53 @@ object ConversionBMABAlg {
         ).mapN(BayesianMAB.apply _)
       }
     }
+
+  private[bayesian] def allocateGroupSize(
+      optimalDistribution: Map[GroupName, Probability],
+      precision: GroupSize
+    ): List[Group] = {
+    val sizeCandidates =
+      0.to((1d / precision).toInt + 1)
+        .toList
+        .map(_.toDouble * precision)
+        .filter(_ < 1d) :+ 1d
+
+    @tailrec
+    def findClosest(
+        v: Double,
+        candidates: List[Double]
+      ): Double = {
+      candidates match {
+        case last :: Nil =>
+          last
+        case head :: next :: tail =>
+          val headDiff = Math.abs(v - head)
+          val nextDiff = Math.abs(next - v)
+
+          if (headDiff < nextDiff)
+            head
+          else
+            findClosest(v, next :: tail)
+
+        case Nil =>
+          0d
+      }
+    }
+
+    optimalDistribution.toList
+      .foldLeft((sizeCandidates, List.empty[Group])) { (mp, gp) =>
+        val (candidates, groups) = mp
+        val (groupName, probability) = gp
+
+        val size = findClosest(probability.p, candidates)
+        val newGroups = groups :+ Group(groupName, size)
+        val remainder = 1d - newGroups.foldMap(_.size)
+        (
+          candidates.filter(_ <= remainder + 0.000001),
+          newGroups
+        )
+      }
+      ._2
+
+  }
 }

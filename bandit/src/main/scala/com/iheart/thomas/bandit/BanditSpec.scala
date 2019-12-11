@@ -11,4 +11,5 @@ case class BanditSpec(
     author: String,
     start: OffsetDateTime,
     title: String,
-    kpiName: KPIName)
+    kpiName: KPIName,
+    minimumSizeChange: Double = 0.01)

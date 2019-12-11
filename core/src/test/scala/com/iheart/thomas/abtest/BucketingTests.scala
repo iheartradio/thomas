@@ -238,7 +238,6 @@ class BucketingTests extends BucketingTestsBase {
 
         val newRanges1 = Bucketing.newRanges(groups1, oldRanges)
         assertConsistency(oldRanges, newRanges1, groups1)
-
         assertRangesValid(newRanges1)
 
         val newRanges2 = Bucketing.newRanges(groups2, newRanges1)
@@ -290,6 +289,7 @@ object BucketingTests {
       idx: Int
     ) = Group(s"group$idx", size)
   lazy val userIdGen = choose(10000, 400000).map(_.toString)
+
   def rangesToGroups(ranges: List[GroupRange]): (GroupRanges, List[Group]) = {
     val groupsWithRange = ranges.mapWithIndex { (range, idx) =>
       (createGroup(range.size, idx), range)
@@ -312,12 +312,10 @@ object BucketingTests {
       if (length == 1) const(List(GroupRange(start, 1d)))
       else
         for {
-          endRaw <- choose(start + 0.0001, 0.9999)
-          end = if (endRaw > 0.9995) 1d
-          else roundUpToAvoidAccidentalDecimals(endRaw, 4)
+          endRaw <- choose(start + 0.00009, 0.9999 - (length - 1) * 0.0001)
+          end = roundUpToAvoidAccidentalDecimals(endRaw, 4)
           head = GroupRange(start, end)
-          tail <- if (end == 1) Gen.const[List[GroupRange]](Nil)
-          else loop(end, length - 1)
+          tail <- loop(end, length - 1)
         } yield head :: tail
     loop(0, length)
   }
