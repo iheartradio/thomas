@@ -53,7 +53,7 @@ trait BucketingTestsBase
       r1 <- ranges1
       r2 <- ranges.filterKeys(_ != gn).values.toList.flatten
     } {
-      if ((r2.end - r1.start) > 0.0001 && (r1.end - r2.start) > 0.0001)
+      if (r2.end > r1.start && r1.end > r2.start)
         fail(s"$r1 and $r2 overlaps")
     }
   }
