@@ -34,7 +34,7 @@ lazy val libs =
   .addJVM(name = "log4cats",              version = "1.0.1",  org = "io.chrisdavenport", "log4cats-slf4j", "log4cats-core")
   .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
   .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
-  .addJVM(name = "akka-slf4j",            version = "2.5.27", org = "com.typesafe.akka")
+  .addJVM(name = "akka-slf4j",            version = "2.6.1", org = "com.typesafe.akka")
   .add(   name = "http4s",                version = "0.21.0-M6")
   .add(   name = "http4s-client",         version = "0.20.15", org = "org.http4s", "http4s-blaze-client", "http4s-play-json") //overrides two modules with different version
   .add(   name = "scalacheck-1-14",       version = "3.1.0.0",   org = "org.scalatestplus")
