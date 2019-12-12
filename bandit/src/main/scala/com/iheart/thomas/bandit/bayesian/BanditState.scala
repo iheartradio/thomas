@@ -14,7 +14,8 @@ case class BanditState[R](
     author: String,
     arms: List[ArmState[R]],
     start: Instant,
-    kpiName: KPIName) {
+    kpiName: KPIName,
+    minimumSizeChange: Double) {
 
   def rewardState: Map[ArmName, R] =
     arms.map(as => (as.name, as.rewardState)).toMap

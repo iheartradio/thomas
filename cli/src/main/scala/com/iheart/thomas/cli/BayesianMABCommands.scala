@@ -22,7 +22,10 @@ object BayesianMABCommands {
       Opts.option[String]("author", "author name", "u"),
       Opts.option[OffsetDateTime]("start", "start time of the MAB"),
       Opts.option[String]("title", "author name", "u"),
-      Opts.option[String]("kpi", "KPI name", "k").coerce[Opts[KPIName]]
+      Opts.option[String]("kpi", "KPI name", "k").coerce[Opts[KPIName]],
+      Opts
+        .option[Double]("minimumSizeChange", "minimum group size change")
+        .withDefault(0.005d)
     ).mapN(BanditSpec.apply)
 
   def conversionBMABCommand[F[_]](

@@ -37,7 +37,7 @@ lazy val libs =
   .addJVM(name = "akka-slf4j",            version = "2.5.25", org = "com.typesafe.akka")
   .add(   name = "http4s",                version = "0.21.0-M6")
   .add(   name = "http4s-client",         version = "0.20.15", org = "org.http4s", "http4s-blaze-client", "http4s-play-json") //overrides two modules with different version
-  .add(   name = "scalatestplus-scalacheck", version = "3.1.0.0-RC2",   org = "org.scalatestplus")
+  .add(   name = "scalacheck-1-14",       version = "3.1.0.0",   org = "org.scalatestplus")
   .add(   name = "scalatestplus-play",    version = "4.0.3",  org = "org.scalatestplus.play")
   .add(   name = "cats-effect-testing-scalatest",    version = "0.3.0",  org = "com.codecommit")
   .addJVM(name = "fs2-kafka",             version = "0.20.2", org = "com.ovoenergy")
@@ -113,7 +113,7 @@ lazy val core = project
     name := "thomas-core",
     rootSettings,
     taglessSettings,
-    libs.testDependencies("scalatestplus-scalacheck"),
+    libs.testDependencies("scalacheck-1-14"),
     libs.dependencies(
       "cats-core",
       "monocle-macro",
@@ -128,14 +128,13 @@ lazy val core = project
   )
 
 lazy val bandit = project
-  .dependsOn(analysis)
+  .dependsOn(analysis, core  % "compile->compile;test->test")
   .aggregate(analysis)
   .settings(
     name := "thomas-bandit",
     crossScalaVersions := Seq(scalaVersion.value),
     rootSettings,
     taglessSettings,
-    libs.testDependencies("scalatestplus-scalacheck"),
     libs.dependencies("breeze"),
     simulacrumSettings(libs)
   )
