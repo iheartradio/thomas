@@ -52,22 +52,7 @@ private[thomas] object Bucketing {
       }
       .reverse
       .filter(_.size > 0)
-      .map(
-        r =>
-          GroupRange(
-            roundUpToAvoidAccidentalDecimals(r.start),
-            roundUpToAvoidAccidentalDecimals(r.end)
-          )
-      )
   }
-
-  val defaultPrecision = 7
-
-  def roundUpToAvoidAccidentalDecimals(
-      d: Double,
-      scale: Int = defaultPrecision
-    ) =
-    BigDecimal(d).setScale(scale, BigDecimal.RoundingMode.CEILING).toDouble
 
   def newRanges(
       groups: List[Group],
@@ -83,8 +68,8 @@ private[thomas] object Bucketing {
       groups
         .filter(_.size > 0)
         .foldLeft(Vector.empty[(GroupName, List[GroupRange])]) { (ranges, group) ⇒
-          val start = ranges.lastOption.map(_._2.head.end).getOrElse(0d)
-          val end = Math.min(1d, start + group.size)
+          val start = ranges.lastOption.map(_._2.head.end).getOrElse(BigDecimal(0))
+          val end = BigDecimal(1).min(start + group.size)
           ranges :+ (group.name -> List(GroupRange(start, end)))
         }
         .toMap
@@ -98,7 +83,7 @@ private[thomas] object Bucketing {
       }
       val groupsInSurplusOrder = groups.sortBy(
         g =>
-          oldRanges.get(g.name).fold(0d) { rs =>
+          oldRanges.get(g.name).fold(BigDecimal(0)) { rs =>
             g.size - rs.foldMap(_.size)
           }
       )
@@ -107,13 +92,14 @@ private[thomas] object Bucketing {
         def allAvailable = {
           val (as, last) = assigned.values.toList.flatten
             .sortBy(_.start)
-            .foldLeft((List.empty[GroupRange], 0d)) { (memo, assignedSlot) =>
-              val (allocated, start) = memo
-              val allocateMore =
-                if (assignedSlot.start > start)
-                  GroupRange(start, assignedSlot.start) :: allocated
-                else allocated
-              (allocateMore, assignedSlot.end)
+            .foldLeft((List.empty[GroupRange], BigDecimal(0))) {
+              (memo, assignedSlot) =>
+                val (allocated, start) = memo
+                val allocateMore =
+                  if (assignedSlot.start > start)
+                    GroupRange(start, assignedSlot.start) :: allocated
+                  else allocated
+                (allocateMore, assignedSlot.end)
             }
           if (last < 1) GroupRange(last, 1) :: as else as
         }
@@ -126,13 +112,16 @@ private[thomas] object Bucketing {
               rest: GroupSize,
               rangesLeft: List[GroupRange]
             ): List[GroupRange] = {
-            if (rest < 1d / Math.pow(10d, defaultPrecision.toDouble - 1))
-              Nil //needed due to double accuracy
+            if (rest == BigDecimal(0))
+              Nil
             else
               rangesLeft match {
                 case head :: tail =>
                   if (rest > head.size) head :: loop(rest - head.size, tail)
-                  else List(GroupRange(head.start, Math.min(1d, head.start + rest)))
+                  else
+                    List(
+                      GroupRange(head.start, BigDecimal(1).min(head.start + rest))
+                    )
                 case Nil =>
                   throw new Exception(
                     s"Something went terribly wrong, do not have enough available slot to assign $rest"
