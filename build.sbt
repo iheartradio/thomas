@@ -38,7 +38,7 @@ lazy val libs =
   .add(   name = "http4s",                version = "0.21.0-M6")
   .add(   name = "http4s-client",         version = "0.20.15", org = "org.http4s", "http4s-blaze-client", "http4s-play-json") //overrides two modules with different version
   .add(   name = "scalacheck-1-14",       version = "3.1.0.0",   org = "org.scalatestplus")
-  .add(   name = "scalatestplus-play",    version = "4.0.3",  org = "org.scalatestplus.play")
+  .add(   name = "scalatestplus-play",    version = "5.0.0",  org = "org.scalatestplus.play")
   .add(   name = "cats-effect-testing-scalatest",    version = "0.3.0",  org = "com.codecommit")
   .addJVM(name = "fs2-kafka",             version = "0.20.2", org = "com.ovoenergy")
   .add(   name = "jawn",                  version = "0.14.2", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
