@@ -252,7 +252,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
 
   }
 
-  test("reallocate does not reallocate groups before hitting enough samples") {
+  test("reallocate does not reallocate groups until it hits enough samples") {
     val spec = BanditSpec(
       feature = "A_new_Feature",
       arms = List("A", "B"),
@@ -294,6 +294,50 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
 
     before shouldBe init
     after should not be (init)
+
+  }
+
+  test(
+    "reallocate does not reallocate groups if the new group size remains the same"
+  ) {
+    val spec = BanditSpec(
+      feature = "A_new_Feature",
+      arms = List("A", "B"),
+      author = "Test Runner",
+      start = OffsetDateTime.now,
+      title = "for integration tests",
+      kpiName = kpi.name,
+      minimumSizeChange = 0.02
+    )
+
+    val (first, second) = withAPI { api =>
+      for {
+        is <- api.init(spec)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(1000, total = 9000),
+            "B" -> Conversions(500, total = 5000)
+          )
+        )
+        _ <- api.reallocate(spec.feature)
+        firstReallocate <- api.currentState(spec.feature)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(200, total = 1800), //the new samples are the same rate as the old one.
+            "B" -> Conversions(300, total = 3000)
+          )
+        )
+        _ <- api.reallocate(spec.feature)
+        secondReallocate <- api.currentState(spec.feature)
+      } yield (
+        firstReallocate.abtest,
+        secondReallocate.abtest
+      )
+    }
+
+    first shouldBe second
 
   }
 

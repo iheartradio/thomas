@@ -121,33 +121,38 @@ object ConversionBMABAlg {
         ): F[BayesianMAB[Conversions]] = {
         import Event.ConversionBanditReallocation._
 
-        def resizeAbtest(bandit: BayesianMAB[Conversions]) =
-          for {
-            now <- nowF.map(_.atOffset(ZoneOffset.UTC))
-            abtest <- abtestAPI.continue(
-              bandit.abtest.data
-                .to[AbtestSpec]
-                .set(
-                  start = now,
-                  end = bandit.abtest.data.end.map(_.atOffset(ZoneOffset.UTC)),
-                  groups = allocateGroupSize(
-                    bandit.state.distribution,
-                    bandit.state.minimumSizeChange
+        def resizeAbtest(bandit: BayesianMAB[Conversions]) = {
+          val newGroups = allocateGroupSize(
+            bandit.state.distribution,
+            bandit.state.minimumSizeChange
+          )
+          if (newGroups.toSet == bandit.abtest.data.groups.toSet)
+            bandit.pure[F]
+          else
+            for {
+              now <- nowF.map(_.atOffset(ZoneOffset.UTC))
+              abtest <- abtestAPI.continue(
+                bandit.abtest.data
+                  .to[AbtestSpec]
+                  .set(
+                    start = now,
+                    end = bandit.abtest.data.end.map(_.atOffset(ZoneOffset.UTC)),
+                    groups = newGroups
                   )
-                )
-            )
-            _ <- cleanUpBefore.fold(F.unit)(
-              before =>
-                abtestAPI
-                  .cleanUp(
-                    featureName,
-                    now
-                      .minus(java.time.Duration.ofMillis(before.toMillis))
-                  )
-                  .void
-            )
-            _ <- log(Reallocated(abtest.data))
-          } yield bandit.copy(abtest = abtest)
+              )
+              _ <- cleanUpBefore.fold(F.unit)(
+                before =>
+                  abtestAPI
+                    .cleanUp(
+                      featureName,
+                      now
+                        .minus(java.time.Duration.ofMillis(before.toMillis))
+                    )
+                    .void
+              )
+              _ <- log(Reallocated(abtest.data))
+            } yield bandit.copy(abtest = abtest)
+        }
 
         for {
           current <- currentState(featureName)
