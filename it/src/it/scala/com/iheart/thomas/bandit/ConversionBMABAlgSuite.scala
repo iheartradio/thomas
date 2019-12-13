@@ -123,7 +123,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       arms = List("A", "B"),
       author = "Test Runner",
       start = OffsetDateTime.now,
-      title = "for initegration tests",
+      title = "for integration tests",
       kpiName = kpi.name
     )
 
@@ -133,15 +133,15 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
         _ <- api.updateRewardState(
           spec.feature,
           Map(
-            "A" -> Conversions(12, 2),
-            "B" -> Conversions(43, 6)
+            "A" -> Conversions(2, 12),
+            "B" -> Conversions(6, 43)
           )
         )
         _ <- api.updateRewardState(
           spec.feature,
           Map(
-            "A" -> Conversions(13, 5),
-            "B" -> Conversions(12, 7)
+            "A" -> Conversions(5, 13),
+            "B" -> Conversions(7, 12)
           )
         )
         current <- api.currentState(spec.feature)
@@ -152,11 +152,11 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
     newState.arms
       .find(_.name == "A")
       .get
-      .rewardState shouldBe Conversions(25, 7)
+      .rewardState shouldBe Conversions(7, 25)
     newState.arms
       .find(_.name == "B")
       .get
-      .rewardState shouldBe Conversions(55, 13)
+      .rewardState shouldBe Conversions(13, 55)
 
   }
 
@@ -176,8 +176,8 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
         _ <- api.updateRewardState(
           spec.feature,
           Map(
-            "A" -> Conversions(12, 2),
-            "B" -> Conversions(43, 10)
+            "A" -> Conversions(2, 12),
+            "B" -> Conversions(10, 43)
           )
         )
         _ <- api.reallocate(spec.feature)
@@ -234,8 +234,8 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
         _ <- api.updateRewardState(
           spec.feature,
           Map(
-            "A" -> Conversions(12, 2),
-            "B" -> Conversions(43, 10)
+            "A" -> Conversions(2, 12),
+            "B" -> Conversions(10, 43)
           )
         )
         _ <- api.reallocate(spec.feature)
@@ -249,6 +249,51 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       .size shouldBe >(
       currentState.abtest.data.getGroup("A").get.size
     )
+
+  }
+
+  test("reallocate does not reallocate groups before hitting enough samples") {
+    val spec = BanditSpec(
+      feature = "A_new_Feature",
+      arms = List("A", "B"),
+      author = "Test Runner",
+      start = OffsetDateTime.now,
+      title = "for integration tests",
+      kpiName = kpi.name,
+      minimumSizeChange = 0.0001,
+      initialSampleSize = 100
+    )
+
+    val (init, before, after) = withAPI { api =>
+      for {
+        is <- api.init(spec)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(2, total = 99),
+            "B" -> Conversions(1, total = 5)
+          )
+        )
+        _ <- api.reallocate(spec.feature)
+        beforeHittingMinmumSampleSize <- api.currentState(spec.feature)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(3, total = 5),
+            "B" -> Conversions(3, total = 97)
+          )
+        )
+        _ <- api.reallocate(spec.feature)
+        afterHittingMinmumSampleSize <- api.currentState(spec.feature)
+      } yield (
+        is.abtest,
+        beforeHittingMinmumSampleSize.abtest,
+        afterHittingMinmumSampleSize.abtest
+      )
+    }
+
+    before shouldBe init
+    after should not be (init)
 
   }
 

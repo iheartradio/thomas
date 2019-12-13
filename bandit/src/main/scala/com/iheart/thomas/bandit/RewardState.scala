@@ -13,7 +13,7 @@ trait RewardState[A] extends Monoid[A] {
 object RewardState {
   implicit val conversionInstance: RewardState[Conversions] =
     new RewardState[Conversions] {
-      def toReward(a: Conversions): Reward = a.converted.toDouble / a.total.toDouble
+      def toReward(a: Conversions): Reward = a.rate
 
       def combine(
           x: Conversions,
