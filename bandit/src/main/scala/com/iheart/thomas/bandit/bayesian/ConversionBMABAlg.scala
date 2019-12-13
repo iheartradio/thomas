@@ -187,20 +187,20 @@ object ConversionBMABAlg {
     val sizeCandidates =
       0.to((1d / precision).toInt + 1)
         .toList
-        .map(_.toDouble * precision)
-        .filter(_ < 1d) :+ 1d
+        .map(BigDecimal(_) * precision)
+        .filter(_ < 1d) :+ BigDecimal(1)
 
     @tailrec
     def findClosest(
-        v: Double,
-        candidates: List[Double]
-      ): Double = {
+        v: BigDecimal,
+        candidates: List[BigDecimal]
+      ): BigDecimal = {
       candidates match {
         case last :: Nil =>
           last
         case head :: next :: tail =>
-          val headDiff = Math.abs(v - head)
-          val nextDiff = Math.abs(next - v)
+          val headDiff = (v - head).abs
+          val nextDiff = (next - v).abs
 
           if (headDiff < nextDiff)
             head
@@ -221,7 +221,7 @@ object ConversionBMABAlg {
         val newGroups = groups :+ Group(groupName, size)
         val remainder = 1d - newGroups.foldMap(_.size)
         (
-          candidates.filter(_ <= remainder + 0.000001),
+          candidates.filter(_ <= remainder),
           newGroups
         )
       }

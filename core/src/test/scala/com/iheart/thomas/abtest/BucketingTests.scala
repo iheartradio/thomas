@@ -31,7 +31,7 @@ trait BucketingTestsBase
       groups: List[Group]
     ): Unit =
     groups.foreach { group =>
-      sizeOf(ranges(group.name)) should be(group.size +- 0.000001)
+      sizeOf(ranges(group.name)) shouldBe group.size
     }
 
   def assertGroupDistribution(
@@ -42,7 +42,9 @@ trait BucketingTestsBase
 
     (groupSizes
       .get(g.name)
-      .fold(0d)(_.toDouble) / groupResults.size) should be(g.size +- 0.1)
+      .fold(0d)(_.toDouble) / groupResults.size) should be(
+      g.size.doubleValue() +- 0.1
+    )
   }
 
   def assertRangesValid(ranges: GroupRanges) = {
@@ -51,7 +53,7 @@ trait BucketingTestsBase
       r1 <- ranges1
       r2 <- ranges.filterKeys(_ != gn).values.toList.flatten
     } {
-      if ((r2.end - r1.start) > 0.0001 && (r1.end - r2.start) > 0.0001)
+      if (r2.end > r1.start && r1.end > r2.start)
         fail(s"$r1 and $r2 overlaps")
     }
   }
@@ -152,7 +154,7 @@ class BucketingTests extends BucketingTestsBase {
   ) {
     forAll(groupRangeGen(None)) { groupRanges: (GroupRanges, List[Group]) =>
       val (oldRanges, groups) = groupRanges
-      oldRanges.values.toList.flatten.foldMap(_.size) should be(
+      oldRanges.values.toList.flatten.foldMap(_.size.doubleValue) should be(
         1d +- 0.000001
       )
       Bucketing.newRanges(groups, oldRanges) should be(oldRanges)
@@ -280,7 +282,6 @@ class BucketingRegression extends BucketingTestsBase {
 }
 
 object BucketingTests {
-  import Bucketing.{defaultPrecision, roundUpToAvoidAccidentalDecimals}
 
   def sizeOf(ranges: List[GroupRange]): GroupSize = ranges.foldMap(_.size)
 
@@ -304,16 +305,21 @@ object BucketingTests {
   def sizesGen(length: Int): Gen[List[GroupSize]] =
     rangesGen(length).map(_.map(_.size))
 
+  implicit val chooseBigDecimal: Choose[BigDecimal] =
+    Choose.xmap[Double, BigDecimal](BigDecimal(_), _.doubleValue)
+
   def rangesGen(length: Int): Gen[List[GroupRange]] = {
     def loop(
-        start: Double,
+        start: BigDecimal,
         length: Int
       ): Gen[List[GroupRange]] =
       if (length == 1) const(List(GroupRange(start, 1d)))
       else
         for {
-          endRaw <- choose(start + 0.00009, 0.9999 - (length - 1) * 0.0001)
-          end = roundUpToAvoidAccidentalDecimals(endRaw, 4)
+          end <- choose(
+            start + BigDecimal(0.00009),
+            BigDecimal(0.9999 - (length - 1) * 0.0001)
+          )
           head = GroupRange(start, end)
           tail <- loop(end, length - 1)
         } yield head :: tail

@@ -1,4 +1,5 @@
-package com.iheart.thomas.bandit.bayesian
+package com.iheart.thomas
+package bandit.bayesian
 
 import com.iheart.thomas.GroupName
 import com.iheart.thomas.analysis.Probability
@@ -16,13 +17,13 @@ class ConversionBMABAlgSuite
 
   implicit val distributionGen: Arbitrary[Map[GroupName, Probability]] = Arbitrary {
     groupsGen(3).map(_.map { group =>
-      group.name -> Probability(group.size)
+      group.name -> Probability(group.size.doubleValue)
     }.toMap)
   }
 
   test("allocateGroupSize allocates to specific precision") {
     forAll { (distribution: Map[GroupName, Probability]) =>
-      val precision = 0.01d
+      val precision = BigDecimal(0.01)
       val groups = ConversionBMABAlg
         .allocateGroupSize(distribution, precision)
 
@@ -31,19 +32,17 @@ class ConversionBMABAlgSuite
       val totalSize = groups.foldMap(_.size)
 
       totalSize should be(
-        distribution.values.toList.foldMap(_.p) +- precision
+        BigDecimal(distribution.values.toList.foldMap(_.p)) +- precision
       )
-      totalSize should be <= 1d
+      totalSize should be <= BigDecimal(1)
 
       groups
         .foreach { group =>
-          group.size shouldBe distribution(group.name).p +- precision
+          group.size shouldBe BigDecimal(distribution(group.name).p) +- precision
 
-          group.size % precision should (be(0d +- 0.00001) or be(
-            precision +- 0.00001
-          ))
+          (group.size % precision) should be(BigDecimal(0))
+
         }
-
     }
   }
 

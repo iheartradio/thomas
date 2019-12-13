@@ -21,12 +21,17 @@ package object model {
   type GroupRanges = Map[GroupName, List[GroupRange]]
   type GroupMeta = JsObject
   type GroupMetas = Map[GroupName, GroupMeta]
-  type GroupSize = Double
+  type GroupSize = BigDecimal
   type Tag = String
   type UserMeta = Map[MetaFieldName, String]
 }
 
 package model {
+
+  object GroupSize {
+    val One = BigDecimal(1)
+    val Zero = BigDecimal(0)
+  }
 
   import cats.Eq
 
@@ -129,8 +134,8 @@ package model {
       size: GroupSize)
 
   case class GroupRange(
-      start: Double,
-      end: Double) {
+      start: BigDecimal,
+      end: BigDecimal) {
     assert(
       start >= 0 && end <= 1 && start <= end,
       s"Invalid Range $start-$end, must be between 0 and 1"
