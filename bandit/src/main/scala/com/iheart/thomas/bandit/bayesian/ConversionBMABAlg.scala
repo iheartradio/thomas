@@ -84,7 +84,8 @@ object ConversionBMABAlg {
                   ),
                   start = banditSpec.start.toInstant,
                   kpiName = banditSpec.kpiName,
-                  minimumSizeChange = banditSpec.minimumSizeChange
+                  minimumSizeChange = banditSpec.minimumSizeChange,
+                  initialSampleSize = banditSpec.initialSampleSize
                 )
               )
           ).mapN(BayesianMAB.apply _)
@@ -119,12 +120,46 @@ object ConversionBMABAlg {
           cleanUpBefore: Option[FiniteDuration]
         ): F[BayesianMAB[Conversions]] = {
         import Event.ConversionBanditReallocation._
+
+        def resizeAbtest(bandit: BayesianMAB[Conversions]) = {
+          val newGroups = allocateGroupSize(
+            bandit.state.distribution,
+            bandit.state.minimumSizeChange
+          )
+          if (newGroups.toSet == bandit.abtest.data.groups.toSet)
+            bandit.pure[F]
+          else
+            for {
+              now <- nowF.map(_.atOffset(ZoneOffset.UTC))
+              abtest <- abtestAPI.continue(
+                bandit.abtest.data
+                  .to[AbtestSpec]
+                  .set(
+                    start = now,
+                    end = bandit.abtest.data.end.map(_.atOffset(ZoneOffset.UTC)),
+                    groups = newGroups
+                  )
+              )
+              _ <- cleanUpBefore.fold(F.unit)(
+                before =>
+                  abtestAPI
+                    .cleanUp(
+                      featureName,
+                      now
+                        .minus(java.time.Duration.ofMillis(before.toMillis))
+                    )
+                    .void
+              )
+              _ <- log(Reallocated(abtest.data))
+            } yield bandit.copy(abtest = abtest)
+        }
+
         for {
           current <- currentState(featureName)
           kpi <- kpiAPI.getSpecific[BetaKPIDistribution](
             current.state.kpiName
           )
-          BayesianMAB(abtest, state) = current
+          BayesianMAB(currentTest, state) = current
           _ <- log(Initiated(state))
           distribution <- assessmentAlg.assessOptimumGroup(
             kpi,
@@ -141,29 +176,14 @@ object ConversionBMABAlg {
               )
             )
           )
-          _ <- log(Calculated(state))
-          now <- nowF.map(_.atOffset(ZoneOffset.UTC))
-          abtest <- abtestAPI.continue(
-            abtest.data
-              .to[AbtestSpec]
-              .set(
-                start = now,
-                end = abtest.data.end.map(_.atOffset(ZoneOffset.UTC)),
-                groups = allocateGroupSize(distribution, state.minimumSizeChange)
-              )
-          )
-          _ <- cleanUpBefore.fold(F.unit)(
-            before =>
-              abtestAPI
-                .cleanUp(
-                  featureName,
-                  now
-                    .minus(java.time.Duration.ofMillis(before.toMillis))
-                )
-                .void
-          )
-          _ <- log(Reallocated(abtest.data))
-        } yield BayesianMAB(abtest, newState)
+          _ <- log(Calculated(newState))
+          newBandit <- if (newState.arms.forall(
+                             _.rewardState.total > newState.initialSampleSize
+                           ))
+            resizeAbtest(BayesianMAB(currentTest, newState))
+          else
+            F.pure(BayesianMAB(currentTest, newState))
+        } yield newBandit
 
       }
 
