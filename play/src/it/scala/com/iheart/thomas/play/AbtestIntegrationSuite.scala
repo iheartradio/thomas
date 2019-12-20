@@ -25,6 +25,7 @@ import com.typesafe.config.ConfigFactory
 import lihua.mongo.JsonFormats._
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.util.Random
 
 class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
@@ -91,6 +92,48 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
         test2,
         test1
       ).map(_._id)
+    }
+  }
+
+  "GET /testsData" should {
+    "get tests valid at the target time" in {
+      val test = createAbtestOnServer(fakeAb())
+      val resp = controller.getTestsData(
+        Instant.now.plusMinutes(1).toEpochMilli,
+        None
+      )(FakeRequest())
+      status(resp) mustBe OK
+      contentAsJson(resp).as[TestsData].data.map(_._1) mustBe Vector(test)
+    }
+
+    "get tests valid within range of the target time" in {
+      val test = createAbtestOnServer(fakeAb())
+      val resp = controller.getTestsData(
+        Instant.now.minusMinutes(1).toEpochMilli,
+        Some(4.minutes.toMillis)
+      )(FakeRequest())
+      status(resp) mustBe OK
+      contentAsJson(resp).as[TestsData].data.map(_._1) mustBe Vector(test)
+    }
+
+    "does not get tests valid outside range of the target time" in {
+      val test = createAbtestOnServer(fakeAb())
+      val resp = controller.getTestsData(
+        Instant.now.minusMinutes(6).toEpochMilli,
+        Some(4.minutes.toMillis)
+      )(FakeRequest())
+      status(resp) mustBe OK
+      contentAsJson(resp).as[TestsData].data.map(_._1) mustBe empty
+    }
+
+    "does not get tests valid at the target time" in {
+      createAbtestOnServer(fakeAb())
+      val resp = controller.getTestsData(
+        Instant.now.minusMinutes(1).toEpochMilli,
+        None
+      )(FakeRequest())
+      status(resp) mustBe OK
+      contentAsJson(resp).as[TestsData].data mustBe empty
     }
   }
 
