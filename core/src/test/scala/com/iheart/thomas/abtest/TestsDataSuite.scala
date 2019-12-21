@@ -10,7 +10,7 @@ import org.scalacheck.Arbitrary
 
 import scala.concurrent.duration._
 import org.scalacheck.Gen._
-import com.fortysevendeg.scalacheck.datetime.jdk8.ArbitraryJdk8._
+
 import TimeUtil._
 
 class TestsDataSuite
@@ -35,7 +35,7 @@ class TestsDataSuite
             testsData.duration.fold(testsData.at)(testsData.at.plusDuration)
           val cutOffTimeEnd = endTime.plusNanos(tolerance.toNanos.abs)
 
-          val withinRange = target.isAfter(cutOffTimeBegin) && target.isBefore(
+          val withinRange = !target.isBefore(cutOffTimeBegin) && !target.isAfter(
             cutOffTimeEnd
           )
 
@@ -52,9 +52,9 @@ class TestsDataSuite
 
   implicit val arbTestsData: Arbitrary[TestsData] = Arbitrary {
     for {
-      at <- Arbitrary.arbitrary[Instant]
+      at <- choose(-1000000000L, 10000000000L)
       duration <- option(choose(Duration.Zero, 1000000000000L.nanos))
-    } yield TestsData(at, Vector.empty, duration)
+    } yield TestsData(Instant.now.plusMillis(at), Vector.empty, duration)
   }
 
 }

@@ -114,7 +114,7 @@ lazy val core = project
     name := "thomas-core",
     rootSettings,
     taglessSettings,
-    libs.testDependencies("scalacheck-1-14", "scalacheck-toolbox-datetime"),
+    libs.testDependencies("scalacheck-1-14"),
     libs.dependencies(
       "cats-core",
       "monocle-macro",
