@@ -11,12 +11,22 @@ import cats.implicits._
 
 import scala.concurrent.duration.FiniteDuration
 
-abstract class AutoRefreshGroupAssigner[F[_]] {
+abstract class AutoRefreshAssignGroups[F[_]] {
   def assign(query: UserGroupQuery): F[Map[FeatureName, AssignmentWithMeta]]
 }
 
-object AutoRefreshGroupAssigner {
+object AutoRefreshAssignGroups {
 
+  /**
+    *
+    * @param abtestClient  client to get A/B tests data
+    * @param refreshPeriod  how ofter the data is refreshed
+    * @param staleTimeout how stale is the data allowed to be (in cases when refresh fails)
+    * @param testsRange time range during which valid tests are used to for getting assignment.
+    *                   if the `at` field in the UserGroupQuery is outside this range, the assignment
+    *                   will fail
+    * @return A Resource of An [[AutoRefreshAssignGroups]]
+    */
   def resource[F[_]: Timer](
       abtestClient: AbtestClient[F],
       refreshPeriod: FiniteDuration,
@@ -24,11 +34,11 @@ object AutoRefreshGroupAssigner {
       testsRange: Option[FiniteDuration]
     )(implicit F: ConcurrentEffect[F],
       nowF: F[Instant]
-    ): Resource[F, AutoRefreshGroupAssigner[F]] = {
+    ): Resource[F, AutoRefreshAssignGroups[F]] = {
     RefreshRef
       .resource[F, TestsData]((_: TestsData) => F.unit) //todo: possibly add logging here.
       .map { ref =>
-        new AutoRefreshGroupAssigner[F] {
+        new AutoRefreshAssignGroups[F] {
           def assign(
               query: UserGroupQuery
             ): F[Map[FeatureName, AssignmentWithMeta]] = {
