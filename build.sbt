@@ -45,7 +45,6 @@ lazy val libs =
   .addJVM( name = "embedded-kafka",       version = "2.3.1",  org = "io.github.embeddedkafka")
   .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
   .add(   name = "circe",                 version = "0.12.1", org = "io.circe", "circe-core", "circe-generic")
-  .add(   name = "scalacheck-toolbox-datetime", version = "0.3.1",  org = "com.47deg")
 // format: on
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
