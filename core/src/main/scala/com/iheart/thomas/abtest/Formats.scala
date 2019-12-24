@@ -2,9 +2,12 @@ package com.iheart.thomas
 
 package abtest
 import model._
-import _root_.play.api.libs.json._, Json.WithDefaultValues
+import _root_.play.api.libs.json._
+import Json.WithDefaultValues
 import com.iheart.thomas.abtest.model.Abtest.Specialization
-
+import lihua.playJson.Formats._
+import play.api.libs.functional.InvariantFunctorOps
+import concurrent.duration._
 object Formats {
   implicit val jSpecialization: Format[Specialization] =
     new Format[Specialization] {
@@ -31,5 +34,10 @@ object Formats {
     j.format[UserGroupQuery]
   implicit val userGroupQueryResultFormat =
     j.format[UserGroupQueryResult]
+
+  implicit val finiteDurationFormat: Format[FiniteDuration] =
+    new InvariantFunctorOps(implicitly[Format[Long]]).inmap(_.nanos, _.toNanos)
+
+  implicit val testsDataFormat = j.format[TestsData]
 
 }

@@ -57,10 +57,19 @@ object EligibilityControl extends EligibilityControlInstances0 {
 private[thomas] sealed abstract class EligibilityControlInstances0
     extends EligibilityControlInstances1 {
 
-  implicit def default: EligibilityControl[Id] =
-    byGroupMeta |+| byRequiredTags |+| bySegRanges |+| byTestEffectiveRange
+  implicit def default[F[_]: Applicative]: EligibilityControl[F] =
+    new EligibilityControl[F] {
+      def eligible(
+          query: UserGroupQuery,
+          test: Abtest
+        ): F[Boolean] =
+        (byGroupMeta |+| byRequiredTags |+| bySegRanges |+| byTestEffectiveRange)
+          .eligible(query, test)
+          .pure[F]
 
-  lazy val byGroupMeta: EligibilityControl[Id] =
+    }
+
+  implicit lazy val byGroupMeta: EligibilityControl[Id] =
     abtest.EligibilityControl[Id](
       (query, test) =>
         test.matchingUserMeta.forall {

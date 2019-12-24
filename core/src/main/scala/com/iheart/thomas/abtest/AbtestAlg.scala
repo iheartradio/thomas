@@ -15,7 +15,7 @@ import cats.tagless.FunctorK
 import com.iheart.thomas.TimeUtil
 import Error._
 import cats.effect.{Concurrent, Resource, Timer}
-import com.iheart.thomas.abtest.model.Abtest.Specialization
+import model.Abtest.Specialization
 import model._
 import lihua._
 import monocle.macros.syntax.lens._
@@ -58,6 +58,11 @@ trait AbtestAlg[F[_]] {
     * @param time optional time constraint, if set, this will only return tests as of that time.
     */
   def getAllTests(time: Option[OffsetDateTime]): F[Vector[Entity[Abtest]]]
+
+  def getTestsData(
+      at: Instant,
+      duration: Option[FiniteDuration]
+    ): F[TestsData]
 
   def getAllTestsBySpecialization(
       specialization: Specialization,
@@ -160,7 +165,7 @@ object AbtestAlg {
       idSelector: EntityId => JsObject
     ): Resource[F, AbtestAlg[F]] =
     RefreshRef
-      .resource[F, (Vector[(lihua.Entity[Abtest], Feature)], Instant)]
+      .resource[F, TestsData]
       .map { implicit rr =>
         implicit val nowF = F.delay(Instant.now)
         new DefaultAbtestAlg[F](refreshPeriod)
@@ -168,7 +173,8 @@ object AbtestAlg {
 }
 
 final class DefaultAbtestAlg[F[_]](
-    refreshPeriod: FiniteDuration
+    refreshPeriod: FiniteDuration,
+    staleTimeout: FiniteDuration = 30.minutes
   )(implicit
     private[thomas] val abTestDao: EntityDAO[
       F,
@@ -180,9 +186,7 @@ final class DefaultAbtestAlg[F[_]](
       Feature,
       JsObject
     ],
-    refreshRef: RefreshRef[F, (Vector[
-          (Entity[Abtest], Feature)
-        ], Instant)],
+    refreshRef: RefreshRef[F, TestsData],
     nowF: F[Instant],
     F: MonadThrowable[F],
     eligibilityControl: EligibilityControl[F],
@@ -207,27 +211,26 @@ final class DefaultAbtestAlg[F[_]](
       } yield created
     }
 
-  def getAllTestsCachedWithAt(
-      time: Option[Instant]
-    ): F[(Vector[(Entity[Abtest], Feature)], Instant)] =
+  def getAllTestsCachedWithAt(time: Option[Instant]): F[TestsData] =
     time.fold(
-      refreshRef.getOrFetch(refreshPeriod, 30.minutes)(
-        nowF.flatMap(t => getAllTestsWithFeatures(t).map((_, t)))
+      refreshRef.getOrFetch(refreshPeriod, staleTimeout)(
+        nowF.flatMap(getTestsData(_, None))
       ) {
         case e => F.unit //todo: add logging here for Abtest retrieval failure
       }
-    )(t => getAllTestsWithFeatures(t).map((_, t)))
+    )(getTestsData(_, None))
 
   def getAllTestsCached(
       time: Option[OffsetDateTime]
     ): F[Vector[(Entity[Abtest], Feature)]] =
-    getAllTestsCachedWithAt(time.map(_.toInstant)).map(_._1)
+    getAllTestsCachedWithAt(time.map(_.toInstant)).map(_.data)
 
-  def getAllTestsWithFeatures(
-      ofTime: Instant
-    ): F[Vector[(Entity[Abtest], Feature)]] = {
+  def getTestsData(
+      at: Instant,
+      duration: Option[FiniteDuration]
+    ): F[TestsData] =
     for {
-      tests <- abTestDao.find(abtests.byTime(ofTime))
+      tests <- abTestDao.find(abtests.byTime(at, duration))
       features <- featureDao.find(
         Json.obj(
           "name" ->
@@ -239,19 +242,22 @@ final class DefaultAbtestAlg[F[_]](
             )
         )
       )
-    } yield tests.map(
-      t =>
-        (
-          t,
-          features
-            .find(_.data.name == t.data.feature)
-            .map(_.data)
-            .getOrElse(
-              Feature(t.data.feature, None, Map())
-            )
-        )
+    } yield TestsData(
+      at,
+      tests.map(
+        t =>
+          (
+            t,
+            features
+              .find(_.data.name == t.data.feature)
+              .map(_.data)
+              .getOrElse(
+                Feature(t.data.feature, None, Map())
+              )
+          )
+      ),
+      None
     )
-  }
 
   def getAllFeatures: F[List[FeatureName]] =
     abTestDao
@@ -263,7 +269,7 @@ final class DefaultAbtestAlg[F[_]](
 
   def getAllTests(time: Option[OffsetDateTime]): F[Vector[Entity[Abtest]]] =
     nowF.flatMap { n =>
-      abTestDao.find(abtests.byTime(time.map(_.toInstant).getOrElse(n)))
+      abTestDao.find(abtests.byTime(time.map(_.toInstant).getOrElse(n), None))
     }
 
   def getAllTestsEndAfter(time: OffsetDateTime): F[Vector[Entity[Abtest]]] =
@@ -639,12 +645,9 @@ final class DefaultAbtestAlg[F[_]](
       query: UserGroupQuery
     ): F[(Map[FeatureName, (GroupName, Abtest)], Instant)] =
     for {
-      p <- getAllTestsCachedWithAt(query.at.map(_.toInstant))
-      (data, at) = p
-      testFeatures = data.map {
-        case (Entity(_, test), feature) => (test, feature)
-      }
-    } yield (AssignGroups.assign[Id](testFeatures, query), at)
+      td <- getAllTestsCachedWithAt(query.at.map(_.toInstant))
+      assignment <- AssignGroups.assign[F](td, query, staleTimeout)
+    } yield (assignment, td.at)
 
   private def doCreate(
       newSpec: AbtestSpec,
