@@ -17,6 +17,24 @@ abstract class AutoRefreshAssignGroups[F[_]] {
 
 object AutoRefreshAssignGroups {
 
+  case class Config(
+      refreshPeriod: FiniteDuration,
+      staleTimeout: FiniteDuration,
+      testsRange: Option[FiniteDuration])
+
+  def resource[F[_]: Timer](
+      abtestClient: AbtestClient[F],
+      config: Config
+    )(implicit F: ConcurrentEffect[F],
+      nowF: F[Instant]
+    ): Resource[F, AutoRefreshAssignGroups[F]] =
+    resource[F](
+      abtestClient,
+      refreshPeriod = config.refreshPeriod,
+      staleTimeout = config.staleTimeout,
+      testsRange = config.testsRange
+    )
+
   /**
     *
     * @param abtestClient  client to get A/B tests data
