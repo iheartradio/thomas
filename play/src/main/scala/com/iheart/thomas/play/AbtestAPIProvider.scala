@@ -14,7 +14,6 @@ import com.iheart.thomas.analysis.KPIApi
 import lihua.mongo._
 import _root_.play.api.Configuration
 import _root_.play.api.inject.ApplicationLifecycle
-import com.iheart.thomas.abtest.model.{Abtest, Feature}
 import com.iheart.thomas.play.AbtestAPIProvider.FailedToStartApplicationException
 import mau.RefreshRef
 
@@ -58,7 +57,7 @@ class APIProviderBase(
 
   implicit val refreshRef =
     RefreshRef
-      .create[IO, (Vector[(lihua.Entity[Abtest], Feature)], Instant)](_ => IO.unit)
+      .create[IO, TestsData](_ => IO.unit)
       .unsafeRunSync()
 
   lifecycle.addStopHook(() => refreshRef.cancel.unsafeToFuture())

@@ -3,18 +3,18 @@ package spark
 
 import java.time.Instant
 
-import cats.Id
 import cats.effect.{ConcurrentEffect, ContextShift, IO}
-import com.iheart.thomas.abtest.AssignGroups
-import com.iheart.thomas.abtest.model.{Abtest, Feature, UserGroupQuery}
+import com.iheart.thomas.abtest.{AssignGroups, TestsData}
+import com.iheart.thomas.abtest.model.UserGroupQuery
 import com.iheart.thomas.client.AbtestClient
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{col, udf}
 import cats.implicits._
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.Duration
 
-class Assigner(data: Vector[(Abtest, Feature)]) extends Serializable {
+class Assigner(data: TestsData) extends Serializable {
 
   def assignUdf(feature: FeatureName) = udf { (userId: String) =>
     assign(feature, userId).getOrElse(null)
@@ -23,11 +23,18 @@ class Assigner(data: Vector[(Abtest, Feature)]) extends Serializable {
   def assign(
       feature: FeatureName,
       userId: String
-    ): Option[GroupName] =
+    ): Option[GroupName] = {
+    implicit val nowF = IO.delay(Instant.now)
     AssignGroups
-      .assign[Id](data, UserGroupQuery(Some(userId), None, features = List(feature)))
+      .assign[IO](
+        data,
+        UserGroupQuery(Some(userId), None, features = List(feature)),
+        Duration.Zero
+      )
+      .unsafeRunSync
       .get(feature)
       .map(_._1)
+  }
 
   def assignments(
       userIds: DataFrame,
@@ -65,9 +72,9 @@ object Assigner {
       asOf: Option[Long]
     )(implicit ec: ExecutionContext
     ): F[Assigner] = {
-    val time = asOf.map(Instant.ofEpochSecond)
+    val time = asOf.map(Instant.ofEpochSecond).getOrElse(Instant.now)
 
-    AbtestClient.testsWithFeatures[F](url, time).map {
+    AbtestClient.testsData[F](url, time).map {
       new Assigner(_)
     }
 

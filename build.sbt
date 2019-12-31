@@ -36,15 +36,15 @@ lazy val libs =
   .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
   .addJVM(name = "akka-slf4j",            version = "2.5.27", org = "com.typesafe.akka")
   .add(   name = "http4s",                version = "0.21.0-M6")
-  .add(   name = "http4s-client",         version = "0.20.15", org = "org.http4s", "http4s-blaze-client", "http4s-play-json") //overrides two modules with different version
-  .add(   name = "scalacheck-1-14",       version = "3.1.0.0",   org = "org.scalatestplus")
+  .add(   name = "http4s-client",         version = "0.20.15",org = "org.http4s", "http4s-blaze-client", "http4s-play-json") //overrides two modules with different version
+  .add(   name = "scalacheck-1-14",       version = "3.1.0.0",org = "org.scalatestplus")
   .add(   name = "scalatestplus-play",    version = "4.0.3",  org = "org.scalatestplus.play")
   .add(   name = "cats-effect-testing-scalatest",    version = "0.3.0",  org = "com.codecommit")
   .addJVM(name = "fs2-kafka",             version = "0.20.2", org = "com.ovoenergy")
   .add(   name = "jawn",                  version = "0.14.2", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
-  .addJVM( name = "embedded-kafka",       version = "2.4.0",  org = "io.github.embeddedkafka")
-  .add(   name = "pureconfig",       version = "0.12.2",  org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
-  .add(   name = "circe",       version = "0.12.1",  org = "io.circe", "circe-core", "circe-generic")
+  .addJVM( name = "embedded-kafka",       version = "2.3.1",  org = "io.github.embeddedkafka")
+  .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
+  .add(   name = "circe",                 version = "0.12.1", org = "io.circe", "circe-core", "circe-generic")
 // format: on
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")

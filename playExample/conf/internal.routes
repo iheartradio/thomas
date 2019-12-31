@@ -74,6 +74,21 @@ GET      /tests                                                controllers.MyAbt
 ###
 GET      /testsWithFeatures                                    controllers.MyAbtestController.getAllTestsCached(at: Option[Long])
 
+###
+#  summary: get all tests and feature running within a certain time from now
+#  parameters:
+#    - name: atEpochMilli
+#      description: Epoch milliseconds for the time as of which the tests are running
+#    - name: durationMillisecond
+#      description: Optional, milliseconds for the duration during which valid tests are included.
+#  responses:
+#    200:
+#      schema:
+#        $ref: '#/definitions/com.iheart.thomas.abtest.TestsData
+#
+###
+GET      /testsData                                    controllers.MyAbtestController.getTestsData(atEpochMilli: Long, durationMillisecond: Option[Long])
+
 
 ###
 #  summary: get tests for a feature
