@@ -43,7 +43,7 @@ lazy val libs =
   .addJVM(name = "fs2-kafka",             version = "0.20.2", org = "com.ovoenergy")
   .add(   name = "jawn",                  version = "0.14.2", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
   .addJVM( name = "embedded-kafka",       version = "2.3.1",  org = "io.github.embeddedkafka")
-  .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
+  .add(   name = "pureconfig",            version = "0.12.2", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
   .add(   name = "circe",                 version = "0.12.1", org = "io.circe", "circe-core", "circe-generic")
 // format: on
 
