@@ -6,16 +6,21 @@ import java.time.{Instant, OffsetDateTime}
 import model._
 import lihua.{Entity, EntityDAO}
 import _root_.play.api.libs.json.{JsObject, Json, Writes}
+import TimeUtil._
+import scala.concurrent.duration.FiniteDuration
 
 object QueryDSL {
 
   object abtests {
 
-    def byTime(time: OffsetDateTime): JsObject = byTime(time.toInstant)
+    def byTime(time: OffsetDateTime): JsObject = byTime(time.toInstant, None)
 
-    def byTime(time: Instant): JsObject =
+    def byTime(
+        time: Instant,
+        duration: Option[FiniteDuration]
+      ): JsObject =
       Json.obj(
-        "start" → Json.obj("$lte" → time)
+        "start" → Json.obj("$lte" → duration.fold(time)(time.plusDuration))
       ) ++ endTimeAfter(time)
 
     def endTimeAfter(time: Instant): JsObject =

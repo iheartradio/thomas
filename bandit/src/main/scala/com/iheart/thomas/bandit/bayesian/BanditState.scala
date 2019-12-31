@@ -15,10 +15,14 @@ case class BanditState[R](
     arms: List[ArmState[R]],
     start: Instant,
     kpiName: KPIName,
-    minimumSizeChange: Double) {
+    minimumSizeChange: Double,
+    initialSampleSize: Int) {
 
   def rewardState: Map[ArmName, R] =
     arms.map(as => (as.name, as.rewardState)).toMap
+
+  def distribution: Map[ArmName, Probability] =
+    arms.map(as => (as.name, as.likelihoodOptimum)).toMap
 
   def updateArms(rewards: Map[ArmName, R])(implicit RS: Monoid[R]): BanditState[R] =
     copy(arms = arms.map { arm =>

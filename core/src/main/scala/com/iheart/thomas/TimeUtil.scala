@@ -7,8 +7,9 @@ package com.iheart.thomas
 
 import java.time._
 import java.time.format.DateTimeFormatter
-import scala.util.Try
 
+import scala.concurrent.duration.{FiniteDuration, NANOSECONDS}
+import scala.util.Try
 object TimeUtil {
 
   def defaultOffset: ZoneOffset =
@@ -20,8 +21,15 @@ object TimeUtil {
       ZoneId.systemDefault()
     )
 
-  implicit class InstantOps(private val instant: Instant) extends AnyVal {
-    def toODT = instant.atOffset(ZoneOffset.UTC)
+  implicit class InstantOps(private val me: Instant) extends AnyVal {
+    def toODT = me.atOffset(ZoneOffset.UTC)
+
+    def durationTo(that: Instant): FiniteDuration =
+      FiniteDuration(Duration.between(me, that).toNanos, NANOSECONDS)
+
+    def plusDuration(duration: FiniteDuration): Instant =
+      me.plusNanos(duration.toNanos)
+
   }
 
   def parse(value: String): Option[OffsetDateTime] =

@@ -8,21 +8,22 @@ package client
 
 import java.time.{Instant, ZoneOffset}
 
-import cats.Id
 import cats.effect.{ContextShift, IO}
 import com.iheart.thomas.abtest.AssignGroups
 import com.iheart.thomas.abtest.model.UserGroupQuery
 
 import collection.JavaConverters._
+import scala.concurrent.duration.Duration
 
 class JavaAbtestAssignments private (
     serviceUrl: String,
     asOf: Option[Long]) {
-  private val time = asOf.map(Instant.ofEpochSecond)
+  private val time = asOf.map(Instant.ofEpochSecond).getOrElse(Instant.now)
   import scala.concurrent.ExecutionContext.Implicits.global
   implicit val csIo: ContextShift[IO] = IO.contextShift(global)
+  implicit val nowF: IO[Instant] = IO.delay(Instant.now)
   val testData =
-    AbtestClient.testsWithFeatures[IO](serviceUrl, time).unsafeRunSync()
+    AbtestClient.testsData[IO](serviceUrl, time).unsafeRunSync()
 
   def assignments(
       userId: String,
@@ -31,18 +32,20 @@ class JavaAbtestAssignments private (
       features: java.util.List[String]
     ): java.util.Map[FeatureName, GroupName] = {
     AssignGroups
-      .assign[Id](
+      .assign[IO](
         testData,
         UserGroupQuery(
           Some(userId),
-          time.map(_.atOffset(ZoneOffset.UTC)),
+          Some(time.atOffset(ZoneOffset.UTC)),
           tags.asScala.toList,
           meta.asScala.toMap,
           features = features.asScala.toList
-        )
+        ),
+        Duration.Zero
       )
-      .map { case (fn, (gn, _)) => (fn, gn) }
-      .asJava
+      .map(_.map { case (fn, (gn, _)) => (fn, gn) }.asJava)
+      .unsafeRunSync()
+
   }
 
   def assignments(userId: String): java.util.Map[FeatureName, GroupName] =

@@ -25,7 +25,10 @@ object BayesianMABCommands {
       Opts.option[String]("kpi", "KPI name", "k").coerce[Opts[KPIName]],
       Opts
         .option[Double]("minimumSizeChange", "minimum group size change")
-        .withDefault(0.005d)
+        .withDefault(0.005d),
+      Opts
+        .option[Int]("initialSampleSize", "required sample size to start allocating")
+        .withDefault(0)
     ).mapN(BanditSpec.apply)
 
   def conversionBMABCommand[F[_]](

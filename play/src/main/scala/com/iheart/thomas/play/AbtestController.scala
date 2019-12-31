@@ -5,6 +5,8 @@
 
 package com.iheart.thomas
 package play
+import java.time.Instant
+
 import abtest._
 import Formats._
 import model._
@@ -13,7 +15,6 @@ import ThomasController.{Alerter, InvalidRequest}
 import _root_.play.api.libs.json._
 import _root_.play.api.mvc._
 import cats.implicits._
-
 import com.iheart.thomas.analysis.{KPIApi, KPIDistribution}
 import lihua.{Entity, EntityId}
 import lihua.mongo.JsonFormats._
@@ -61,6 +62,17 @@ class AbtestController[F[_]](
 
   def getAllTestsCached(at: Option[Long]) = action {
     api.getAllTestsCachedEpoch(at)
+  }
+
+  def getTestsData(
+      atEpochMilli: Long,
+      durationMillisecond: Option[Long]
+    ) = action {
+    import scala.concurrent.duration._
+    api.getTestsData(
+      Instant.ofEpochMilli(atEpochMilli),
+      durationMillisecond.map(_.millis)
+    )
   }
 
   def create(autoResolveConflict: Boolean): Action[JsValue] =
