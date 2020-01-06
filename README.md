@@ -6,6 +6,9 @@
 [![Build Status](https://travis-ci.org/iheartradio/thomas.svg?branch=master)](https://travis-ci.org/iheartradio/thomas)
 [![Gitter](https://badges.gitter.im/iheartradio/thomas.svg)](https://gitter.im/iheartradio/thomas?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
+
+![Thomas](/iheartradio/thomas/blob/master/docs/src/main/resources/microsite/img/Thomas_Bayes.gif)
+
 **Thomas is a modular Scala library for setting up an A/B test service for A/B test management and user group assignment. It also provides tools for results analysis.**
 
 To use Thomas as part of a complete A/B test solution, a team needs to: 
