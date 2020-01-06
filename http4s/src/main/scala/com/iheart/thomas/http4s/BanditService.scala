@@ -23,13 +23,13 @@ import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.dynamo.ClientConfig
 import com.iheart.thomas.kafka.BanditUpdater.KafkaConfig
 import com.typesafe.config.Config
-import play.api.libs.json._
+import _root_.play.api.libs.json._
 import fs2.Stream
 import org.http4s.server.Router
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import play.api.libs.json.Json.toJson
+import _root_.play.api.libs.json.Json.toJson
 
 class BanditService[F[_]: Async] private (
     conversionsRunner: Repeating[F],

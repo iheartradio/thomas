@@ -13,7 +13,7 @@ import com.iheart.thomas.{dynamo, mongo}
 import com.stripe.rainier.sampler.RNG
 import com.typesafe.config.ConfigFactory
 import lihua.dynamo.testkit.LocalDynamo
-import play.api.libs.json.Json
+import _root_.play.api.libs.json.Json
 
 import scala.concurrent.duration._
 

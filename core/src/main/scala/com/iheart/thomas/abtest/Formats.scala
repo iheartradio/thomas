@@ -6,7 +6,7 @@ import _root_.play.api.libs.json._
 import Json.WithDefaultValues
 import com.iheart.thomas.abtest.model.Abtest.Specialization
 import lihua.playJson.Formats._
-import play.api.libs.functional.InvariantFunctorOps
+import _root_.play.api.libs.functional.InvariantFunctorOps
 import concurrent.duration._
 object Formats {
   implicit val jSpecialization: Format[Specialization] =
