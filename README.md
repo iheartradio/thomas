@@ -7,7 +7,7 @@
 [![Gitter](https://badges.gitter.im/iheartradio/thomas.svg)](https://gitter.im/iheartradio/thomas?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 
-![Thomas](https://iheartradio.github.io/thomas/img/thomas-the-tank-engine.svg?sanitize=true)
+![Thomas](https://iheartradio.github.io/thomas/img/thomas-the-tank-engine.png)
 
 **Thomas is a modular Scala library for setting up an A/B test service for A/B test management and user group assignment. It also provides tools for results analysis.**
 
