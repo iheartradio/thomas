@@ -177,6 +177,10 @@
                         <span class="separator"></span>
                         <a class="object" href="QueryDSL$.html" title=""></a>
                         <a href="QueryDSL$.html" title="">QueryDSL</a>
+                      </li><li class="current-entities indented4">
+                        <span class="separator"></span>
+                        <a class="class" href="TestsData.html" title=""></a>
+                        <a href="TestsData.html" title="">TestsData</a>
                       </li>
               </ul>
             </div>
@@ -255,7 +259,26 @@
         <div id="allMembers">
         
 
-        
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="com.iheart.thomas.abtest.AssignGroups.PresentTestsData" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PresentTestsData=Vector[(lihua.Entity[com.iheart.thomas.abtest.model.Abtest],com.iheart.thomas.abtest.model.Feature)]"></a><a id="PresentTestsData:PresentTestsData"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/abtest/AssignGroups$.html#PresentTestsData=Vector[(lihua.Entity[com.iheart.thomas.abtest.model.Abtest],com.iheart.thomas.abtest.model.Feature)]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">type</span>
+      </span>
+      <span class="symbol">
+        <span class="name">PresentTestsData</span><span class="result alias"> = <a href="https://www.scala-lang.org/api/2.12.10/scala/collection/immutable/Vector.html#scala.collection.immutable.Vector" class="extype" name="scala.collection.immutable.Vector">Vector</a>[(<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>], <a href="model/Feature.html" class="extype" name="com.iheart.thomas.abtest.model.Feature">Feature</a>)]</span>
+      </span>
+      
+      
+    </li></ol>
+            </div>
 
         
 
@@ -327,9 +350,9 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="com.iheart.thomas.abtest.AssignGroups#assign" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="assign[F[_]](tests:Vector[(com.iheart.thomas.abtest.model.Abtest,com.iheart.thomas.abtest.model.Feature)],query:com.iheart.thomas.abtest.model.UserGroupQuery)(implicitevidence$2:cats.Monad[F],impliciteligibilityControl:com.iheart.thomas.abtest.EligibilityControl[F]):F[Map[com.iheart.thomas.FeatureName,(com.iheart.thomas.GroupName,com.iheart.thomas.abtest.model.Abtest)]]"></a><a id="assign[F[_]](Vector[(Abtest,Feature)],UserGroupQuery)(Monad[F],EligibilityControl[F]):F[Map[FeatureName,(GroupName,Abtest)]]"></a>
+      <a id="assign[F[_]](tests:com.iheart.thomas.abtest.TestsData,query:com.iheart.thomas.abtest.model.UserGroupQuery,consistencyTolerance:scala.concurrent.duration.FiniteDuration)(implicitevidence$2:com.iheart.thomas.abtest.EligibilityControl[F],implicitF:com.iheart.thomas.MonadThrowable[F],implicitnowF:F[java.time.Instant]):F[Map[com.iheart.thomas.FeatureName,(com.iheart.thomas.GroupName,com.iheart.thomas.abtest.model.Abtest)]]"></a><a id="assign[F[_]](TestsData,UserGroupQuery,FiniteDuration)(EligibilityControl[F],MonadThrowable[F],F[Instant]):F[Map[FeatureName,(GroupName,Abtest)]]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/abtest/AssignGroups$.html#assign[F[_]](tests:Vector[(com.iheart.thomas.abtest.model.Abtest,com.iheart.thomas.abtest.model.Feature)],query:com.iheart.thomas.abtest.model.UserGroupQuery)(implicitevidence$2:cats.Monad[F],impliciteligibilityControl:com.iheart.thomas.abtest.EligibilityControl[F]):F[Map[com.iheart.thomas.FeatureName,(com.iheart.thomas.GroupName,com.iheart.thomas.abtest.model.Abtest)]]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/abtest/AssignGroups$.html#assign[F[_]](tests:com.iheart.thomas.abtest.TestsData,query:com.iheart.thomas.abtest.model.UserGroupQuery,consistencyTolerance:scala.concurrent.duration.FiniteDuration)(implicitevidence$2:com.iheart.thomas.abtest.EligibilityControl[F],implicitF:com.iheart.thomas.MonadThrowable[F],implicitnowF:F[java.time.Instant]):F[Map[com.iheart.thomas.FeatureName,(com.iheart.thomas.GroupName,com.iheart.thomas.abtest.model.Abtest)]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -338,23 +361,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">assign</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="tests">tests: <a href="../../../../scala/index.html#Vector[+A]=scala.collection.immutable.Vector[A]" class="extmbr" name="scala.Vector">Vector</a>[(<a href="model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>, <a href="model/Feature.html" class="extype" name="com.iheart.thomas.abtest.model.Feature">Feature</a>)]</span>, <span name="query">query: <a href="model/UserGroupQuery.html" class="extype" name="com.iheart.thomas.abtest.model.UserGroupQuery">UserGroupQuery</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="http://typelevel.org/cats/api/cats/Monad.html#cats.Monad" class="extype" name="cats.Monad">Monad</a>[<span class="extype" name="com.iheart.thomas.abtest.AssignGroups.assign.F">F</span>]</span>, <span name="eligibilityControl">eligibilityControl: <a href="EligibilityControl.html" class="extype" name="com.iheart.thomas.abtest.EligibilityControl">EligibilityControl</a>[<span class="extype" name="com.iheart.thomas.abtest.AssignGroups.assign.F">F</span>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.AssignGroups.assign.F">F</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>, (<a href="../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>, <a href="model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>)]]</span>
-      </span>
-      
-      
-    </li><li name="com.iheart.thomas.abtest.AssignGroups#assign" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="assign[F[_]](test:com.iheart.thomas.abtest.model.Abtest,feature:com.iheart.thomas.abtest.model.Feature,query:com.iheart.thomas.abtest.model.UserGroupQuery)(implicitevidence$1:cats.Monad[F],impliciteligibilityControl:com.iheart.thomas.abtest.EligibilityControl[F]):F[Option[com.iheart.thomas.GroupName]]"></a><a id="assign[F[_]](Abtest,Feature,UserGroupQuery)(Monad[F],EligibilityControl[F]):F[Option[GroupName]]"></a>
-      <span class="permalink">
-      <a href="../../../../com/iheart/thomas/abtest/AssignGroups$.html#assign[F[_]](test:com.iheart.thomas.abtest.model.Abtest,feature:com.iheart.thomas.abtest.model.Feature,query:com.iheart.thomas.abtest.model.UserGroupQuery)(implicitevidence$1:cats.Monad[F],impliciteligibilityControl:com.iheart.thomas.abtest.EligibilityControl[F]):F[Option[com.iheart.thomas.GroupName]]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">assign</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="test">test: <a href="model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a></span>, <span name="feature">feature: <a href="model/Feature.html" class="extype" name="com.iheart.thomas.abtest.model.Feature">Feature</a></span>, <span name="query">query: <a href="model/UserGroupQuery.html" class="extype" name="com.iheart.thomas.abtest.model.UserGroupQuery">UserGroupQuery</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="http://typelevel.org/cats/api/cats/Monad.html#cats.Monad" class="extype" name="cats.Monad">Monad</a>[<span class="extype" name="com.iheart.thomas.abtest.AssignGroups.assign.F">F</span>]</span>, <span name="eligibilityControl">eligibilityControl: <a href="EligibilityControl.html" class="extype" name="com.iheart.thomas.abtest.EligibilityControl">EligibilityControl</a>[<span class="extype" name="com.iheart.thomas.abtest.AssignGroups.assign.F">F</span>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.AssignGroups.assign.F">F</span>[<a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>]]</span>
+        <span class="name">assign</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="tests">tests: <a href="TestsData.html" class="extype" name="com.iheart.thomas.abtest.TestsData">TestsData</a></span>, <span name="query">query: <a href="model/UserGroupQuery.html" class="extype" name="com.iheart.thomas.abtest.model.UserGroupQuery">UserGroupQuery</a></span>, <span name="consistencyTolerance">consistencyTolerance: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <a href="EligibilityControl.html" class="extype" name="com.iheart.thomas.abtest.EligibilityControl">EligibilityControl</a>[<span class="extype" name="com.iheart.thomas.abtest.AssignGroups.assign.F">F</span>]</span>, <span name="F">F: <a href="../index.html#MonadThrowable[F[_]]=cats.MonadError[F,Throwable]" class="extmbr" name="com.iheart.thomas.MonadThrowable">MonadThrowable</a>[<span class="extype" name="com.iheart.thomas.abtest.AssignGroups.assign.F">F</span>]</span>, <span name="nowF">nowF: <span class="extype" name="com.iheart.thomas.abtest.AssignGroups.assign.F">F</span>[<span class="extype" name="java.time.Instant">Instant</span>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.AssignGroups.assign.F">F</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>, (<a href="../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>, <a href="model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>)]]</span>
       </span>
       
       
@@ -644,6 +651,22 @@
                 <span class="name">@native</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="com.iheart.thomas.abtest.AssignGroups.InsufficientTestsDataToAssign" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="InsufficientTestsDataToAssign"></a><a id="InsufficientTestsDataToAssign:InsufficientTestsDataToAssign"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/abtest/AssignGroups$$InsufficientTestsDataToAssign$.html" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="AssignGroups$$InsufficientTestsDataToAssign$.html"><span class="name">InsufficientTestsDataToAssign</span></a><span class="result"> extends <a href="../../../../scala/index.html#RuntimeException=RuntimeException" class="extmbr" name="scala.RuntimeException">RuntimeException</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/util/control/NoStackTrace.html#scala.util.control.NoStackTrace" class="extype" name="scala.util.control.NoStackTrace">NoStackTrace</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
+      </span>
+      
+      
     </li>
               </ol>
             </div>

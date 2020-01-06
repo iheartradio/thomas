@@ -143,6 +143,14 @@
                         <a href="AnalysisAPI.html" title="">AnalysisAPI</a>
                       </li><li class="current-entities indented4">
                         <span class="separator"></span>
+                        <a class="class" href="AssignmentWithMeta.html" title=""></a>
+                        <a href="AssignmentWithMeta.html" title="">AssignmentWithMeta</a>
+                      </li><li class="current-entities indented4">
+                        <a class="object" href="AutoRefreshAssignGroups$.html" title=""></a>
+                        <a class="class" href="AutoRefreshAssignGroups.html" title=""></a>
+                        <a href="AutoRefreshAssignGroups.html" title="">AutoRefreshAssignGroups</a>
+                      </li><li class="current-entities indented4">
+                        <span class="separator"></span>
                         <a class="object" href="BayesianBanditClient$.html" title=""></a>
                         <a href="BayesianBanditClient$.html" title="">BayesianBanditClient</a>
                       </li><li class="current-entities indented4">
@@ -557,10 +565,10 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="com.iheart.thomas.client.AbtestClient#testsWithFeatures" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="testsWithFeatures[F[_]](serviceUrl:String,time:Option[java.time.OffsetDateTime])(implicitevidence$3:cats.effect.ConcurrentEffect[F],implicitec:scala.concurrent.ExecutionContext):F[Vector[(com.iheart.thomas.abtest.model.Abtest,com.iheart.thomas.abtest.model.Feature)]]"></a><a id="testsWithFeatures[F[_]](String,Option[OffsetDateTime])(ConcurrentEffect[F],ExecutionContext):F[Vector[(Abtest,Feature)]]"></a>
+    </li><li name="com.iheart.thomas.client.AbtestClient#testsData" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="testsData[F[_]](serviceUrl:String,time:java.time.Instant)(implicitevidence$3:cats.effect.ConcurrentEffect[F],implicitec:scala.concurrent.ExecutionContext):F[com.iheart.thomas.abtest.TestsData]"></a><a id="testsData[F[_]](String,Instant)(ConcurrentEffect[F],ExecutionContext):F[TestsData]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/AbtestClient$.html#testsWithFeatures[F[_]](serviceUrl:String,time:Option[java.time.OffsetDateTime])(implicitevidence$3:cats.effect.ConcurrentEffect[F],implicitec:scala.concurrent.ExecutionContext):F[Vector[(com.iheart.thomas.abtest.model.Abtest,com.iheart.thomas.abtest.model.Feature)]]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/client/AbtestClient$.html#testsData[F[_]](serviceUrl:String,time:java.time.Instant)(implicitevidence$3:cats.effect.ConcurrentEffect[F],implicitec:scala.concurrent.ExecutionContext):F[com.iheart.thomas.abtest.TestsData]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -569,7 +577,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">testsWithFeatures</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="serviceUrl">serviceUrl: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="time">time: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.effect.ConcurrentEffect">ConcurrentEffect</span>[<span class="extype" name="com.iheart.thomas.client.AbtestClient.testsWithFeatures.F">F</span>]</span>, <span name="ec">ec: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/ExecutionContext.html#scala.concurrent.ExecutionContext" class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.testsWithFeatures.F">F</span>[<a href="../../../../scala/index.html#Vector[+A]=scala.collection.immutable.Vector[A]" class="extmbr" name="scala.Vector">Vector</a>[(<a href="../abtest/model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>, <a href="../abtest/model/Feature.html" class="extype" name="com.iheart.thomas.abtest.model.Feature">Feature</a>)]]</span>
+        <span class="name">testsData</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="serviceUrl">serviceUrl: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="time">time: <span class="extype" name="java.time.Instant">Instant</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.effect.ConcurrentEffect">ConcurrentEffect</span>[<span class="extype" name="com.iheart.thomas.client.AbtestClient.testsData.F">F</span>]</span>, <span name="ec">ec: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/ExecutionContext.html#scala.concurrent.ExecutionContext" class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.testsData.F">F</span>[<a href="../abtest/TestsData.html" class="extype" name="com.iheart.thomas.abtest.TestsData">TestsData</a>]</span>
       </span>
       
       <p class="shortcomment cmt">Shortcuts for getting the assigned group only.</p><div class="fullcomment"><div class="comment cmt"><p>Shortcuts for getting the assigned group only.</p></div><dl class="paramcmts block"><dt class="param">serviceUrl</dt><dd class="cmt"><p>for getting all running tests as of <code>time</code></p></dd></dl></div>

@@ -143,6 +143,14 @@
                         <a href="AnalysisAPI.html" title="">AnalysisAPI</a>
                       </li><li class="current-entities indented4">
                         <span class="separator"></span>
+                        <a class="class" href="AssignmentWithMeta.html" title=""></a>
+                        <a href="AssignmentWithMeta.html" title="">AssignmentWithMeta</a>
+                      </li><li class="current-entities indented4">
+                        <a class="object" href="AutoRefreshAssignGroups$.html" title=""></a>
+                        <a class="class" href="AutoRefreshAssignGroups.html" title=""></a>
+                        <a href="AutoRefreshAssignGroups.html" title="">AutoRefreshAssignGroups</a>
+                      </li><li class="current-entities indented4">
+                        <span class="separator"></span>
                         <a class="object" href="BayesianBanditClient$.html" title=""></a>
                         <a href="BayesianBanditClient$.html" title="">BayesianBanditClient</a>
                       </li><li class="current-entities indented4">
@@ -339,9 +347,9 @@
       
       
     </li><li name="com.iheart.thomas.client.AbtestClient#tests" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="tests(asOf:Option[java.time.OffsetDateTime]):F[Vector[(lihua.Entity[com.iheart.thomas.abtest.model.Abtest],com.iheart.thomas.abtest.model.Feature)]]"></a><a id="tests(Option[OffsetDateTime]):F[Vector[(Entity[Abtest],Feature)]]"></a>
+      <a id="tests(asOf:Option[java.time.Instant]):F[Vector[(lihua.Entity[com.iheart.thomas.abtest.model.Abtest],com.iheart.thomas.abtest.model.Feature)]]"></a><a id="tests(Option[Instant]):F[Vector[(Entity[Abtest],Feature)]]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#tests(asOf:Option[java.time.OffsetDateTime]):F[Vector[(lihua.Entity[com.iheart.thomas.abtest.model.Abtest],com.iheart.thomas.abtest.model.Feature)]]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#tests(asOf:Option[java.time.Instant]):F[Vector[(lihua.Entity[com.iheart.thomas.abtest.model.Abtest],com.iheart.thomas.abtest.model.Feature)]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -350,7 +358,23 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">tests</span><span class="params">(<span name="asOf">asOf: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span>] = <span class="symbol"><span class="name"><a href="../../../../scala/index.html">None</a></span></span></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="../../../../scala/index.html#Vector[+A]=scala.collection.immutable.Vector[A]" class="extmbr" name="scala.Vector">Vector</a>[(<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="../abtest/model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>], <a href="../abtest/model/Feature.html" class="extype" name="com.iheart.thomas.abtest.model.Feature">Feature</a>)]]</span>
+        <span class="name">tests</span><span class="params">(<span name="asOf">asOf: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.Instant">Instant</span>] = <span class="symbol"><span class="name"><a href="../../../../scala/index.html">None</a></span></span></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="../../../../scala/index.html#Vector[+A]=scala.collection.immutable.Vector[A]" class="extmbr" name="scala.Vector">Vector</a>[(<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="../abtest/model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>], <a href="../abtest/model/Feature.html" class="extype" name="com.iheart.thomas.abtest.model.Feature">Feature</a>)]]</span>
+      </span>
+      
+      
+    </li><li name="com.iheart.thomas.client.AbtestClient#testsData" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="testsData(at:java.time.Instant,duration:Option[scala.concurrent.duration.FiniteDuration]):F[com.iheart.thomas.abtest.TestsData]"></a><a id="testsData(Instant,Option[FiniteDuration]):F[TestsData]"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#testsData(at:java.time.Instant,duration:Option[scala.concurrent.duration.FiniteDuration]):F[com.iheart.thomas.abtest.TestsData]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">testsData</span><span class="params">(<span name="at">at: <span class="extype" name="java.time.Instant">Instant</span></span>, <span name="duration">duration: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="../abtest/TestsData.html" class="extype" name="com.iheart.thomas.abtest.TestsData">TestsData</a>]</span>
       </span>
       
       
@@ -643,9 +667,9 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="com.iheart.thomas.client.AbtestClient#test" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="test(feature:com.iheart.thomas.FeatureName,asOf:Option[java.time.OffsetDateTime])(implicitF:cats.Functor[F]):F[Option[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]]"></a><a id="test(FeatureName,Option[OffsetDateTime])(Functor[F]):F[Option[Entity[Abtest]]]"></a>
+      <a id="test(feature:com.iheart.thomas.FeatureName,asOf:Option[java.time.Instant])(implicitF:cats.Functor[F]):F[Option[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]]"></a><a id="test(FeatureName,Option[Instant])(Functor[F]):F[Option[Entity[Abtest]]]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#test(feature:com.iheart.thomas.FeatureName,asOf:Option[java.time.OffsetDateTime])(implicitF:cats.Functor[F]):F[Option[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#test(feature:com.iheart.thomas.FeatureName,asOf:Option[java.time.Instant])(implicitF:cats.Functor[F]):F[Option[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -654,7 +678,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">test</span><span class="params">(<span name="feature">feature: <a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a></span>, <span name="asOf">asOf: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span>] = <span class="symbol"><span class="name"><a href="../../../../scala/index.html">None</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="F">F: <span class="extype" name="cats.Functor">Functor</span>[<span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="../abtest/model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>]]]</span>
+        <span class="name">test</span><span class="params">(<span name="feature">feature: <a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a></span>, <span name="asOf">asOf: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.Instant">Instant</span>] = <span class="symbol"><span class="name"><a href="../../../../scala/index.html">None</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="F">F: <span class="extype" name="cats.Functor">Functor</span>[<span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="../abtest/model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>]]]</span>
       </span>
       
       

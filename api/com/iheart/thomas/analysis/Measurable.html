@@ -302,9 +302,9 @@
         <div class="values members">
               <h3>Abstract Value Members</h3>
               <ol><li name="com.iheart.thomas.analysis.Measurable#measureAbtest" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="measureAbtest(k:K,abtest:com.iheart.thomas.abtest.model.Abtest,start:Option[java.time.OffsetDateTime],end:Option[java.time.OffsetDateTime]):F[Map[com.iheart.thomas.GroupName,M]]"></a><a id="measureAbtest(K,Abtest,Option[OffsetDateTime],Option[OffsetDateTime]):F[Map[GroupName,M]]"></a>
+      <a id="measureAbtest(k:K,abtest:com.iheart.thomas.abtest.model.Abtest,start:Option[java.time.Instant],end:Option[java.time.Instant]):F[Map[com.iheart.thomas.GroupName,M]]"></a><a id="measureAbtest(K,Abtest,Option[Instant],Option[Instant]):F[Map[GroupName,M]]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/analysis/Measurable.html#measureAbtest(k:K,abtest:com.iheart.thomas.abtest.model.Abtest,start:Option[java.time.OffsetDateTime],end:Option[java.time.OffsetDateTime]):F[Map[com.iheart.thomas.GroupName,M]]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/analysis/Measurable.html#measureAbtest(k:K,abtest:com.iheart.thomas.abtest.model.Abtest,start:Option[java.time.Instant],end:Option[java.time.Instant]):F[Map[com.iheart.thomas.GroupName,M]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -313,14 +313,14 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">measureAbtest</span><span class="params">(<span name="k">k: <span class="extype" name="com.iheart.thomas.analysis.Measurable.K">K</span></span>, <span name="abtest">abtest: <a href="../abtest/model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a></span>, <span name="start">start: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span>]</span>, <span name="end">end: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.analysis.Measurable.F">F</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<a href="../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>, <span class="extype" name="com.iheart.thomas.analysis.Measurable.M">M</span>]]</span>
+        <span class="name">measureAbtest</span><span class="params">(<span name="k">k: <span class="extype" name="com.iheart.thomas.analysis.Measurable.K">K</span></span>, <span name="abtest">abtest: <a href="../abtest/model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a></span>, <span name="start">start: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.Instant">Instant</span>]</span>, <span name="end">end: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.Instant">Instant</span>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.analysis.Measurable.F">F</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<a href="../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>, <span class="extype" name="com.iheart.thomas.analysis.Measurable.M">M</span>]]</span>
       </span>
       
       
     </li><li name="com.iheart.thomas.analysis.Measurable#measureHistory" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="measureHistory(k:K,start:java.time.OffsetDateTime,end:java.time.OffsetDateTime):F[M]"></a><a id="measureHistory(K,OffsetDateTime,OffsetDateTime):F[M]"></a>
+      <a id="measureHistory(k:K,start:java.time.Instant,end:java.time.Instant):F[M]"></a><a id="measureHistory(K,Instant,Instant):F[M]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/analysis/Measurable.html#measureHistory(k:K,start:java.time.OffsetDateTime,end:java.time.OffsetDateTime):F[M]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/analysis/Measurable.html#measureHistory(k:K,start:java.time.Instant,end:java.time.Instant):F[M]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -329,7 +329,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">measureHistory</span><span class="params">(<span name="k">k: <span class="extype" name="com.iheart.thomas.analysis.Measurable.K">K</span></span>, <span name="start">start: <span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span></span>, <span name="end">end: <span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.analysis.Measurable.F">F</span>[<span class="extype" name="com.iheart.thomas.analysis.Measurable.M">M</span>]</span>
+        <span class="name">measureHistory</span><span class="params">(<span name="k">k: <span class="extype" name="com.iheart.thomas.analysis.Measurable.K">K</span></span>, <span name="start">start: <span class="extype" name="java.time.Instant">Instant</span></span>, <span name="end">end: <span class="extype" name="java.time.Instant">Instant</span></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.analysis.Measurable.F">F</span>[<span class="extype" name="com.iheart.thomas.analysis.Measurable.M">M</span>]</span>
       </span>
       
       

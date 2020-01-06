@@ -260,7 +260,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">APIProviderBase</span><span class="params">(<span name="config">config: <a href="https://www.playframework.com/documentation/2.7.3/api/scala/play/api/Configuration.html#play.api.Configuration" class="extype" name="play.api.Configuration">Configuration</a></span>, <span name="lifecycle">lifecycle: <a href="https://www.playframework.com/documentation/2.7.3/api/scala/play/api/inject/ApplicationLifecycle.html#play.api.inject.ApplicationLifecycle" class="extype" name="play.api.inject.ApplicationLifecycle">ApplicationLifecycle</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ex">ex: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/ExecutionContext.html#scala.concurrent.ExecutionContext" class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</a></span>)</span>
+        <span class="name">APIProviderBase</span><span class="params">(<span name="config">config: <a href="https://www.playframework.com/documentation/2.7.4/api/scala/play/api/Configuration.html#play.api.Configuration" class="extype" name="play.api.Configuration">Configuration</a></span>, <span name="lifecycle">lifecycle: <a href="https://www.playframework.com/documentation/2.7.4/api/scala/play/api/inject/ApplicationLifecycle.html#play.api.inject.ApplicationLifecycle" class="extype" name="play.api.inject.ApplicationLifecycle">ApplicationLifecycle</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ex">ex: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/ExecutionContext.html#scala.concurrent.ExecutionContext" class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</a></span>)</span>
       </span>
       
       
@@ -605,9 +605,9 @@
               
         </dd></dl></div>
     </li><li name="com.iheart.thomas.play.APIProviderBase#nowF" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="nowF:cats.effect.IO[java.time.OffsetDateTime]"></a><a id="nowF:IO[OffsetDateTime]"></a>
+      <a id="nowF:cats.effect.IO[java.time.Instant]"></a><a id="nowF:IO[Instant]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/play/APIProviderBase.html#nowF:cats.effect.IO[java.time.OffsetDateTime]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/play/APIProviderBase.html#nowF:cats.effect.IO[java.time.Instant]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -616,14 +616,30 @@
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">nowF</span><span class="result">: <span class="extype" name="cats.effect.IO">IO</span>[<span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span>]</span>
+        <span class="name">nowF</span><span class="result">: <span class="extype" name="cats.effect.IO">IO</span>[<span class="extype" name="java.time.Instant">Instant</span>]</span>
+      </span>
+      
+      
+    </li><li name="com.iheart.thomas.play.APIProviderBase#refreshRate" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="refreshRate:scala.concurrent.duration.FiniteDuration"></a><a id="refreshRate:FiniteDuration"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/play/APIProviderBase.html#refreshRate:scala.concurrent.duration.FiniteDuration" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">lazy val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">refreshRate</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a></span>
       </span>
       
       
     </li><li name="com.iheart.thomas.play.APIProviderBase#refreshRef" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="refreshRef:mau.RefreshRef[cats.effect.IO,Vector[(lihua.Entity[com.iheart.thomas.abtest.model.Abtest],com.iheart.thomas.abtest.model.Feature)]]"></a><a id="refreshRef:RefreshRef[IO,Vector[(Entity[Abtest],Feature)]]"></a>
+      <a id="refreshRef:mau.RefreshRef[cats.effect.IO,com.iheart.thomas.abtest.TestsData]"></a><a id="refreshRef:RefreshRef[IO,TestsData]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/play/APIProviderBase.html#refreshRef:mau.RefreshRef[cats.effect.IO,Vector[(lihua.Entity[com.iheart.thomas.abtest.model.Abtest],com.iheart.thomas.abtest.model.Feature)]]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/play/APIProviderBase.html#refreshRef:mau.RefreshRef[cats.effect.IO,com.iheart.thomas.abtest.TestsData]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -632,7 +648,7 @@
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">refreshRef</span><span class="result">: <span class="extype" name="mau.RefreshRef">RefreshRef</span>[<span class="extype" name="cats.effect.IO">IO</span>, <a href="../../../../scala/index.html#Vector[+A]=scala.collection.immutable.Vector[A]" class="extmbr" name="scala.Vector">Vector</a>[(<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="../abtest/model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>], <a href="../abtest/model/Feature.html" class="extype" name="com.iheart.thomas.abtest.model.Feature">Feature</a>)]]</span>
+        <span class="name">refreshRef</span><span class="result">: <span class="extype" name="mau.RefreshRef">RefreshRef</span>[<span class="extype" name="cats.effect.IO">IO</span>, <a href="../abtest/TestsData.html" class="extype" name="com.iheart.thomas.abtest.TestsData">TestsData</a>]</span>
       </span>
       
       
@@ -700,22 +716,6 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="com.iheart.thomas.play.APIProviderBase#ttl" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="ttl:scala.concurrent.duration.FiniteDuration"></a><a id="ttl:FiniteDuration"></a>
-      <span class="permalink">
-      <a href="../../../../com/iheart/thomas/play/APIProviderBase.html#ttl:scala.concurrent.duration.FiniteDuration" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">lazy val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">ttl</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a></span>
-      </span>
-      
-      
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <span class="permalink">

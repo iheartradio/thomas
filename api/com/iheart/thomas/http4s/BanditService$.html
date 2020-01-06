@@ -143,12 +143,12 @@
                         <a href="BanditService.html" title="">BanditService</a>
                       </li><li class="current-entities indented4">
                         <span class="separator"></span>
-                        <a class="trait" href="ExampleHtt4sApp.html" title=""></a>
-                        <a href="ExampleHtt4sApp.html" title="">ExampleHtt4sApp</a>
+                        <a class="object" href="ExampleAbtestServerApp$.html" title=""></a>
+                        <a href="ExampleAbtestServerApp$.html" title="">ExampleAbtestServerApp</a>
                       </li><li class="current-entities indented4">
                         <span class="separator"></span>
-                        <a class="object" href="Main$.html" title=""></a>
-                        <a href="Main$.html" title="">Main</a>
+                        <a class="object" href="StreamControlTest$.html" title=""></a>
+                        <a href="StreamControlTest$.html" title="">StreamControlTest</a>
                       </li>
               </ul>
             </div>
@@ -229,7 +229,42 @@
         <div id="allMembers">
         
 
-        
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="com.iheart.thomas.http4s.BanditService.BanditRunnerConfig" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BanditRunnerConfigextendsProductwithSerializable"></a><a id="BanditRunnerConfig:BanditRunnerConfig"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/http4s/BanditService$$BanditRunnerConfig.html" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="BanditService$$BanditRunnerConfig.html"><span class="name">BanditRunnerConfig</span></a><span class="params">(<span name="repeat">repeat: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a></span>, <span name="historyRetention">historyRetention: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a>]</span>)</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
+      </span>
+      
+      
+    </li><li name="com.iheart.thomas.http4s.BanditService.BanditServiceConfig" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BanditServiceConfigextendsProductwithSerializable"></a><a id="BanditServiceConfig:BanditServiceConfig"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/http4s/BanditService$$BanditServiceConfig.html" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="BanditService$$BanditServiceConfig.html"><span class="name">BanditServiceConfig</span></a><span class="params">(<span name="kafka">kafka: <span class="extype" name="com.iheart.thomas.kafka.BanditUpdater.KafkaConfig">KafkaConfig</span></span>, <span name="dynamo">dynamo: <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/dynamo/ClientConfig.html#com.iheart.thomas.dynamo.ClientConfig" class="extype" name="com.iheart.thomas.dynamo.ClientConfig">ClientConfig</a></span>, <span name="runner">runner: <a href="BanditService$$BanditRunnerConfig.html" class="extype" name="com.iheart.thomas.http4s.BanditService.BanditRunnerConfig">BanditRunnerConfig</a></span>)</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
+      </span>
+      
+      
+    </li></ol>
+            </div>
 
         
 
@@ -325,9 +360,9 @@
               
         </dd></dl></div>
     </li><li name="com.iheart.thomas.http4s.BanditService#create" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="create[F[_]](mongoConfig:com.typesafe.config.Config,reallocationRepeatDuration:scala.concurrent.duration.FiniteDuration)(implicitevidence$4:cats.effect.Concurrent[F],implicitevidence$5:cats.effect.Timer[F],implicitex:scala.concurrent.ExecutionContext,implicitamazonClient:com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync):cats.effect.Resource[F,com.iheart.thomas.http4s.BanditService[F]]"></a><a id="create[F[_]](Config,FiniteDuration)(Concurrent[F],Timer[F],ExecutionContext,AmazonDynamoDBAsync):Resource[F,BanditService[F]]"></a>
+      <a id="create[F[_]](kafkaConfig:com.iheart.thomas.kafka.BanditUpdater.KafkaConfig,bcs:com.iheart.thomas.http4s.BanditService.BanditRunnerConfig)(implicitevidence$16:cats.effect.ConcurrentEffect[F],implicitevidence$17:cats.effect.Timer[F],implicitevidence$18:cats.effect.ContextShift[F],implicitevidence$19:com.iheart.thomas.mongo.DAOs[F],implicitevidence$20:com.iheart.thomas.kafka.MessageProcessor[F],implicitevidence$21:com.iheart.thomas.bandit.tracking.EventLogger[F],implicitex:scala.concurrent.ExecutionContext,implicitamazonClient:com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync):cats.effect.Resource[F,com.iheart.thomas.http4s.BanditService[F]]"></a><a id="create[F[_]](KafkaConfig,BanditRunnerConfig)(ConcurrentEffect[F],Timer[F],ContextShift[F],DAOs[F],MessageProcessor[F],EventLogger[F],ExecutionContext,AmazonDynamoDBAsync):Resource[F,BanditService[F]]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/http4s/BanditService$.html#create[F[_]](mongoConfig:com.typesafe.config.Config,reallocationRepeatDuration:scala.concurrent.duration.FiniteDuration)(implicitevidence$4:cats.effect.Concurrent[F],implicitevidence$5:cats.effect.Timer[F],implicitex:scala.concurrent.ExecutionContext,implicitamazonClient:com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync):cats.effect.Resource[F,com.iheart.thomas.http4s.BanditService[F]]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/http4s/BanditService$.html#create[F[_]](kafkaConfig:com.iheart.thomas.kafka.BanditUpdater.KafkaConfig,bcs:com.iheart.thomas.http4s.BanditService.BanditRunnerConfig)(implicitevidence$16:cats.effect.ConcurrentEffect[F],implicitevidence$17:cats.effect.Timer[F],implicitevidence$18:cats.effect.ContextShift[F],implicitevidence$19:com.iheart.thomas.mongo.DAOs[F],implicitevidence$20:com.iheart.thomas.kafka.MessageProcessor[F],implicitevidence$21:com.iheart.thomas.bandit.tracking.EventLogger[F],implicitex:scala.concurrent.ExecutionContext,implicitamazonClient:com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync):cats.effect.Resource[F,com.iheart.thomas.http4s.BanditService[F]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -336,14 +371,14 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">create</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="mongoConfig">mongoConfig: <span class="extype" name="com.typesafe.config.Config">Config</span></span>, <span name="reallocationRepeatDuration">reallocationRepeatDuration: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.effect.Concurrent">Concurrent</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="arg1">arg1: <span class="extype" name="cats.effect.Timer">Timer</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="ex">ex: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/ExecutionContext.html#scala.concurrent.ExecutionContext" class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</a></span>, <span name="amazonClient">amazonClient: <span class="extype" name="com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync">AmazonDynamoDBAsync</span></span>)</span><span class="result">: <span class="extype" name="cats.effect.Resource">Resource</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>, <a href="BanditService.html" class="extype" name="com.iheart.thomas.http4s.BanditService">BanditService</a>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]]</span>
+        <span class="name">create</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="kafkaConfig">kafkaConfig: <span class="extype" name="com.iheart.thomas.kafka.BanditUpdater.KafkaConfig">KafkaConfig</span></span>, <span name="bcs">bcs: <a href="BanditService$$BanditRunnerConfig.html" class="extype" name="com.iheart.thomas.http4s.BanditService.BanditRunnerConfig">BanditRunnerConfig</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.effect.ConcurrentEffect">ConcurrentEffect</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="arg1">arg1: <span class="extype" name="cats.effect.Timer">Timer</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="arg2">arg2: <span class="extype" name="cats.effect.ContextShift">ContextShift</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="arg3">arg3: <span class="extype" name="com.iheart.thomas.mongo.DAOs">DAOs</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="arg4">arg4: <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/kafka/MessageProcessor.html#com.iheart.thomas.kafka.MessageProcessor" class="extype" name="com.iheart.thomas.kafka.MessageProcessor">MessageProcessor</a>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="arg5">arg5: <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/bandit/tracking/EventLogger.html#com.iheart.thomas.bandit.tracking.EventLogger" class="extype" name="com.iheart.thomas.bandit.tracking.EventLogger">EventLogger</a>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="ex">ex: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/ExecutionContext.html#scala.concurrent.ExecutionContext" class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</a></span>, <span name="amazonClient">amazonClient: <span class="extype" name="com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync">AmazonDynamoDBAsync</span></span>)</span><span class="result">: <span class="extype" name="cats.effect.Resource">Resource</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>, <a href="BanditService.html" class="extype" name="com.iheart.thomas.http4s.BanditService">BanditService</a>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]]</span>
       </span>
       
       
     </li><li name="com.iheart.thomas.http4s.BanditService#create" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="create[F[_]](mongoConfig:com.typesafe.config.Config,dynamoConfig:com.iheart.thomas.dynamo.ClientConfig,reallocationRepeatDuration:scala.concurrent.duration.FiniteDuration)(implicitevidence$2:cats.effect.Concurrent[F],implicitevidence$3:cats.effect.Timer[F],implicitex:scala.concurrent.ExecutionContext):cats.effect.Resource[F,com.iheart.thomas.http4s.BanditService[F]]"></a><a id="create[F[_]](Config,ClientConfig,FiniteDuration)(Concurrent[F],Timer[F],ExecutionContext):Resource[F,BanditService[F]]"></a>
+      <a id="create[F[_]](kafkaConfig:com.iheart.thomas.kafka.BanditUpdater.KafkaConfig,mongoConfig:com.typesafe.config.Config,dynamoConfig:com.iheart.thomas.dynamo.ClientConfig,bcs:com.iheart.thomas.http4s.BanditService.BanditRunnerConfig)(implicitevidence$11:cats.effect.ConcurrentEffect[F],implicitevidence$12:cats.effect.Timer[F],implicitevidence$13:cats.effect.ContextShift[F],implicitevidence$14:com.iheart.thomas.kafka.MessageProcessor[F],implicitevidence$15:com.iheart.thomas.bandit.tracking.EventLogger[F],implicitex:scala.concurrent.ExecutionContext):cats.effect.Resource[F,com.iheart.thomas.http4s.BanditService[F]]"></a><a id="create[F[_]](KafkaConfig,Config,ClientConfig,BanditRunnerConfig)(ConcurrentEffect[F],Timer[F],ContextShift[F],MessageProcessor[F],EventLogger[F],ExecutionContext):Resource[F,BanditService[F]]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/http4s/BanditService$.html#create[F[_]](mongoConfig:com.typesafe.config.Config,dynamoConfig:com.iheart.thomas.dynamo.ClientConfig,reallocationRepeatDuration:scala.concurrent.duration.FiniteDuration)(implicitevidence$2:cats.effect.Concurrent[F],implicitevidence$3:cats.effect.Timer[F],implicitex:scala.concurrent.ExecutionContext):cats.effect.Resource[F,com.iheart.thomas.http4s.BanditService[F]]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/http4s/BanditService$.html#create[F[_]](kafkaConfig:com.iheart.thomas.kafka.BanditUpdater.KafkaConfig,mongoConfig:com.typesafe.config.Config,dynamoConfig:com.iheart.thomas.dynamo.ClientConfig,bcs:com.iheart.thomas.http4s.BanditService.BanditRunnerConfig)(implicitevidence$11:cats.effect.ConcurrentEffect[F],implicitevidence$12:cats.effect.Timer[F],implicitevidence$13:cats.effect.ContextShift[F],implicitevidence$14:com.iheart.thomas.kafka.MessageProcessor[F],implicitevidence$15:com.iheart.thomas.bandit.tracking.EventLogger[F],implicitex:scala.concurrent.ExecutionContext):cats.effect.Resource[F,com.iheart.thomas.http4s.BanditService[F]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -352,7 +387,23 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">create</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="mongoConfig">mongoConfig: <span class="extype" name="com.typesafe.config.Config">Config</span></span>, <span name="dynamoConfig">dynamoConfig: <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/dynamo/ClientConfig.html#com.iheart.thomas.dynamo.ClientConfig" class="extype" name="com.iheart.thomas.dynamo.ClientConfig">ClientConfig</a></span>, <span name="reallocationRepeatDuration">reallocationRepeatDuration: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.effect.Concurrent">Concurrent</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="arg1">arg1: <span class="extype" name="cats.effect.Timer">Timer</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="ex">ex: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/ExecutionContext.html#scala.concurrent.ExecutionContext" class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</a></span>)</span><span class="result">: <span class="extype" name="cats.effect.Resource">Resource</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>, <a href="BanditService.html" class="extype" name="com.iheart.thomas.http4s.BanditService">BanditService</a>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]]</span>
+        <span class="name">create</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="kafkaConfig">kafkaConfig: <span class="extype" name="com.iheart.thomas.kafka.BanditUpdater.KafkaConfig">KafkaConfig</span></span>, <span name="mongoConfig">mongoConfig: <span class="extype" name="com.typesafe.config.Config">Config</span></span>, <span name="dynamoConfig">dynamoConfig: <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/dynamo/ClientConfig.html#com.iheart.thomas.dynamo.ClientConfig" class="extype" name="com.iheart.thomas.dynamo.ClientConfig">ClientConfig</a></span>, <span name="bcs">bcs: <a href="BanditService$$BanditRunnerConfig.html" class="extype" name="com.iheart.thomas.http4s.BanditService.BanditRunnerConfig">BanditRunnerConfig</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.effect.ConcurrentEffect">ConcurrentEffect</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="arg1">arg1: <span class="extype" name="cats.effect.Timer">Timer</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="arg2">arg2: <span class="extype" name="cats.effect.ContextShift">ContextShift</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="arg3">arg3: <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/kafka/MessageProcessor.html#com.iheart.thomas.kafka.MessageProcessor" class="extype" name="com.iheart.thomas.kafka.MessageProcessor">MessageProcessor</a>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="arg4">arg4: <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/bandit/tracking/EventLogger.html#com.iheart.thomas.bandit.tracking.EventLogger" class="extype" name="com.iheart.thomas.bandit.tracking.EventLogger">EventLogger</a>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="ex">ex: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/ExecutionContext.html#scala.concurrent.ExecutionContext" class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</a></span>)</span><span class="result">: <span class="extype" name="cats.effect.Resource">Resource</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>, <a href="BanditService.html" class="extype" name="com.iheart.thomas.http4s.BanditService">BanditService</a>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]]</span>
+      </span>
+      
+      
+    </li><li name="com.iheart.thomas.http4s.BanditService#create" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="create[F[_]](configResource:Option[String])(implicitevidence$6:cats.effect.ConcurrentEffect[F],implicitevidence$7:cats.effect.Timer[F],implicitevidence$8:cats.effect.ContextShift[F],implicitevidence$9:com.iheart.thomas.kafka.MessageProcessor[F],implicitevidence$10:com.iheart.thomas.bandit.tracking.EventLogger[F],implicitex:scala.concurrent.ExecutionContext):cats.effect.Resource[F,com.iheart.thomas.http4s.BanditService[F]]"></a><a id="create[F[_]](Option[String])(ConcurrentEffect[F],Timer[F],ContextShift[F],MessageProcessor[F],EventLogger[F],ExecutionContext):Resource[F,BanditService[F]]"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/http4s/BanditService$.html#create[F[_]](configResource:Option[String])(implicitevidence$6:cats.effect.ConcurrentEffect[F],implicitevidence$7:cats.effect.Timer[F],implicitevidence$8:cats.effect.ContextShift[F],implicitevidence$9:com.iheart.thomas.kafka.MessageProcessor[F],implicitevidence$10:com.iheart.thomas.bandit.tracking.EventLogger[F],implicitex:scala.concurrent.ExecutionContext):cats.effect.Resource[F,com.iheart.thomas.http4s.BanditService[F]]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">create</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="configResource">configResource: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol"><span class="name"><a href="../../../../scala/index.html">None</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.effect.ConcurrentEffect">ConcurrentEffect</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="arg1">arg1: <span class="extype" name="cats.effect.Timer">Timer</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="arg2">arg2: <span class="extype" name="cats.effect.ContextShift">ContextShift</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="arg3">arg3: <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/kafka/MessageProcessor.html#com.iheart.thomas.kafka.MessageProcessor" class="extype" name="com.iheart.thomas.kafka.MessageProcessor">MessageProcessor</a>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="arg4">arg4: <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/bandit/tracking/EventLogger.html#com.iheart.thomas.bandit.tracking.EventLogger" class="extype" name="com.iheart.thomas.bandit.tracking.EventLogger">EventLogger</a>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]</span>, <span name="ex">ex: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/ExecutionContext.html#scala.concurrent.ExecutionContext" class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</a></span>)</span><span class="result">: <span class="extype" name="cats.effect.Resource">Resource</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>, <a href="BanditService.html" class="extype" name="com.iheart.thomas.http4s.BanditService">BanditService</a>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.create.F">F</span>]]</span>
       </span>
       
       
@@ -518,22 +569,6 @@
                 <span class="name">@native</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="com.iheart.thomas.http4s.BanditService#reallocateAllConversions" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="reallocateAllConversions[F[_]](mongoConfig:com.typesafe.config.Config,reallocationRepeatDuration:scala.concurrent.duration.FiniteDuration)(implicitevidence$6:cats.effect.Timer[F],implicitevidence$7:cats.effect.Concurrent[F],implicitex:scala.concurrent.ExecutionContext,implicitamazonClient:com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync):cats.effect.Resource[F,mau.Repeating[F]]"></a><a id="reallocateAllConversions[F[_]](Config,FiniteDuration)(Timer[F],Concurrent[F],ExecutionContext,AmazonDynamoDBAsync):Resource[F,Repeating[F]]"></a>
-      <span class="permalink">
-      <a href="../../../../com/iheart/thomas/http4s/BanditService$.html#reallocateAllConversions[F[_]](mongoConfig:com.typesafe.config.Config,reallocationRepeatDuration:scala.concurrent.duration.FiniteDuration)(implicitevidence$6:cats.effect.Timer[F],implicitevidence$7:cats.effect.Concurrent[F],implicitex:scala.concurrent.ExecutionContext,implicitamazonClient:com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync):cats.effect.Resource[F,mau.Repeating[F]]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">reallocateAllConversions</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="mongoConfig">mongoConfig: <span class="extype" name="com.typesafe.config.Config">Config</span></span>, <span name="reallocationRepeatDuration">reallocationRepeatDuration: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.effect.Timer">Timer</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.reallocateAllConversions.F">F</span>]</span>, <span name="arg1">arg1: <span class="extype" name="cats.effect.Concurrent">Concurrent</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.reallocateAllConversions.F">F</span>]</span>, <span name="ex">ex: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/ExecutionContext.html#scala.concurrent.ExecutionContext" class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</a></span>, <span name="amazonClient">amazonClient: <span class="extype" name="com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync">AmazonDynamoDBAsync</span></span>)</span><span class="result">: <span class="extype" name="cats.effect.Resource">Resource</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.reallocateAllConversions.F">F</span>, <span class="extype" name="mau.Repeating">Repeating</span>[<span class="extype" name="com.iheart.thomas.http4s.BanditService.reallocateAllConversions.F">F</span>]]</span>
-      </span>
-      
-      
     </li><li name="scala.AnyRef#synchronized" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a><a id="synchronized[T0](⇒T0):T0"></a>
       <span class="permalink">
@@ -634,6 +669,22 @@
                 <span class="name">@native</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="com.iheart.thomas.http4s.BanditService.BanditServiceConfig" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="BanditServiceConfig"></a><a id="BanditServiceConfig:BanditServiceConfig"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/http4s/BanditService$$BanditServiceConfig$.html" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="BanditService$$BanditServiceConfig$.html"><span class="name">BanditServiceConfig</span></a><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
+      </span>
+      
+      
     </li>
               </ol>
             </div>

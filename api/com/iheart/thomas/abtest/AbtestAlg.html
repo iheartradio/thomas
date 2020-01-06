@@ -177,6 +177,10 @@
                         <span class="separator"></span>
                         <a class="object" href="QueryDSL$.html" title=""></a>
                         <a href="QueryDSL$.html" title="">QueryDSL</a>
+                      </li><li class="current-entities indented4">
+                        <span class="separator"></span>
+                        <a class="class" href="TestsData.html" title=""></a>
+                        <a href="TestsData.html" title="">TestsData</a>
                       </li>
               </ul>
             </div>
@@ -296,6 +300,22 @@ Final Tagless encoding</p></div><dl class="attributes block"> <dt>Source</dt><dd
       </span>
       <span class="symbol">
         <span class="name">addOverrides</span><span class="params">(<span name="featureName">featureName: <a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a></span>, <span name="overrides">overrides: <a href="model/index.html#Overrides=Map[com.iheart.thomas.UserId,com.iheart.thomas.GroupName]" class="extmbr" name="com.iheart.thomas.abtest.model.Overrides">Overrides</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.AbtestAlg.F">F</span>[<a href="model/Feature.html" class="extype" name="com.iheart.thomas.abtest.model.Feature">Feature</a>]</span>
+      </span>
+      
+      
+    </li><li name="com.iheart.thomas.abtest.AbtestAlg#cleanUp" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="cleanUp(featureName:com.iheart.thomas.FeatureName,historyBefore:java.time.OffsetDateTime):F[Int]"></a><a id="cleanUp(FeatureName,OffsetDateTime):F[Int]"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/abtest/AbtestAlg.html#cleanUp(featureName:com.iheart.thomas.FeatureName,historyBefore:java.time.OffsetDateTime):F[Int]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cleanUp</span><span class="params">(<span name="featureName">featureName: <a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a></span>, <span name="historyBefore">historyBefore: <span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.AbtestAlg.F">F</span>[<a href="https://www.scala-lang.org/api/2.12.10/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a>]</span>
       </span>
       
       
@@ -505,6 +525,22 @@ Final Tagless encoding</p></div><dl class="attributes block"> <dt>Source</dt><dd
       </span>
       <span class="symbol">
         <span class="name">getTestsByFeature</span><span class="params">(<span name="feature">feature: <a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.AbtestAlg.F">F</span>[<a href="../../../../scala/index.html#Vector[+A]=scala.collection.immutable.Vector[A]" class="extmbr" name="scala.Vector">Vector</a>[<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>]]]</span>
+      </span>
+      
+      
+    </li><li name="com.iheart.thomas.abtest.AbtestAlg#getTestsData" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="getTestsData(at:java.time.Instant,duration:Option[scala.concurrent.duration.FiniteDuration]):F[com.iheart.thomas.abtest.TestsData]"></a><a id="getTestsData(Instant,Option[FiniteDuration]):F[TestsData]"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/abtest/AbtestAlg.html#getTestsData(at:java.time.Instant,duration:Option[scala.concurrent.duration.FiniteDuration]):F[com.iheart.thomas.abtest.TestsData]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getTestsData</span><span class="params">(<span name="at">at: <span class="extype" name="java.time.Instant">Instant</span></span>, <span name="duration">duration: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.AbtestAlg.F">F</span>[<a href="TestsData.html" class="extype" name="com.iheart.thomas.abtest.TestsData">TestsData</a>]</span>
       </span>
       
       

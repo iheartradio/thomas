@@ -171,6 +171,10 @@
                         <a href="GroupRange.html" title="">GroupRange</a>
                       </li><li class="current-entities indented5">
                         <span class="separator"></span>
+                        <a class="object" href="GroupSize$.html" title=""></a>
+                        <a href="GroupSize$.html" title="">GroupSize</a>
+                      </li><li class="current-entities indented5">
+                        <span class="separator"></span>
                         <a class="class" href="UserGroupQuery.html" title=""></a>
                         <a href="UserGroupQuery.html" title="">UserGroupQuery</a>
                       </li><li class="current-entities indented5">
@@ -204,7 +208,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">UserGroupQueryResult</span><span class="params">(<span name="groups">groups: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>, <a href="../../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>]</span>, <span name="metas">metas: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>, <a href="index.html#GroupMeta=play.api.libs.json.JsObject" class="extmbr" name="com.iheart.thomas.abtest.model.GroupMeta">GroupMeta</a>]</span>)</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
+        <span class="name">UserGroupQueryResult</span><span class="params">(<span name="at">at: <span class="extype" name="java.time.Instant">Instant</span></span>, <span name="groups">groups: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>, <a href="../../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>]</span>, <span name="metas">metas: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>, <a href="index.html#GroupMeta=play.api.libs.json.JsObject" class="extmbr" name="com.iheart.thomas.abtest.model.GroupMeta">GroupMeta</a>]</span>)</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
       </span>
       </h4>
 
@@ -260,9 +264,9 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="com.iheart.thomas.abtest.model.UserGroupQueryResult#&lt;init&gt;" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(groups:Map[com.iheart.thomas.FeatureName,com.iheart.thomas.GroupName],metas:Map[com.iheart.thomas.FeatureName,com.iheart.thomas.abtest.model.GroupMeta]):com.iheart.thomas.abtest.model.UserGroupQueryResult"></a><a id="&lt;init&gt;:UserGroupQueryResult"></a>
+      <a id="&lt;init&gt;(at:java.time.Instant,groups:Map[com.iheart.thomas.FeatureName,com.iheart.thomas.GroupName],metas:Map[com.iheart.thomas.FeatureName,com.iheart.thomas.abtest.model.GroupMeta]):com.iheart.thomas.abtest.model.UserGroupQueryResult"></a><a id="&lt;init&gt;:UserGroupQueryResult"></a>
       <span class="permalink">
-      <a href="../../../../../com/iheart/thomas/abtest/model/UserGroupQueryResult.html#&lt;init&gt;(groups:Map[com.iheart.thomas.FeatureName,com.iheart.thomas.GroupName],metas:Map[com.iheart.thomas.FeatureName,com.iheart.thomas.abtest.model.GroupMeta]):com.iheart.thomas.abtest.model.UserGroupQueryResult" title="Permalink">
+      <a href="../../../../../com/iheart/thomas/abtest/model/UserGroupQueryResult.html#&lt;init&gt;(at:java.time.Instant,groups:Map[com.iheart.thomas.FeatureName,com.iheart.thomas.GroupName],metas:Map[com.iheart.thomas.FeatureName,com.iheart.thomas.abtest.model.GroupMeta]):com.iheart.thomas.abtest.model.UserGroupQueryResult" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -271,7 +275,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">UserGroupQueryResult</span><span class="params">(<span name="groups">groups: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>, <a href="../../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>]</span>, <span name="metas">metas: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>, <a href="index.html#GroupMeta=play.api.libs.json.JsObject" class="extmbr" name="com.iheart.thomas.abtest.model.GroupMeta">GroupMeta</a>]</span>)</span>
+        <span class="name">UserGroupQueryResult</span><span class="params">(<span name="at">at: <span class="extype" name="java.time.Instant">Instant</span></span>, <span name="groups">groups: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>, <a href="../../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>]</span>, <span name="metas">metas: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>, <a href="index.html#GroupMeta=play.api.libs.json.JsObject" class="extmbr" name="com.iheart.thomas.abtest.model.GroupMeta">GroupMeta</a>]</span>)</span>
       </span>
       
       
@@ -349,6 +353,22 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.iheart.thomas.abtest.model.UserGroupQueryResult#at" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="at:java.time.Instant"></a><a id="at:Instant"></a>
+      <span class="permalink">
+      <a href="../../../../../com/iheart/thomas/abtest/model/UserGroupQueryResult.html#at:java.time.Instant" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">at</span><span class="result">: <span class="extype" name="java.time.Instant">Instant</span></span>
+      </span>
+      
+      
     </li><li name="scala.AnyRef#clone" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a><a id="clone():AnyRef"></a>
       <span class="permalink">

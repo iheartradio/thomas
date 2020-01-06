@@ -177,6 +177,10 @@
                         <span class="separator"></span>
                         <a class="object" href="QueryDSL$.html" title=""></a>
                         <a href="QueryDSL$.html" title="">QueryDSL</a>
+                      </li><li class="current-entities indented4">
+                        <span class="separator"></span>
+                        <a class="class" href="TestsData.html" title=""></a>
+                        <a href="TestsData.html" title="">TestsData</a>
                       </li>
               </ul>
             </div>
@@ -256,9 +260,9 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="com.iheart.thomas.abtest.DefaultAbtestAlg#&lt;init&gt;" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(refreshPeriod:scala.concurrent.duration.FiniteDuration)(implicitabTestDao:lihua.EntityDAO[F,com.iheart.thomas.abtest.model.Abtest,play.api.libs.json.JsObject],implicitfeatureDao:lihua.EntityDAO[F,com.iheart.thomas.abtest.model.Feature,play.api.libs.json.JsObject],implicitrefreshRef:mau.RefreshRef[F,Vector[(lihua.Entity[com.iheart.thomas.abtest.model.Abtest],com.iheart.thomas.abtest.model.Feature)]],implicitnowF:F[java.time.OffsetDateTime],implicitF:com.iheart.thomas.MonadThrowable[F],impliciteligibilityControl:com.iheart.thomas.abtest.EligibilityControl[F],implicitidSelector:lihua.EntityId=&gt;play.api.libs.json.JsObject):com.iheart.thomas.abtest.DefaultAbtestAlg[F]"></a><a id="&lt;init&gt;:DefaultAbtestAlg[F]"></a>
+      <a id="&lt;init&gt;(refreshPeriod:scala.concurrent.duration.FiniteDuration,staleTimeout:scala.concurrent.duration.FiniteDuration)(implicitabTestDao:lihua.EntityDAO[F,com.iheart.thomas.abtest.model.Abtest,play.api.libs.json.JsObject],implicitfeatureDao:lihua.EntityDAO[F,com.iheart.thomas.abtest.model.Feature,play.api.libs.json.JsObject],implicitrefreshRef:mau.RefreshRef[F,com.iheart.thomas.abtest.TestsData],implicitnowF:F[java.time.Instant],implicitF:com.iheart.thomas.MonadThrowable[F],impliciteligibilityControl:com.iheart.thomas.abtest.EligibilityControl[F],implicitidSelector:lihua.EntityId=&gt;play.api.libs.json.JsObject):com.iheart.thomas.abtest.DefaultAbtestAlg[F]"></a><a id="&lt;init&gt;:DefaultAbtestAlg[F]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/abtest/DefaultAbtestAlg.html#&lt;init&gt;(refreshPeriod:scala.concurrent.duration.FiniteDuration)(implicitabTestDao:lihua.EntityDAO[F,com.iheart.thomas.abtest.model.Abtest,play.api.libs.json.JsObject],implicitfeatureDao:lihua.EntityDAO[F,com.iheart.thomas.abtest.model.Feature,play.api.libs.json.JsObject],implicitrefreshRef:mau.RefreshRef[F,Vector[(lihua.Entity[com.iheart.thomas.abtest.model.Abtest],com.iheart.thomas.abtest.model.Feature)]],implicitnowF:F[java.time.OffsetDateTime],implicitF:com.iheart.thomas.MonadThrowable[F],impliciteligibilityControl:com.iheart.thomas.abtest.EligibilityControl[F],implicitidSelector:lihua.EntityId=&gt;play.api.libs.json.JsObject):com.iheart.thomas.abtest.DefaultAbtestAlg[F]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/abtest/DefaultAbtestAlg.html#&lt;init&gt;(refreshPeriod:scala.concurrent.duration.FiniteDuration,staleTimeout:scala.concurrent.duration.FiniteDuration)(implicitabTestDao:lihua.EntityDAO[F,com.iheart.thomas.abtest.model.Abtest,play.api.libs.json.JsObject],implicitfeatureDao:lihua.EntityDAO[F,com.iheart.thomas.abtest.model.Feature,play.api.libs.json.JsObject],implicitrefreshRef:mau.RefreshRef[F,com.iheart.thomas.abtest.TestsData],implicitnowF:F[java.time.Instant],implicitF:com.iheart.thomas.MonadThrowable[F],impliciteligibilityControl:com.iheart.thomas.abtest.EligibilityControl[F],implicitidSelector:lihua.EntityId=&gt;play.api.libs.json.JsObject):com.iheart.thomas.abtest.DefaultAbtestAlg[F]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -267,7 +271,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">DefaultAbtestAlg</span><span class="params">(<span name="refreshPeriod">refreshPeriod: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="abTestDao">abTestDao: <a href="https://iheartradio.github.io/lihua/api/lihua/EntityDAO.html#lihua.EntityDAO" class="extype" name="lihua.EntityDAO">EntityDAO</a>[<span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>, <a href="model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>, <span class="extype" name="play.api.libs.json.JsObject">JsObject</span>]</span>, <span name="featureDao">featureDao: <a href="https://iheartradio.github.io/lihua/api/lihua/EntityDAO.html#lihua.EntityDAO" class="extype" name="lihua.EntityDAO">EntityDAO</a>[<span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>, <a href="model/Feature.html" class="extype" name="com.iheart.thomas.abtest.model.Feature">Feature</a>, <span class="extype" name="play.api.libs.json.JsObject">JsObject</span>]</span>, <span name="refreshRef">refreshRef: <span class="extype" name="mau.RefreshRef">RefreshRef</span>[<span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>, <a href="../../../../scala/index.html#Vector[+A]=scala.collection.immutable.Vector[A]" class="extmbr" name="scala.Vector">Vector</a>[(<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>], <a href="model/Feature.html" class="extype" name="com.iheart.thomas.abtest.model.Feature">Feature</a>)]]</span>, <span name="nowF">nowF: <span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>[<span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span>]</span>, <span name="F">F: <a href="../index.html#MonadThrowable[F[_]]=cats.MonadError[F,Throwable]" class="extmbr" name="com.iheart.thomas.MonadThrowable">MonadThrowable</a>[<span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>]</span>, <span name="eligibilityControl">eligibilityControl: <a href="EligibilityControl.html" class="extype" name="com.iheart.thomas.abtest.EligibilityControl">EligibilityControl</a>[<span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>]</span>, <span name="idSelector">idSelector: (<span class="extype" name="lihua.EntityId">EntityId</span>) ⇒ <span class="extype" name="play.api.libs.json.JsObject">JsObject</span></span>)</span>
+        <span class="name">DefaultAbtestAlg</span><span class="params">(<span name="refreshPeriod">refreshPeriod: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a></span>, <span name="staleTimeout">staleTimeout: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a> = <span class="symbol"><span class="name"><a href="../../../../scala/index.html">30.minutes</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="abTestDao">abTestDao: <a href="https://iheartradio.github.io/lihua/api/lihua/EntityDAO.html#lihua.EntityDAO" class="extype" name="lihua.EntityDAO">EntityDAO</a>[<span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>, <a href="model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>, <span class="extype" name="play.api.libs.json.JsObject">JsObject</span>]</span>, <span name="featureDao">featureDao: <a href="https://iheartradio.github.io/lihua/api/lihua/EntityDAO.html#lihua.EntityDAO" class="extype" name="lihua.EntityDAO">EntityDAO</a>[<span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>, <a href="model/Feature.html" class="extype" name="com.iheart.thomas.abtest.model.Feature">Feature</a>, <span class="extype" name="play.api.libs.json.JsObject">JsObject</span>]</span>, <span name="refreshRef">refreshRef: <span class="extype" name="mau.RefreshRef">RefreshRef</span>[<span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>, <a href="TestsData.html" class="extype" name="com.iheart.thomas.abtest.TestsData">TestsData</a>]</span>, <span name="nowF">nowF: <span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>[<span class="extype" name="java.time.Instant">Instant</span>]</span>, <span name="F">F: <a href="../index.html#MonadThrowable[F[_]]=cats.MonadError[F,Throwable]" class="extmbr" name="com.iheart.thomas.MonadThrowable">MonadThrowable</a>[<span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>]</span>, <span name="eligibilityControl">eligibilityControl: <a href="EligibilityControl.html" class="extype" name="com.iheart.thomas.abtest.EligibilityControl">EligibilityControl</a>[<span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>]</span>, <span name="idSelector">idSelector: (<span class="extype" name="lihua.EntityId">EntityId</span>) ⇒ <span class="extype" name="play.api.libs.json.JsObject">JsObject</span></span>)</span>
       </span>
       
       
@@ -377,6 +381,22 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.iheart.thomas.abtest.DefaultAbtestAlg#cleanUp" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="cleanUp(featureName:com.iheart.thomas.FeatureName,before:java.time.OffsetDateTime):F[Int]"></a><a id="cleanUp(FeatureName,OffsetDateTime):F[Int]"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/abtest/DefaultAbtestAlg.html#cleanUp(featureName:com.iheart.thomas.FeatureName,before:java.time.OffsetDateTime):F[Int]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cleanUp</span><span class="params">(<span name="featureName">featureName: <a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a></span>, <span name="before">before: <span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>[<a href="https://www.scala-lang.org/api/2.12.10/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a>]</span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg">DefaultAbtestAlg</a> → <a href="AbtestAlg.html" class="extype" name="com.iheart.thomas.abtest.AbtestAlg">AbtestAlg</a></dd></dl></div>
     </li><li name="scala.AnyRef#clone" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a><a id="clone():AnyRef"></a>
       <span class="permalink">
@@ -567,6 +587,22 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="AbtestAlg.html" class="extype" name="com.iheart.thomas.abtest.AbtestAlg">AbtestAlg</a></dd></dl></div>
+    </li><li name="com.iheart.thomas.abtest.DefaultAbtestAlg#getAllTestsCachedWithAt" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getAllTestsCachedWithAt(time:Option[java.time.Instant]):F[com.iheart.thomas.abtest.TestsData]"></a><a id="getAllTestsCachedWithAt(Option[Instant]):F[TestsData]"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/abtest/DefaultAbtestAlg.html#getAllTestsCachedWithAt(time:Option[java.time.Instant]):F[com.iheart.thomas.abtest.TestsData]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getAllTestsCachedWithAt</span><span class="params">(<span name="time">time: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.Instant">Instant</span>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>[<a href="TestsData.html" class="extype" name="com.iheart.thomas.abtest.TestsData">TestsData</a>]</span>
+      </span>
+      
+      
     </li><li name="com.iheart.thomas.abtest.DefaultAbtestAlg#getAllTestsEndAfter" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getAllTestsEndAfter(time:java.time.OffsetDateTime):F[Vector[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]]"></a><a id="getAllTestsEndAfter(OffsetDateTime):F[Vector[Entity[Abtest]]]"></a>
       <span class="permalink">
@@ -615,22 +651,6 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="AbtestAlg.html" class="extype" name="com.iheart.thomas.abtest.AbtestAlg">AbtestAlg</a></dd></dl></div>
-    </li><li name="com.iheart.thomas.abtest.DefaultAbtestAlg#getAllTestsWithFeatures" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="getAllTestsWithFeatures(ofTime:java.time.OffsetDateTime):F[Vector[(lihua.Entity[com.iheart.thomas.abtest.model.Abtest],com.iheart.thomas.abtest.model.Feature)]]"></a><a id="getAllTestsWithFeatures(OffsetDateTime):F[Vector[(Entity[Abtest],Feature)]]"></a>
-      <span class="permalink">
-      <a href="../../../../com/iheart/thomas/abtest/DefaultAbtestAlg.html#getAllTestsWithFeatures(ofTime:java.time.OffsetDateTime):F[Vector[(lihua.Entity[com.iheart.thomas.abtest.model.Abtest],com.iheart.thomas.abtest.model.Feature)]]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getAllTestsWithFeatures</span><span class="params">(<span name="ofTime">ofTime: <span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>[<a href="../../../../scala/index.html#Vector[+A]=scala.collection.immutable.Vector[A]" class="extmbr" name="scala.Vector">Vector</a>[(<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>], <a href="model/Feature.html" class="extype" name="com.iheart.thomas.abtest.model.Feature">Feature</a>)]]</span>
-      </span>
-      
-      
     </li><li name="scala.AnyRef#getClass" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <span class="permalink">
@@ -777,6 +797,22 @@
       </span>
       <span class="symbol">
         <span class="name">getTestsByFeature</span><span class="params">(<span name="feature">feature: <a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>[<a href="../../../../scala/index.html#Vector[+A]=scala.collection.immutable.Vector[A]" class="extmbr" name="scala.Vector">Vector</a>[<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>]]]</span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg">DefaultAbtestAlg</a> → <a href="AbtestAlg.html" class="extype" name="com.iheart.thomas.abtest.AbtestAlg">AbtestAlg</a></dd></dl></div>
+    </li><li name="com.iheart.thomas.abtest.DefaultAbtestAlg#getTestsData" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getTestsData(at:java.time.Instant,duration:Option[scala.concurrent.duration.FiniteDuration]):F[com.iheart.thomas.abtest.TestsData]"></a><a id="getTestsData(Instant,Option[FiniteDuration]):F[TestsData]"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/abtest/DefaultAbtestAlg.html#getTestsData(at:java.time.Instant,duration:Option[scala.concurrent.duration.FiniteDuration]):F[com.iheart.thomas.abtest.TestsData]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getTestsData</span><span class="params">(<span name="at">at: <span class="extype" name="java.time.Instant">Instant</span></span>, <span name="duration">duration: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg.F">F</span>[<a href="TestsData.html" class="extype" name="com.iheart.thomas.abtest.TestsData">TestsData</a>]</span>
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.iheart.thomas.abtest.DefaultAbtestAlg">DefaultAbtestAlg</a> → <a href="AbtestAlg.html" class="extype" name="com.iheart.thomas.abtest.AbtestAlg">AbtestAlg</a></dd></dl></div>

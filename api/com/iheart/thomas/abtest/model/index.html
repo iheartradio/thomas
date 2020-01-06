@@ -171,6 +171,10 @@
                         <a href="GroupRange.html" title="">GroupRange</a>
                       </li><li class="current-entities indented5">
                         <span class="separator"></span>
+                        <a class="object" href="GroupSize$.html" title=""></a>
+                        <a href="GroupSize$.html" title="">GroupSize</a>
+                      </li><li class="current-entities indented5">
+                        <span class="separator"></span>
                         <a class="class" href="UserGroupQuery.html" title=""></a>
                         <a href="UserGroupQuery.html" title="">UserGroupQuery</a>
                       </li><li class="current-entities indented5">
@@ -273,7 +277,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a title="Internal representation of an A/B test, the public representation is Abtest" href="Abtest.html"><span class="name">Abtest</span></a><span class="params">(<span name="name">name: <a href="#TestName=String" class="extmbr" name="com.iheart.thomas.abtest.model.TestName">TestName</a></span>, <span name="feature">feature: <a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a></span>, <span name="author">author: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="start">start: <span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span></span>, <span name="end">end: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span>]</span>, <span name="groups">groups: <a href="../../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Group.html" class="extype" name="com.iheart.thomas.abtest.model.Group">Group</a>]</span>, <span name="ranges">ranges: <a href="#GroupRanges=Map[com.iheart.thomas.GroupName,List[com.iheart.thomas.abtest.model.GroupRange]]" class="extmbr" name="com.iheart.thomas.abtest.model.GroupRanges">GroupRanges</a></span>, <span name="requiredTags">requiredTags: <a href="../../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="#Tag=String" class="extmbr" name="com.iheart.thomas.abtest.model.Tag">Tag</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Nil</a></span></span></span>, <span name="alternativeIdName">alternativeIdName: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="#MetaFieldName=String" class="extmbr" name="com.iheart.thomas.abtest.model.MetaFieldName">MetaFieldName</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">None</a></span></span></span>, <span name="matchingUserMeta">matchingUserMeta: <a href="#UserMeta=Map[com.iheart.thomas.abtest.model.package.MetaFieldName,String]" class="extmbr" name="com.iheart.thomas.abtest.model.UserMeta">UserMeta</a> = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Map()</a></span></span></span>, <span name="salt">salt: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">None</a></span></span></span>, <span name="segmentRanges">segmentRanges: <a href="../../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="GroupRange.html" class="extype" name="com.iheart.thomas.abtest.model.GroupRange">GroupRange</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Nil</a></span></span></span>, <span name="groupMetas">groupMetas: <a href="#GroupMetas=Map[com.iheart.thomas.GroupName,com.iheart.thomas.abtest.model.package.GroupMeta]" class="extmbr" name="com.iheart.thomas.abtest.model.GroupMetas">GroupMetas</a> = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Map()</a></span></span></span>, <span name="specialization">specialization: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="Abtest$$Specialization.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest.Specialization">Specialization</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">None</a></span></span></span>)</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
+        <a title="Internal representation of an A/B test, the public representation is Abtest" href="Abtest.html"><span class="name">Abtest</span></a><span class="params">(<span name="name">name: <a href="#TestName=String" class="extmbr" name="com.iheart.thomas.abtest.model.TestName">TestName</a></span>, <span name="feature">feature: <a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a></span>, <span name="author">author: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="start">start: <span class="extype" name="java.time.Instant">Instant</span></span>, <span name="end">end: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.Instant">Instant</span>]</span>, <span name="groups">groups: <a href="../../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="Group.html" class="extype" name="com.iheart.thomas.abtest.model.Group">Group</a>]</span>, <span name="ranges">ranges: <a href="#GroupRanges=Map[com.iheart.thomas.GroupName,List[com.iheart.thomas.abtest.model.GroupRange]]" class="extmbr" name="com.iheart.thomas.abtest.model.GroupRanges">GroupRanges</a></span>, <span name="requiredTags">requiredTags: <a href="../../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="#Tag=String" class="extmbr" name="com.iheart.thomas.abtest.model.Tag">Tag</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Nil</a></span></span></span>, <span name="alternativeIdName">alternativeIdName: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="#MetaFieldName=String" class="extmbr" name="com.iheart.thomas.abtest.model.MetaFieldName">MetaFieldName</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">None</a></span></span></span>, <span name="matchingUserMeta">matchingUserMeta: <a href="#UserMeta=Map[com.iheart.thomas.abtest.model.package.MetaFieldName,String]" class="extmbr" name="com.iheart.thomas.abtest.model.UserMeta">UserMeta</a> = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Map()</a></span></span></span>, <span name="salt">salt: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">None</a></span></span></span>, <span name="segmentRanges">segmentRanges: <a href="../../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="GroupRange.html" class="extype" name="com.iheart.thomas.abtest.model.GroupRange">GroupRange</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Nil</a></span></span></span>, <span name="groupMetas">groupMetas: <a href="#GroupMetas=Map[com.iheart.thomas.GroupName,com.iheart.thomas.abtest.model.package.GroupMeta]" class="extmbr" name="com.iheart.thomas.abtest.model.GroupMetas">GroupMetas</a> = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Map()</a></span></span></span>, <span name="specialization">specialization: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="Abtest$$Specialization.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest.Specialization">Specialization</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">None</a></span></span></span>)</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
       </span>
       
       <p class="shortcomment cmt">Internal representation of an A/B test, the public representation is <a href="Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>
@@ -324,7 +328,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a title="" href="Group.html"><span class="name">Group</span></a><span class="params">(<span name="name">name: <a href="../../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a></span>, <span name="size">size: <a href="#GroupSize=Double" class="extmbr" name="com.iheart.thomas.abtest.model.GroupSize">GroupSize</a></span>)</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
+        <a title="" href="Group.html"><span class="name">Group</span></a><span class="params">(<span name="name">name: <a href="../../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a></span>, <span name="size">size: <a href="#GroupSize=BigDecimal" class="extmbr" name="com.iheart.thomas.abtest.model.GroupSize">GroupSize</a></span>)</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
       </span>
       
       
@@ -372,7 +376,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a title="" href="GroupRange.html"><span class="name">GroupRange</span></a><span class="params">(<span name="start">start: <a href="https://www.scala-lang.org/api/2.12.10/scala/Double.html#scala.Double" class="extype" name="scala.Double">Double</a></span>, <span name="end">end: <a href="https://www.scala-lang.org/api/2.12.10/scala/Double.html#scala.Double" class="extype" name="scala.Double">Double</a></span>)</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
+        <a title="" href="GroupRange.html"><span class="name">GroupRange</span></a><span class="params">(<span name="start">start: <a href="../../../../../scala/index.html#BigDecimal=scala.math.BigDecimal" class="extmbr" name="scala.BigDecimal">BigDecimal</a></span>, <span name="end">end: <a href="../../../../../scala/index.html#BigDecimal=scala.math.BigDecimal" class="extmbr" name="scala.BigDecimal">BigDecimal</a></span>)</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
       </span>
       
       
@@ -393,9 +397,9 @@
       
       
     </li><li name="com.iheart.thomas.abtest.model.GroupSize" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="GroupSize=Double"></a><a id="GroupSize:GroupSize"></a>
+      <a id="GroupSize=BigDecimal"></a><a id="GroupSize:GroupSize"></a>
       <span class="permalink">
-      <a href="../../../../../com/iheart/thomas/abtest/model/index.html#GroupSize=Double" title="Permalink">
+      <a href="../../../../../com/iheart/thomas/abtest/model/index.html#GroupSize=BigDecimal" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -404,7 +408,7 @@
         <span class="kind">type</span>
       </span>
       <span class="symbol">
-        <span class="name">GroupSize</span><span class="result alias"> = <a href="https://www.scala-lang.org/api/2.12.10/scala/Double.html#scala.Double" class="extype" name="scala.Double">Double</a></span>
+        <span class="name">GroupSize</span><span class="result alias"> = <a href="https://www.scala-lang.org/api/2.12.10/scala/math/BigDecimal.html#scala.math.BigDecimal" class="extype" name="scala.math.BigDecimal">BigDecimal</a></span>
       </span>
       
       
@@ -516,7 +520,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a title="" href="UserGroupQueryResult.html"><span class="name">UserGroupQueryResult</span></a><span class="params">(<span name="groups">groups: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>, <a href="../../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>]</span>, <span name="metas">metas: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>, <a href="#GroupMeta=play.api.libs.json.JsObject" class="extmbr" name="com.iheart.thomas.abtest.model.GroupMeta">GroupMeta</a>]</span>)</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
+        <a title="" href="UserGroupQueryResult.html"><span class="name">UserGroupQueryResult</span></a><span class="params">(<span name="at">at: <span class="extype" name="java.time.Instant">Instant</span></span>, <span name="groups">groups: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>, <a href="../../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>]</span>, <span name="metas">metas: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>, <a href="#GroupMeta=play.api.libs.json.JsObject" class="extmbr" name="com.iheart.thomas.abtest.model.GroupMeta">GroupMeta</a>]</span>)</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
       </span>
       
       
@@ -573,6 +577,22 @@
       </span>
       <span class="symbol">
         <a title="" href="Abtest$.html"><span class="name">Abtest</span></a><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
+      </span>
+      
+      
+    </li><li name="com.iheart.thomas.abtest.model.GroupSize" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GroupSize"></a><a id="GroupSize:GroupSize"></a>
+      <span class="permalink">
+      <a href="../../../../../com/iheart/thomas/abtest/model/GroupSize$.html" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="GroupSize$.html"><span class="name">GroupSize</span></a>
       </span>
       
       
