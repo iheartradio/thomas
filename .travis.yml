@@ -23,5 +23,3 @@ jobs:
     # it can speed up the overall build to have the longer-running jobs at the top of this list.
     - env: TEST="validate"
       script: sbt validate
-    - env: TEST="Scala 2.11"
-      script: sbt "++2.11.12 test"
