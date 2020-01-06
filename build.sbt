@@ -182,6 +182,7 @@ lazy val docs = project
   .settings(
     crossScalaVersions := Seq(scalaVersion.value),
     scalacOptions in Tut ~= (_.filterNot(Set("-Ywarn-unused:imports"))),
+    micrositeCompilingDocsTool := WithTut,
     micrositeSettings(gh, developerKai, "Thomas, a library for A/B tests"),
     micrositeDocumentationUrl := "/thomas/api/com/iheart/thomas/index.html",
     micrositeDocumentationLabelDescription := "API Documentation",
