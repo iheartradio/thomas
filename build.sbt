@@ -132,7 +132,6 @@ lazy val bandit = project
   .aggregate(analysis)
   .settings(
     name := "thomas-bandit",
-    crossScalaVersions := Seq(scalaVersion.value),
     rootSettings,
     taglessSettings,
     libs.dependencies("breeze"),
@@ -180,7 +179,6 @@ lazy val docs = project
   .enablePlugins(MicrositesPlugin)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
-    crossScalaVersions := Seq(scalaVersion.value),
     scalacOptions in Tut ~= (_.filterNot(Set("-Ywarn-unused:imports"))),
     micrositeCompilingDocsTool := WithTut,
     micrositeSettings(gh, developerKai, "Thomas, a library for A/B tests"),
@@ -211,7 +209,6 @@ lazy val mongo = project
   .settings(name := "thomas-mongo")
   .settings(rootSettings)
   .settings(
-    crossScalaVersions := Seq(scalaVersion.value),
     libs.dependencies("lihua-mongo", "lihua-crypt")
   )
 
@@ -220,7 +217,6 @@ lazy val dynamo = project
   .settings(name := "thomas-dynamo")
   .settings(rootSettings)
   .settings(
-    crossScalaVersions := Seq(scalaVersion.value),
     libs.dependencies("lihua-dynamo")
   )
 
@@ -229,7 +225,6 @@ lazy val testkit = project
   .settings(name := "thomas-testkit")
   .settings(rootSettings)
   .settings(
-    crossScalaVersions := Seq(scalaVersion.value),
     libs.dependencies("lihua-dynamo-testkit", "cats-effect-testing-scalatest")
   )
 
@@ -239,7 +234,6 @@ lazy val stream = project
   .settings(name := "thomas-stream")
   .settings(rootSettings)
   .settings(
-    crossScalaVersions := Seq(scalaVersion.value),
     libs.dependencies("fs2-core"),
     libs.testDependencies("cats-effect-testing-scalatest")
   )
@@ -250,7 +244,6 @@ lazy val kafka = project
   .settings(name := "thomas-kafka")
   .settings(rootSettings)
   .settings(
-    crossScalaVersions := Seq(scalaVersion.value),
     libs
       .dependencies("fs2-kafka", "log4cats-slf4j", "logback-classic", "akka-slf4j"),
     libs.testDependencies("cats-effect-testing-scalatest")
@@ -273,7 +266,6 @@ lazy val http4s = project
   .settings(rootSettings)
   .settings(taglessSettings)
   .settings(
-    crossScalaVersions := Seq(scalaVersion.value),
     libs.testDependencies("scalacheck", "scalatest"),
     libs.dependencies(
       "logback-classic",
@@ -294,7 +286,6 @@ lazy val stress = project
   .settings(rootSettings)
   .settings(
     resolvers += Resolver.sonatypeRepo("snapshots"),
-    crossScalaVersions := Seq(scalaVersion.value),
     libraryDependencies ++= Seq(
       "io.gatling.highcharts" % "gatling-charts-highcharts" % "2.3.1" % Test,
       "io.gatling" % "gatling-test-framework" % "2.3.1" % Test
@@ -306,7 +297,6 @@ lazy val it = project
   .configs(IntegrationTest)
   .settings(rootSettings)
   .settings(
-    crossScalaVersions := Seq(scalaVersion.value),
     Defaults.itSettings,
     parallelExecution in IntegrationTest := false,
     noPublishSettings,
@@ -320,7 +310,6 @@ lazy val it = project
   )
 
 lazy val dynamoTestSettings = Seq(
-  crossScalaVersions := Seq(scalaVersion.value),
   libs.dependency("lihua-dynamo-testkit", Some(IntegrationTest.name)),
   dynamoDBLocalPort := 8042,
   dynamoDBLocalCleanAfterStop := true,
@@ -344,7 +333,6 @@ lazy val play = project
     Defaults.itSettings,
     parallelExecution in IntegrationTest := false,
     taglessSettings,
-    crossScalaVersions := Seq(scalaVersion.value),
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
     libs.dependency("scalatestplus-play", Some(IntegrationTest.name)),
     libs.dependencies("scala-java8-compat", "play", "lihua-dynamo")
@@ -356,8 +344,7 @@ lazy val playExample = project
   .aggregate(play)
   .settings(
     rootSettings,
-    noPublishing,
-    crossScalaVersions := Seq(scalaVersion.value)
+    noPublishing
   )
   .settings(
     name := "thomas-play-example",
@@ -388,7 +375,7 @@ lazy val commonSettings = addCompilerPlugins(libs, "kind-projector") ++ sharedCo
   scalaVersion := defaultScalaVer,
   parallelExecution in Test := false,
   releaseCrossBuild := false,
-  crossScalaVersions := Seq(scalaVersion.value, libs.vers("scalac_2.11")),
+  crossScalaVersions := Seq(scalaVersion.value),
   developers := List(developerKai),
   scalacOptions in (Compile, console) ~= lessStrictScalaChecks,
   scalacOptions in (Test, compile) ~= lessStrictScalaChecks,
