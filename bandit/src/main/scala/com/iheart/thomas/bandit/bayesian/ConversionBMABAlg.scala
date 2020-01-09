@@ -19,7 +19,7 @@ object ConversionBMABAlg {
   implicit def default[F[_]](
       implicit
       stateDao: BanditStateDAO[F, BanditState[Conversions]],
-      kpiAPI: KPIApi[F],
+      kpiAPI: KPIDistributionApi[F],
       abtestAPI: abtest.AbtestAlg[F],
       sampleSettings: SampleSettings,
       rng: RNG,

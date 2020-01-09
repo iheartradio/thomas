@@ -155,7 +155,7 @@ object AbtestClient {
     def testsData: String
 
     /**
-      * Service URL corresponding to [[analysis.KPIApi]].get
+      * Service URL corresponding to [[analysis.KPIDistributionApi]].get
       */
     def kPIs: String
 

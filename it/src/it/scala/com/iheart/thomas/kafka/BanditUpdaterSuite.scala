@@ -20,7 +20,7 @@ import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.analysis.{
   BetaKPIDistribution,
   Conversions,
-  KPIApi,
+  KPIDistributionApi,
   KPIName,
   Probability,
   SampleSettings
@@ -93,7 +93,7 @@ class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
         }
         .evalTap { _ =>
           implicit val kpiDAO = daos._3
-          KPIApi.default.upsert(kpi)
+          KPIDistributionApi.default.upsert(kpi)
         }
     }
 
