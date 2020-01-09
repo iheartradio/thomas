@@ -39,6 +39,8 @@ object KPIDistribution {
   implicit val mdFormat: Format[KPIDistribution] =
     derived.flat.oformat[KPIDistribution]((__ \ "type").format[String])
 
+  implicit val bkpidFormat: Format[BetaKPIDistribution] =
+    j.format[BetaKPIDistribution]
 }
 
 case class BetaKPIDistribution(
@@ -48,6 +50,7 @@ case class BetaKPIDistribution(
     extends KPIDistribution
 
 object BetaKPIDistribution {
+
   def sample(
       b: BetaKPIDistribution,
       data: Conversions

@@ -15,13 +15,13 @@ import ThomasController.{Alerter, InvalidRequest}
 import _root_.play.api.libs.json._
 import _root_.play.api.mvc._
 import cats.implicits._
-import com.iheart.thomas.analysis.{KPIApi, KPIDistribution}
+import com.iheart.thomas.analysis.{KPIDistributionApi, KPIDistribution}
 import lihua.{Entity, EntityId}
 import lihua.mongo.JsonFormats._
 
 class AbtestController[F[_]](
     api: AbtestAlg[F],
-    kpiAPI: KPIApi[F],
+    kpiAPI: KPIDistributionApi[F],
     components: ControllerComponents,
     alerter: Option[Alerter[F]]
   )(implicit

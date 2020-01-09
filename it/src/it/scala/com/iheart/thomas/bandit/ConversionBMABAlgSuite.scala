@@ -9,7 +9,7 @@ import com.iheart.thomas.abtest.{AbtestAlg, DefaultAbtestAlg}
 import com.iheart.thomas.analysis.{
   BetaKPIDistribution,
   Conversions,
-  KPIApi,
+  KPIDistributionApi,
   SampleSettings
 }
 import com.iheart.thomas.bandit.bayesian.{BanditState, ConversionBMABAlg}
@@ -36,7 +36,9 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
     betaPrior = 100000
   )
 
-  def withAPI[A](f: (ConversionBMABAlg[IO], KPIApi[IO], AbtestAlg[IO]) => IO[A]): A =
+  def withAPI[A](
+      f: (ConversionBMABAlg[IO], KPIDistributionApi[IO], AbtestAlg[IO]) => IO[A]
+    ): A =
     apis
       .use {
         case (conversionBMABAlg, kPIApi, abtestAlg) =>
