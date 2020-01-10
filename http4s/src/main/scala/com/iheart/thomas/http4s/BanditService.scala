@@ -16,25 +16,25 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.play._
 import bandit.Formats._
 import lihua.mongo.JsonFormats._
-import com.iheart.thomas.analysis.{Conversions, KPIApi, KPIDistribution}
+import com.iheart.thomas.analysis.{Conversions, KPIDistributionApi, KPIDistribution}
 import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.dynamo.ClientConfig
 import com.iheart.thomas.kafka.BanditUpdater.KafkaConfig
 import com.typesafe.config.Config
-import play.api.libs.json._
+import _root_.play.api.libs.json._
 import fs2.Stream
 import org.http4s.server.Router
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import play.api.libs.json.Json.toJson
+import _root_.play.api.libs.json.Json.toJson
 
 class BanditService[F[_]: Async] private (
     conversionsRunner: Repeating[F],
     apiAlg: ConversionBMABAlg[F],
-    kpiAlg: KPIApi[F],
+    kpiDistApi: KPIDistributionApi[F],
     banditUpdater: BanditUpdater[F])
     extends Http4sDsl[F] {
   private type PartialRoutes = PartialFunction[Request[F], F[Response[F]]]
@@ -47,8 +47,8 @@ class BanditService[F[_]: Async] private (
     Router(
       "/bandits" -> HttpRoutes
         .of[F](managementRoutes orElse runnerRoutes orElse updaterRoutes),
-      "/kpis" -> HttpRoutes
-        .of[F](kpiRoutes)
+      "/kpiDistributions" -> HttpRoutes
+        .of[F](kpiDistributionsRoutes)
     )
 
   private def runnerRoutes = {
@@ -87,15 +87,15 @@ class BanditService[F[_]: Async] private (
 
   }: PartialRoutes
 
-  private def kpiRoutes = {
+  private def kpiDistributionsRoutes = {
     case GET -> Root =>
-      kpiAlg.getAll
+      kpiDistApi.getAll
 
     case GET -> Root / kpiName =>
-      kpiAlg.get(kpiName)
+      kpiDistApi.get(kpiName)
 
     case req @ POST -> Root =>
-      req.as[KPIDistribution].flatMap(kpiAlg.upsert _)
+      req.as[KPIDistribution].flatMap(kpiDistApi.upsert _)
 
   }: PartialRoutes
 
@@ -208,7 +208,7 @@ object BanditService {
             new BanditService[F](
               repeating,
               conversionBMAB,
-              KPIApi.default[F],
+              KPIDistributionApi.default[F],
               bu
             )
           }
