@@ -86,20 +86,17 @@ object BanditUpdater {
           .withGroupId("thomas-kpi-monitor")
       val toEvent = (fn: FeatureName, kn: KPIName) => mp.toConversionEvent(fn, kn)
 
-      Stream
-        .eval(
-          updater.updateAllConversions(kafkaConfig.chunkSize, toEvent)
-        )
-        .flatMap { updatePipe =>
-          consumerStream[F]
-            .using(consumerSettings)
-            .evalTap(_.subscribeTo(kafkaConfig.topic))
-            .flatMap(_.stream)
-            .map(r => r.record.value)
-            .through(mp.preprocessor)
-            .through(updatePipe)
-            .pauseWhen(pauseSignal)
-        }
+      val updaterPipe = updater.updateAllConversions(kafkaConfig.chunkSize, toEvent)
+
+      consumerStream[F]
+        .using(consumerSettings)
+        .evalTap(_.subscribeTo(kafkaConfig.topic))
+        .flatMap(_.stream)
+        .map(r => r.record.value)
+        .through(mp.preprocessor)
+        .through(updaterPipe)
+        .pauseWhen(pauseSignal)
+
     }
 
     def conversionBMABAlg: ConversionBMABAlg[F] = cbm
