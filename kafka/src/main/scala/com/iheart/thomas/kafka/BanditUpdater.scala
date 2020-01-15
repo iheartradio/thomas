@@ -6,12 +6,12 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
-import com.iheart.thomas.stream.ConversionBanditKPITracker
+import com.iheart.thomas.stream.{ConversionBanditKPITracker, RestartableStream}
 import com.iheart.thomas.stream.ConversionBanditKPITracker.ConversionEvent
-import fs2.concurrent.SignallingRef
 import fs2.{Pipe, Stream}
 import fs2.kafka.{AutoOffsetReset, ConsumerSettings, Deserializer, consumerStream}
 import cats.implicits._
+import com.iheart.thomas.bandit.tracking.Event.BanditKPIUpdateStreamStarted
 import com.iheart.thomas.bandit.tracking.EventLogger
 
 import scala.concurrent.ExecutionContext
@@ -58,56 +58,53 @@ object BanditUpdater {
       implicit alg => create[F](kafkaConfig)
     )
 
-  def create[
-      F[_]: Timer: ContextShift: ConcurrentEffect: MessageProcessor: ConversionBMABAlg: EventLogger
-    ](kafkaConfig: KafkaConfig
-    ): F[BanditUpdater[F]] =
-    SignallingRef[F, Boolean](false).map { pauseSignal =>
-      apply[F](
-        kafkaConfig,
-        pauseSignal
-      )
-    }
-
-  def apply[F[_]: Timer: ConcurrentEffect: EventLogger: ContextShift](
-      kafkaConfig: KafkaConfig,
-      pauseSignal: SignallingRef[F, Boolean]
+  def create[F[_]: Timer: ConcurrentEffect: ContextShift](
+      kafkaConfig: KafkaConfig
     )(implicit mp: MessageProcessor[F],
-      cbm: ConversionBMABAlg[F]
-    ): BanditUpdater[F] = new BanditUpdater[F] with WithConversionBMABAlg[F] {
-    import mp.deserializer
-    val updater = new ConversionBanditKPITracker[F]
-    val consumer: Stream[F, Unit] = {
+      cbm: ConversionBMABAlg[F],
+      log: EventLogger[F]
+    ): F[BanditUpdater[F]] = {
+
+    def runningStream = {
+
+      import mp.deserializer
+
       val consumerSettings =
         ConsumerSettings[F, Unit, mp.RawMessage]
           .withEnableAutoCommit(true)
           .withAutoOffsetReset(AutoOffsetReset.Earliest)
           .withBootstrapServers(kafkaConfig.kafkaServers)
           .withGroupId("thomas-kpi-monitor")
-      val toEvent = (fn: FeatureName, kn: KPIName) => mp.toConversionEvent(fn, kn)
 
-      Stream
-        .eval(
-          updater.updateAllConversions(kafkaConfig.chunkSize, toEvent)
-        )
-        .flatMap { updatePipe =>
-          consumerStream[F]
-            .using(consumerSettings)
-            .evalTap(_.subscribeTo(kafkaConfig.topic))
-            .flatMap(_.stream)
-            .map(r => r.record.value)
-            .through(mp.preprocessor)
-            .through(updatePipe)
-            .pauseWhen(pauseSignal)
-        }
+      val toEvent = (fn: FeatureName, kn: KPIName) => mp.toConversionEvent(fn, kn)
+      val updater = new ConversionBanditKPITracker[F]
+      val updaterPipe = updater.updateAllConversions(kafkaConfig.chunkSize, toEvent)
+
+      Stream.eval(log(BanditKPIUpdateStreamStarted)) ++
+        consumerStream[F]
+          .using(consumerSettings)
+          .evalTap(_.subscribeTo(kafkaConfig.topic))
+          .flatMap(_.stream)
+          .map(r => r.record.value)
+          .through(mp.preprocessor)
+          .through(updaterPipe)
     }
 
-    def conversionBMABAlg: ConversionBMABAlg[F] = cbm
+    RestartableStream.restartable(runningStream).map {
+      case (consumerStream, pauseSignal) =>
+        new BanditUpdater[F] with WithConversionBMABAlg[F] {
 
-    def pauseResume(pause: ConversionEvent): F[Unit] =
-      pauseSignal.set(pause)
+          def conversionBMABAlg: ConversionBMABAlg[F] = cbm
 
-    def isPaused: F[ConversionEvent] = pauseSignal.get
+          val consumer = consumerStream
+
+          def pauseResume(pause: ConversionEvent): F[Unit] =
+            pauseSignal.set(pause)
+
+          def isPaused: F[ConversionEvent] = pauseSignal.get
+
+        }
+    }
   }
 
   case class KafkaConfig(
