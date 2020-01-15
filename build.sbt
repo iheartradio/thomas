@@ -229,7 +229,6 @@ lazy val testkit = project
 
 lazy val stream = project
   .dependsOn(bandit)
-  .aggregate(bandit)
   .settings(name := "thomas-stream")
   .settings(rootSettings)
   .settings(

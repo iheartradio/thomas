@@ -1,7 +1,7 @@
 package com.iheart.thomas.stream
 
-import cats.effect.IO
 import fs2.Stream
+import cats.effect.IO
 import org.scalatest.matchers.should.Matchers
 import ConversionBanditKPITracker.{Converted, Viewed}
 import cats.effect.scalatest.AsyncIOSpec
