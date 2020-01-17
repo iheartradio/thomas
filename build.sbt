@@ -389,7 +389,7 @@ lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =
 
 lazy val taglessSettings = paradiseSettings(libs) ++ Seq(
   libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-tagless-macros" % "0.10"
+    "org.typelevel" %% "cats-tagless-macros" % "0.11"
   )
 )
 
