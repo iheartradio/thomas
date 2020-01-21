@@ -15,7 +15,7 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 // format: off
 lazy val libs =
   org.typelevel.libraries
-  .addJVM(name = "lihua",                 version = "0.31",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-dynamo-testkit", "lihua-play-json")
+  .addJVM(name = "lihua",                 version = "0.32-SNAPSHOT",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-dynamo-testkit", "lihua-play-json")
   .addJVM(name = "scanamo",               version = "1.0.0-M12", org ="org.scanamo", "scanamo-testkit")
   .addJVM(name = "rainier",               version = "0.2.3",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
   .addJVM(name = "breeze",                version = "1.0",    org ="org.scalanlp", "breeze", "breeze-viz")
@@ -38,7 +38,7 @@ lazy val libs =
   .add(   name = "http4s",                version = "0.21.0-M6")
   .add(   name = "scalacheck-1-14",       version = "3.1.0.1",org = "org.scalatestplus")
   .add(   name = "scalatestplus-play",    version = "4.0.3",  org = "org.scalatestplus.play")
-  .add(   name = "cats-effect-testing-scalatest",    version = "0.3.0",  org = "com.codecommit")
+  .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
   .addJVM(name = "fs2-kafka",             version = "0.20.2", org = "com.ovoenergy")
   .add(   name = "jawn",                  version = "0.14.2", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
   .addJVM( name = "embedded-kafka",       version = "2.3.1",  org = "io.github.embeddedkafka")

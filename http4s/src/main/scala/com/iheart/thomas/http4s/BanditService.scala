@@ -16,7 +16,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.play._
 import bandit.Formats._
 import lihua.mongo.JsonFormats._
-import com.iheart.thomas.analysis.{Conversions, KPIDistributionApi, KPIDistribution}
+import com.iheart.thomas.analysis.{Conversions, KPIDistribution, KPIDistributionApi}
 import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.tracking.EventLogger
@@ -30,16 +30,25 @@ import org.http4s.server.Router
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import _root_.play.api.libs.json.Json.toJson
+import com.iheart.thomas.bandit.tracking.Event.BanditKPIUpdateError
 
-class BanditService[F[_]: Async] private (
+class BanditService[F[_]: Async: Timer] private (
     conversionsRunner: Repeating[F],
     apiAlg: ConversionBMABAlg[F],
     kpiDistApi: KPIDistributionApi[F],
-    banditUpdater: BanditUpdater[F])
+    banditUpdater: BanditUpdater[F],
+    kafkaConsumerRestartWait: FiniteDuration
+  )(implicit log: EventLogger[F])
     extends Http4sDsl[F] {
   private type PartialRoutes = PartialFunction[Request[F], F[Response[F]]]
 
-  def backGroundProcess: Stream[F, Unit] = banditUpdater.consumer
+  def backGroundProcess: Stream[F, Unit] = banditUpdater.consumer.handleErrorWith {
+    e =>
+      Stream.eval(log(BanditKPIUpdateError(e))) ++
+        Stream.sleep[F](kafkaConsumerRestartWait) ++
+        Stream.eval(banditUpdater.pauseResume(pause = false)) ++
+        backGroundProcess
+  }
 
   private implicit def decoder[A: Reads]: EntityDecoder[F, A] = jsonOf
 
@@ -73,16 +82,16 @@ class BanditService[F[_]: Async] private (
   private def updaterRoutes = {
     case PUT -> Root / "conversions" / "updating" =>
       banditUpdater
-        .pauseResume(true) *>
+        .pauseResume(false) *>
         Ok("conversions are being updated")
 
     case GET -> Root / "conversions" / "updating" =>
       banditUpdater.isPaused.flatMap(
-        b => Ok(Json.prettyPrint(Json.obj("status" -> JsBoolean(!b))))
+        b => Ok(Json.prettyPrint(Json.obj("updating" -> JsBoolean(!b))))
       )
     case DELETE -> Root / "conversions" / "updating" =>
       banditUpdater
-        .pauseResume(false) *>
+        .pauseResume(true) *>
         Ok("conversions update are paused now")
 
   }: PartialRoutes
@@ -117,6 +126,9 @@ class BanditService[F[_]: Async] private (
     case GET -> Root / "conversions" / "features" =>
       apiAlg.getAll
 
+    case DELETE -> Root / "conversions" / "features" / feature =>
+      apiAlg.delete(feature) *> Ok(s"$feature, if existed, was removed.")
+
     case req @ POST -> Root / "conversions" / "features" =>
       req.as[BanditSpec].flatMap { bs =>
         apiAlg.init(bs)
@@ -133,7 +145,9 @@ object BanditService {
 
   case class BanditRunnerConfig(
       repeat: FiniteDuration,
-      historyRetention: Option[FiniteDuration])
+      historyRetention: Option[FiniteDuration],
+      kafkaConsumerRestartWait: FiniteDuration)
+
   case class BanditServiceConfig(
       kafka: KafkaConfig,
       dynamo: ClientConfig,
@@ -209,7 +223,8 @@ object BanditService {
               repeating,
               conversionBMAB,
               KPIDistributionApi.default[F],
-              bu
+              bu,
+              bcs.kafkaConsumerRestartWait
             )
           }
         }

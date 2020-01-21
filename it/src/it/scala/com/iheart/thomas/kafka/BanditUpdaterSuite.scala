@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
 
 import cats.effect.{ContextShift, IO, Resource, Sync, Timer}
-import cats.effect.scalatest.AsyncIOSpec
+import cats.effect.testing.scalatest.AsyncIOSpec
 import com.iheart.thomas.{FeatureName, dynamo, mongo}
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.kafka.BanditUpdater.KafkaConfig
