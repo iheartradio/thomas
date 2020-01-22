@@ -15,7 +15,7 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 // format: off
 lazy val libs =
   org.typelevel.libraries
-  .addJVM(name = "lihua",                 version = "0.31",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-dynamo-testkit", "lihua-play-json")
+  .addJVM(name = "lihua",                 version = "0.32",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-dynamo-testkit", "lihua-play-json")
   .addJVM(name = "scanamo",               version = "1.0.0-M12", org ="org.scanamo", "scanamo-testkit")
   .addJVM(name = "rainier",               version = "0.2.3",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
   .addJVM(name = "breeze",                version = "1.0",    org ="org.scalanlp", "breeze", "breeze-viz")
