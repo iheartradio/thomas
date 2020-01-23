@@ -104,7 +104,13 @@ lazy val cli = project
       s"release/thomas-cli_${version.value}.jar"
     ),
     buildInfoKeys := BuildInfoKey.ofN(name, version),
-    buildInfoPackage := "com.iheart.thomas"
+    buildInfoPackage := "com.iheart.thomas",
+    assemblyMergeStrategy in assembly := {
+      case "module-info.class" => MergeStrategy.discard
+      case x =>
+        val oldStrategy = (assemblyMergeStrategy in assembly).value
+        oldStrategy(x)
+    }
   )
 
 lazy val core = project
