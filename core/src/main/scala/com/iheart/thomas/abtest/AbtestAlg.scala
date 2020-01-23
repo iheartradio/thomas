@@ -47,6 +47,11 @@ trait AbtestAlg[F[_]] {
 
   def getTest(test: TestId): F[Entity[Abtest]]
 
+  /**
+    *
+    * @param feature
+    * @return tests for this feature in chronological descending order
+    */
   def getTestsByFeature(feature: FeatureName): F[Vector[Entity[Abtest]]]
 
   def continue(spec: AbtestSpec): F[Entity[Abtest]]

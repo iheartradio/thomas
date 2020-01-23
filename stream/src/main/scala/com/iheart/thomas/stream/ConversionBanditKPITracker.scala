@@ -10,6 +10,7 @@ import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
 import com.iheart.thomas.bandit.tracking.EventLogger
 import cats.effect.Timer
+
 class ConversionBanditKPITracker[F[_]: Timer](
     implicit
     bmabAlg: ConversionBMABAlg[F],
@@ -25,28 +26,33 @@ class ConversionBanditKPITracker[F[_]: Timer](
       ): Pipe[F, (ArmName, ConversionEvent), Unit] =
       ConversionBanditKPITracker.toConversion(chunkSize) andThen { input =>
         input.evalMap { r =>
-          bmabAlg
-            .updateRewardState(featureName, r)
-            .void // <* F.delay(println("updating bandits"))
+          log.debug(s"Updating reward $r to bandit $featureName") *>
+            bmabAlg
+              .updateRewardState(featureName, r)
+              .void
         }
       }
 
     val updatePipes =
       bmabAlg
-        .runningBandits(None) //<* F.delay(println("getting bandits")))
+        .runningBandits(None)
         .flatMap { bandits =>
-          bandits
-            .traverse { b =>
-              toEvent(b.feature, b.kpiName)
-                .map(_ andThen updateConversion(b.feature))
-            }
+          log.debug(s"updating KPI state for ${bandits.map(_.feature)}") *>
+            bandits
+              .traverse { b =>
+                toEvent(b.feature, b.kpiName)
+                  .map(_ andThen updateConversion(b.feature))
+              }
         }
 
     { input: Stream[F, I] =>
       Stream
         .eval(updatePipes)
         .flatMap { featurePipes =>
-          input.broadcastThrough(featurePipes: _*)
+          if (featurePipes.nonEmpty)
+            input.broadcastThrough(featurePipes: _*)
+          else
+            input.void
         }
     }
 

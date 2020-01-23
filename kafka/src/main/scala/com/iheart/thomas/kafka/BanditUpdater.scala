@@ -98,10 +98,10 @@ object BanditUpdater {
 
           val consumer = consumerStream
 
-          def pauseResume(pause: ConversionEvent): F[Unit] =
-            pauseSignal.set(pause)
+          def pauseResume(pause: Boolean): F[Unit] =
+            pauseSignal.set(pause) <* log.debug(s"pauseSignal set to $pause")
 
-          def isPaused: F[ConversionEvent] = pauseSignal.get
+          def isPaused: F[Boolean] = pauseSignal.get
 
         }
     }

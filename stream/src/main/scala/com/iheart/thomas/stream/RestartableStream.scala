@@ -11,10 +11,16 @@ object RestartableStream {
     )(implicit F: ConcurrentEffect[F]
     ): F[(Stream[F, A], SignallingRef[F, Boolean])] = {
     SignallingRef[F, Boolean](false).map { pauseSignal =>
-      val resultStream = Stream
-        .constant[F, Unit]((), 1)
-        .flatMap(_ => stream.interruptWhen(pauseSignal))
-        .pauseWhen(pauseSignal)
+      val resultStream =
+        Stream
+          .eval(pauseSignal.get)
+          .repeat
+          .pauseWhen(pauseSignal) *>
+          Stream
+            .suspend(stream)
+            .onFinalize(pauseSignal.set(true))
+            .interruptWhen(pauseSignal)
+
       (resultStream, pauseSignal)
     }
   }

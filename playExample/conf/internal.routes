@@ -84,7 +84,7 @@ GET      /testsWithFeatures                                    controllers.MyAbt
 #  responses:
 #    200:
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.abtest.TestsData
+#        $ref: '#/definitions/com.iheart.thomas.abtest.TestsData'
 #
 ###
 GET      /testsData                                    controllers.MyAbtestController.getTestsData(atEpochMilli: Long, durationMillisecond: Option[Long])

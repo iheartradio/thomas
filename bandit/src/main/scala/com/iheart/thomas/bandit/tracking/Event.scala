@@ -20,5 +20,6 @@ object Event {
 
   case class BanditKPIUpdated[R](state: BanditState[R]) extends Event
   case object BanditKPIUpdateStreamStarted extends Event
+  case class BanditKPIUpdateError(e: Throwable) extends Event
 
 }
