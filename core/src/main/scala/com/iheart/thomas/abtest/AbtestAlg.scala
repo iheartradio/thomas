@@ -31,7 +31,7 @@ import scala.util.Random
   * Final Tagless encoding
   * @tparam F
   */
-trait AbtestAlg[F[_]] {
+trait AbtestAlg[F[_]] extends DataProvider[F] {
 
   def create(
       testSpec: AbtestSpec,
@@ -63,11 +63,6 @@ trait AbtestAlg[F[_]] {
     * @param time optional time constraint, if set, this will only return tests as of that time.
     */
   def getAllTests(time: Option[OffsetDateTime]): F[Vector[Entity[Abtest]]]
-
-  def getTestsData(
-      at: Instant,
-      duration: Option[FiniteDuration]
-    ): F[TestsData]
 
   def getAllTestsBySpecialization(
       specialization: Specialization,
