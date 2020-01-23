@@ -10,7 +10,7 @@ import cats.implicits._
 
 object ExampleAbtestServerApp extends IOApp {
   def run(args: List[String]): IO[ExitCode] =
-    AbtestService.mongo[IO].use { s =>
+    AbtestService.fromMongo[IO].use { s =>
       BlazeServerBuilder[IO]
         .bindHttp(8080, "localhost")
         .withHttpApp(s.routes)
