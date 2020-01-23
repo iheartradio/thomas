@@ -10,16 +10,21 @@ import cats.effect.{ConcurrentEffect, Sync}
 import com.iheart.thomas.analysis.{Conversions, KPIName}
 import org.http4s.client.{Client => HClient}
 import Formats._
+import cats.implicits._
 import org.http4s.QueryParamEncoder
-import org.http4s.client.blaze.BlazeClientBuilder
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
+import scala.util.control.NoStackTrace
 
 object BayesianBanditClient {
 
   implicit val te: QueryParamEncoder[KPIName] =
     KPIName.deriving
+
+  case object UnexpectedResult
+      extends RuntimeException("unexpected return from service")
+      with NoStackTrace
 
   def defaultConversion[F[_]: Sync](
       c: HClient[F],
@@ -79,13 +84,27 @@ object BayesianBanditClient {
             _.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
           ))
         )
+
+      def delete(feature: FeatureName): F[Unit] =
+        c.successful(
+            DELETE(
+              Uri.unsafeFromString(
+                rootUrl + "/features/" + feature
+              )
+            )
+          )
+          .ensure(UnexpectedResult)(identity)
+          .void
+
     }
 
   def defaultConversionResource[F[_]: ConcurrentEffect](
       rootUrl: String
     )(implicit ec: ExecutionContext
-    ) =
+    ): cats.effect.Resource[F, BayesianMABAlg[F, Conversions]] = {
+    import org.http4s.client.blaze.BlazeClientBuilder
     BlazeClientBuilder[F](ec).resource
       .map(cl => defaultConversion[F](cl, rootUrl))
+  }
 
 }

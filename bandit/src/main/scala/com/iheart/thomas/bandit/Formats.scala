@@ -7,21 +7,25 @@ import _root_.play.api.libs.json.{Format, Json}
 import io.estatico.newtype.ops._
 import lihua.playJson.Formats._
 import com.iheart.thomas.abtest.Formats._
+import play.api.libs.json.Json.WithDefaultValues
 object Formats {
+  val j = Json.using[WithDefaultValues]
+
   implicit val jfProbability: Format[Probability] =
     implicitly[Format[Double]].coerce[Format[Probability]]
 
   implicit val jfKPIName: Format[KPIName] =
     implicitly[Format[String]].coerce[Format[KPIName]]
 
-  implicit val jfC: Format[Conversions] = Json.format[Conversions]
+  implicit val jfC: Format[Conversions] = j.format[Conversions]
   implicit val jfAS: Format[ArmState[Conversions]] =
-    Json.format[ArmState[Conversions]]
-  implicit val jfBS: Format[BanditSpec] = Json.format[BanditSpec]
+    j.format[ArmState[Conversions]]
+
+  implicit val jfBS: Format[BanditSpec] = j.format[BanditSpec]
   implicit val jfBSC: Format[BanditState[Conversions]] =
-    Json.format[BanditState[Conversions]]
+    j.format[BanditState[Conversions]]
 
   implicit val jfBMAB: Format[BayesianMAB[Conversions]] =
-    Json.format[BayesianMAB[Conversions]]
+    j.format[BayesianMAB[Conversions]]
 
 }
