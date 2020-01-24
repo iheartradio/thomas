@@ -15,7 +15,7 @@ object RestartableStream {
         Stream
           .eval(pauseSignal.get)
           .repeat
-          .filter(identity)
+          .filterNot(identity)
           .pauseWhen(pauseSignal) *>
           Stream
             .suspend(stream)
