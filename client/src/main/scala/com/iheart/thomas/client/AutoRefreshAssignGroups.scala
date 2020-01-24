@@ -23,13 +23,13 @@ object AutoRefreshAssignGroups {
       testsRange: Option[FiniteDuration])
 
   def resource[F[_]: Timer](
-      abtestClient: AbtestClient[F],
+      dataProvider: abtest.DataProvider[F],
       config: Config
     )(implicit F: ConcurrentEffect[F],
       nowF: F[Instant]
     ): Resource[F, AutoRefreshAssignGroups[F]] =
     resource[F](
-      abtestClient,
+      dataProvider,
       refreshPeriod = config.refreshPeriod,
       staleTimeout = config.staleTimeout,
       testsRange = config.testsRange
@@ -37,7 +37,7 @@ object AutoRefreshAssignGroups {
 
   /**
     *
-    * @param abtestClient  client to get A/B tests data
+    * @param dataProvider  client to get A/B tests data
     * @param refreshPeriod  how ofter the data is refreshed
     * @param staleTimeout how stale is the data allowed to be (in cases when refresh fails)
     * @param testsRange time range during which valid tests are used to for getting assignment.
@@ -46,7 +46,7 @@ object AutoRefreshAssignGroups {
     * @return A Resource of An [[AutoRefreshAssignGroups]]
     */
   def resource[F[_]: Timer](
-      abtestClient: AbtestClient[F],
+      dataProvider: abtest.DataProvider[F],
       refreshPeriod: FiniteDuration,
       staleTimeout: FiniteDuration,
       testsRange: Option[FiniteDuration]
@@ -64,8 +64,8 @@ object AutoRefreshAssignGroups {
               data <- ref
                 .getOrFetch(refreshPeriod, staleTimeout)(
                   nowF.flatMap { now =>
-                    abtestClient
-                      .testsData(
+                    dataProvider
+                      .getTestsData(
                         testsRange.fold(now)(tr => now.minusNanos(tr.toNanos)),
                         testsRange
                       )

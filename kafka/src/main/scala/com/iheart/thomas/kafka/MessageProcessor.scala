@@ -5,13 +5,13 @@ import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.stream.ConversionBanditKPITracker.ConversionEvent
 import fs2.Pipe
-import fs2.kafka.Deserializer
+import fs2.kafka.RecordDeserializer
 
 trait MessageProcessor[F[_]] {
   type RawMessage
   type PreprocessedMessage
 
-  implicit def deserializer: Deserializer.Record[F, RawMessage]
+  implicit def deserializer: RecordDeserializer[F, RawMessage]
   def preprocessor: Pipe[F, RawMessage, PreprocessedMessage]
   def toConversionEvent(
       featureName: FeatureName,
@@ -25,7 +25,7 @@ object MessageProcessor {
   def apply[F[_], Message](
       toEvent: (FeatureName,
           KPIName) => F[Pipe[F, Message, (ArmName, ConversionEvent)]]
-    )(implicit ev: Deserializer.Record[F, Message]
+    )(implicit ev: RecordDeserializer[F, Message]
     ): MessageProcessor[F] {
     type RawMessage = Message;
     type PreprocessedMessage = Message
@@ -34,7 +34,7 @@ object MessageProcessor {
 
       type RawMessage = Message
       type PreprocessedMessage = Message
-      implicit def deserializer: Deserializer.Record[F, Message] = ev
+      implicit def deserializer: RecordDeserializer[F, Message] = ev
       def preprocessor: Pipe[F, Message, Message] = identity
 
       def toConversionEvent(

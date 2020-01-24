@@ -1,10 +1,10 @@
 package com.iheart.thomas.stream
 
-import cats.effect.IO
 import fs2.Stream
+import cats.effect.IO
 import org.scalatest.matchers.should.Matchers
 import ConversionBanditKPITracker.{Converted, Viewed}
-import cats.effect.scalatest.AsyncIOSpec
+import cats.effect.testing.scalatest.AsyncIOSpec
 import com.iheart.thomas.analysis.Conversions
 
 class ConversionBanditKPITrackerSuite extends AsyncIOSpec with Matchers {

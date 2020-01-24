@@ -112,6 +112,7 @@ object AssessmentAlg {
             iterations,
             keepEvery
           )
+
       val initCounts = allMeasurement.map { case (gn, _) => (gn, 0L) }
 
       val winnerCounts = numericGroupResult.foldLeft(initCounts) {
@@ -119,6 +120,7 @@ object AssessmentAlg {
           val winnerGroup = groupResult.maxBy(_._2)._1
           counts.updated(winnerGroup, counts(winnerGroup) + 1)
       }
+
       val total = winnerCounts.toList.map(_._2).sum
 
       winnerCounts.map {

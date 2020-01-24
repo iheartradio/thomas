@@ -6,8 +6,8 @@ import abtest._
 import model._
 import Formats._
 import cats.effect.{Async, Resource}
-import analysis.{KPIApi, KPIDistribution}
-import com.typesafe.config.ConfigFactory
+import analysis.{KPIDistribution, KPIDistributionApi}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes, Response}
 import org.http4s.dsl.Http4sDsl
 import _root_.play.api.libs.json._
@@ -15,7 +15,8 @@ import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.play._
 import lihua.mongo.JsonFormats._
-import cats.effect.{Timer, Concurrent}
+import cats.effect.{Concurrent, Timer}
+
 import scala.concurrent.ExecutionContext
 import _root_.play.api.libs.json.Json.toJson
 import cats.implicits._
@@ -25,11 +26,12 @@ import org.http4s.dsl.impl.{
   OptionalQueryParamDecoderMatcher,
   QueryParamDecoderMatcher
 }
+
 import scala.compat.java8.DurationConverters._
 
 class AbtestService[F[_]: Async](
     api: AbtestAlg[F],
-    kpiAPI: KPIApi[F])
+    kpiAPI: KPIDistributionApi[F])
     extends Http4sDsl[F] {
 
   implicit val jsonObjectEncoder: EntityEncoder[F, JsObject] =
@@ -216,28 +218,36 @@ class AbtestService[F[_]: Async](
 
 object AbtestService {
 
-  def mongo[F[_]: Timer](
+  def fromMongo[F[_]: Timer](
       implicit F: Concurrent[F],
       ex: ExecutionContext
     ): Resource[F, AbtestService[F]] = {
 
-    import thomas.mongo.idSelector
     for {
       cfg <- Resource.liftF(F.delay(ConfigFactory.load))
-      daos <- {
-        implicit val c = cfg
-        thomas.mongo.daosResource[F](cfg)
-      }
+      daos <- thomas.mongo.daosResource[F](cfg)
       alg <- {
-        implicit val (abtestDAO, featureDAO, _) = daos
-        val refreshPeriod =
-          cfg.getDuration("iheart.abtest.get-groups.ttl").toScala
-        AbtestAlg.defaultResource[F](refreshPeriod)
+        implicit val (c, d) = (cfg, daos)
+        abtestAlgFromMongo[F]
       }
+
     } yield {
       implicit val (_, _, kpiDAO) = daos
-      new AbtestService(alg, KPIApi.default[F])
+      new AbtestService(alg, KPIDistributionApi.default[F])
     }
+  }
+
+  def abtestAlgFromMongo[F[_]: Timer: Concurrent](
+      implicit
+      daos: mongo.DAOs[F],
+      cfg: Config
+    ): Resource[F, AbtestAlg[F]] = {
+
+    import thomas.mongo.idSelector
+    implicit val (abtestDAO, featureDAO, _) = daos
+    val refreshPeriod =
+      cfg.getDuration("iheart.abtest.get-groups.ttl").toScala
+    AbtestAlg.defaultResource[F](refreshPeriod)
   }
 
   object QueryParamDecoderMatchers {

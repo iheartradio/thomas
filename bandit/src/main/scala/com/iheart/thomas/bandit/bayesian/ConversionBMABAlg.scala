@@ -19,7 +19,7 @@ object ConversionBMABAlg {
   implicit def default[F[_]](
       implicit
       stateDao: BanditStateDAO[F, BanditState[Conversions]],
-      kpiAPI: KPIApi[F],
+      kpiAPI: KPIDistributionApi[F],
       abtestAPI: abtest.AbtestAlg[F],
       sampleSettings: SampleSettings,
       rng: RNG,
@@ -165,17 +165,19 @@ object ConversionBMABAlg {
             kpi,
             state.rewardState
           )
-          newState <- stateDao.upsert(
-            state.copy(
-              arms = state.arms.map(
-                arm =>
-                  arm.copy(
-                    likelihoodOptimum =
-                      distribution.getOrElse(arm.name, arm.likelihoodOptimum)
-                  )
+          newState <- stateDao
+            .update(
+              state.copy(
+                arms = state.arms.map(
+                  arm =>
+                    arm.copy(
+                      likelihoodOptimum =
+                        distribution.getOrElse(arm.name, arm.likelihoodOptimum)
+                    )
+                )
               )
             )
-          )
+            .onError { case e => log.debug("!!!!!!!!!!!!!errored here" + e) }
           _ <- log(Calculated(newState))
           newBandit <- if (newState.arms.forall(
                              _.rewardState.total > newState.initialSampleSize
@@ -185,6 +187,16 @@ object ConversionBMABAlg {
             F.pure(BayesianMAB(currentTest, newState))
         } yield newBandit
 
+      }
+
+      def delete(featureName: FeatureName): F[Unit] = {
+        for {
+          tests <- abtestAPI.getTestsByFeature(featureName)
+          _ <- tests.headOption.fold(F.unit)(
+            test => abtestAPI.terminate(test._id).void
+          )
+          _ <- stateDao.remove(featureName)
+        } yield ()
       }
 
       def currentState(featureName: FeatureName): F[BayesianMAB[Conversions]] = {

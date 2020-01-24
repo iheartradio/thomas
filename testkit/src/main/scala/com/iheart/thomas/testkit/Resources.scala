@@ -5,7 +5,7 @@ import java.time.Instant
 import cats.effect.{IO, Resource}
 import cats.implicits._
 import com.iheart.thomas.abtest.AbtestAlg
-import com.iheart.thomas.analysis.{Conversions, KPIApi, SampleSettings}
+import com.iheart.thomas.analysis.{Conversions, KPIDistributionApi, SampleSettings}
 import com.iheart.thomas.bandit.BanditStateDAO
 import com.iheart.thomas.bandit.bayesian.{BanditState, ConversionBMABAlg}
 import com.iheart.thomas.bandit.tracking.EventLogger
@@ -13,7 +13,7 @@ import com.iheart.thomas.{dynamo, mongo}
 import com.stripe.rainier.sampler.RNG
 import com.typesafe.config.ConfigFactory
 import lihua.dynamo.testkit.LocalDynamo
-import play.api.libs.json.Json
+import _root_.play.api.libs.json.Json
 
 import scala.concurrent.duration._
 
@@ -55,7 +55,10 @@ object Resources {
   /**
     * An ConversionAPI resource that cleans up after
     */
-  lazy val apis: Resource[IO, (ConversionBMABAlg[IO], KPIApi[IO], AbtestAlg[IO])] =
+  lazy val apis: Resource[
+    IO,
+    (ConversionBMABAlg[IO], KPIDistributionApi[IO], AbtestAlg[IO])
+  ] =
     (mangoDAOs, stateDAO).tupled
       .flatMap {
         case (daos, sd) =>
@@ -70,7 +73,7 @@ object Resources {
 
             (
               ConversionBMABAlg.default[IO],
-              KPIApi.default[IO],
+              KPIDistributionApi.default[IO],
               abtestAlg
             )
           }

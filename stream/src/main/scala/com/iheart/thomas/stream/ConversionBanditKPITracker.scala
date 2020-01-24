@@ -9,38 +9,54 @@ import cats.implicits._
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
 import com.iheart.thomas.bandit.tracking.EventLogger
+import cats.effect.Timer
 
-class ConversionBanditKPITracker[F[_]: ConcurrentEffect](
+class ConversionBanditKPITracker[F[_]: Timer](
     implicit
     bmabAlg: ConversionBMABAlg[F],
-    log: EventLogger[F]) {
+    log: EventLogger[F],
+    F: ConcurrentEffect[F]) {
 
   def updateAllConversions[I](
       chunkSize: Int,
       toEvent: (FeatureName, KPIName) => F[Pipe[F, I, (ArmName, ConversionEvent)]]
-    ): F[Pipe[F, I, Unit]] = {
+    ): Pipe[F, I, Unit] = {
     def updateConversion(
         featureName: FeatureName
       ): Pipe[F, (ArmName, ConversionEvent), Unit] =
       ConversionBanditKPITracker.toConversion(chunkSize) andThen { input =>
         input.evalMap { r =>
-          bmabAlg
-            .updateRewardState(featureName, r)
-            .void
+          log.debug(s"Updating reward $r to bandit $featureName") *>
+            bmabAlg
+              .updateRewardState(featureName, r)
+              .void
         }
       }
 
-    bmabAlg.runningBandits(None).flatMap { bandits =>
-      bandits
-        .traverse { b =>
-          toEvent(b.feature, b.kpiName).map(_ andThen updateConversion(b.feature))
+    val updatePipes =
+      bmabAlg
+        .runningBandits(None)
+        .flatMap { bandits =>
+          log.debug(s"updating KPI state for ${bandits.map(_.feature)}") *>
+            bandits
+              .traverse { b =>
+                toEvent(b.feature, b.kpiName)
+                  .map(_ andThen updateConversion(b.feature))
+              }
         }
-        .map { featurePipes => input: Stream[F, I] =>
-          input.broadcastThrough(featurePipes: _*)
+
+    { input: Stream[F, I] =>
+      Stream
+        .eval(updatePipes)
+        .flatMap { featurePipes =>
+          if (featurePipes.nonEmpty)
+            input.broadcastThrough(featurePipes: _*)
+          else
+            input.void
         }
     }
-  }
 
+  }
 }
 
 object ConversionBanditKPITracker {

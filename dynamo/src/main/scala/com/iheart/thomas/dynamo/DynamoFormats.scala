@@ -11,7 +11,7 @@ import com.iheart.thomas.bandit.bayesian._
 
 object DynamoFormats {
 
-  import org.scanamo.semiauto._
+  import org.scanamo.generic.semiauto._
 
   implicit val dfProbability: DynamoFormat[Probability] =
     DynamoFormat[Double].coerce[DynamoFormat[Probability]]

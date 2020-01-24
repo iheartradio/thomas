@@ -14,7 +14,7 @@ import com.iheart.thomas.abtest.model._
 import lihua.Entity
 import _root_.play.api.libs.json._
 import cats.implicits._
-import com.iheart.thomas.abtest.{Error, TestsData}
+import com.iheart.thomas.abtest.{DataProvider, Error, TestsData}
 import com.iheart.thomas.analysis.KPIDistribution
 import abtest.Formats._
 
@@ -26,13 +26,8 @@ import org.http4s.client.UnexpectedStatus
 
 import scala.concurrent.duration.FiniteDuration
 
-trait AbtestClient[F[_]] {
+trait AbtestClient[F[_]] extends DataProvider[F] {
   def tests(asOf: Option[Instant] = None): F[Vector[(Entity[Abtest], Feature)]]
-
-  def testsData(
-      at: Instant,
-      duration: Option[FiniteDuration]
-    ): F[TestsData]
 
   def test(
       feature: FeatureName,
@@ -98,7 +93,7 @@ class Http4SAbtestClient[F[_]: Sync](
     )
   }
 
-  def testsData(
+  def getTestsData(
       at: Instant,
       duration: Option[FiniteDuration]
     ): F[TestsData] = {
@@ -155,7 +150,7 @@ object AbtestClient {
     def testsData: String
 
     /**
-      * Service URL corresponding to [[analysis.KPIApi]].get
+      * Service URL corresponding to [[analysis.KPIDistributionApi]].get
       */
     def kPIs: String
 
@@ -208,5 +203,5 @@ object AbtestClient {
       .resource[F](new HttpServiceUrlsPlay("mock") {
         override val tests: String = serviceUrl
       }, ec)
-      .use(_.testsData(time, None))
+      .use(_.getTestsData(time, None))
 }

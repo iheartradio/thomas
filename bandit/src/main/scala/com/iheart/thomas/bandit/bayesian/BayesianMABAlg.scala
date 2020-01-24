@@ -36,6 +36,8 @@ trait BayesianMABAlg[F[_], R] {
       historyRetention: Option[FiniteDuration] = None
     ): F[BayesianMAB[R]]
 
+  def delete(featureName: FeatureName): F[Unit]
+
 }
 
 object BayesianMABAlg {
