@@ -152,7 +152,7 @@ lazy val analysis = project
   .settings(
     sources in (Compile, doc) := Nil, //disable scaladoc due to scalameta not working in scaladoc
     resolvers += Resolver.bintrayRepo("cibotech", "public"),
-    libs.testDependencies("scalacheck", "scalatest"),
+    libs.testDependencies("scalacheck", "cats-effect-testing-scalatest"),
     libs.dependencies(
       "rainier-core",
       "cats-effect",
