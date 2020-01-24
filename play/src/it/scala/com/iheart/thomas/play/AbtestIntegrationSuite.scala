@@ -1310,7 +1310,7 @@ class AssessmentAlgIntegrationSuite extends AbtestIntegrationSuiteBase {
     }
 
     "create one when there isn't one already" in {
-      val kpi =
+      val kpi: KPIDistribution =
         GammaKPIDistribution(KPIName("new KPI"), Normal(1d, 0.1d), Normal(3d, 0.3d))
       val r = controller.updateKPIDistribution(jsonRequest(kpi))
       status(r) mustBe OK
@@ -1318,15 +1318,17 @@ class AssessmentAlgIntegrationSuite extends AbtestIntegrationSuiteBase {
     }
 
     "update one" in {
-      val kpi =
+      val gkpi =
         GammaKPIDistribution(
           KPIName("another KPI"),
           Normal(1d, 0.1d),
           Normal(3d, 0.3d)
         )
+      val kpi: KPIDistribution = gkpi
+      val kpiUpdated: KPIDistribution = gkpi.copy(shapePrior = Normal(1.3, 0.13d))
+
       toServer(controller.updateKPIDistribution, jsonRequest(kpi))
 
-      val kpiUpdated = kpi.copy(shapePrior = Normal(1.3, 0.13d))
       toServer(controller.updateKPIDistribution, jsonRequest(kpiUpdated))
 
       val r = controller.getKPIDistribution("another KPI")(FakeRequest())
