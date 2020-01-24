@@ -42,7 +42,7 @@ lazy val libs =
   .addJVM(name = "fs2-kafka",             version = "1.0.0", org = "com.github.fd4s")
   .add(   name = "jawn",                  version = "1.0.0", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
   .addJVM( name = "embedded-kafka",       version = "2.4.0",  org = "io.github.embeddedkafka")
-  .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
+  .add(   name = "pureconfig",            version = "0.12.2", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
 // format: on
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
