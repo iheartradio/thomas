@@ -30,7 +30,7 @@ class RestartableStreamSuite extends AsyncIOSpec with Matchers {
           .toVector
       } yield c
 
-      count.asserting(_.last shouldBe (20 +- 4))
+      count.asserting(_.last shouldBe (20 +- 5))
 
     }
 
