@@ -44,31 +44,13 @@ object ConversionBMABAlg {
           cs <- currentState(featureName)
           toUpdate = cs.state.updateArms(rewards)
           updated <- stateDao.upsert(toUpdate)
-          _ <- log(Event.BanditKPIUpdated(updated))
+          _ <- log(Event.BanditKPIUpdate.Updated(updated))
         } yield updated
       }
 
       def init(banditSpec: BanditSpec): F[BayesianMAB[Conversions]] = {
         kpiAPI.getSpecific[BetaKPIDistribution](banditSpec.kpiName) >>
           (
-            abtestAPI
-              .create(
-                AbtestSpec(
-                  name = "Abtest for Bayesian MAB " + banditSpec.feature,
-                  feature = banditSpec.feature,
-                  author = banditSpec.author,
-                  start = banditSpec.start,
-                  end = None,
-                  groups = banditSpec.arms.map(
-                    Group(
-                      _,
-                      1d / banditSpec.arms.size.toDouble
-                    )
-                  ),
-                  specialization = Some(Specialization.MultiArmBanditConversion)
-                ),
-                false
-              ),
             stateDao
               .upsert(
                 BanditState[Conversions](
@@ -87,8 +69,26 @@ object ConversionBMABAlg {
                   minimumSizeChange = banditSpec.minimumSizeChange,
                   initialSampleSize = banditSpec.initialSampleSize
                 )
+              ),
+            abtestAPI
+              .create(
+                AbtestSpec(
+                  name = "Abtest for Bayesian MAB " + banditSpec.feature,
+                  feature = banditSpec.feature,
+                  author = banditSpec.author,
+                  start = banditSpec.start,
+                  end = None,
+                  groups = banditSpec.arms.map(
+                    Group(
+                      _,
+                      1d / banditSpec.arms.size.toDouble
+                    )
+                  ),
+                  specialization = Some(Specialization.MultiArmBanditConversion)
+                ),
+                false
               )
-          ).mapN(BayesianMAB.apply _)
+          ).mapN((s, a) => BayesianMAB(a, s))
       }
 
       def getAll: F[Vector[BayesianMAB[Conversions]]] =
@@ -104,7 +104,7 @@ object ConversionBMABAlg {
       def findAll(
           time: Option[OffsetDateTime]
         ): F[Vector[BayesianMAB[Conversions]]] =
-        abtestAPI
+        abtestAPI //todo: this search depends how the bandit was initialized, if the abtest is created before the state, this will have concurrency problem.
           .getAllTestsBySpecialization(
             Specialization.MultiArmBanditConversion,
             time
@@ -177,7 +177,6 @@ object ConversionBMABAlg {
                 )
               )
             )
-            .onError { case e => log.debug("!!!!!!!!!!!!!errored here" + e) }
           _ <- log(Calculated(newState))
           newBandit <- if (newState.arms.forall(
                              _.rewardState.total > newState.initialSampleSize
