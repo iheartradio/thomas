@@ -11,4 +11,5 @@ case class BayesianMAB[R](
     state: BanditState[R]) {
   def feature: FeatureName = abtest.data.feature
   def kpiName: KPIName = state.kpiName
+
 }

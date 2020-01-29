@@ -7,12 +7,13 @@ import com.iheart.thomas.FeatureName
 import com.iheart.thomas.analysis.{Conversions, KPIName}
 import cats.implicits._
 import com.iheart.thomas.bandit.`package`.ArmName
-import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
+import com.iheart.thomas.bandit.bayesian.{BayesianMAB, ConversionBMABAlg}
 import com.iheart.thomas.bandit.tracking.EventLogger
 import cats.effect.Timer
 
 class ConversionBanditKPITracker[F[_]: Timer](
-    implicit
+    bandits: Vector[BayesianMAB[Conversions]]
+  )(implicit
     bmabAlg: ConversionBMABAlg[F],
     log: EventLogger[F],
     F: ConcurrentEffect[F]) {
@@ -34,16 +35,12 @@ class ConversionBanditKPITracker[F[_]: Timer](
       }
 
     val updatePipes =
-      bmabAlg
-        .runningBandits(None)
-        .flatMap { bandits =>
-          log.debug(s"updating KPI state for ${bandits.map(_.feature)}") *>
-            bandits
-              .traverse { b =>
-                toEvent(b.feature, b.kpiName)
-                  .map(_ andThen updateConversion(b.feature))
-              }
-        }
+      log.debug(s"updating KPI state for ${bandits.map(_.feature)}") *>
+        bandits
+          .traverse { b =>
+            toEvent(b.feature, b.kpiName)
+              .map(_ andThen updateConversion(b.feature))
+          }
 
     { input: Stream[F, I] =>
       Stream
