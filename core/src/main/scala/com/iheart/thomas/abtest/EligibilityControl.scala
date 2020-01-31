@@ -12,6 +12,7 @@ import cats.implicits._
 import cats.kernel.Semigroup
 import cats.{Applicative, Id, Monad}
 import com.iheart.thomas.abtest
+import com.iheart.thomas.abtest.model.Abtest.EligibilityType
 import com.iheart.thomas.abtest.model.Abtest.Status.InProgress
 import model._
 
@@ -25,6 +26,25 @@ trait EligibilityControl[F[_]] {
       test: Abtest
     ): F[Boolean]
 
+  def and(that: EligibilityControl[F])(implicit F: Monad[F]): EligibilityControl[F] =
+    EligibilityControl[F](
+      (userInfo: UserGroupQuery, test: Abtest) =>
+        eligible(userInfo, test).flatMap { a =>
+          if (a) {
+            that.eligible(userInfo, test)
+          } else false.pure[F]
+        }
+    )
+
+  def or(that: EligibilityControl[F])(implicit F: Monad[F]): EligibilityControl[F] =
+    EligibilityControl[F](
+      (userInfo: UserGroupQuery, test: Abtest) =>
+        eligible(userInfo, test).flatMap { a =>
+          if (!a) {
+            that.eligible(userInfo, test)
+          } else true.pure[F]
+        }
+    )
 }
 
 object EligibilityControl extends EligibilityControlInstances0 {
@@ -42,15 +62,7 @@ object EligibilityControl extends EligibilityControlInstances0 {
       override def combine(
           x: EligibilityControl[F],
           y: EligibilityControl[F]
-        ): EligibilityControl[F] =
-        apply[F](
-          (userInfo: UserGroupQuery, test: Abtest) =>
-            x.eligible(userInfo, test).flatMap { a =>
-              if (a) {
-                y.eligible(userInfo, test)
-              } else false.pure[F]
-            }
-        )
+        ): EligibilityControl[F] = x and y
     }
 }
 
@@ -63,13 +75,21 @@ private[thomas] sealed abstract class EligibilityControlInstances0
           query: UserGroupQuery,
           test: Abtest
         ): F[Boolean] =
-        (byGroupMeta |+| byRequiredTags |+| bySegRanges |+| byTestEffectiveRange)
+        (byUserEligibility and bySegRanges and byTestEffectiveRange)
           .eligible(query, test)
           .pure[F]
 
     }
 
-  implicit lazy val byGroupMeta: EligibilityControl[Id] =
+  lazy val byUserEligibility: EligibilityControl[Id] =
+    byTestEligibilityType or (byGroupMeta and byRequiredTags)
+
+  lazy val byTestEligibilityType: EligibilityControl[Id] =
+    abtest.EligibilityControl[Id](
+      (_, test) => test.eligibilityType == EligibilityType.AllEligible
+    )
+
+  lazy val byGroupMeta: EligibilityControl[Id] =
     abtest.EligibilityControl[Id](
       (query, test) =>
         test.matchingUserMeta.forall {

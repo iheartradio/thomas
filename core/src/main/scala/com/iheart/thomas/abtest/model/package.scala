@@ -34,6 +34,7 @@ package model {
   }
 
   import cats.Eq
+  import com.iheart.thomas.abtest.model.Abtest.EligibilityType
 
   /**
     * Internal representation of an A/B test, the public representation is [[Abtest]]
@@ -52,7 +53,8 @@ package model {
       salt: Option[String] = None,
       segmentRanges: List[GroupRange] = Nil,
       groupMetas: GroupMetas = Map(),
-      specialization: Option[Abtest.Specialization] = None) {
+      specialization: Option[Abtest.Specialization] = None,
+      eligibilityType: EligibilityType = EligibilityType.Controlled) {
 
     def statusAsOf(time: OffsetDateTime): Abtest.Status = statusAsOf(time.toInstant)
 
@@ -105,7 +107,8 @@ package model {
       reshuffle: Boolean = false,
       segmentRanges: List[GroupRange] = Nil,
       groupMetas: GroupMetas = Map(),
-      specialization: Option[Abtest.Specialization] = None) {
+      specialization: Option[Abtest.Specialization] = None,
+      eligibilityType: EligibilityType = EligibilityType.Controlled) {
 
     val startI = start.toInstant
     val endI = end.map(_.toInstant)
@@ -125,6 +128,13 @@ package model {
       case object InProgress extends Status
       case object Expired extends Status
       implicit val eq: Eq[Status] = Eq.fromUniversalEquals
+    }
+
+    sealed trait EligibilityType
+
+    object EligibilityType {
+      case object Controlled extends EligibilityType
+      case object AllEligible extends EligibilityType
     }
 
   }
