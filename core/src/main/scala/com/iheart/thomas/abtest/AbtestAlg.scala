@@ -15,6 +15,7 @@ import cats.tagless.FunctorK
 import com.iheart.thomas.TimeUtil
 import Error._
 import cats.effect.{Concurrent, Resource, Timer}
+import com.iheart.thomas.abtest.AssignGroups.{AssignmentResult, AssignmentWithMeta}
 import model.Abtest.Specialization
 import model._
 import lihua._
@@ -459,9 +460,8 @@ final class DefaultAbtestAlg[F[_]](
     validate(query) >> {
       getGroupAssignmentsOfWithAt(query).map {
         case (groupAssignments, at) =>
-          val metas = groupAssignments.mapFilter {
-            case (groupName, test) =>
-              test.groupMetas.get(groupName)
+          val metas = groupAssignments.collect {
+            case (fn, AssignmentWithMeta(gn, Some(meta))) => fn -> meta
           }
           UserGroupQueryResult(
             at,
@@ -632,18 +632,20 @@ final class DefaultAbtestAlg[F[_]](
     } yield created
 
   private def toGroups(
-      assignments: Map[FeatureName, (GroupName, _)]
+      assignments: Map[FeatureName, AssignmentResult]
     ): Map[FeatureName, GroupName] =
-    assignments.toList.map { case (k, v) => (k, v._1) }.toMap
+    assignments.toList.collect {
+      case (k, AssignmentWithMeta(groupName, _)) => (k, groupName)
+    }.toMap
 
   private def getGroupAssignmentsOf(
       query: UserGroupQuery
-    ): F[Map[FeatureName, (GroupName, Abtest)]] =
+    ): F[Map[FeatureName, AssignmentResult]] =
     getGroupAssignmentsOfWithAt(query).map(_._1)
 
   private def getGroupAssignmentsOfWithAt(
       query: UserGroupQuery
-    ): F[(Map[FeatureName, (GroupName, Abtest)], Instant)] =
+    ): F[(Map[FeatureName, AssignmentResult], Instant)] =
     for {
       td <- getAllTestsCachedWithAt(query.at.map(_.toInstant))
       assignment <- AssignGroups.assign[F](td, query, staleTimeout)

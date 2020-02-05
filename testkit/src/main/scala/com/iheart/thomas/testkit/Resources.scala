@@ -27,17 +27,18 @@ object Resources {
   implicit private val _timer = timer
 
   lazy val mangoDAOs =
-    Resource.liftF(IO(ConfigFactory.load())).flatMap { config =>
-      mongo.daosResource[IO](config).flatMap {
-        case daos =>
-          Resource
-            .make(IO.pure(daos)) {
-              case (abtestDAO, featureDAO, kpiDAO) =>
-                List(abtestDAO, featureDAO, kpiDAO)
-                  .traverse(_.removeAll(Json.obj()))
-                  .void
-            }
-      }
+    Resource.liftF(IO(ConfigFactory.load(getClass.getClassLoader))).flatMap {
+      config =>
+        mongo.daosResource[IO](config).flatMap {
+          case daos =>
+            Resource
+              .make(IO.pure(daos)) {
+                case (abtestDAO, featureDAO, kpiDAO) =>
+                  List(abtestDAO, featureDAO, kpiDAO)
+                    .traverse(_.removeAll(Json.obj()))
+                    .void
+              }
+        }
     }
 
   lazy val localDynamoR =

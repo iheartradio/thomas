@@ -10,6 +10,7 @@ import java.time.{Instant, ZoneOffset}
 
 import cats.effect.{ContextShift, IO}
 import com.iheart.thomas.abtest.AssignGroups
+import com.iheart.thomas.abtest.AssignGroups.AssignmentWithMeta
 import com.iheart.thomas.abtest.model.UserGroupQuery
 
 import collection.JavaConverters._
@@ -43,7 +44,7 @@ class JavaAbtestAssignments private (
         ),
         Duration.Zero
       )
-      .map(_.map { case (fn, (gn, _)) => (fn, gn) }.asJava)
+      .map(_.collect { case (fn, AssignmentWithMeta(gn, _)) => (fn, gn) }.asJava)
       .unsafeRunSync()
 
   }

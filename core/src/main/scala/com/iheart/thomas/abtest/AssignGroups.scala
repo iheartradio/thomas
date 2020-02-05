@@ -16,7 +16,6 @@ import TimeUtil._
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.control.NoStackTrace
-
 import lihua.Entity
 
 object AssignGroups {
@@ -51,29 +50,56 @@ object AssignGroups {
       consistencyTolerance: FiniteDuration
     )(implicit F: MonadThrowable[F],
       nowF: F[Instant]
-    ): F[Map[FeatureName, (GroupName, Abtest)]] = {
+    ): F[Map[FeatureName, AssignmentResult]] = {
 
     query.at.map(_.toInstant.pure[F]).getOrElse(nowF).flatMap { targetTime =>
       if (tests.withinTolerance(consistencyTolerance, targetTime)) {
         tests.data
           .traverseFilter {
             case (test, feature) =>
-              assign[F](test.data, feature, query).map(
-                _.map(gn => (feature.name, (gn, test.data)))
-              )
+              if (test.data.hasEligibilityControl && !query.eligibilityInfoIncluded)
+                F.pure(
+                  Option((feature.name, MissingEligibilityInfo: AssignmentResult))
+                )
+              else
+                assign[F](test.data, feature, query).map(
+                  _.map(
+                    gn =>
+                      (
+                        feature.name,
+                        AssignmentWithMeta(gn, test.data.groupMetas.get(gn)): AssignmentResult
+                      )
+                  )
+                )
           }
           .map(_.toMap)
       } else
         F.raiseError(InsufficientTestsDataToAssign)
     }
-
   }
 
   case object InsufficientTestsDataToAssign
       extends RuntimeException
       with NoStackTrace
 
+  sealed trait AssignmentResult extends Serializable with Product
+
+  case object MissingEligibilityInfo extends AssignmentResult
+
+  case class AssignmentWithMeta(
+      groupName: GroupName,
+      meta: Option[GroupMeta])
+      extends AssignmentResult
+
+  object AssignmentResult {
+    val missingInfo = MissingEligibilityInfo
+    def withMeta(
+        groupName: GroupName,
+        m: Option[GroupMeta]
+      ) = AssignmentWithMeta(groupName, m)
+  }
 }
+
 case class TestsData(
     at: Instant,
     data: Vector[(Entity[Abtest], Feature)],
