@@ -12,7 +12,6 @@ import cats.implicits._
 import cats.kernel.Semigroup
 import cats.{Applicative, Id, Monad}
 import com.iheart.thomas.abtest
-import com.iheart.thomas.abtest.model.Abtest.EligibilityType
 import com.iheart.thomas.abtest.model.Abtest.Status.InProgress
 import model._
 
@@ -82,11 +81,15 @@ private[thomas] sealed abstract class EligibilityControlInstances0
     }
 
   lazy val byUserEligibility: EligibilityControl[Id] =
-    byTestEligibilityType or (byGroupMeta and byRequiredTags)
+    byTestEligibilityType or (byUserEligibilityInfoAvailability and byGroupMeta and byRequiredTags)
 
   lazy val byTestEligibilityType: EligibilityControl[Id] =
     abtest.EligibilityControl[Id](
-      (_, test) => test.eligibilityType == EligibilityType.AllEligible
+      (_, test) => !test.hasEligibilityControl
+    )
+  lazy val byUserEligibilityInfoAvailability: EligibilityControl[Id] =
+    abtest.EligibilityControl[Id](
+      (u, _) => u.eligibilityInfoIncluded
     )
 
   lazy val byGroupMeta: EligibilityControl[Id] =

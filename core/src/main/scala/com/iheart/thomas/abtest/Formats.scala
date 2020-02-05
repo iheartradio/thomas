@@ -4,7 +4,7 @@ package abtest
 import model._
 import _root_.play.api.libs.json._
 import Json.WithDefaultValues
-import com.iheart.thomas.abtest.model.Abtest.{EligibilityType, Specialization}
+import com.iheart.thomas.abtest.model.Abtest.Specialization
 import lihua.playJson.Formats._
 import _root_.play.api.libs.functional.InvariantFunctorOps
 
@@ -26,9 +26,6 @@ object Formats {
 
   implicit val jSpecialization: Format[Specialization] =
     stringADTFormat(Specialization.MultiArmBanditConversion)
-
-  implicit val jEligibilityType: Format[EligibilityType] =
-    stringADTFormat(EligibilityType.Controlled, EligibilityType.AllEligible)
 
   val j = Json.using[WithDefaultValues]
 

@@ -10,6 +10,7 @@ import com.iheart.thomas.client.AbtestClient
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{col, udf}
 import cats.implicits._
+import com.iheart.thomas.abtest.AssignGroups.AssignmentWithMeta
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
@@ -33,7 +34,9 @@ class Assigner(data: TestsData) extends Serializable {
       )
       .unsafeRunSync
       .get(feature)
-      .map(_._1)
+      .collect {
+        case AssignmentWithMeta(groupName, _) => groupName
+      }
   }
 
   def assignments(

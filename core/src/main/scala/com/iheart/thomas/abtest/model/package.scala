@@ -34,7 +34,6 @@ package model {
   }
 
   import cats.Eq
-  import com.iheart.thomas.abtest.model.Abtest.EligibilityType
 
   /**
     * Internal representation of an A/B test, the public representation is [[Abtest]]
@@ -53,8 +52,10 @@ package model {
       salt: Option[String] = None,
       segmentRanges: List[GroupRange] = Nil,
       groupMetas: GroupMetas = Map(),
-      specialization: Option[Abtest.Specialization] = None,
-      eligibilityType: EligibilityType = EligibilityType.Controlled) {
+      specialization: Option[Abtest.Specialization] = None) {
+
+    val hasEligibilityControl: Boolean =
+      requiredTags.nonEmpty || matchingUserMeta.nonEmpty
 
     def statusAsOf(time: OffsetDateTime): Abtest.Status = statusAsOf(time.toInstant)
 
@@ -107,8 +108,7 @@ package model {
       reshuffle: Boolean = false,
       segmentRanges: List[GroupRange] = Nil,
       groupMetas: GroupMetas = Map(),
-      specialization: Option[Abtest.Specialization] = None,
-      eligibilityType: EligibilityType = EligibilityType.Controlled) {
+      specialization: Option[Abtest.Specialization] = None) {
 
     val startI = start.toInstant
     val endI = end.map(_.toInstant)
@@ -128,13 +128,6 @@ package model {
       case object InProgress extends Status
       case object Expired extends Status
       implicit val eq: Eq[Status] = Eq.fromUniversalEquals
-    }
-
-    sealed trait EligibilityType
-
-    object EligibilityType {
-      case object Controlled extends EligibilityType
-      case object AllEligible extends EligibilityType
     }
 
   }
@@ -165,12 +158,22 @@ package model {
       overrideEligibility: Boolean = false,
       locked: Boolean = false)
 
+  /**
+    *
+    * @param userId
+    * @param at
+    * @param tags
+    * @param meta
+    * @param features
+    * @param eligibilityInfoIncluded indicate whether eligibility information is included.
+    */
   case class UserGroupQuery(
       userId: Option[UserId],
       at: Option[OffsetDateTime] = None,
       tags: List[Tag] = Nil,
       meta: UserMeta = Map(),
-      features: List[FeatureName] = Nil)
+      features: List[FeatureName] = Nil,
+      eligibilityInfoIncluded: Boolean = true)
 
   case class UserInfo(
       userId: Option[UserId],
