@@ -23,7 +23,7 @@ lazy val libs =
   .add(   name = "play-json",             version = "2.8.1",  org = "com.typesafe.play")
   .add(   name = "play",                  version = "2.8.0",  org = "com.typesafe.play")
   .add(   name = "cats-testkit-scalatest",version = "1.0.0-RC1", org = org.typelevel.typeLevelOrg)
-  .add(   name = "spark",                  version = "2.4.4", org = "org.apache.spark", "spark-sql", "spark-core")
+  .add(   name = "spark",                  version = "2.4.5", org = "org.apache.spark", "spark-sql", "spark-core")
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
   .addJVM(name = "play-json-derived-codecs", version = "7.0.0", org = "org.julienrf")
   .addJVM(name = "newtype",               version = "0.4.3",  org = "io.estatico")
