@@ -13,6 +13,6 @@ class MyBayesianMABController @Inject()(
     components: ControllerComponents
   )(implicit ec: ExecutionContext)
     extends BayesianMABController(
-      new BanditAlgsProvider(provider, LocalDynamoClientProvider).conversionBMABAlg,
+      new BanditAlgsProvider(provider, LocalDynamoClientProvider, ec).conversionBMABAlg,
       components
     )

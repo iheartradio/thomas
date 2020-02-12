@@ -12,7 +12,8 @@ import com.iheart.thomas.bandit.tracking.EventLogger
 import cats.effect.Timer
 
 class ConversionBanditKPITracker[F[_]: Timer](
-    bandits: Vector[BayesianMAB[Conversions]]
+    bandits: Vector[BayesianMAB[Conversions]],
+    name: String
   )(implicit
     bmabAlg: ConversionBMABAlg[F],
     log: EventLogger[F],
@@ -27,7 +28,7 @@ class ConversionBanditKPITracker[F[_]: Timer](
       ): Pipe[F, (ArmName, ConversionEvent), Unit] =
       ConversionBanditKPITracker.toConversion(chunkSize) andThen { input =>
         input.evalMap { r =>
-          log.debug(s"Updating reward $r to bandit $featureName") *>
+          log.debug(s"Updating reward $r to bandit $featureName by $name") *>
             bmabAlg
               .updateRewardState(featureName, r)
               .void

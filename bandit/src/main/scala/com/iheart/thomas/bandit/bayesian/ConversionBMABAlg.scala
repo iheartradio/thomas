@@ -18,7 +18,7 @@ object ConversionBMABAlg {
 
   implicit def default[F[_]](
       implicit
-      stateDao: BanditStateDAO[F, BanditState[Conversions]],
+      stateDao: StateDAO[F, Conversions],
       kpiAPI: KPIDistributionApi[F],
       abtestAPI: abtest.AbtestAlg[F],
       sampleSettings: SampleSettings,
@@ -41,9 +41,14 @@ object ConversionBMABAlg {
         implicit val mc: Monoid[Conversions] =
           RewardState[Conversions]
         for {
-          cs <- currentState(featureName)
-          toUpdate = cs.state.updateArms(rewards)
-          updated <- stateDao.upsert(toUpdate)
+          updated <- stateDao
+            .updateArms(featureName, _.map { arm =>
+              arm.copy(
+                rewardState = rewards
+                  .get(arm.name)
+                  .fold(arm.rewardState)(arm.rewardState |+| _)
+              )
+            }.pure[F])
           _ <- log(Event.BanditKPIUpdate.Updated(updated))
         } yield updated
       }
@@ -52,7 +57,7 @@ object ConversionBMABAlg {
         kpiAPI.getSpecific[BetaKPIDistribution](banditSpec.kpiName) >>
           (
             stateDao
-              .upsert(
+              .insert(
                 BanditState[Conversions](
                   feature = banditSpec.feature,
                   title = banditSpec.title,
@@ -67,7 +72,8 @@ object ConversionBMABAlg {
                   start = banditSpec.start.toInstant,
                   kpiName = banditSpec.kpiName,
                   minimumSizeChange = banditSpec.minimumSizeChange,
-                  initialSampleSize = banditSpec.initialSampleSize
+                  initialSampleSize = banditSpec.initialSampleSize,
+                  version = 0L
                 )
               ),
             abtestAPI
@@ -166,16 +172,15 @@ object ConversionBMABAlg {
             state.rewardState
           )
           newState <- stateDao
-            .update(
-              state.copy(
-                arms = state.arms.map(
-                  arm =>
-                    arm.copy(
-                      likelihoodOptimum =
-                        distribution.getOrElse(arm.name, arm.likelihoodOptimum)
-                    )
-                )
-              )
+            .updateArms(
+              featureName,
+              _.map(
+                arm =>
+                  arm.copy(
+                    likelihoodOptimum =
+                      distribution.getOrElse(arm.name, arm.likelihoodOptimum)
+                  )
+              ).pure[F]
             )
           _ <- log(Calculated(newState))
           newBandit <- if (newState.arms.forall(
