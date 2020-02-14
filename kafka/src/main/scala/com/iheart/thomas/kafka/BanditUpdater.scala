@@ -107,9 +107,9 @@ object BanditUpdater {
               .delay(
                 UUID.randomUUID().toString
               )
-              .flatTap(name => log.debug(s"starting consumer $name"))
+              .flatTap(name => log.debug(s"Starting Consumer $name"))
           )
-          .flatMap { r =>
+          .flatMap { name =>
             changingRunningBandit.switchMap { runningBandits =>
               import mp.deserializer
 
@@ -122,7 +122,7 @@ object BanditUpdater {
 
               val toEvent =
                 (fn: FeatureName, kn: KPIName) => mp.toConversionEvent(fn, kn)
-              val updater = new ConversionBanditKPITracker[F](runningBandits, r)
+              val updater = new ConversionBanditKPITracker[F](runningBandits, name)
               val updaterPipe =
                 updater.updateAllConversions(cfg.kafka.chunkSize, toEvent)
 

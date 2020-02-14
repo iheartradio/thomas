@@ -338,8 +338,6 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
 
   }
 
-}
-class BanditUpdaterSuite2 extends BanditUpdaterSuiteBase {
   "Can update bandits in parallel" in {
     withRunningKafka {
       createCustomTopic(topic, partitions = 4) //force distribute to different consumers
