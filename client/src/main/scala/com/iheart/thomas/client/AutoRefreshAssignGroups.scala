@@ -5,14 +5,15 @@ import java.time.Instant
 
 import com.iheart.thomas.abtest.{AssignGroups, TestsData}
 import cats.effect.{ConcurrentEffect, Resource, Timer}
-import com.iheart.thomas.abtest.model.{GroupMeta, UserGroupQuery}
+import com.iheart.thomas.abtest.model.UserGroupQuery
 import mau.RefreshRef
 import cats.implicits._
+import com.iheart.thomas.abtest.AssignGroups.{AssignmentResult}
 
 import scala.concurrent.duration.FiniteDuration
 
 abstract class AutoRefreshAssignGroups[F[_]] {
-  def assign(query: UserGroupQuery): F[Map[FeatureName, AssignmentWithMeta]]
+  def assign(query: UserGroupQuery): F[Map[FeatureName, AssignmentResult]]
 }
 
 object AutoRefreshAssignGroups {
@@ -59,7 +60,7 @@ object AutoRefreshAssignGroups {
         new AutoRefreshAssignGroups[F] {
           def assign(
               query: UserGroupQuery
-            ): F[Map[FeatureName, AssignmentWithMeta]] = {
+            ): F[Map[FeatureName, AssignmentResult]] = {
             for {
               data <- ref
                 .getOrFetch(refreshPeriod, staleTimeout)(
@@ -73,19 +74,9 @@ object AutoRefreshAssignGroups {
                 )(PartialFunction.empty)
 
               assignment <- AssignGroups.assign[F](data, query, staleTimeout)
-            } yield {
-              assignment.map {
-                case (fn, (gn, test)) =>
-                  (fn, AssignmentWithMeta(gn, test.groupMetas.get(gn)))
-
-              }
-            }
+            } yield assignment
           }
         }
       }
   }
 }
-
-case class AssignmentWithMeta(
-    groupName: GroupName,
-    meta: Option[GroupMeta])

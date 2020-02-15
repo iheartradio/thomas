@@ -25,7 +25,7 @@ import com.iheart.thomas.analysis.{
   Probability,
   SampleSettings
 }
-import com.iheart.thomas.bandit.{BanditSpec, BanditStateDAO}
+import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.bandit.bayesian.{ArmState, ConversionBMABAlg}
 import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.stream.ConversionBanditKPITracker
@@ -37,7 +37,8 @@ import org.scalatest.freespec.AnyFreeSpec
 
 import concurrent.duration._
 import scala.concurrent.ExecutionContext
-class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
+
+class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafka {
 
   implicit val embeddedKafkaConfig = EmbeddedKafkaConfig(
     kafkaPort = 34563,
@@ -78,15 +79,21 @@ class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
   )
 
   implicit val logger = EventLogger.noop[IO]
-  val updaterR =
+
+  val updaterR = updaterResource(2)
+  def updaterResource(chunkSize: Int) =
     Resources.mangoDAOs.flatMap { implicit daos =>
       Resources.localDynamoR
         .flatMap { implicit dynamoClient =>
           BanditUpdater.resource[IO, (FeatureName, ArmName, ConversionEvent)](
-            kafkaConfig = KafkaConfig(
-              server,
-              topic,
-              2
+            cfg = BanditUpdater.Config(
+              checkRunningBanditsEvery = 100.milliseconds,
+              restartOnErrorAfter = None,
+              kafka = KafkaConfig(
+                server,
+                topic,
+                chunkSize = chunkSize
+              )
             ),
             toEvent
           )
@@ -97,15 +104,36 @@ class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
         }
     }
 
-  val spec = BanditSpec(
-    feature = "feature1",
-    arms = List("A", "B"),
-    author = "Test Runner",
-    start = OffsetDateTime.now,
-    title = "for integration tests",
-    kpiName = kpi.name
-  )
+  def spec =
+    IO.delay(
+      BanditSpec(
+        feature = "feature1",
+        arms = List("A", "B"),
+        author = "Test Runner",
+        start = OffsetDateTime.now,
+        title = "for integration tests",
+        kpiName = kpi.name
+      )
+    )
 
+  final def consumerSettings[F[_]](
+      config: EmbeddedKafkaConfig
+    )(implicit F: Sync[F]
+    ): ConsumerSettings[F, Unit, String] =
+    ConsumerSettings[F, Unit, String]
+      .withProperties(consumerProperties(config))
+      .withRecordMetadata(_.timestamp.toString)
+
+  final def consumerProperties(config: EmbeddedKafkaConfig): Map[String, String] =
+    Map(
+      ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG -> s"localhost:${config.kafkaPort}",
+      ConsumerConfig.AUTO_OFFSET_RESET_CONFIG -> "earliest",
+      ConsumerConfig.GROUP_ID_CONFIG -> "group"
+    )
+
+}
+
+class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
   "Can update an bandit" in {
     withRunningKafka {
       createCustomTopic(topic)
@@ -123,7 +151,7 @@ class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
                 IO
               ]]
             for {
-              _ <- updater.conversionBMABAlg.init(spec)
+              _ <- spec flatMap updater.conversionBMABAlg.init
               _ <- ioTimer.sleep(1.second) //wait for spec to start
               _ <- updater.consumer
                 .interruptAfter(10.seconds) //10 seconds needed for all message processed
@@ -162,7 +190,7 @@ class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
                 IO
               ]]
             for {
-              _ <- updater.conversionBMABAlg.init(spec)
+              _ <- spec flatMap updater.conversionBMABAlg.init
               _ <- publish
                 .concurrently(updater.consumer)
                 .concurrently(Stream.eval(updater.pauseResume(true)))
@@ -176,6 +204,42 @@ class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
           .unsafeRunSync()
 
       resultState.state.arms.head.rewardState.total should be < (10L)
+    }
+  }
+
+  "Can keep up with the messages" in {
+    withRunningKafka {
+      createCustomTopic(topic)
+      val count = new java.util.concurrent.atomic.AtomicLong(0)
+      val publish = Stream.repeatEval(
+        IO.delay {
+          count.incrementAndGet()
+          publishToKafka(topic, s"feature1|A|true")
+        }
+      )
+
+      val resultState =
+        updaterR
+          .use { updaterPublic =>
+            val updater = updaterPublic
+              .asInstanceOf[BanditUpdater[IO] with WithConversionBMABAlg[
+                IO
+              ]]
+            for {
+              _ <- spec flatMap updater.conversionBMABAlg.init
+              _ <- publish
+                .concurrently(updater.consumer)
+                .interruptAfter(10.seconds)
+                .compile
+                .toVector
+
+              state <- updater.conversionBMABAlg.currentState("feature1")
+
+            } yield state
+          }
+          .unsafeRunSync()
+
+      resultState.state.arms.head.rewardState.total.toDouble should be > (count.get.toDouble * 0.6d)
     }
   }
 
@@ -198,12 +262,13 @@ class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
                 IO
               ]]
             for {
-              _ <- updater.conversionBMABAlg.init(spec)
+              _ <- spec flatMap updater.conversionBMABAlg.init
               _ <- publish
                 .concurrently(updater.consumer)
                 .concurrently(
-                  Stream.eval(updater.pauseResume(true)) ++ Stream
-                    .eval(updater.pauseResume(false))
+                  Stream.eval(updater.pauseResume(true)) ++
+                    Stream.sleep(40.millis) ++
+                    Stream.eval(updater.pauseResume(false))
                 )
                 .interruptAfter(10.seconds)
                 .compile
@@ -214,71 +279,105 @@ class BanditUpdaterSuite extends AnyFreeSpec with Matchers with EmbeddedKafka {
           }
           .unsafeRunSync()
 
-      resultState.state.arms.head.rewardState.total should be > (50L)
+      resultState.state.arms.head.rewardState.total.toDouble should be > (count.get.toDouble * 0.6d)
     }
 
   }
 
-//  "Can update bandits dynamically i.e. pick up new bandits" in {
-//    withRunningKafka {
-//      createCustomTopic(topic)
-//
-//      val spec2 = spec.copy(feature = "feature2", arms = List("A", "C"))
-//      val publish = Stream.repeatEval(
-//        IO.delay {
-//          List("A|true", "A|false", "B|false", "B|false", "B|true", "B|true")
-//            .foreach { m =>
-//              publishToKafka(topic, s"feature1|$m")
-//            }
-//          List("A|true", "A|false", "C|true", "C|false", "A|true", "C|true")
-//            .foreach { m =>
-//              publishToKafka(topic, s"feature2|$m")
-//            }
-//        }
-//      )
-//
-//      val (resultState1, resultState2) =
-//        updaterR
-//          .use { updaterPublic =>
-//            val updater = updaterPublic
-//              .asInstanceOf[BanditUpdater[IO] with WithConversionBMABAlg[
-//                IO
-//              ]]
-//            for {
-//              _ <- updater.conversionBMABAlg.init(spec)
-//              _ <- publish
-//                .concurrently(updater.consumer)
-//                .concurrently(
-//                  Stream.sleep[IO](4.seconds) *> Stream
-//                    .eval(updater.conversionBMABAlg.init(spec2))
-//                )
-//                .interruptAfter(10.seconds)
-//                .compile
-//                .toVector
-//
-//              state1 <- updater.conversionBMABAlg.currentState("feature1")
-//              state2 <- updater.conversionBMABAlg.currentState("feature2")
-//            } yield (state1, state2)
-//          }
-//          .unsafeRunSync()
-//      resultState2.state.arms.head.rewardState.total should be > (3L)
-//    }
-//
-//  }
+  "Can update bandits dynamically i.e. pick up new bandits" in {
+    withRunningKafka {
+      createCustomTopic(topic)
 
-  final def consumerSettings[F[_]](
-      config: EmbeddedKafkaConfig
-    )(implicit F: Sync[F]
-    ): ConsumerSettings[F, Unit, String] =
-    ConsumerSettings[F, Unit, String]
-      .withProperties(consumerProperties(config))
-      .withRecordMetadata(_.timestamp.toString)
+      def spec2 =
+        spec.map(
+          _.copy(
+            feature = "feature2",
+            arms = List("A", "C")
+          )
+        )
 
-  final def consumerProperties(config: EmbeddedKafkaConfig): Map[String, String] =
-    Map(
-      ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG -> s"localhost:${config.kafkaPort}",
-      ConsumerConfig.AUTO_OFFSET_RESET_CONFIG -> "earliest",
-      ConsumerConfig.GROUP_ID_CONFIG -> "group"
-    )
+      val publish = Stream.fixedDelay(50.millis) >> Stream.eval(
+        IO.delay {
+          List("A|true", "A|false", "B|false", "B|false", "B|true", "B|true")
+            .foreach { m =>
+              publishToKafka(topic, s"feature1|$m")
+            }
+          List("A|true", "A|false", "C|true", "C|false", "A|true", "C|true")
+            .foreach { m =>
+              publishToKafka(topic, s"feature2|$m")
+            }
+        }
+      )
+
+      val (resultState1, resultState2) =
+        updaterR
+          .use { updaterPublic =>
+            val updater = updaterPublic
+              .asInstanceOf[BanditUpdater[IO] with WithConversionBMABAlg[
+                IO
+              ]]
+            for {
+              _ <- spec flatMap updater.conversionBMABAlg.init
+              _ <- publish
+                .concurrently(updater.consumer)
+                .concurrently(
+                  Stream.sleep[IO](2.seconds) *> Stream
+                    .eval(spec2.flatMap(updater.conversionBMABAlg.init))
+                )
+                .interruptAfter(12.seconds)
+                .compile
+                .toVector
+
+              state1 <- updater.conversionBMABAlg.currentState("feature1")
+              state2 <- updater.conversionBMABAlg.currentState("feature2")
+            } yield (state1, state2)
+          }
+          .unsafeRunSync()
+      resultState2.state.arms.head.rewardState.total should be > (40L)
+    }
+
+  }
+
+  "Can update bandits in parallel" in {
+    withRunningKafka {
+      createCustomTopic(topic, partitions = 4) //force distribute to different consumers
+      val count = new java.util.concurrent.atomic.AtomicLong(0)
+
+      val totalPublish = 100L
+      val publish = Stream.fixedDelay(5.millis) >> Stream
+        .eval(IO.delay(count.getAndIncrement()).map { c =>
+          if (c < totalPublish)
+            publishToKafka(topic, s"feature1|A|true")
+          else ()
+        })
+
+      val result = updaterResource(1)
+        .use { updaterPublic =>
+          val updater = updaterPublic
+            .asInstanceOf[BanditUpdater[IO] with WithConversionBMABAlg[
+              IO
+            ]]
+          for {
+            _ <- spec flatMap updater.conversionBMABAlg.init
+            _ <- publish
+              .concurrently(updater.consumer)
+              .concurrently(updater.consumer)
+              .concurrently(updater.consumer)
+              .interruptAfter(10.seconds)
+              .compile
+              .toVector
+
+            state <- updater.conversionBMABAlg.currentState("feature1")
+          } yield state
+        }
+        .unsafeRunSync()
+
+      result.state.arms
+        .find(_.name == "A")
+        .get
+        .rewardState
+        .total shouldBe totalPublish
+    }
+  }
 
 }

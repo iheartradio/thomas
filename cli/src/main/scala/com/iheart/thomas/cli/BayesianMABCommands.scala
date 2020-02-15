@@ -1,4 +1,5 @@
-package com.iheart.thomas.cli
+package com.iheart.thomas
+package cli
 
 import java.time.OffsetDateTime
 
@@ -10,6 +11,7 @@ import com.monovore.decline.time._
 import BayesianBanditHttpClientOpts.conversionClientOpts
 import com.iheart.thomas.analysis.KPIName
 import io.estatico.newtype.ops._
+
 import scala.concurrent.ExecutionContext
 
 object BayesianMABCommands {

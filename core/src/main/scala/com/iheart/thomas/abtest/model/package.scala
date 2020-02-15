@@ -54,6 +54,9 @@ package model {
       groupMetas: GroupMetas = Map(),
       specialization: Option[Abtest.Specialization] = None) {
 
+    val hasEligibilityControl: Boolean =
+      requiredTags.nonEmpty || matchingUserMeta.nonEmpty
+
     def statusAsOf(time: OffsetDateTime): Abtest.Status = statusAsOf(time.toInstant)
 
     def statusAsOf(time: Instant): Abtest.Status =
@@ -155,12 +158,22 @@ package model {
       overrideEligibility: Boolean = false,
       locked: Boolean = false)
 
+  /**
+    *
+    * @param userId
+    * @param at
+    * @param tags
+    * @param meta
+    * @param features
+    * @param eligibilityInfoIncluded indicate whether eligibility information is included.
+    */
   case class UserGroupQuery(
       userId: Option[UserId],
       at: Option[OffsetDateTime] = None,
       tags: List[Tag] = Nil,
       meta: UserMeta = Map(),
-      features: List[FeatureName] = Nil)
+      features: List[FeatureName] = Nil,
+      eligibilityInfoIncluded: Boolean = true)
 
   case class UserInfo(
       userId: Option[UserId],

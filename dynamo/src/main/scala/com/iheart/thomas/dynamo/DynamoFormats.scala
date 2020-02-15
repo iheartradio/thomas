@@ -28,6 +28,9 @@ object DynamoFormats {
         _.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
       )
 
+  implicit val armSfc: DynamoFormat[ArmState[Conversions]] =
+    deriveDynamoFormat[ArmState[Conversions]]
+
   implicit val dfc: DynamoFormat[BanditState[Conversions]] =
     deriveDynamoFormat[BanditState[Conversions]]
 }

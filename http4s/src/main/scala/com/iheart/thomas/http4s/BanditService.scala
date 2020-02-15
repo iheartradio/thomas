@@ -21,7 +21,6 @@ import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.dynamo.ClientConfig
-import com.iheart.thomas.kafka.BanditUpdater.KafkaConfig
 import com.typesafe.config.Config
 import _root_.play.api.libs.json._
 import fs2.Stream
@@ -30,7 +29,6 @@ import org.http4s.server.Router
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import _root_.play.api.libs.json.Json.toJson
-import com.iheart.thomas.bandit.tracking.Event.BanditKPIUpdateError
 
 class BanditService[F[_]: Async: Timer] private (
     conversionsRunner: Repeating[F],
@@ -42,13 +40,7 @@ class BanditService[F[_]: Async: Timer] private (
     extends Http4sDsl[F] {
   private type PartialRoutes = PartialFunction[Request[F], F[Response[F]]]
 
-  def backGroundProcess: Stream[F, Unit] = banditUpdater.consumer.handleErrorWith {
-    e =>
-      Stream.eval(log(BanditKPIUpdateError(e))) ++
-        Stream.sleep[F](kafkaConsumerRestartWait) ++
-        Stream.eval(banditUpdater.pauseResume(pause = false)) ++
-        backGroundProcess
-  }
+  def backGroundProcess: Stream[F, Unit] = banditUpdater.consumer
 
   private implicit def decoder[A: Reads]: EntityDecoder[F, A] = jsonOf
 
@@ -149,7 +141,7 @@ object BanditService {
       kafkaConsumerRestartWait: FiniteDuration)
 
   case class BanditServiceConfig(
-      kafka: KafkaConfig,
+      updater: BanditUpdater.Config,
       dynamo: ClientConfig,
       runner: BanditRunnerConfig)
 
@@ -183,14 +175,14 @@ object BanditService {
       .liftF(BanditServiceConfig.load(configResource))
       .flatMap {
         case (bsc, root) =>
-          create[F](bsc.kafka, root, bsc.dynamo, bsc.runner)
+          create[F](bsc.updater, root, bsc.dynamo, bsc.runner)
       }
 
   }
 
   def create[
       F[_]: ConcurrentEffect: Timer: ContextShift: MessageProcessor: EventLogger
-    ](kafkaConfig: KafkaConfig,
+    ](buConfig: BanditUpdater.Config,
       mongoConfig: Config,
       dynamoConfig: dynamo.ClientConfig,
       bcs: BanditRunnerConfig
@@ -198,13 +190,13 @@ object BanditService {
     ): Resource[F, BanditService[F]] =
     dynamo.client[F](dynamoConfig).flatMap { implicit dc =>
       mongo.daosResource(mongoConfig).flatMap { implicit daos =>
-        create[F](kafkaConfig, bcs)
+        create[F](buConfig, bcs)
       }
     }
 
   def create[
       F[_]: ConcurrentEffect: Timer: ContextShift: mongo.DAOs: MessageProcessor: EventLogger
-    ](kafkaConfig: KafkaConfig,
+    ](buConfig: BanditUpdater.Config,
       bcs: BanditRunnerConfig
     )(implicit ex: ExecutionContext,
       amazonClient: AmazonDynamoDBAsync
@@ -218,7 +210,7 @@ object BanditService {
           true
         )
         .evalMap { repeating =>
-          BanditUpdater.create[F](kafkaConfig).map { bu =>
+          BanditUpdater.create[F](buConfig).map { bu =>
             new BanditService[F](
               repeating,
               conversionBMAB,

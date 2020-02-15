@@ -18,7 +18,7 @@ object ConversionBMABAlg {
 
   implicit def default[F[_]](
       implicit
-      stateDao: BanditStateDAO[F, BanditState[Conversions]],
+      stateDao: StateDAO[F, Conversions],
       kpiAPI: KPIDistributionApi[F],
       abtestAPI: abtest.AbtestAlg[F],
       sampleSettings: SampleSettings,
@@ -41,16 +41,41 @@ object ConversionBMABAlg {
         implicit val mc: Monoid[Conversions] =
           RewardState[Conversions]
         for {
-          cs <- currentState(featureName)
-          toUpdate = cs.state.updateArms(rewards)
-          updated <- stateDao.upsert(toUpdate)
-          _ <- log(Event.BanditKPIUpdated(updated))
+          updated <- stateDao
+            .updateArms(featureName, _.map { arm =>
+              arm.copy(
+                rewardState = rewards
+                  .get(arm.name)
+                  .fold(arm.rewardState)(arm.rewardState |+| _)
+              )
+            }.pure[F])
+          _ <- log(Event.BanditKPIUpdate.Updated(updated))
         } yield updated
       }
 
       def init(banditSpec: BanditSpec): F[BayesianMAB[Conversions]] = {
         kpiAPI.getSpecific[BetaKPIDistribution](banditSpec.kpiName) >>
           (
+            stateDao
+              .insert(
+                BanditState[Conversions](
+                  feature = banditSpec.feature,
+                  title = banditSpec.title,
+                  author = banditSpec.author,
+                  arms = banditSpec.arms.map(
+                    ArmState(
+                      _,
+                      RewardState[Conversions].empty,
+                      Probability(0d)
+                    )
+                  ),
+                  start = banditSpec.start.toInstant,
+                  kpiName = banditSpec.kpiName,
+                  minimumSizeChange = banditSpec.minimumSizeChange,
+                  initialSampleSize = banditSpec.initialSampleSize,
+                  version = 0L
+                )
+              ),
             abtestAPI
               .create(
                 AbtestSpec(
@@ -68,27 +93,8 @@ object ConversionBMABAlg {
                   specialization = Some(Specialization.MultiArmBanditConversion)
                 ),
                 false
-              ),
-            stateDao
-              .upsert(
-                BanditState[Conversions](
-                  feature = banditSpec.feature,
-                  title = banditSpec.title,
-                  author = banditSpec.author,
-                  arms = banditSpec.arms.map(
-                    ArmState(
-                      _,
-                      RewardState[Conversions].empty,
-                      Probability(0d)
-                    )
-                  ),
-                  start = banditSpec.start.toInstant,
-                  kpiName = banditSpec.kpiName,
-                  minimumSizeChange = banditSpec.minimumSizeChange,
-                  initialSampleSize = banditSpec.initialSampleSize
-                )
               )
-          ).mapN(BayesianMAB.apply _)
+          ).mapN((s, a) => BayesianMAB(a, s))
       }
 
       def getAll: F[Vector[BayesianMAB[Conversions]]] =
@@ -104,7 +110,7 @@ object ConversionBMABAlg {
       def findAll(
           time: Option[OffsetDateTime]
         ): F[Vector[BayesianMAB[Conversions]]] =
-        abtestAPI
+        abtestAPI //todo: this search depends how the bandit was initialized, if the abtest is created before the state, this will have concurrency problem.
           .getAllTestsBySpecialization(
             Specialization.MultiArmBanditConversion,
             time
@@ -166,18 +172,16 @@ object ConversionBMABAlg {
             state.rewardState
           )
           newState <- stateDao
-            .update(
-              state.copy(
-                arms = state.arms.map(
-                  arm =>
-                    arm.copy(
-                      likelihoodOptimum =
-                        distribution.getOrElse(arm.name, arm.likelihoodOptimum)
-                    )
-                )
-              )
+            .updateArms(
+              featureName,
+              _.map(
+                arm =>
+                  arm.copy(
+                    likelihoodOptimum =
+                      distribution.getOrElse(arm.name, arm.likelihoodOptimum)
+                  )
+              ).pure[F]
             )
-            .onError { case e => log.debug("!!!!!!!!!!!!!errored here" + e) }
           _ <- log(Calculated(newState))
           newBandit <- if (newState.arms.forall(
                              _.rewardState.total > newState.initialSampleSize

@@ -2,17 +2,16 @@ package modules
 
 import cats.effect.IO
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
-import com.iheart.thomas.dynamo
+import com.iheart.thomas.dynamo.DAOs
 import com.iheart.thomas.play.DynamoClientProvider
-import lihua.dynamo.ScanamoEntityDAO
+import lihua.dynamo.ScanamoManagement
 import org.scanamo.LocalDynamoDB
-
-object LocalDynamoClientProvider extends DynamoClientProvider {
+object LocalDynamoClientProvider
+    extends DynamoClientProvider
+    with ScanamoManagement {
   lazy val get: AmazonDynamoDBAsync = {
-    val client = LocalDynamoDB.client()
-    ScanamoEntityDAO
-      .ensureTable[IO](client, dynamo.DAOs.banditStateTableName)
-      .unsafeRunSync()
+    implicit val client = LocalDynamoDB.client()
+    DAOs.ensureBanditStateTable[IO](1L, 1L).unsafeRunSync()
     client
   }
 }

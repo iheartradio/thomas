@@ -9,7 +9,7 @@ trait SingleChoiceBanditAPIAlg[F[_]] {
   def updateRewardState[R](
       featureName: FeatureName,
       r: R
-    )(implicit stateDAO: BanditStateDAO[F, SingleChoiceBanditState[R]],
+    )(implicit stateDAO: StateDAO[F, SingleChoiceBanditState[R]],
       R: RewardState[R]
     ): F[SingleChoiceBanditState[R]]
 }
@@ -20,7 +20,7 @@ object SingleChoiceBanditAPIAlg {
       def updateRewardState[R](
           featureName: FeatureName,
           r: R
-        )(implicit stateDAO: BanditStateDAO[F, SingleChoiceBanditState[R]],
+        )(implicit stateDAO: StateDAO[F, SingleChoiceBanditState[R]],
           R: RewardState[R]
         ): F[SingleChoiceBanditState[R]] =
         for {
@@ -28,7 +28,7 @@ object SingleChoiceBanditAPIAlg {
           updated = lastState.copy(
             rewardStateSoFar = lastState.rewardStateSoFar |+| r
           )
-          stored <- stateDAO.upsert(updated)
+          stored <- stateDAO.update(updated)
         } yield stored
     }
 }
