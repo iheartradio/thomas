@@ -35,7 +35,7 @@ lazy val libs =
   .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
   .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
   .addJVM(name = "akka-slf4j",            version = "2.6.3", org = "com.typesafe.akka")
-  .add(   name = "http4s",                version = "0.21.0")
+  .add(   name = "http4s",                version = "0.21.1")
   .add(   name = "scalacheck-1-14",       version = "3.1.0.1",org = "org.scalatestplus")
   .add(   name = "scalatestplus-play",    version = "5.0.0",  org = "org.scalatestplus.play")
   .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
