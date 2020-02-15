@@ -1,6 +1,8 @@
 package com.iheart.thomas
 package kafka
 
+import java.util.UUID
+
 import cats.effect._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.analysis.{Conversions, KPIName}
@@ -98,34 +100,43 @@ object BanditUpdater {
           )
           .pauseWhen(pauseSig)
 
-      val mainStream = {
-        changingRunningBandit.switchMap { runningBandits =>
-          import mp.deserializer
+      val mainStream =
+        Stream
+          .eval(
+            ConcurrentEffect[F]
+              .delay(
+                UUID.randomUUID().toString
+              )
+              .flatTap(name => log.debug(s"Starting Consumer $name"))
+          )
+          .flatMap { name =>
+            changingRunningBandit.switchMap { runningBandits =>
+              import mp.deserializer
 
-          val consumerSettings =
-            ConsumerSettings[F, Unit, mp.RawMessage]
-              .withEnableAutoCommit(true)
-              .withAutoOffsetReset(AutoOffsetReset.Earliest)
-              .withBootstrapServers(cfg.kafka.kafkaServers)
-              .withGroupId("thomas-kpi-monitor")
+              val consumerSettings =
+                ConsumerSettings[F, Unit, mp.RawMessage]
+                  .withEnableAutoCommit(true)
+                  .withAutoOffsetReset(AutoOffsetReset.Earliest)
+                  .withBootstrapServers(cfg.kafka.kafkaServers)
+                  .withGroupId("thomas-kpi-monitor")
 
-          val toEvent =
-            (fn: FeatureName, kn: KPIName) => mp.toConversionEvent(fn, kn)
-          val updater = new ConversionBanditKPITracker[F](runningBandits)
-          val updaterPipe =
-            updater.updateAllConversions(cfg.kafka.chunkSize, toEvent)
+              val toEvent =
+                (fn: FeatureName, kn: KPIName) => mp.toConversionEvent(fn, kn)
+              val updater = new ConversionBanditKPITracker[F](runningBandits, name)
+              val updaterPipe =
+                updater.updateAllConversions(cfg.kafka.chunkSize, toEvent)
 
-          Stream.eval(log(Event.BanditKPIUpdate.UpdateStreamStarted)) ++
-            consumerStream[F]
-              .using(consumerSettings)
-              .evalTap(_.subscribeTo(cfg.kafka.topic))
-              .flatMap(_.stream)
-              .map(r => r.record.value)
-              .through(mp.preprocessor)
-              .through(updaterPipe)
-              .pauseWhen(pauseSig)
-        }
-      }
+              Stream.eval(log(Event.BanditKPIUpdate.UpdateStreamStarted)) ++
+                consumerStream[F]
+                  .using(consumerSettings)
+                  .evalTap(_.subscribeTo(cfg.kafka.topic))
+                  .flatMap(_.stream)
+                  .map(r => r.record.value)
+                  .through(mp.preprocessor)
+                  .through(updaterPipe)
+                  .pauseWhen(pauseSig)
+            }
+          }
 
       new BanditUpdater[F] with WithConversionBMABAlg[F] {
 

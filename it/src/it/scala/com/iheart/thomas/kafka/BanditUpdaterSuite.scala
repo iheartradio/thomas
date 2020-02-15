@@ -25,7 +25,7 @@ import com.iheart.thomas.analysis.{
   Probability,
   SampleSettings
 }
-import com.iheart.thomas.bandit.{BanditSpec, BanditStateDAO}
+import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.bandit.bayesian.{ArmState, ConversionBMABAlg}
 import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.stream.ConversionBanditKPITracker
@@ -80,7 +80,8 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
 
   implicit val logger = EventLogger.noop[IO]
 
-  val updaterR =
+  val updaterR = updaterResource(2)
+  def updaterResource(chunkSize: Int) =
     Resources.mangoDAOs.flatMap { implicit daos =>
       Resources.localDynamoR
         .flatMap { implicit dynamoClient =>
@@ -91,7 +92,7 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
               kafka = KafkaConfig(
                 server,
                 topic,
-                2
+                chunkSize = chunkSize
               )
             ),
             toEvent
@@ -335,6 +336,48 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
       resultState2.state.arms.head.rewardState.total should be > (40L)
     }
 
+  }
+
+  "Can update bandits in parallel" in {
+    withRunningKafka {
+      createCustomTopic(topic, partitions = 4) //force distribute to different consumers
+      val count = new java.util.concurrent.atomic.AtomicLong(0)
+
+      val totalPublish = 100L
+      val publish = Stream.fixedDelay(5.millis) >> Stream
+        .eval(IO.delay(count.getAndIncrement()).map { c =>
+          if (c < totalPublish)
+            publishToKafka(topic, s"feature1|A|true")
+          else ()
+        })
+
+      val result = updaterResource(1)
+        .use { updaterPublic =>
+          val updater = updaterPublic
+            .asInstanceOf[BanditUpdater[IO] with WithConversionBMABAlg[
+              IO
+            ]]
+          for {
+            _ <- spec flatMap updater.conversionBMABAlg.init
+            _ <- publish
+              .concurrently(updater.consumer)
+              .concurrently(updater.consumer)
+              .concurrently(updater.consumer)
+              .interruptAfter(10.seconds)
+              .compile
+              .toVector
+
+            state <- updater.conversionBMABAlg.currentState("feature1")
+          } yield state
+        }
+        .unsafeRunSync()
+
+      result.state.arms
+        .find(_.name == "A")
+        .get
+        .rewardState
+        .total shouldBe totalPublish
+    }
   }
 
 }

@@ -6,8 +6,7 @@ import java.time.Instant
 import cats.effect._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.abtest.AbtestAlg
-import com.iheart.thomas.analysis.SampleSettings
-import com.iheart.thomas.bandit.BanditStateDAO
+import com.iheart.thomas.analysis.{Conversions, SampleSettings}
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
 import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.{dynamo, mongo}
@@ -16,6 +15,7 @@ import com.typesafe.config.Config
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import dynamo.DynamoFormats._
 
 object ConversionBMABAlgResource {
   def apply[F[_]: Timer: EventLogger](
@@ -26,9 +26,7 @@ object ConversionBMABAlgResource {
     ): Resource[F, ConversionBMABAlg[F]] = {
     import mongo.idSelector
     implicit val stateDAO =
-      BanditStateDAO.bayesianfromLihua(
-        dynamo.DAOs.lihuaStateDAO[F](amazonClient)
-      )
+      dynamo.DAOs.banditState[F, Conversions]
     implicit val (abtestDAO, featureDAO, kpiDAO) = mongoDAOs
     lazy val refreshPeriod = 0.seconds //No cache is needed for abtests in Conversion API
 

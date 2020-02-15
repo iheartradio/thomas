@@ -15,7 +15,7 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 // format: off
 lazy val libs =
   org.typelevel.libraries
-  .addJVM(name = "lihua",                 version = "0.34",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-dynamo-testkit", "lihua-play-json")
+  .addJVM(name = "lihua",                 version = "0.35",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-dynamo-testkit", "lihua-play-json")
   .addJVM(name = "scanamo",               version = "1.0.0-M12-1", org ="org.scanamo", "scanamo-testkit")
   .addJVM(name = "rainier",               version = "0.2.3",  org ="com.stripe", "rainier-core", "rainier-cats", "rainier-plot")
   .addJVM(name = "breeze",                version = "1.0",    org ="org.scalanlp", "breeze", "breeze-viz")
@@ -43,6 +43,7 @@ lazy val libs =
   .add(   name = "jawn",                  version = "1.0.0", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
   .addJVM( name = "embedded-kafka",       version = "2.4.0",  org = "io.github.embeddedkafka")
   .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
+  .add(   name = "cats-retry",            version = "1.1.0", org = "com.github.cb372")
 // format: on
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
@@ -221,7 +222,7 @@ lazy val dynamo = project
   .settings(name := "thomas-dynamo")
   .settings(rootSettings)
   .settings(
-    libs.dependencies("lihua-dynamo")
+    libs.dependencies("lihua-dynamo", "cats-retry")
   )
 
 lazy val testkit = project
