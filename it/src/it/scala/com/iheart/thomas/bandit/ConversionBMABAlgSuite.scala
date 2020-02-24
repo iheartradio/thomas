@@ -9,8 +9,7 @@ import com.iheart.thomas.abtest.{AbtestAlg, DefaultAbtestAlg}
 import com.iheart.thomas.analysis.{
   BetaKPIDistribution,
   Conversions,
-  KPIDistributionApi,
-  SampleSettings
+  KPIDistributionApi
 }
 import com.iheart.thomas.bandit.bayesian.{BanditState, ConversionBMABAlg}
 import com.iheart.thomas.mongo

@@ -1,6 +1,4 @@
 package com.iheart.thomas.analysis
-import cats.effect.Sync
-import com.stripe.rainier.repl.DensityPlot
 import io.estatico.newtype.ops._
 
 case class NumericGroupResult(rawSample: List[Double]) {
@@ -18,31 +16,32 @@ case class NumericGroupResult(rawSample: List[Double]) {
   lazy val medianEffect = findMinimum(0.5)
   lazy val riskOfNotUsing = KPIDouble(-findMinimum(0.05).d)
 
-  /**
-    * trace MCMC
-    */
-  def trace[F[_]](filePath: String)(implicit F: Sync[F]): F[Unit] = {
-    import com.cibo.evilplot.geometry.Extent
-    import com.stripe.rainier.plot.EvilTracePlot._
-    F.delay {
-      render(
-        traces(rawSample.map(d => Map("diff from control" -> d))),
-        filePath,
-        Extent(1800, 600)
-      )
-    }
-  }
-
-  def plot(plotPortionO: Option[Double] = None): String = {
-
-    val plotSample = plotPortionO.fold(rawSample) { pp =>
-      val noPlotEndPortion = (1d - pp) / 2d
-      val plotRangeMin = findMinimum(1d - noPlotEndPortion)
-      val plotRangeMax = findMinimum(noPlotEndPortion)
-      rawSample.filter(d => d > plotRangeMin && d < plotRangeMax)
-    }
-
-    DensityPlot().plot1D(plotSample).mkString("\n|")
-  }
+// todo: replace with new plotting
+//  /**
+//    * trace MCMC
+//    */
+//  def trace[F[_]](filePath: String)(implicit F: Sync[F]): F[Unit] = {
+//    import com.cibo.evilplot.geometry.Extent
+//    import com.stripe.rainier.plot.EvilTracePlot._
+//    F.delay {
+//      render(
+//        traces(rawSample.map(d => Map("diff from control" -> d))),
+//        filePath,
+//        Extent(1800, 600)
+//      )
+//    }
+//  }
+//
+//  def plot(plotPortionO: Option[Double] = None): String = {
+//
+//    val plotSample = plotPortionO.fold(rawSample) { pp =>
+//      val noPlotEndPortion = (1d - pp) / 2d
+//      val plotRangeMin = findMinimum(1d - noPlotEndPortion)
+//      val plotRangeMax = findMinimum(noPlotEndPortion)
+//      rawSample.filter(d => d > plotRangeMin && d < plotRangeMax)
+//    }
+//
+//    DensityPlot().plot1D(plotSample).mkString("\n|")
+//  }
 
 }

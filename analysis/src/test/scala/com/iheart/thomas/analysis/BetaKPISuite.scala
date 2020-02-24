@@ -4,7 +4,7 @@ import java.time.Instant
 
 import com.iheart.thomas.GroupName
 import com.iheart.thomas.abtest.model.Abtest
-import com.stripe.rainier.sampler.RNG
+import com.stripe.rainier.sampler.{RNG, Sampler}
 import org.scalatest.matchers.should.Matchers
 import cats.implicits._
 import cats.effect.testing.scalatest.AsyncIOSpec
@@ -12,7 +12,7 @@ import cats.effect.IO
 
 class BetaKPISuite extends AsyncIOSpec with Matchers {
   implicit val rng = RNG.default
-  implicit val sampleSettings = SampleSettings.default
+  implicit val sampler = Sampler.default
 
   val mockAb: Abtest = null
   val alg: BasicAssessmentAlg[IO, BetaKPIDistribution, Conversions] =

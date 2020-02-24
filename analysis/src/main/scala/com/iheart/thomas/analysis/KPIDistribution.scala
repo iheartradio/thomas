@@ -12,7 +12,7 @@ import com.iheart.thomas.analysis.AssessmentAlg.{
 import com.iheart.thomas.analysis.DistributionSpec.Normal
 import com.stripe.rainier.compute.Real
 import com.stripe.rainier.core._
-import com.stripe.rainier.sampler.RNG
+import com.stripe.rainier.sampler.{RNG, Sampler}
 import io.estatico.newtype.Coercible
 import monocle.macros.syntax.lens._
 import org.apache.commons.math3.distribution.GammaDistribution
@@ -20,7 +20,6 @@ import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
 import _root_.play.api.libs.json._
 import cats.effect.Sync
 import cats.implicits._
-import implicits._
 
 sealed trait KPIDistribution extends Serializable with Product {
   def name: KPIName
@@ -57,12 +56,12 @@ object BetaKPIDistribution {
     ): Indicator = {
     val postAlpha = b.alphaPrior + data.converted
     val postBeta = b.betaPrior + data.total - data.converted
-    Beta(postAlpha, postBeta).param
+    Variable(Beta(postAlpha, postBeta).latent, None)
   }
 
   implicit def betaInstances[F[_]](
       implicit
-      sampleSettings: SampleSettings,
+      sampler: Sampler,
       rng: RNG,
       B: Measurable[F, Conversions, BetaKPIDistribution],
       F: MonadError[F, Throwable]
@@ -95,7 +94,7 @@ object BetaKPIDistribution {
 
   implicit def basicAssessmentAlg[F[_]](
       implicit
-      sampleSettings: SampleSettings,
+      sampler: Sampler,
       rng: RNG,
       F: Sync[F]
     ): BasicAssessmentAlg[F, BetaKPIDistribution, Conversions] =
@@ -123,7 +122,7 @@ object GammaKPIDistribution {
 
   implicit def gammaKPIInstances[F[_]](
       implicit
-      sampleSettings: SampleSettings,
+      sampler: Sampler,
       rng: RNG,
       K: Measurable[F, Measurements, GammaKPIDistribution],
       F: MonadError[F, Throwable]
@@ -135,20 +134,21 @@ object GammaKPIDistribution {
       private def fitModel(
           gk: GammaKPIDistribution,
           data: List[Double]
-        ): RandomVariable[(Real, Real, Distribution[Double])] =
-        for {
-          shape <- gk.shapePrior.distribution.param
-          scale <- gk.scalePrior.distribution.param
-          g <- Gamma(shape, scale).fit(data)
-        } yield (shape, scale, g)
+        ): Variable[(Real, Real)] = {
+        val shape = gk.shapePrior.distribution.latent
+        val scale = gk.scalePrior.distribution.latent
+        val g = Model.observe(data, Gamma(shape, scale))
+        Variable((shape, scale), g)
+      }
 
       def sampleIndicator(
           gk: GammaKPIDistribution,
           data: List[Double]
-        ): Indicator =
+        ): Indicator = {
         fitModel(gk, data).map {
-          case (shape, scale, _) => shape * scale
+          case (shape, scale) => shape * scale
         }
+      }
 
       def updateFromData(
           k: GammaKPIDistribution,
@@ -158,8 +158,8 @@ object GammaKPIDistribution {
         K.measureHistory(k, start, end).map { data =>
           val model = fitModel(k, data)
 
-          val shapeSample = model.map(_._1).sample(sampleSettings)
-          val scaleSample = model.map(_._2).sample(sampleSettings)
+          val shapeSample = model.map(_._1).predict()
+          val scaleSample = model.map(_._2).predict()
 
           val updated = k.copy(
             shapePrior = Normal.fit(shapeSample),

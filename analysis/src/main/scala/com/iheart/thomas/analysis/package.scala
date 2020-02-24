@@ -2,8 +2,7 @@ package com.iheart.thomas
 package analysis
 
 import com.stripe.rainier.compute.Real
-import com.stripe.rainier.core.RandomVariable
-import io.estatico.newtype.macros.{newsubtype}
+import io.estatico.newtype.macros.newsubtype
 
 object `package` {
   @newsubtype case class Probability(p: Double)
@@ -14,16 +13,6 @@ object `package` {
     implicit def fromString(n: String): KPIName = KPIName(n)
   }
 
-  type Indicator = RandomVariable[Real]
   type Measurements = List[Double]
-}
-
-case class Conversions(
-    converted: Long,
-    total: Long) {
-  assert(
-    converted <= total,
-    s"Cannot crate a conversions whose converted count $converted is more than total count $total"
-  )
-  def rate = converted.toDouble / total.toDouble
+  type Indicator = Variable[Real]
 }

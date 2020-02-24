@@ -6,16 +6,17 @@ import java.time.Instant
 import cats.effect.{IO, Resource}
 import cats.implicits._
 import com.iheart.thomas.abtest.AbtestAlg
-import com.iheart.thomas.analysis.{Conversions, KPIDistributionApi, SampleSettings}
+import com.iheart.thomas.analysis.{Conversions, KPIDistributionApi}
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
 import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.{dynamo, mongo}
-import com.stripe.rainier.sampler.RNG
+import com.stripe.rainier.sampler.{RNG, Sampler}
 import com.typesafe.config.ConfigFactory
 import lihua.dynamo.testkit.LocalDynamo
 import _root_.play.api.libs.json.Json
 import com.iheart.thomas.bandit.bayesian.StateDAO
 import dynamo.DynamoFormats._
+
 import scala.concurrent.duration._
 
 object Resources {
@@ -70,7 +71,7 @@ object Resources {
 
           implicit val logger = EventLogger.noop[IO]
           AbtestAlg.defaultResource[IO](refreshPeriod).map { implicit abtestAlg =>
-            implicit val ss = SampleSettings.default
+            implicit val ss = Sampler.default
             implicit val rng = RNG.default
             implicit val nowF = IO.delay(Instant.now)
 
