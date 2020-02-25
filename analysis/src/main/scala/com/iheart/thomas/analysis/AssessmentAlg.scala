@@ -4,13 +4,12 @@ package analysis
 import java.time.Instant
 
 import com.iheart.thomas.abtest.model.Abtest
-import com.stripe.rainier.sampler.RNG
+import com.stripe.rainier.sampler.{RNG, Sampler}
 import cats.implicits._
 
 import scala.util.control.NoStackTrace
-import cats.MonadError
-import cats.effect.Sync
-import com.stripe.rainier.cats.rainierMonadRandomVariable
+import cats.{Applicative, MonadError}
+import cats.data.NonEmptyList
 import com.stripe.rainier.core.{Generator, ToGenerator}
 trait AssessmentAlg[F[_], K] {
   def assess(
@@ -72,10 +71,12 @@ trait KPISyntax {
 object AssessmentAlg {
   def apply[F[_], K](implicit ev: AssessmentAlg[F, K]): AssessmentAlg[F, K] = ev
 
-  implicit val toGenerator: ToGenerator[GroupName, GroupName] =
-    new ToGenerator[GroupName, GroupName] {
-      override def apply(t: GroupName): Generator[GroupName] = Generator.constant(t)
-    }
+  implicit def toGeneratorTuple[A, B, U](
+      implicit tga: ToGenerator[A, A],
+      tgB: ToGenerator[B, U]
+    ): ToGenerator[(A, B), U] = new ToGenerator[(A, B), U] {
+    def apply(p: (A, B)): Generator[U] = tga(p._1).zip(tgB(p._2)).map(_._2)
+  }
 
   case object ControlGroupMeasurementMissing
       extends RuntimeException
@@ -83,9 +84,9 @@ object AssessmentAlg {
 
   abstract class BayesianBasicAssessmentAlg[F[_], K, M](
       implicit
-      samplerSettings: SampleSettings,
+      sampler: Sampler,
       rng: RNG,
-      F: Sync[F])
+      F: Applicative[F])
       extends BasicAssessmentAlg[F, K, M] {
 
     protected def sampleIndicator(
@@ -96,42 +97,38 @@ object AssessmentAlg {
     def assessOptimumGroup(
         k: K,
         allMeasurement: Map[GroupName, M]
-      ): F[Map[GroupName, Probability]] = F.delay {
-      val rvGroupResults = allMeasurement.toList
-        .traverse {
-          case (gn, ms) => sampleIndicator(k, ms).map((gn, _))
+      ): F[Map[GroupName, Probability]] =
+      NonEmptyList
+        .fromList(allMeasurement.toList)
+        .map {
+          _.nonEmptyTraverse {
+            case (gn, ms) => sampleIndicator(k, ms).map((gn, _))
+          }
         }
-        .map(_.toSeq)
+        .fold(F.pure(Map.empty[GroupName, Probability])) { rvGroupResults =>
+          val numericGroupResult =
+            rvGroupResults
+              .map(_.toList.toMap)
+              .predict()
 
-      import samplerSettings._
-      val numericGroupResult =
-        rvGroupResults
-          .sample[Seq[(GroupName, Double)]](
-            sampler,
-            warmupIterations,
-            iterations,
-            keepEvery
-          )
+          val initCounts = allMeasurement.map { case (gn, _) => (gn, 0L) }
 
-      val initCounts = allMeasurement.map { case (gn, _) => (gn, 0L) }
+          val winnerCounts = numericGroupResult.foldLeft(initCounts) {
+            (counts, groupResult) =>
+              val winnerGroup = groupResult.maxBy(_._2)._1
+              counts.updated(winnerGroup, counts(winnerGroup) + 1)
+          }
 
-      val winnerCounts = numericGroupResult.foldLeft(initCounts) {
-        (counts, groupResult) =>
-          val winnerGroup = groupResult.maxBy(_._2)._1
-          counts.updated(winnerGroup, counts(winnerGroup) + 1)
-      }
-
-      val total = winnerCounts.toList.map(_._2).sum
-
-      winnerCounts.map {
-        case (gn, c) => (gn, Probability(c.toDouble / total.toDouble))
-      }
-    }
+          val total = winnerCounts.toList.map(_._2).sum
+          F.pure(winnerCounts.map {
+            case (gn, c) => (gn, Probability(c.toDouble / total.toDouble))
+          })
+        }
   }
 
   abstract class BayesianAssessmentAlg[F[_], K, M](
       implicit
-      samplerSettings: SampleSettings,
+      sampler: Sampler,
       rng: RNG,
       K: Measurable[F, M, K],
       F: MonadError[F, Throwable])
@@ -159,12 +156,10 @@ object AssessmentAlg {
 
         groupMeasurements.map {
           case (gn, ms) =>
-            import samplerSettings._
-            val improvement = (for {
-              treatmentIndicator <- sampleIndicator(k, ms)
-              controlIndicator <- sampleIndicator(k, baselineMeasurements)
-            } yield treatmentIndicator - controlIndicator)
-              .sample(sampler, warmupIterations, iterations, keepEvery)
+            val improvement =
+              sampleIndicator(k, ms)
+                .map2(sampleIndicator(k, baselineMeasurements))(_ - _)
+                .predict()
 
             (gn, NumericGroupResult(improvement))
         }

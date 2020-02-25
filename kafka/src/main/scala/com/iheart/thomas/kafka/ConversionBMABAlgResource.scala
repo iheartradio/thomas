@@ -6,11 +6,11 @@ import java.time.Instant
 import cats.effect._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.abtest.AbtestAlg
-import com.iheart.thomas.analysis.{Conversions, SampleSettings}
+import com.iheart.thomas.analysis.{Conversions}
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
 import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.{dynamo, mongo}
-import com.stripe.rainier.sampler.RNG
+import com.stripe.rainier.sampler.{RNG, Sampler}
 import com.typesafe.config.Config
 
 import scala.concurrent.ExecutionContext
@@ -31,7 +31,7 @@ object ConversionBMABAlgResource {
     lazy val refreshPeriod = 0.seconds //No cache is needed for abtests in Conversion API
 
     AbtestAlg.defaultResource[F](refreshPeriod).map { implicit abtestAlg =>
-      implicit val ss = SampleSettings.default
+      implicit val ss = Sampler.default
       implicit val rng = RNG.default
       implicit val nowF = F.delay(Instant.now)
       ConversionBMABAlg.default[F]

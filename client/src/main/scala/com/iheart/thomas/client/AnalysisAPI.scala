@@ -6,7 +6,7 @@ import java.time.Instant
 import cats.MonadError
 import com.iheart.thomas.analysis._
 import analysis.implicits._
-import com.stripe.rainier.sampler.RNG
+import com.stripe.rainier.sampler.{RNG, Sampler}
 import cats.implicits._
 import com.iheart.thomas.abtest.Error.NotFound
 
@@ -89,7 +89,7 @@ object AnalysisAPI {
   implicit def defaultGamma[F[_]](
       implicit
       G: Measurable[F, Measurements, GammaKPIDistribution],
-      sampleSettings: SampleSettings = SampleSettings.default,
+      sampler: Sampler = Sampler.default,
       rng: RNG = RNG.default,
       client: AbtestClient[F],
       F: MonadError[F, Throwable]
@@ -103,7 +103,7 @@ object AnalysisAPI {
   implicit def defaultBeta[F[_]](
       implicit
       G: Measurable[F, Conversions, BetaKPIDistribution],
-      sampleSettings: SampleSettings = SampleSettings.default,
+      sampler: Sampler = Sampler.default,
       rng: RNG = RNG.default,
       client: AbtestClient[F],
       F: MonadError[F, Throwable]

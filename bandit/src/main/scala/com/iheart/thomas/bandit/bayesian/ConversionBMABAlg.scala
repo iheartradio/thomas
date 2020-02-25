@@ -8,7 +8,7 @@ import cats.implicits._
 import com.iheart.thomas.abtest.model.Abtest.Specialization
 import com.iheart.thomas.abtest.model.{AbtestSpec, Group, GroupSize}
 import com.iheart.thomas.analysis._
-import com.stripe.rainier.sampler.RNG
+import com.stripe.rainier.sampler.{Sampler, RNG}
 import henkan.convert.Syntax._
 import tracking._
 
@@ -21,7 +21,7 @@ object ConversionBMABAlg {
       stateDao: StateDAO[F, Conversions],
       kpiAPI: KPIDistributionApi[F],
       abtestAPI: abtest.AbtestAlg[F],
-      sampleSettings: SampleSettings,
+      sampler: Sampler,
       rng: RNG,
       F: MonadThrowable[F],
       assessmentAlg: BasicAssessmentAlg[

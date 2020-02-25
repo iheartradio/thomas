@@ -22,8 +22,7 @@ import com.iheart.thomas.analysis.{
   Conversions,
   KPIDistributionApi,
   KPIName,
-  Probability,
-  SampleSettings
+  Probability
 }
 import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.bandit.bayesian.{ArmState, ConversionBMABAlg}
