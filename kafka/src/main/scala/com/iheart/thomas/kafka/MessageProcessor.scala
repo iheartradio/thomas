@@ -3,7 +3,7 @@ package com.iheart.thomas.kafka
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.bandit.`package`.ArmName
-import com.iheart.thomas.stream.ConversionBanditKPITracker.ConversionEvent
+import com.iheart.thomas.stream.ConversionBanditUpdater.ConversionEvent
 import fs2.Pipe
 import fs2.kafka.RecordDeserializer
 
