@@ -56,7 +56,7 @@ object ConversionBanditUpdater {
 
         (
           current,
-          if (current.map(banditIdentifier) == old.map(banditIdentifier)) None
+          if (current.map(banditIdentifier).toSet == old.map(banditIdentifier).toSet) None
           else Some(current)
         )
       }
