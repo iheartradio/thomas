@@ -8,8 +8,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.analysis.{Conversions, KPIName}
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.{BayesianMAB, ConversionBMABAlg}
-import com.iheart.thomas.stream.ConversionBanditKPITracker
-import com.iheart.thomas.stream.ConversionBanditKPITracker.ConversionEvent
+import com.iheart.thomas.stream.ConversionBanditUpdater
+import com.iheart.thomas.stream.ConversionBanditUpdater.ConversionEvent
 import fs2.{Pipe, Stream}
 import fs2.kafka.{AutoOffsetReset, ConsumerSettings, Deserializer, consumerStream}
 import cats.implicits._
@@ -68,38 +68,8 @@ object BanditUpdater {
       cbm: ConversionBMABAlg[F],
       log: EventLogger[F]
     ): F[BanditUpdater[F]] = {
+
     SignallingRef[F, Boolean](false).map { pauseSig =>
-      val changingRunningBandit: Stream[F, ConversionBandits] =
-        ((Stream.emit[F, Unit](()) ++ Stream
-          .fixedDelay[F](cfg.checkRunningBanditsEvery))
-          .evalMap(_ => cbm.runningBandits()))
-          .scan(
-            (
-              Vector.empty[BayesianMAB[Conversions]],
-              none[Vector[BayesianMAB[Conversions]]]
-            )
-          ) { (memo, current) =>
-            val old = memo._1
-
-            def banditIdentifier(b: BayesianMAB[_]) =
-              (b.feature, b.kpiName, b.abtest.data.groups.map(_.name))
-
-            (
-              current,
-              if (current.map(banditIdentifier) == old.map(banditIdentifier)) None
-              else Some(current)
-            )
-          }
-          .mapFilter(_._2)
-          .evalTap(
-            b =>
-              log(
-                Event.BanditKPIUpdate
-                  .NewSetOfRunningBanditsDetected(b.map(_.feature))
-              )
-          )
-          .pauseWhen(pauseSig)
-
       val mainStream =
         Stream
           .eval(
@@ -110,32 +80,32 @@ object BanditUpdater {
               .flatTap(name => log.debug(s"Starting Consumer $name"))
           )
           .flatMap { name =>
-            changingRunningBandit.switchMap { runningBandits =>
-              import mp.deserializer
-
-              val consumerSettings =
-                ConsumerSettings[F, Unit, mp.RawMessage]
-                  .withEnableAutoCommit(true)
-                  .withAutoOffsetReset(AutoOffsetReset.Earliest)
-                  .withBootstrapServers(cfg.kafka.kafkaServers)
-                  .withGroupId("thomas-kpi-monitor")
-
-              val toEvent =
+            ConversionBanditUpdater
+              .updatePipes(
+                name,
+                cfg.updater,
                 (fn: FeatureName, kn: KPIName) => mp.toConversionEvent(fn, kn)
-              val updater = new ConversionBanditKPITracker[F](runningBandits, name)
-              val updaterPipe =
-                updater.updateAllConversions(cfg.kafka.chunkSize, toEvent)
+              )
+              .switchMap { updatePipes =>
+                import mp.deserializer
 
-              Stream.eval(log(Event.BanditKPIUpdate.UpdateStreamStarted)) ++
-                consumerStream[F]
-                  .using(consumerSettings)
-                  .evalTap(_.subscribeTo(cfg.kafka.topic))
-                  .flatMap(_.stream)
-                  .map(r => r.record.value)
-                  .through(mp.preprocessor)
-                  .through(updaterPipe)
-                  .pauseWhen(pauseSig)
-            }
+                val consumerSettings =
+                  ConsumerSettings[F, Unit, mp.RawMessage]
+                    .withEnableAutoCommit(true)
+                    .withAutoOffsetReset(AutoOffsetReset.Earliest)
+                    .withBootstrapServers(cfg.kafka.kafkaServers)
+                    .withGroupId("thomas-kpi-monitor")
+
+                Stream.eval(log(Event.BanditKPIUpdate.UpdateStreamStarted)) ++
+                  consumerStream[F]
+                    .using(consumerSettings)
+                    .evalTap(_.subscribeTo(cfg.kafka.topic))
+                    .flatMap(_.stream.pauseWhen(pauseSig))
+                    .map(r => r.record.value)
+                    .through(mp.preprocessor)
+                    .through(updatePipes)
+
+              }
           }
 
       new BanditUpdater[F] with WithConversionBMABAlg[F] {
@@ -163,13 +133,12 @@ object BanditUpdater {
   }
 
   case class Config(
-      checkRunningBanditsEvery: FiniteDuration,
       restartOnErrorAfter: Option[FiniteDuration],
+      updater: ConversionBanditUpdater.Config,
       kafka: KafkaConfig)
 
   case class KafkaConfig(
       kafkaServers: String,
-      topic: String,
-      chunkSize: Int)
+      topic: String)
 
 }

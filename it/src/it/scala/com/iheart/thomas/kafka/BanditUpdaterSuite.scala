@@ -8,7 +8,7 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import com.iheart.thomas.{FeatureName, dynamo, mongo}
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.kafka.BanditUpdater.KafkaConfig
-import com.iheart.thomas.stream.ConversionBanditKPITracker.ConversionEvent
+import com.iheart.thomas.stream.ConversionBanditUpdater.ConversionEvent
 import com.iheart.thomas.testkit.Resources
 import com.typesafe.config.{ConfigFactory, ConfigResolveOptions}
 import org.scalatest.matchers.should.Matchers
@@ -27,7 +27,7 @@ import com.iheart.thomas.analysis.{
 import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.bandit.bayesian.{ArmState, ConversionBMABAlg}
 import com.iheart.thomas.bandit.tracking.EventLogger
-import com.iheart.thomas.stream.ConversionBanditKPITracker
+import com.iheart.thomas.stream.ConversionBanditUpdater
 import com.stripe.rainier.sampler.RNG
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -80,18 +80,25 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
   implicit val logger = EventLogger.noop[IO]
 
   val updaterR = updaterResource(2)
-  def updaterResource(chunkSize: Int) =
+  def updaterResource(
+      chunkSize: Int,
+      numOfChunksPerReallocate: Int = 100
+    ) =
     Resources.mangoDAOs.flatMap { implicit daos =>
       Resources.localDynamoR
         .flatMap { implicit dynamoClient =>
           BanditUpdater.resource[IO, (FeatureName, ArmName, ConversionEvent)](
             cfg = BanditUpdater.Config(
-              checkRunningBanditsEvery = 100.milliseconds,
               restartOnErrorAfter = None,
+              updater = ConversionBanditUpdater.Config(
+                checkRunningBanditsEvery = 100.milliseconds,
+                chunkSize = chunkSize,
+                numOfChunksPerReallocate = numOfChunksPerReallocate,
+                historyRetention = None
+              ),
               kafka = KafkaConfig(
                 server,
-                topic,
-                chunkSize = chunkSize
+                topic
               )
             ),
             toEvent
@@ -133,6 +140,43 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
 }
 
 class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
+  "reallocates bandit" in {
+    withRunningKafka {
+      createCustomTopic(topic)
+
+      (1 to 200)
+        .map(_ => List("A|true", "A|false", "B|false", "B|true", "B|true", "B|true"))
+        .flatten
+        .foreach { m =>
+          publishToKafka(topic, s"feature1|$m")
+        }
+
+      val resultState =
+        updaterResource(300, 2)
+          .use { updaterPublic =>
+            val updater = updaterPublic
+              .asInstanceOf[BanditUpdater[IO] with WithConversionBMABAlg[
+                IO
+              ]]
+            for {
+              _ <- spec flatMap updater.conversionBMABAlg.init
+              _ <- ioTimer.sleep(1.second) //wait for spec to start
+              _ <- updater.consumer
+                .interruptAfter(10.seconds) //10 seconds needed for all message processed
+                .compile
+                .drain
+
+              state <- updater.conversionBMABAlg.currentState("feature1")
+            } yield state
+          }
+          .unsafeRunSync()
+
+      val sizes = resultState.abtest.data.groups.map(g => g.name -> g.size).toMap
+      sizes("B").toDouble should be > 0.9d
+      sizes("A").toDouble should be < 0.9d
+    }
+  }
+
   "Can update an bandit" in {
     withRunningKafka {
       createCustomTopic(topic)

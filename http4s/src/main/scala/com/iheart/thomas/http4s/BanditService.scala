@@ -10,7 +10,6 @@ import com.iheart.thomas.kafka.{
   ConversionBMABAlgResource,
   MessageProcessor
 }
-import mau.Repeating
 import org.http4s.{EntityDecoder, HttpRoutes, Request, Response}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.play._
@@ -31,7 +30,6 @@ import scala.concurrent.duration._
 import _root_.play.api.libs.json.Json.toJson
 
 class BanditService[F[_]: Async: Timer] private (
-    conversionsRunner: Repeating[F],
     apiAlg: ConversionBMABAlg[F],
     kpiDistApi: KPIDistributionApi[F],
     banditUpdater: BanditUpdater[F],
@@ -47,29 +45,10 @@ class BanditService[F[_]: Async: Timer] private (
   def routes =
     Router(
       "/bandits" -> HttpRoutes
-        .of[F](managementRoutes orElse runnerRoutes orElse updaterRoutes),
+        .of[F](managementRoutes orElse updaterRoutes),
       "/kpiDistributions" -> HttpRoutes
         .of[F](kpiDistributionsRoutes)
     )
-
-  private def runnerRoutes = {
-    case PUT -> Root / "conversions" / "run" =>
-      conversionsRunner.resume.ifA(
-        Ok("all bandits resumed"),
-        Conflict("bandits already running")
-      )
-
-    case GET -> Root / "conversions" / "run" =>
-      conversionsRunner.running.ifA(
-        Ok("all bandits are running"),
-        Ok("all bandits are paused")
-      )
-    case DELETE -> Root / "conversions" / "run" =>
-      conversionsRunner.pause.ifA(
-        Ok("all bandits paused"),
-        Conflict("bandits already paused")
-      )
-  }: PartialRoutes
 
   private def updaterRoutes = {
     case PUT -> Root / "conversions" / "updating" =>
@@ -202,24 +181,15 @@ object BanditService {
       amazonClient: AmazonDynamoDBAsync
     ): Resource[F, BanditService[F]] = {
     import mongo.extracKPIDistDAO
-    ConversionBMABAlgResource[F].flatMap { implicit conversionBMAB =>
-      mau.Repeating
-        .resource[F](
-          conversionBMAB.reallocateAllRunning(bcs.historyRetention).void,
-          bcs.repeat,
-          true
+    ConversionBMABAlgResource[F].evalMap { implicit conversionBMAB =>
+      BanditUpdater.create[F](buConfig).map { bu =>
+        new BanditService[F](
+          conversionBMAB,
+          KPIDistributionApi.default[F],
+          bu,
+          bcs.kafkaConsumerRestartWait
         )
-        .evalMap { repeating =>
-          BanditUpdater.create[F](buConfig).map { bu =>
-            new BanditService[F](
-              repeating,
-              conversionBMAB,
-              KPIDistributionApi.default[F],
-              bu,
-              bcs.kafkaConsumerRestartWait
-            )
-          }
-        }
+      }
     }
   }
 
