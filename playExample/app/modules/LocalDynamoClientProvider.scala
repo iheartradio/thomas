@@ -11,7 +11,7 @@ object LocalDynamoClientProvider
     with ScanamoManagement {
   lazy val get: AmazonDynamoDBAsync = {
     implicit val client = LocalDynamoDB.client()
-    DAOs.ensureBanditStateTable[IO](1L, 1L).unsafeRunSync()
+    DAOs.ensureBanditTables[IO](1L, 1L).unsafeRunSync()
     client
   }
 }

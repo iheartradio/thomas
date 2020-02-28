@@ -10,4 +10,4 @@ GET  /features/running                       controllers.MyBayesianMABController
 
 GET /features/:feature                     controllers.MyBayesianMABController.getState(feature)
 
-PUT  /features/:feature/reallocate                   controllers.MyBayesianMABController.reallocate(feature, historyRetentionSeconds: Option[Long])
+PUT  /features/:feature/reallocate                   controllers.MyBayesianMABController.reallocate(feature)

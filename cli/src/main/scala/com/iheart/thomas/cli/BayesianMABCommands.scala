@@ -9,13 +9,29 @@ import cats.implicits._
 import com.iheart.thomas.bandit.BanditSpec
 import com.monovore.decline.time._
 import BayesianBanditHttpClientOpts.conversionClientOpts
+import cats.data.Validated
 import com.iheart.thomas.analysis.KPIName
+import com.iheart.thomas.bandit.bayesian.BanditSettings
 import io.estatico.newtype.ops._
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.util.Try
 
 object BayesianMABCommands {
   val fnOpts = Opts.option[String]("feature", "feature name", "f")
+
+  private val conversionSettingsOps = (
+    Opts
+      .option[Int]("eventChunkSize", "chunk size for kpi update")
+      .withDefault(300),
+    Opts
+      .option[Int](
+        "reallocateEveryNChunk",
+        "number of chunks for every reallocating"
+      )
+      .withDefault(3)
+  ).mapN(BanditSettings.Conversion.apply)
 
   private val banditSpecOpts =
     (
@@ -29,9 +45,22 @@ object BayesianMABCommands {
         .option[Double]("minimumSizeChange", "minimum group size change")
         .withDefault(0.005d),
       Opts
-        .option[Int]("initialSampleSize", "required sample size to start allocating")
-        .withDefault(0)
-    ).mapN(BanditSpec.apply)
+        .option[Int](" n", "required sample size to start allocating")
+        .withDefault(0),
+      Opts
+        .option[String](
+          "historyRetention",
+          "how long does older versions of A/B tests be kept"
+        )
+        .mapValidated { s =>
+          Validated
+            .fromTry(Try(Duration(s).asInstanceOf[FiniteDuration]))
+            .leftMap(_.getMessage)
+            .toValidatedNel
+        }
+        .orNone,
+      conversionSettingsOps
+    ).mapN(BanditSpec.apply[BanditSettings.Conversion])
 
   def conversionBMABCommand[F[_]](
       implicit F: ConcurrentEffect[F],

@@ -14,3 +14,13 @@ private[thomas] trait StateDAO[F[_], R] {
 
   def get(featureName: FeatureName): F[BanditState[R]]
 }
+
+private[thomas] trait BanditSettingsDAO[F[_], SpecificSettings] {
+  def insert(
+      state: BanditSettings[SpecificSettings]
+    ): F[BanditSettings[SpecificSettings]]
+
+  def remove(featureName: FeatureName): F[Unit]
+
+  def get(featureName: FeatureName): F[BanditSettings[SpecificSettings]]
+}

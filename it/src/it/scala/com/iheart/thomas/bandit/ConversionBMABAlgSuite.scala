@@ -9,9 +9,14 @@ import com.iheart.thomas.abtest.{AbtestAlg, DefaultAbtestAlg}
 import com.iheart.thomas.analysis.{
   BetaKPIDistribution,
   Conversions,
-  KPIDistributionApi
+  KPIDistributionApi,
+  KPIName
 }
-import com.iheart.thomas.bandit.bayesian.{BanditState, ConversionBMABAlg}
+import com.iheart.thomas.bandit.bayesian.{
+  BanditSettings,
+  BanditState,
+  ConversionBMABAlg
+}
 import com.iheart.thomas.mongo
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
@@ -48,16 +53,34 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
   def withAPI[A](f: ConversionBMABAlg[IO] => IO[A]): A =
     withAPI((api, _, _) => f(api))
 
-  test("init state") {
-    val spec = BanditSpec(
-      feature = "A_new_Feature",
-      arms = List("A", "B"),
-      author = "Test Runner",
-      start = OffsetDateTime.now,
-      title = "for integration tests",
-      kpiName = kpi.name
+  def createSpec(
+      feature: FeatureName = "A_new_Feature",
+      arms: List[ArmName] = List("A", "B"),
+      author: String = "Test Runner",
+      start: OffsetDateTime = OffsetDateTime.now,
+      title: String = "for integration tests",
+      kpiName: KPIName = kpi.name,
+      minimumSizeChange: Double = 0.01,
+      initialSampleSize: Int = 0,
+      historyRetention: Option[FiniteDuration] = None
+    ) = BanditSpec(
+    feature = feature,
+    arms = arms,
+    author = author,
+    start = start,
+    title = title,
+    kpiName = kpiName,
+    minimumSizeChange = minimumSizeChange,
+    initialSampleSize = initialSampleSize,
+    historyRetention = historyRetention,
+    specificSettings = BanditSettings.Conversion(
+      eventChunkSize = 1,
+      reallocateEveryNChunk = 1
     )
+  )
 
+  test("init state") {
+    val spec = createSpec()
     val (init, currentState) = withAPI { api =>
       for {
         is <- api.init(spec)
@@ -68,7 +91,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
     init.state.arms
       .map(_.likelihoodOptimum)
       .forall(_.p == 0) shouldBe true
-    init.state.title shouldBe spec.title
+    init.settings.title shouldBe spec.title
     init.abtest.data.specialization shouldBe Some(
       MultiArmBanditConversion
     )
@@ -80,14 +103,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
   }
 
   test("running bandits include running bandits") {
-    val spec = BanditSpec(
-      feature = "A_new_Feature",
-      arms = List("A", "B"),
-      author = "Test Runner",
-      start = OffsetDateTime.now,
-      title = "for integration tests",
-      kpiName = kpi.name
-    )
+    val spec = createSpec()
 
     val spec2 = spec.copy(feature = "Another_new_feature")
     val spec3 = spec.copy(feature = "Yet_Another_new_feature")
@@ -119,14 +135,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
   }
 
   test("update state") {
-    val spec = BanditSpec(
-      feature = "A_new_Feature",
-      arms = List("A", "B"),
-      author = "Test Runner",
-      start = OffsetDateTime.now,
-      title = "for integration tests",
-      kpiName = kpi.name
-    )
+    val spec = createSpec()
 
     val currentState = withAPI { api =>
       for {
@@ -162,14 +171,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
   }
 
   test("reallocate update the state with latest possibilities") {
-    val spec = BanditSpec(
-      feature = "A_new_Feature",
-      arms = List("A", "B"),
-      author = "Test Runner",
-      start = OffsetDateTime.now,
-      title = "for integration tests",
-      kpiName = kpi.name
-    )
+    val spec = createSpec()
 
     val currentState = withAPI { api =>
       for {
@@ -193,13 +195,8 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
   }
 
   test("reallocate clean up last tests") {
-    val spec = BanditSpec(
-      feature = "A_new_Feature",
-      arms = List("A", "B"),
-      author = "Test Runner",
-      start = OffsetDateTime.now,
-      title = "for integration tests",
-      kpiName = kpi.name
+    val spec = createSpec(
+      historyRetention = Some(50.milliseconds)
     )
 
     val currentTests = withAPI { (api, _, abtestAlg) =>
@@ -209,7 +206,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
         _ <- api.reallocate(spec.feature)
         _ <- api.reallocate(spec.feature)
         _ <- timer.sleep(300.milliseconds)
-        _ <- api.reallocate(spec.feature, Some(50.milliseconds))
+        _ <- api.reallocate(spec.feature)
         tests <- abtestAlg.getTestsByFeature(spec.feature)
 
       } yield tests
@@ -220,14 +217,8 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
   }
 
   test("reallocate reallocate the size of the abtest groups") {
-    val spec = BanditSpec(
-      feature = "A_new_Feature",
-      arms = List("A", "B"),
-      author = "Test Runner",
-      start = OffsetDateTime.now,
-      title = "for integration tests",
-      kpiName = kpi.name
-    )
+    val spec = createSpec(
+      )
 
     val currentState = withAPI { api =>
       for {
@@ -254,13 +245,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
   }
 
   test("reallocate does not reallocate groups until it hits enough samples") {
-    val spec = BanditSpec(
-      feature = "A_new_Feature",
-      arms = List("A", "B"),
-      author = "Test Runner",
-      start = OffsetDateTime.now,
-      title = "for integration tests",
-      kpiName = kpi.name,
+    val spec = createSpec(
       minimumSizeChange = 0.0001,
       initialSampleSize = 100
     )
@@ -301,13 +286,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
   test(
     "reallocate does not reallocate groups if the new group size remains the same"
   ) {
-    val spec = BanditSpec(
-      feature = "A_new_Feature",
-      arms = List("A", "B"),
-      author = "Test Runner",
-      start = OffsetDateTime.now,
-      title = "for integration tests",
-      kpiName = kpi.name,
+    val spec = createSpec(
       minimumSizeChange = 0.02
     )
 
