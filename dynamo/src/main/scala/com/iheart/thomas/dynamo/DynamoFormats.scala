@@ -3,11 +3,15 @@ package dynamo
 
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import java.time.OffsetDateTime
+import java.util.concurrent.TimeUnit
 
 import com.iheart.thomas.analysis.{Conversions, KPIName, Probability}
 import org.scanamo.DynamoFormat
 import io.estatico.newtype.ops._
 import com.iheart.thomas.bandit.bayesian._
+
+import scala.concurrent.duration
+import scala.concurrent.duration.FiniteDuration
 
 object DynamoFormats {
 
@@ -33,4 +37,12 @@ object DynamoFormats {
 
   implicit val dfc: DynamoFormat[BanditState[Conversions]] =
     deriveDynamoFormat[BanditState[Conversions]]
+
+  implicit val fddf: DynamoFormat[duration.FiniteDuration] =
+    DynamoFormat.coercedXmap[FiniteDuration, Long, Throwable](
+      FiniteDuration(_, TimeUnit.NANOSECONDS)
+    )(_.toNanos)
+
+  implicit val bss: DynamoFormat[BanditSettings[BanditSettings.Conversion]] =
+    deriveDynamoFormat[BanditSettings[BanditSettings.Conversion]]
 }

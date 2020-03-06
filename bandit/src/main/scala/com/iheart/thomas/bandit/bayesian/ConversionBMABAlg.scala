@@ -6,19 +6,20 @@ import java.time.{Instant, OffsetDateTime, ZoneOffset}
 import cats.Monoid
 import cats.implicits._
 import com.iheart.thomas.abtest.model.Abtest.Specialization
-import com.iheart.thomas.abtest.model.{AbtestSpec, Group, GroupSize}
+import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group, GroupSize}
 import com.iheart.thomas.analysis._
-import com.stripe.rainier.sampler.{Sampler, RNG}
+import com.stripe.rainier.sampler.{RNG, Sampler}
 import henkan.convert.Syntax._
+import lihua.Entity
 import tracking._
 
 import scala.annotation.tailrec
-import scala.concurrent.duration.FiniteDuration
 object ConversionBMABAlg {
 
   implicit def default[F[_]](
       implicit
       stateDao: StateDAO[F, Conversions],
+      settingsDao: BanditSettingsDAO[F, BanditSettings.Conversion],
       kpiAPI: KPIDistributionApi[F],
       abtestAPI: abtest.AbtestAlg[F],
       sampler: Sampler,
@@ -32,7 +33,7 @@ object ConversionBMABAlg {
       nowF: F[Instant],
       log: EventLogger[F]
     ): ConversionBMABAlg[F] =
-    new BayesianMABAlg[F, Conversions] {
+    new BayesianMABAlg[F, Conversions, BanditSettings.Conversion] {
 
       def updateRewardState(
           featureName: FeatureName,
@@ -53,15 +54,13 @@ object ConversionBMABAlg {
         } yield updated
       }
 
-      def init(banditSpec: BanditSpec): F[BayesianMAB[Conversions]] = {
+      def init(banditSpec: ConversionBanditSpec): F[ConversionBandit] = {
         kpiAPI.getSpecific[BetaKPIDistribution](banditSpec.kpiName) >>
           (
             stateDao
               .insert(
                 BanditState[Conversions](
                   feature = banditSpec.feature,
-                  title = banditSpec.title,
-                  author = banditSpec.author,
                   arms = banditSpec.arms.map(
                     ArmState(
                       _,
@@ -70,12 +69,20 @@ object ConversionBMABAlg {
                     )
                   ),
                   start = banditSpec.start.toInstant,
-                  kpiName = banditSpec.kpiName,
-                  minimumSizeChange = banditSpec.minimumSizeChange,
-                  initialSampleSize = banditSpec.initialSampleSize,
                   version = 0L
                 )
               ),
+            settingsDao.insert(
+              BanditSettings(
+                feature = banditSpec.feature,
+                title = banditSpec.title,
+                author = banditSpec.author,
+                kpiName = banditSpec.kpiName,
+                minimumSizeChange = banditSpec.minimumSizeChange,
+                initialSampleSize = banditSpec.initialSampleSize,
+                distSpecificSettings = banditSpec.specificSettings
+              )
+            ),
             abtestAPI
               .create(
                 AbtestSpec(
@@ -94,43 +101,36 @@ object ConversionBMABAlg {
                 ),
                 false
               )
-          ).mapN((s, a) => BayesianMAB(a, s))
+          ).mapN((state, settings, a) => BayesianMAB(a, settings, state))
       }
 
-      def getAll: F[Vector[BayesianMAB[Conversions]]] =
+      private def getConversionBandit(abtest: Entity[Abtest]): F[ConversionBandit] =
+        (settingsDao.get(abtest.data.feature), stateDao.get(abtest.data.feature))
+          .mapN(BayesianMAB(abtest, _, _))
+
+      def getAll: F[Vector[ConversionBandit]] =
         findAll(None)
 
-      def runningBandits(
-          at: Option[OffsetDateTime]
-        ): F[Vector[BayesianMAB[Conversions]]] =
+      def runningBandits(at: Option[OffsetDateTime]): F[Vector[ConversionBandit]] =
         nowF.flatMap { now =>
           findAll(at.orElse(Some(now.atOffset(ZoneOffset.UTC))))
         }
 
-      def findAll(
-          time: Option[OffsetDateTime]
-        ): F[Vector[BayesianMAB[Conversions]]] =
+      def findAll(time: Option[OffsetDateTime]): F[Vector[ConversionBandit]] =
         abtestAPI //todo: this search depends how the bandit was initialized, if the abtest is created before the state, this will have concurrency problem.
           .getAllTestsBySpecialization(
             Specialization.MultiArmBanditConversion,
             time
           )
-          .flatMap(_.traverse { abtest =>
-            stateDao
-              .get(abtest.data.feature)
-              .map(s => BayesianMAB(abtest, s))
-          })
+          .flatMap(_.traverse(getConversionBandit))
 
-      def reallocate(
-          featureName: FeatureName,
-          cleanUpBefore: Option[FiniteDuration]
-        ): F[BayesianMAB[Conversions]] = {
+      def reallocate(feature: FeatureName): F[ConversionBandit] = {
         import Event.ConversionBanditReallocation._
 
-        def resizeAbtest(bandit: BayesianMAB[Conversions]) = {
+        def resizeAbtest(bandit: ConversionBandit) = {
           val newGroups = allocateGroupSize(
             bandit.state.distribution,
-            bandit.state.minimumSizeChange
+            bandit.settings.minimumSizeChange
           )
           if (newGroups.toSet == bandit.abtest.data.groups.toSet)
             bandit.pure[F]
@@ -146,11 +146,11 @@ object ConversionBMABAlg {
                     groups = newGroups
                   )
               )
-              _ <- cleanUpBefore.fold(F.unit)(
+              _ <- bandit.settings.historyRetention.fold(F.unit)(
                 before =>
                   abtestAPI
                     .cleanUp(
-                      featureName,
+                      feature,
                       now
                         .minus(java.time.Duration.ofMillis(before.toMillis))
                     )
@@ -161,19 +161,18 @@ object ConversionBMABAlg {
         }
 
         for {
-          current <- currentState(featureName)
+          current <- currentState(feature)
           kpi <- kpiAPI.getSpecific[BetaKPIDistribution](
-            current.state.kpiName
+            current.settings.kpiName
           )
-          BayesianMAB(currentTest, state) = current
-          _ <- log(Initiated(state))
+          _ <- log(Initiated(current.state))
           distribution <- assessmentAlg.assessOptimumGroup(
             kpi,
-            state.rewardState
+            current.state.rewardState
           )
           newState <- stateDao
             .updateArms(
-              featureName,
+              feature,
               _.map(
                 arm =>
                   arm.copy(
@@ -184,11 +183,11 @@ object ConversionBMABAlg {
             )
           _ <- log(Calculated(newState))
           newBandit <- if (newState.arms.forall(
-                             _.rewardState.total > newState.initialSampleSize
+                             _.rewardState.total > current.settings.initialSampleSize
                            ))
-            resizeAbtest(BayesianMAB(currentTest, newState))
+            resizeAbtest(current.copy(state = newState))
           else
-            F.pure(BayesianMAB(currentTest, newState))
+            F.pure(current.copy(state = newState))
         } yield newBandit
 
       }
@@ -203,7 +202,7 @@ object ConversionBMABAlg {
         } yield ()
       }
 
-      def currentState(featureName: FeatureName): F[BayesianMAB[Conversions]] = {
+      def currentState(featureName: FeatureName): F[ConversionBandit] = {
         (
           abtestAPI
             .getTestsByFeature(featureName)
@@ -211,6 +210,7 @@ object ConversionBMABAlg {
               _.headOption
                 .liftTo[F](AbtestNotFound(featureName))
             ),
+          settingsDao.get(featureName),
           stateDao.get(featureName)
         ).mapN(BayesianMAB.apply _)
       }

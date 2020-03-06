@@ -4,7 +4,7 @@ package http4s
 import cats.effect.{Async, ConcurrentEffect, ContextShift, Resource, Sync, Timer}
 import cats.implicits._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
-import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
+import com.iheart.thomas.bandit.bayesian.{ConversionBMABAlg, ConversionBanditSpec}
 import com.iheart.thomas.kafka.{
   BanditUpdater,
   ConversionBMABAlgResource,
@@ -16,7 +16,6 @@ import org.http4s.play._
 import bandit.Formats._
 import lihua.mongo.JsonFormats._
 import com.iheart.thomas.analysis.{Conversions, KPIDistribution, KPIDistributionApi}
-import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.dynamo.ClientConfig
@@ -26,14 +25,12 @@ import fs2.Stream
 import org.http4s.server.Router
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
 import _root_.play.api.libs.json.Json.toJson
 
 class BanditService[F[_]: Async: Timer] private (
     apiAlg: ConversionBMABAlg[F],
     kpiDistApi: KPIDistributionApi[F],
-    banditUpdater: BanditUpdater[F],
-    kafkaConsumerRestartWait: FiniteDuration
+    banditUpdater: BanditUpdater[F]
   )(implicit log: EventLogger[F])
     extends Http4sDsl[F] {
   private type PartialRoutes = PartialFunction[Request[F], F[Response[F]]]
@@ -101,7 +98,7 @@ class BanditService[F[_]: Async: Timer] private (
       apiAlg.delete(feature) *> Ok(s"$feature, if existed, was removed.")
 
     case req @ POST -> Root / "conversions" / "features" =>
-      req.as[BanditSpec].flatMap { bs =>
+      req.as[ConversionBanditSpec].flatMap { bs =>
         apiAlg.init(bs)
       }
 
@@ -114,15 +111,9 @@ class BanditService[F[_]: Async: Timer] private (
 
 object BanditService {
 
-  case class BanditRunnerConfig(
-      repeat: FiniteDuration,
-      historyRetention: Option[FiniteDuration],
-      kafkaConsumerRestartWait: FiniteDuration)
-
   case class BanditServiceConfig(
       updater: BanditUpdater.Config,
-      dynamo: ClientConfig,
-      runner: BanditRunnerConfig)
+      dynamo: ClientConfig)
 
   object BanditServiceConfig {
 
@@ -154,7 +145,7 @@ object BanditService {
       .liftF(BanditServiceConfig.load(configResource))
       .flatMap {
         case (bsc, root) =>
-          create[F](bsc.updater, root, bsc.dynamo, bsc.runner)
+          create[F](bsc.updater, root, bsc.dynamo)
       }
 
   }
@@ -163,20 +154,18 @@ object BanditService {
       F[_]: ConcurrentEffect: Timer: ContextShift: MessageProcessor: EventLogger
     ](buConfig: BanditUpdater.Config,
       mongoConfig: Config,
-      dynamoConfig: dynamo.ClientConfig,
-      bcs: BanditRunnerConfig
+      dynamoConfig: dynamo.ClientConfig
     )(implicit ex: ExecutionContext
     ): Resource[F, BanditService[F]] =
     dynamo.client[F](dynamoConfig).flatMap { implicit dc =>
       mongo.daosResource(mongoConfig).flatMap { implicit daos =>
-        create[F](buConfig, bcs)
+        create[F](buConfig)
       }
     }
 
   def create[
       F[_]: ConcurrentEffect: Timer: ContextShift: mongo.DAOs: MessageProcessor: EventLogger
-    ](buConfig: BanditUpdater.Config,
-      bcs: BanditRunnerConfig
+    ](buConfig: BanditUpdater.Config
     )(implicit ex: ExecutionContext,
       amazonClient: AmazonDynamoDBAsync
     ): Resource[F, BanditService[F]] = {
@@ -186,8 +175,7 @@ object BanditService {
         new BanditService[F](
           conversionBMAB,
           KPIDistributionApi.default[F],
-          bu,
-          bcs.kafkaConsumerRestartWait
+          bu
         )
       }
     }

@@ -4,17 +4,17 @@ package kafka
 import java.util.UUID
 
 import cats.effect._
+import cats.implicits._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
-import com.iheart.thomas.analysis.{Conversions, KPIName}
+import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.bandit.`package`.ArmName
-import com.iheart.thomas.bandit.bayesian.{BayesianMAB, ConversionBMABAlg}
+import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
+import com.iheart.thomas.bandit.tracking.{Event, EventLogger}
 import com.iheart.thomas.stream.ConversionBanditUpdater
 import com.iheart.thomas.stream.ConversionBanditUpdater.ConversionEvent
-import fs2.{Pipe, Stream}
-import fs2.kafka.{AutoOffsetReset, ConsumerSettings, Deserializer, consumerStream}
-import cats.implicits._
-import com.iheart.thomas.bandit.tracking.{Event, EventLogger}
 import fs2.concurrent.SignallingRef
+import fs2.kafka.{AutoOffsetReset, ConsumerSettings, Deserializer, consumerStream}
+import fs2.{Pipe, Stream}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
@@ -33,7 +33,6 @@ private[kafka] trait WithConversionBMABAlg[F[_]] {
 }
 
 object BanditUpdater {
-  type ConversionBandits = Vector[BayesianMAB[Conversions]]
 
   def resource[
       F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs: EventLogger,
@@ -83,7 +82,7 @@ object BanditUpdater {
             ConversionBanditUpdater
               .updatePipes(
                 name,
-                cfg.updater,
+                cfg.allowedBanditsStaleness,
                 (fn: FeatureName, kn: KPIName) => mp.toConversionEvent(fn, kn)
               )
               .switchMap { updatePipes =>
@@ -134,7 +133,7 @@ object BanditUpdater {
 
   case class Config(
       restartOnErrorAfter: Option[FiniteDuration],
-      updater: ConversionBanditUpdater.Config,
+      allowedBanditsStaleness: FiniteDuration,
       kafka: KafkaConfig)
 
   case class KafkaConfig(

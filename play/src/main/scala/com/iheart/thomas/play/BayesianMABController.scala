@@ -17,8 +17,6 @@ import cats.implicits._
 import scala.concurrent.Future
 import lihua.mongo.JsonFormats._
 
-import scala.concurrent.duration.FiniteDuration
-
 class BayesianMABController[F[_]](
     api: ConversionBMABAlg[F],
     components: ControllerComponents
@@ -59,7 +57,7 @@ class BayesianMABController[F[_]](
     }
 
   def init =
-    withJsonReq[BanditSpec] { req =>
+    withJsonReq[BanditSpec[BanditSettings.Conversion]] { req =>
       jsonResult(api.init(req))
     }
 
@@ -76,15 +74,9 @@ class BayesianMABController[F[_]](
       .flatMap(api.runningBandits)
   }
 
-  def reallocate(
-      featureName: FeatureName,
-      historyRetentionSeconds: Option[Long]
-    ) = action {
+  def reallocate(featureName: FeatureName) = action {
     api.reallocate(
-      featureName,
-      historyRetentionSeconds.map(
-        s => FiniteDuration(s, concurrent.duration.SECONDS)
-      )
+      featureName
     )
   }
 

@@ -1,41 +1,29 @@
-package com.iheart.thomas.kafka
+package com.iheart.thomas
+package kafka
 
-import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
 
-import cats.effect.{ContextShift, IO, Resource, Sync, Timer}
-import cats.effect.testing.scalatest.AsyncIOSpec
-import com.iheart.thomas.{FeatureName, dynamo, mongo}
+import cats.effect.{ContextShift, IO, Sync, Timer}
+import cats.implicits._
+import com.iheart.thomas.analysis._
+import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.bandit.`package`.ArmName
+import com.iheart.thomas.bandit.bayesian.{ArmState, BanditSettings}
+import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.kafka.BanditUpdater.KafkaConfig
+import com.iheart.thomas.stream.ConversionBanditUpdater
 import com.iheart.thomas.stream.ConversionBanditUpdater.ConversionEvent
 import com.iheart.thomas.testkit.Resources
-import com.typesafe.config.{ConfigFactory, ConfigResolveOptions}
-import org.scalatest.matchers.should.Matchers
-import net.manub.embeddedkafka.{EmbeddedKafka, EmbeddedKafkaConfig}
 import fs2.Stream
 import fs2.kafka._
-import cats.implicits._
-import com.iheart.thomas.abtest.AbtestAlg
-import com.iheart.thomas.analysis.{
-  BetaKPIDistribution,
-  Conversions,
-  KPIDistributionApi,
-  KPIName,
-  Probability
-}
-import com.iheart.thomas.bandit.BanditSpec
-import com.iheart.thomas.bandit.bayesian.{ArmState, ConversionBMABAlg}
-import com.iheart.thomas.bandit.tracking.EventLogger
-import com.iheart.thomas.stream.ConversionBanditUpdater
-import com.stripe.rainier.sampler.RNG
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import net.manub.embeddedkafka.{EmbeddedKafka, EmbeddedKafkaConfig}
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.StringSerializer
 import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
-import concurrent.duration._
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafka {
 
@@ -79,23 +67,14 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
 
   implicit val logger = EventLogger.noop[IO]
 
-  val updaterR = updaterResource(2)
-  def updaterResource(
-      chunkSize: Int,
-      numOfChunksPerReallocate: Int = 100
-    ) =
+  val updaterResource =
     Resources.mangoDAOs.flatMap { implicit daos =>
       Resources.localDynamoR
         .flatMap { implicit dynamoClient =>
           BanditUpdater.resource[IO, (FeatureName, ArmName, ConversionEvent)](
             cfg = BanditUpdater.Config(
               restartOnErrorAfter = None,
-              updater = ConversionBanditUpdater.Config(
-                checkRunningBanditsEvery = 100.milliseconds,
-                chunkSize = chunkSize,
-                numOfChunksPerReallocate = numOfChunksPerReallocate,
-                historyRetention = None
-              ),
+              allowedBanditsStaleness = 100.milliseconds,
               kafka = KafkaConfig(
                 server,
                 topic
@@ -110,7 +89,10 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
         }
     }
 
-  def spec =
+  def spec(
+      chunkSize: Int = 2,
+      numOfChunksPerReallocate: Int = 100
+    ) =
     IO.delay(
       BanditSpec(
         feature = "feature1",
@@ -118,7 +100,12 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
         author = "Test Runner",
         start = OffsetDateTime.now,
         title = "for integration tests",
-        kpiName = kpi.name
+        kpiName = kpi.name,
+        historyRetention = None,
+        specificSettings = BanditSettings.Conversion(
+          eventChunkSize = chunkSize,
+          reallocateEveryNChunk = numOfChunksPerReallocate
+        )
       )
     )
 
@@ -152,14 +139,14 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
         }
 
       val resultState =
-        updaterResource(300, 2)
+        updaterResource
           .use { updaterPublic =>
             val updater = updaterPublic
               .asInstanceOf[BanditUpdater[IO] with WithConversionBMABAlg[
                 IO
               ]]
             for {
-              _ <- spec flatMap updater.conversionBMABAlg.init
+              _ <- spec(300, 2) flatMap updater.conversionBMABAlg.init
               _ <- ioTimer.sleep(1.second) //wait for spec to start
               _ <- updater.consumer
                 .interruptAfter(10.seconds) //10 seconds needed for all message processed
@@ -187,14 +174,14 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
       }
 
       val resultState =
-        updaterR
+        updaterResource
           .use { updaterPublic =>
             val updater = updaterPublic
               .asInstanceOf[BanditUpdater[IO] with WithConversionBMABAlg[
                 IO
               ]]
             for {
-              _ <- spec flatMap updater.conversionBMABAlg.init
+              _ <- spec() flatMap updater.conversionBMABAlg.init
               _ <- ioTimer.sleep(1.second) //wait for spec to start
               _ <- updater.consumer
                 .interruptAfter(10.seconds) //10 seconds needed for all message processed
@@ -226,14 +213,14 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
       )
 
       val (resultState) =
-        updaterR
+        updaterResource
           .use { updaterPublic =>
             val updater = updaterPublic
               .asInstanceOf[BanditUpdater[IO] with WithConversionBMABAlg[
                 IO
               ]]
             for {
-              _ <- spec flatMap updater.conversionBMABAlg.init
+              _ <- spec() flatMap updater.conversionBMABAlg.init
               _ <- publish
                 .concurrently(updater.consumer)
                 .concurrently(Stream.eval(updater.pauseResume(true)))
@@ -262,14 +249,14 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
       )
 
       val resultState =
-        updaterR
+        updaterResource
           .use { updaterPublic =>
             val updater = updaterPublic
               .asInstanceOf[BanditUpdater[IO] with WithConversionBMABAlg[
                 IO
               ]]
             for {
-              _ <- spec flatMap updater.conversionBMABAlg.init
+              _ <- spec() flatMap updater.conversionBMABAlg.init
               _ <- publish
                 .concurrently(updater.consumer)
                 .interruptAfter(10.seconds)
@@ -298,14 +285,14 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
       )
 
       val (resultState) =
-        updaterR
+        updaterResource
           .use { updaterPublic =>
             val updater = updaterPublic
               .asInstanceOf[BanditUpdater[IO] with WithConversionBMABAlg[
                 IO
               ]]
             for {
-              _ <- spec flatMap updater.conversionBMABAlg.init
+              _ <- spec() flatMap updater.conversionBMABAlg.init
               _ <- publish
                 .concurrently(updater.consumer)
                 .concurrently(
@@ -332,7 +319,7 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
       createCustomTopic(topic)
 
       def spec2 =
-        spec.map(
+        spec().map(
           _.copy(
             feature = "feature2",
             arms = List("A", "C")
@@ -353,14 +340,14 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
       )
 
       val (resultState1, resultState2) =
-        updaterR
+        updaterResource
           .use { updaterPublic =>
             val updater = updaterPublic
               .asInstanceOf[BanditUpdater[IO] with WithConversionBMABAlg[
                 IO
               ]]
             for {
-              _ <- spec flatMap updater.conversionBMABAlg.init
+              _ <- spec() flatMap updater.conversionBMABAlg.init
               _ <- publish
                 .concurrently(updater.consumer)
                 .concurrently(
@@ -394,14 +381,14 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
           else ()
         })
 
-      val result = updaterResource(1)
+      val result = updaterResource
         .use { updaterPublic =>
           val updater = updaterPublic
             .asInstanceOf[BanditUpdater[IO] with WithConversionBMABAlg[
               IO
             ]]
           for {
-            _ <- spec flatMap updater.conversionBMABAlg.init
+            _ <- spec(1) flatMap updater.conversionBMABAlg.init
             _ <- publish
               .concurrently(updater.consumer)
               .concurrently(updater.consumer)

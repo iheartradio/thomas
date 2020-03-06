@@ -223,7 +223,9 @@ lazy val dynamo = project
   .settings(name := "thomas-dynamo")
   .settings(rootSettings)
   .settings(
-    libs.dependencies("lihua-dynamo", "cats-retry")
+    libs.dependencies("lihua-dynamo", "cats-retry"),
+    libs.testDependencies("cats-effect-testing-scalatest")
+
   )
 
 lazy val testkit = project
