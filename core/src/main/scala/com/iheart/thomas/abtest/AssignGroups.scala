@@ -74,13 +74,26 @@ object AssignGroups {
           }
           .map(_.toMap)
       } else
-        F.raiseError(InsufficientTestsDataToAssign)
+        F.raiseError(
+          InsufficientTestsDataToAssign(
+            (tests.at, tests.duration),
+            targetTime,
+            consistencyTolerance
+          )
+        )
     }
   }
 
-  case object InsufficientTestsDataToAssign
+  case class InsufficientTestsDataToAssign(
+      testDataRange: (Instant, Option[FiniteDuration]),
+      targetTime: Instant,
+      tolerance: FiniteDuration)
       extends RuntimeException
-      with NoStackTrace
+      with NoStackTrace {
+    override val getMessage =
+      s"test data ranges starts ${testDataRange._1} to ${testDataRange._2
+        .fold("")(_.toString())}, querying time: $targetTime,  tolerance: $tolerance "
+  }
 
   sealed trait AssignmentResult extends Serializable with Product
 
