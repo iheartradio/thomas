@@ -59,7 +59,8 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
 
     def mockBandit(
         feature: FeatureName,
-        eventChunkSize: Int = 1
+        eventChunkSize: Int = 1,
+        groups: List[String] = List("A", "B")
       ): ConversionBandit =
       BayesianMAB[Conversions, BanditSettings.Conversion](
         Entity(
@@ -70,7 +71,7 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
             author = "a",
             start = null,
             end = null,
-            groups = List(Group("A", 0.2d), Group("B", 0.5d)),
+            groups = groups.map(Group(_, 0.1d)),
             ranges = null
           )
         ),
@@ -175,6 +176,41 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
           _ shouldBe List(
             Vector(mockBandit("f1"), mockBandit("f2")),
             Vector(mockBandit("f1"))
+          )
+        )
+    }
+
+    "new value when groups changed removed bandit" in {
+      implicit val cbm = mockCbm(
+        Vector(mockBandit("f1", groups = List("A", "B"))),
+        Vector(mockBandit("f1", groups = List("A", "B", "C")))
+      )
+      ConversionBanditUpdater
+        .runningBandits[IO](25.milliseconds)
+        .interruptAfter(75.milliseconds)
+        .compile
+        .toList
+        .asserting(
+          _ shouldBe List(
+            Vector(mockBandit("f1", groups = List("A", "B"))),
+            Vector(mockBandit("f1", groups = List("A", "B", "C")))
+          )
+        )
+    }
+
+    "no new value when groups merely changed sequence" in {
+      implicit val cbm = mockCbm(
+        Vector(mockBandit("f1", groups = List("A", "B"))),
+        Vector(mockBandit("f1", groups = List("B", "A")))
+      )
+      ConversionBanditUpdater
+        .runningBandits[IO](25.milliseconds)
+        .interruptAfter(75.milliseconds)
+        .compile
+        .toList
+        .asserting(
+          _ shouldBe List(
+            Vector(mockBandit("f1", groups = List("A", "B")))
           )
         )
     }
