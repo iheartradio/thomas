@@ -314,7 +314,7 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
 
   }
 
-  "Can update bandits dynamically i.e. pick up new bandits" in {
+  "Can pick up new bandits" in {
     withRunningKafka {
       createCustomTopic(topic)
 
