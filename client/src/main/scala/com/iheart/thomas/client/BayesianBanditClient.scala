@@ -59,6 +59,18 @@ object BayesianBanditClient {
           )
         )
 
+      def update(
+          settings: BanditSettings[BanditSettings.Conversion]
+        ): F[BanditSettings[BanditSettings.Conversion]] =
+        c.expect(
+          PUT(
+            settings,
+            Uri.unsafeFromString(
+              rootUrl + "/features/" + settings.feature + "/settings"
+            )
+          )
+        )
+
       def reallocate(featureName: FeatureName): F[ConversionBandit] =
         c.expect(
           PUT(

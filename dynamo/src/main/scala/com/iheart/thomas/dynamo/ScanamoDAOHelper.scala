@@ -78,6 +78,9 @@ abstract class ScanamoDAOHelperStringKey[F[_], A: DynamoFormat](
   def remove(k: String): F[Unit] =
     sc.exec(table.delete(keyName -> k)).void
 
+  def update(a: A): F[A] =
+    sc.exec(table.given(attributeExists(keyName)).put(a)).as(a)
+
 }
 
 object ScanamoDAOHelperStringKey {

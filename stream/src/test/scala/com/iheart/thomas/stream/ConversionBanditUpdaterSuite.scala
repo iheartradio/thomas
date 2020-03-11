@@ -106,6 +106,10 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
 
         def delete(featureName: FeatureName): IO[Unit] = ???
 
+        def update(
+            banditSettings: BanditSettings[BanditSettings.Conversion]
+          ): IO[BanditSettings[BanditSettings.Conversion]] = ???
+
         def runningBandits(time: Option[OffsetDateTime]): IO[Vector[Bandit]] =
           IO {
             lists(Math.min(i.getAndIncrement(), lists.length - 1))

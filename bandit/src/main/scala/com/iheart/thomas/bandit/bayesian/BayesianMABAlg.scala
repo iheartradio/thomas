@@ -30,4 +30,6 @@ trait BayesianMABAlg[F[_], R, S] {
 
   def delete(featureName: FeatureName): F[Unit]
 
+  def update(banditSettings: BanditSettings[S]): F[BanditSettings[S]]
+
 }
