@@ -14,7 +14,6 @@ import cats.implicits._
 import org.http4s.QueryParamEncoder
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.FiniteDuration
 import scala.util.control.NoStackTrace
 
 object BayesianBanditClient {
@@ -29,13 +28,14 @@ object BayesianBanditClient {
   def defaultConversion[F[_]: Sync](
       c: HClient[F],
       rootUrl: String
-    ): BayesianMABAlg[F, Conversions] =
-    new PlayJsonHttp4sClient[F] with BayesianMABAlg[F, Conversions] {
+    ): ConversionBMABAlg[F] =
+    new PlayJsonHttp4sClient[F]
+    with BayesianMABAlg[F, Conversions, BanditSettings.Conversion] {
 
       import org.http4s.{Method, Uri}
       import Method._
 
-      def init(banditSpec: BanditSpec): F[BayesianMAB[Conversions]] =
+      def init(banditSpec: ConversionBanditSpec): F[ConversionBandit] =
         c.expect(
           POST(
             banditSpec,
@@ -43,7 +43,7 @@ object BayesianBanditClient {
           )
         )
 
-      def currentState(featureName: FeatureName): F[BayesianMAB[Conversions]] =
+      def currentState(featureName: FeatureName): F[ConversionBandit] =
         c.expect(rootUrl + "/features/" + featureName)
 
       def updateRewardState(
@@ -59,24 +59,31 @@ object BayesianBanditClient {
           )
         )
 
-      def reallocate(
-          featureName: FeatureName,
-          historyRetention: Option[FiniteDuration]
-        ): F[BayesianMAB[Conversions]] =
+      def update(
+          settings: BanditSettings[BanditSettings.Conversion]
+        ): F[BanditSettings[BanditSettings.Conversion]] =
+        c.expect(
+          PUT(
+            settings,
+            Uri.unsafeFromString(
+              rootUrl + "/features/" + settings.feature + "/settings"
+            )
+          )
+        )
+
+      def reallocate(featureName: FeatureName): F[ConversionBandit] =
         c.expect(
           PUT(
             Uri.unsafeFromString(
               rootUrl + "/features/" + featureName + "/reallocate"
-            ) +?? ("historyRetentionSeconds", historyRetention.map(_.toSeconds))
+            )
           )
         )
 
-      def getAll: F[Vector[BayesianMAB[Conversions]]] =
+      def getAll: F[Vector[ConversionBandit]] =
         c.expect(rootUrl + "/features")
 
-      def runningBandits(
-          asOf: Option[OffsetDateTime]
-        ): F[Vector[BayesianMAB[Conversions]]] =
+      def runningBandits(asOf: Option[OffsetDateTime]): F[Vector[ConversionBandit]] =
         c.expect(
           Uri.unsafeFromString(
             rootUrl + "/features/running"
@@ -101,7 +108,7 @@ object BayesianBanditClient {
   def defaultConversionResource[F[_]: ConcurrentEffect](
       rootUrl: String
     )(implicit ec: ExecutionContext
-    ): cats.effect.Resource[F, BayesianMABAlg[F, Conversions]] = {
+    ): cats.effect.Resource[F, ConversionBMABAlg[F]] = {
     import org.http4s.client.blaze.BlazeClientBuilder
     BlazeClientBuilder[F](ec).resource
       .map(cl => defaultConversion[F](cl, rootUrl))

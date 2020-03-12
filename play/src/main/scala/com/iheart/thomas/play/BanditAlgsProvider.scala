@@ -6,7 +6,7 @@ import java.time.Instant
 import cats.effect.IO
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.analysis.Conversions
-import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
+import com.iheart.thomas.bandit.bayesian.{BanditSettings, ConversionBMABAlg}
 import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.dynamo.DAOs
 import com.iheart.thomas.dynamo.DynamoFormats._
@@ -26,8 +26,9 @@ class BanditAlgsProvider @Inject()(
     implicit val nowF = IO.delay(Instant.now)
     implicit val t = IO.timer(ec)
     implicit val dc = dcProvider.get()
-    implicit val (sd, kpiApi, api, logger) = (
+    implicit val (sd, bsd, kpiApi, api, logger) = (
       DAOs.banditState[IO, Conversions],
+      DAOs.banditSettings[IO, BanditSettings.Conversion],
       abtestAPIProvider.kpiApi,
       abtestAPIProvider.api,
       EventLogger.noop[IO]

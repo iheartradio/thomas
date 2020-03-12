@@ -116,6 +116,18 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       contentAsJson(resp).as[TestsData].data.map(_._1) mustBe Vector(test)
     }
 
+    "get tests must return range" in {
+      val test = createAbtestOnServer(fakeAb())
+      val resp = controller.getTestsData(
+        Instant.now.minusMinutes(1).toEpochMilli,
+        Some(4.minutes.toMillis)
+      )(FakeRequest())
+      status(resp) mustBe OK
+      contentAsJson(resp).as[TestsData].duration.map(_.toMillis) mustBe Some(
+        4.minutes.toMillis
+      )
+    }
+
     "does not get tests valid outside range of the target time" in {
       val test = createAbtestOnServer(fakeAb())
       val resp = controller.getTestsData(

@@ -7,14 +7,18 @@ import cats.effect.{IO, Resource}
 import cats.implicits._
 import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.analysis.{Conversions, KPIDistributionApi}
-import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
+import com.iheart.thomas.bandit.bayesian.{
+  BanditSettings,
+  BanditSettingsDAO,
+  ConversionBMABAlg,
+  StateDAO
+}
 import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.{dynamo, mongo}
 import com.stripe.rainier.sampler.{RNG, Sampler}
 import com.typesafe.config.ConfigFactory
 import lihua.dynamo.testkit.LocalDynamo
 import _root_.play.api.libs.json.Json
-import com.iheart.thomas.bandit.bayesian.StateDAO
 import dynamo.DynamoFormats._
 
 import scala.concurrent.duration._
@@ -46,13 +50,20 @@ object Resources {
   lazy val localDynamoR =
     LocalDynamo
       .clientWithTables[IO](
-        dynamo.DAOs.banditStateTableName -> dynamo.DAOs.banditStateKeys
+        dynamo.DAOs.banditStateTableName -> Seq(dynamo.DAOs.banditKey),
+        dynamo.DAOs.banditSettingsTableName -> Seq(dynamo.DAOs.banditKey)
       )
 
-  lazy val stateDAO: Resource[IO, StateDAO[IO, Conversions]] =
+  lazy val dynamoDAOS: Resource[
+    IO,
+    (StateDAO[IO, Conversions], BanditSettingsDAO[IO, BanditSettings.Conversion])
+  ] =
     localDynamoR
       .map { implicit client =>
-        dynamo.DAOs.banditState[IO, Conversions]
+        (
+          dynamo.DAOs.banditState[IO, Conversions],
+          dynamo.DAOs.banditSettings[IO, BanditSettings.Conversion]
+        )
       }
 
   /**
@@ -62,12 +73,13 @@ object Resources {
     IO,
     (ConversionBMABAlg[IO], KPIDistributionApi[IO], AbtestAlg[IO])
   ] =
-    (mangoDAOs, stateDAO).tupled
+    (mangoDAOs, dynamoDAOS).tupled
       .flatMap {
-        case (daos, sd) =>
+        case (daos, (sd, ssd)) =>
           implicit val (abtestDAO, featureDAO, kpiDAO) = daos
           lazy val refreshPeriod = 0.seconds
           implicit val isd = sd
+          implicit val issd = ssd
 
           implicit val logger = EventLogger.noop[IO]
           AbtestAlg.defaultResource[IO](refreshPeriod).map { implicit abtestAlg =>

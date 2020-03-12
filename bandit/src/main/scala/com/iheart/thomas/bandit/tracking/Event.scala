@@ -22,7 +22,9 @@ object Event {
   object BanditKPIUpdate {
     case class Updated[R](state: BanditState[R]) extends Event
     case object UpdateStreamStarted extends Event
-    case class Error(e: Throwable) extends Event
+    case class Error(e: Throwable) extends Event {
+      override def toString = "Error when updating bandit: " + e.toString
+    }
     case class NewSetOfRunningBanditsDetected(features: Seq[FeatureName])
         extends Event
 

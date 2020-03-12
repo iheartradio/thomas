@@ -22,7 +22,7 @@ lazy val libs =
   .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
   .add(   name = "play-json",             version = "2.8.1",  org = "com.typesafe.play")
   .add(   name = "play",                  version = "2.8.1",  org = "com.typesafe.play")
-  .add(   name = "cats-testkit-scalatest",version = "1.0.0", org = org.typelevel.typeLevelOrg)
+  .add(   name = "cats-testkit-scalatest",version = "1.0.1", org = org.typelevel.typeLevelOrg)
   .add(   name = "spark",                  version = "2.4.5", org = "org.apache.spark", "spark-sql", "spark-core")
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
   .addJVM(name = "play-json-derived-codecs", version = "7.0.0", org = "org.julienrf")
@@ -41,8 +41,8 @@ lazy val libs =
   .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
   .addJVM(name = "fs2-kafka",             version = "1.0.0", org = "com.github.fd4s")
   .add(   name = "jawn",                  version = "1.0.0", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
-  .addJVM( name = "embedded-kafka",       version = "2.4.0",  org = "io.github.embeddedkafka")
-  .add(   name = "pureconfig",            version = "0.12.3", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
+  .addJVM( name = "embedded-kafka",       version = "2.4.1",  org = "io.github.embeddedkafka")
+  .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
   .add(   name = "cats-retry",            version = "1.1.0", org = "com.github.cb372")
 // format: on
 
@@ -223,7 +223,9 @@ lazy val dynamo = project
   .settings(name := "thomas-dynamo")
   .settings(rootSettings)
   .settings(
-    libs.dependencies("lihua-dynamo", "cats-retry")
+    libs.dependencies("lihua-dynamo", "cats-retry"),
+    libs.testDependencies("cats-effect-testing-scalatest")
+
   )
 
 lazy val testkit = project

@@ -5,6 +5,8 @@ import java.time.OffsetDateTime
 
 import com.iheart.thomas.analysis.KPIName
 
+import scala.concurrent.duration.FiniteDuration
+
 /**
   *
   * @param feature
@@ -16,7 +18,7 @@ import com.iheart.thomas.analysis.KPIName
   * @param minimumSizeChange the minimum threshold of group size change. to avoid small fluctuation on statistics change
   * @param initialSampleSize the sample size from which the allocation starts.
   */
-case class BanditSpec(
+case class BanditSpec[S](
     feature: FeatureName,
     arms: List[ArmName],
     author: String,
@@ -24,4 +26,10 @@ case class BanditSpec(
     title: String,
     kpiName: KPIName,
     minimumSizeChange: Double = 0.01,
-    initialSampleSize: Int = 0)
+    initialSampleSize: Int = 0,
+    historyRetention: Option[FiniteDuration] = None,
+    specificSettings: S)
+
+object BanditSpec {
+  case object EmptySubSettings
+}

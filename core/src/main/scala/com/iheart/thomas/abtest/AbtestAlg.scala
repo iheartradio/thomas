@@ -257,7 +257,7 @@ final class DefaultAbtestAlg[F[_]](
               )
           )
       ),
-      None
+      duration
     )
 
   def getAllFeatures: F[List[FeatureName]] =

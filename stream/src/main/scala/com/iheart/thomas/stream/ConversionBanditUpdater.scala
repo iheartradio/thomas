@@ -6,7 +6,8 @@ import com.iheart.thomas.FeatureName
 import com.iheart.thomas.analysis.{Conversions, KPIName}
 import cats.implicits._
 import com.iheart.thomas.bandit.`package`.ArmName
-import com.iheart.thomas.bandit.bayesian.{BayesianMAB, ConversionBMABAlg}
+import com.iheart.thomas.bandit.bayesian._
+
 import com.iheart.thomas.bandit.tracking.{Event, EventLogger}
 import cats.effect.Timer
 
@@ -16,47 +17,33 @@ object ConversionBanditUpdater {
   type ConversionEvent = Boolean
   val Converted = true
   val Viewed = false
-  type ConversionBandits = Vector[BayesianMAB[Conversions]]
 
-  /**
-    *
-    * @param name
-    * @param chunkSize
-    * @param numOfChunksPerReallocate
-    * @param historyRetention
-    */
-  case class Config(
-      chunkSize: Int,
-      numOfChunksPerReallocate: Int,
-      historyRetention: Option[FiniteDuration] = None,
-      checkRunningBanditsEvery: FiniteDuration)
+  type Settings = BanditSettings[BanditSettings.Conversion]
 
-  def updatePipes[F[_]: Timer: ConcurrentEffect, I](
-      name: String,
-      cfg: Config,
-      toEvent: (FeatureName, KPIName) => F[Pipe[F, I, (ArmName, ConversionEvent)]]
+  private[stream] def runningBandits[F[_]: Timer: ConcurrentEffect](
+      allowedBanditsStaleness: FiniteDuration
     )(implicit
       cbm: ConversionBMABAlg[F],
       log: EventLogger[F]
-    ): Stream[F, Pipe[F, I, Unit]] = {
-    import cfg._
-    val changingRunningBandit = ((Stream.emit[F, Unit](()) ++ Stream
-      .fixedDelay[F](checkRunningBanditsEvery))
+    ): Stream[F, ConversionBandits] =
+    ((Stream.emit[F, Unit](()) ++ Stream
+      .fixedDelay[F](allowedBanditsStaleness))
       .evalMap(_ => cbm.runningBandits()))
       .scan(
         (
-          Vector.empty[BayesianMAB[Conversions]],
-          none[Vector[BayesianMAB[Conversions]]]
+          Vector.empty[ConversionBandit],
+          none[ConversionBandits]
         )
       ) { (memo, current) =>
         val old = memo._1
 
-        def banditIdentifier(b: BayesianMAB[_]) =
-          (b.feature, b.kpiName, b.abtest.data.groups.map(_.name))
+        def banditIdentifier(b: BayesianMAB[_, _]) =
+          (b.abtest.data.groups.map(_.name).toSet, b.settings)
 
         (
           current,
-          if (current.map(banditIdentifier) == old.map(banditIdentifier)) None
+          if (current.map(banditIdentifier).toSet == old.map(banditIdentifier).toSet)
+            None
           else Some(current)
         )
       }
@@ -69,32 +56,44 @@ object ConversionBanditUpdater {
           )
       )
 
+  def updatePipes[F[_]: Timer: ConcurrentEffect, I](
+      name: String,
+      allowedBanditsStaleness: FiniteDuration,
+      toEvent: (FeatureName, KPIName) => F[Pipe[F, I, (ArmName, ConversionEvent)]]
+    )(implicit
+      cbm: ConversionBMABAlg[F],
+      log: EventLogger[F]
+    ): Stream[F, Pipe[F, I, Unit]] = {
+
     def updateConversion(
-        featureName: FeatureName
+        settings: Settings
       ): Pipe[F, (ArmName, ConversionEvent), Unit] =
-      toConversion[F](chunkSize) andThen {
+      toConversion[F](settings.distSpecificSettings.eventChunkSize) andThen {
         _.broadcastTo[F](
           (i: Stream[F, Map[ArmName, Conversions]]) =>
             i.evalMap { r =>
-              log.debug(s"Updating reward $r to bandit $featureName by $name") *>
+              log.debug(
+                s"Updating reward $r to bandit ${settings.feature} by $name"
+              ) *>
                 cbm
-                  .updateRewardState(featureName, r)
+                  .updateRewardState(settings.feature, r)
                   .void
             },
           (i: Stream[F, Map[ArmName, Conversions]]) =>
-            i.chunkN(numOfChunksPerReallocate).evalMap { _ =>
-              cbm.reallocate(featureName, historyRetention).void
+            i.chunkN(settings.distSpecificSettings.reallocateEveryNChunk).evalMap {
+              _ =>
+                cbm.reallocate(settings.feature).void
             }
         )
       }
 
-    changingRunningBandit.map { bandits =>
+    runningBandits(allowedBanditsStaleness).map { bandits =>
       val updatePipes =
         log.debug(s"updating KPI state for ${bandits.map(_.feature)}") *>
           bandits
             .traverse { b =>
               toEvent(b.feature, b.kpiName)
-                .map(_ andThen updateConversion(b.feature))
+                .map(_ andThen updateConversion(b.settings))
             }
 
       { input: Stream[F, I] =>
