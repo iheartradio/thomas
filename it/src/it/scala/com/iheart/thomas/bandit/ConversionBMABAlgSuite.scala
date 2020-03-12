@@ -63,21 +63,25 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       minimumSizeChange: Double = 0.01,
       initialSampleSize: Int = 0,
       historyRetention: Option[FiniteDuration] = None
-    ) = BanditSpec(
-    feature = feature,
-    arms = arms,
-    author = author,
-    start = start,
-    title = title,
-    kpiName = kpiName,
-    minimumSizeChange = minimumSizeChange,
-    initialSampleSize = initialSampleSize,
-    historyRetention = historyRetention,
-    specificSettings = BanditSettings.Conversion(
-      eventChunkSize = 1,
-      reallocateEveryNChunk = 1
+    ) =
+    BanditSpec(
+      arms = arms,
+      start = start,
+      settings = BanditSettings(
+        feature = feature,
+        author = author,
+        title = title,
+        kpiName = kpiName,
+        minimumSizeChange = minimumSizeChange,
+        initialSampleSize = initialSampleSize,
+        historyRetention = historyRetention,
+        maintainExplorationSize = None,
+        distSpecificSettings = BanditSettings.Conversion(
+          eventChunkSize = 1,
+          reallocateEveryNChunk = 1
+        )
+      )
     )
-  )
 
   test("init state") {
     val spec = createSpec()
@@ -91,7 +95,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
     init.state.arms
       .map(_.likelihoodOptimum)
       .forall(_.p == 0) shouldBe true
-    init.settings.title shouldBe spec.title
+    init.settings.title shouldBe spec.settings.title
     init.abtest.data.specialization shouldBe Some(
       MultiArmBanditConversion
     )
@@ -105,8 +109,8 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
   test("running bandits include running bandits") {
     val spec = createSpec()
 
-    val spec2 = spec.copy(feature = "Another_new_feature")
-    val spec3 = spec.copy(feature = "Yet_Another_new_feature")
+    val spec2 = createSpec(feature = "Another_new_feature")
+    val spec3 = createSpec(feature = "Yet_Another_new_feature")
 
     val regularAb = AbtestSpec(
       name = "test",

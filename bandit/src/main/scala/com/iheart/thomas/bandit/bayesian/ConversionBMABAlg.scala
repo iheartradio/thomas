@@ -55,7 +55,7 @@ object ConversionBMABAlg {
       }
 
       def init(banditSpec: ConversionBanditSpec): F[ConversionBandit] = {
-        kpiAPI.getSpecific[BetaKPIDistribution](banditSpec.kpiName) >>
+        kpiAPI.getSpecific[BetaKPIDistribution](banditSpec.settings.kpiName) >>
           (
             stateDao
               .insert(
@@ -72,23 +72,13 @@ object ConversionBMABAlg {
                   version = 0L
                 )
               ),
-            settingsDao.insert(
-              BanditSettings(
-                feature = banditSpec.feature,
-                title = banditSpec.title,
-                author = banditSpec.author,
-                kpiName = banditSpec.kpiName,
-                minimumSizeChange = banditSpec.minimumSizeChange,
-                initialSampleSize = banditSpec.initialSampleSize,
-                distSpecificSettings = banditSpec.specificSettings
-              )
-            ),
+            settingsDao.insert(banditSpec.settings),
             abtestAPI
               .create(
                 AbtestSpec(
                   name = "Abtest for Bayesian MAB " + banditSpec.feature,
                   feature = banditSpec.feature,
-                  author = banditSpec.author,
+                  author = banditSpec.settings.author,
                   start = banditSpec.start,
                   end = None,
                   groups = banditSpec.arms.map(

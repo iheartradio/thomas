@@ -33,20 +33,15 @@ object BayesianMABCommands {
       .withDefault(3)
   ).mapN(BanditSettings.Conversion.apply)
 
-  private val banditSpecOpts =
+  private val banditSettingsOps =
     (
       fnOpts,
-      Opts.options[String]("arms", "list of arms", "a").map(_.toList),
       Opts.option[String]("author", "author name", "u"),
-      Opts.option[OffsetDateTime]("start", "start time of the MAB"),
       Opts.option[String]("title", "author name", "u"),
       Opts.option[String]("kpi", "KPI name", "k").coerce[Opts[KPIName]],
       Opts
         .option[Double]("minimumSizeChange", "minimum group size change")
         .withDefault(0.005d),
-      Opts
-        .option[Int](" n", "required sample size to start allocating")
-        .withDefault(0),
       Opts
         .option[String](
           "historyRetention",
@@ -59,7 +54,20 @@ object BayesianMABCommands {
             .toValidatedNel
         }
         .orNone,
+      Opts
+        .option[Int]("initialSampleSize", "required sample size to start allocating")
+        .withDefault(0),
+      Opts
+        .option[BigDecimal]("maintainExploration", "maintain an exploration size")
+        .orNone,
       conversionSettingsOps
+    ).mapN(BanditSettings.apply[BanditSettings.Conversion])
+
+  private val banditSpecOpts =
+    (
+      Opts.options[String]("arms", "list of arms", "a").map(_.toList),
+      Opts.option[OffsetDateTime]("start", "start time of the MAB"),
+      banditSettingsOps
     ).mapN(BanditSpec.apply[BanditSettings.Conversion])
 
   def conversionBMABCommand[F[_]](
