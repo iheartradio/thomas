@@ -7,12 +7,14 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import cats.implicits._
+import com.iheart.thomas.abtest.model.Group
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 class ConversionBMABAlgSuite
     extends AnyFunSuiteLike
     with Matchers
     with ScalaCheckDrivenPropertyChecks {
+
   import com.iheart.thomas.abtest.BucketingTests.groupsGen
 
   implicit val distributionGen: Arbitrary[Map[GroupName, Probability]] = Arbitrary {
@@ -25,7 +27,7 @@ class ConversionBMABAlgSuite
     forAll { (distribution: Map[GroupName, Probability]) =>
       val precision = BigDecimal(0.01)
       val groups = ConversionBMABAlg
-        .allocateGroupSize(distribution, precision)
+        .allocateGroupSize(distribution, precision, None)
 
       groups.size shouldBe distribution.size
 
@@ -44,6 +46,20 @@ class ConversionBMABAlgSuite
 
         }
     }
+  }
+
+  test("allocateGroupSize respect maintain exploration size") {
+    val distribution: Map[GroupName, Probability] =
+      Map("A" -> Probability(0.001), "B" -> Probability(0.999))
+    val precision = BigDecimal(0.01)
+    val groups = ConversionBMABAlg
+      .allocateGroupSize(distribution, precision, Some(0.1d))
+
+    groups.toSet shouldBe Set(
+      Group("A", BigDecimal(0.1)),
+      Group("B", BigDecimal(0.9))
+    )
+
   }
 
 }
