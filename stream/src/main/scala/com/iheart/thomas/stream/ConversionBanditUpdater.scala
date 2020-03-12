@@ -20,15 +20,13 @@ object ConversionBanditUpdater {
 
   type Settings = BanditSettings[BanditSettings.Conversion]
 
-  def updatePipes[F[_]: Timer: ConcurrentEffect, I](
-      name: String,
-      allowedBanditsStaleness: FiniteDuration,
-      toEvent: (FeatureName, KPIName) => F[Pipe[F, I, (ArmName, ConversionEvent)]]
+  private[stream] def runningBandits[F[_]: Timer: ConcurrentEffect](
+      allowedBanditsStaleness: FiniteDuration
     )(implicit
       cbm: ConversionBMABAlg[F],
       log: EventLogger[F]
-    ): Stream[F, Pipe[F, I, Unit]] = {
-    val changingRunningBandit = ((Stream.emit[F, Unit](()) ++ Stream
+    ): Stream[F, ConversionBandits] =
+    ((Stream.emit[F, Unit](()) ++ Stream
       .fixedDelay[F](allowedBanditsStaleness))
       .evalMap(_ => cbm.runningBandits()))
       .scan(
@@ -40,7 +38,7 @@ object ConversionBanditUpdater {
         val old = memo._1
 
         def banditIdentifier(b: BayesianMAB[_, _]) =
-          (b.feature, b.kpiName, b.abtest.data.groups.map(_.name))
+          (b.abtest.data.groups.map(_.name).toSet, b.settings)
 
         (
           current,
@@ -57,6 +55,15 @@ object ConversionBanditUpdater {
               .NewSetOfRunningBanditsDetected(b.map(_.feature))
           )
       )
+
+  def updatePipes[F[_]: Timer: ConcurrentEffect, I](
+      name: String,
+      allowedBanditsStaleness: FiniteDuration,
+      toEvent: (FeatureName, KPIName) => F[Pipe[F, I, (ArmName, ConversionEvent)]]
+    )(implicit
+      cbm: ConversionBMABAlg[F],
+      log: EventLogger[F]
+    ): Stream[F, Pipe[F, I, Unit]] = {
 
     def updateConversion(
         settings: Settings
@@ -80,7 +87,7 @@ object ConversionBanditUpdater {
         )
       }
 
-    changingRunningBandit.map { bandits =>
+    runningBandits(allowedBanditsStaleness).map { bandits =>
       val updatePipes =
         log.debug(s"updating KPI state for ${bandits.map(_.feature)}") *>
           bandits

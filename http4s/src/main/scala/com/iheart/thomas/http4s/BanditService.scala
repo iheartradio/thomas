@@ -4,7 +4,11 @@ package http4s
 import cats.effect.{Async, ConcurrentEffect, ContextShift, Resource, Sync, Timer}
 import cats.implicits._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
-import com.iheart.thomas.bandit.bayesian.{ConversionBMABAlg, ConversionBanditSpec}
+import com.iheart.thomas.bandit.bayesian.{
+  BanditSettings,
+  ConversionBMABAlg,
+  ConversionBanditSpec
+}
 import com.iheart.thomas.kafka.{
   BanditUpdater,
   ConversionBMABAlgResource,
@@ -15,8 +19,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.play._
 import bandit.Formats._
 import lihua.mongo.JsonFormats._
-import com.iheart.thomas.analysis.{Conversions, KPIDistribution, KPIDistributionApi}
-import com.iheart.thomas.bandit.`package`.ArmName
+import com.iheart.thomas.analysis.{KPIDistribution, KPIDistributionApi}
 import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.dynamo.ClientConfig
 import com.typesafe.config.Config
@@ -80,9 +83,9 @@ class BanditService[F[_]: Async: Timer] private (
     fa.flatMap(a => Ok(toJson(a)))
 
   private def managementRoutes = {
-    case req @ PUT -> Root / "conversions" / "features" / feature / "reward_state" =>
-      req.as[Map[ArmName, Conversions]].flatMap { rwst =>
-        apiAlg.updateRewardState(feature, rwst)
+    case req @ PUT -> Root / "conversions" / "features" / feature / "settings" =>
+      req.as[BanditSettings[BanditSettings.Conversion]].flatMap { s =>
+        apiAlg.update(s)
       }
 
     case PUT -> Root / "conversions" / "features" / feature / "reallocate" =>

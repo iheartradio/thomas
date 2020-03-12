@@ -198,6 +198,7 @@ object ConversionBMABAlg {
           _ <- tests.headOption.fold(F.unit)(
             test => abtestAPI.terminate(test._id).void
           )
+          _ <- settingsDao.remove(featureName)
           _ <- stateDao.remove(featureName)
         } yield ()
       }
@@ -213,6 +214,12 @@ object ConversionBMABAlg {
           settingsDao.get(featureName),
           stateDao.get(featureName)
         ).mapN(BayesianMAB.apply _)
+      }
+
+      def update(
+          banditSettings: BanditSettings[BanditSettings.Conversion]
+        ): F[BanditSettings[BanditSettings.Conversion]] = {
+        settingsDao.update(banditSettings)
       }
     }
 

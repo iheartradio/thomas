@@ -23,4 +23,8 @@ private[thomas] trait BanditSettingsDAO[F[_], SpecificSettings] {
   def remove(featureName: FeatureName): F[Unit]
 
   def get(featureName: FeatureName): F[BanditSettings[SpecificSettings]]
+
+  def update(
+      settings: BanditSettings[SpecificSettings]
+    ): F[BanditSettings[SpecificSettings]]
 }
