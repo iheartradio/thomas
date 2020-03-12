@@ -30,6 +30,7 @@ object Formats {
 
   implicit val jfBS: Format[ConversionBanditSpec] =
     j.format[BanditSpec[BanditSettings.Conversion]]
+
   implicit val jfBSC: Format[BanditState[Conversions]] =
     j.format[BanditState[Conversions]]
 
