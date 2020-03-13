@@ -156,7 +156,6 @@ object ConversionBMABAlg {
           kpi <- kpiAPI.getSpecific[BetaKPIDistribution](
             current.settings.kpiName
           )
-          _ <- log(Initiated(current.state))
           distribution <- assessmentAlg.assessOptimumGroup(
             kpi,
             current.state.rewardState

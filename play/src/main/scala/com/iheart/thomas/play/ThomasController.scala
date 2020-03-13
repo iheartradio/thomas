@@ -117,12 +117,14 @@ class HttpResults[F[_]](alerter: Option[Alerter[F]])(implicit F: Async[F]) {
         BadRequest(
           errorJson(s"Cannot change a test that already started at $start")
         ).pure[F]
-      case ConflictCreation(fn) =>
+      case ConflictCreation(fn, _) =>
         Conflict(
           errorJson(
             s"There is another test being created right now, could this one be a duplicate? $fn"
           )
         ).pure[F]
+      case FailedToReleaseLock(cause) =>
+        serverError(s"Cannot release abtest feature lock due to $cause")
       case ConflictTest(existing) =>
         Conflict(
           errorJson(
