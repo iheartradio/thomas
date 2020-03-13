@@ -93,7 +93,7 @@ object BanditUpdater {
                     .withEnableAutoCommit(true)
                     .withAutoOffsetReset(AutoOffsetReset.Earliest)
                     .withBootstrapServers(cfg.kafka.kafkaServers)
-                    .withGroupId("thomas-kpi-monitor")
+                    .withGroupId(cfg.kafka.groupId)
 
                 Stream.eval(log(Event.BanditKPIUpdate.UpdateStreamStarted)) ++
                   consumerStream[F]
@@ -138,6 +138,7 @@ object BanditUpdater {
 
   case class KafkaConfig(
       kafkaServers: String,
-      topic: String)
+      topic: String,
+      groupId: String)
 
 }
