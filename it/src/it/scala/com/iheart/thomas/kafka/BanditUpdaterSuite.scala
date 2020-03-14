@@ -77,7 +77,8 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
               allowedBanditsStaleness = 100.milliseconds,
               kafka = KafkaConfig(
                 server,
-                topic
+                topic,
+                "test-bandits"
               )
             ),
             toEvent
