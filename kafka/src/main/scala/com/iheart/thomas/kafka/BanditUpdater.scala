@@ -3,6 +3,7 @@ package kafka
 
 import java.util.UUID
 
+import cats.NonEmptyParallel
 import cats.effect._
 import cats.implicits._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
@@ -35,7 +36,7 @@ private[kafka] trait WithConversionBMABAlg[F[_]] {
 object BanditUpdater {
 
   def resource[
-      F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs: EventLogger,
+      F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs: EventLogger: NonEmptyParallel,
       Message
     ](cfg: Config,
       toEvent: (FeatureName, KPIName) => F[
@@ -52,7 +53,7 @@ object BanditUpdater {
   }
 
   def resource[
-      F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs: MessageProcessor: EventLogger
+      F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs: MessageProcessor: EventLogger: NonEmptyParallel
     ](cfg: Config
     )(implicit ex: ExecutionContext,
       amazonClient: AmazonDynamoDBAsync
