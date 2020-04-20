@@ -29,6 +29,7 @@ import org.http4s.server.Router
 
 import scala.concurrent.ExecutionContext
 import _root_.play.api.libs.json.Json.toJson
+import cats.NonEmptyParallel
 
 class BanditService[F[_]: Async: Timer] private (
     apiAlg: ConversionBMABAlg[F],
@@ -140,7 +141,7 @@ object BanditService {
   }
 
   def create[
-      F[_]: ConcurrentEffect: Timer: ContextShift: MessageProcessor: EventLogger
+      F[_]: ConcurrentEffect: Timer: ContextShift: MessageProcessor: EventLogger: NonEmptyParallel
     ](configResource: Option[String] = None
     )(implicit ex: ExecutionContext
     ): Resource[F, BanditService[F]] = {
@@ -154,7 +155,7 @@ object BanditService {
   }
 
   def create[
-      F[_]: ConcurrentEffect: Timer: ContextShift: MessageProcessor: EventLogger
+      F[_]: ConcurrentEffect: Timer: ContextShift: MessageProcessor: EventLogger: NonEmptyParallel
     ](buConfig: BanditUpdater.Config,
       mongoConfig: Config,
       dynamoConfig: dynamo.ClientConfig
@@ -167,7 +168,7 @@ object BanditService {
     }
 
   def create[
-      F[_]: ConcurrentEffect: Timer: ContextShift: mongo.DAOs: MessageProcessor: EventLogger
+      F[_]: ConcurrentEffect: Timer: ContextShift: mongo.DAOs: MessageProcessor: EventLogger: NonEmptyParallel
     ](buConfig: BanditUpdater.Config
     )(implicit ex: ExecutionContext,
       amazonClient: AmazonDynamoDBAsync

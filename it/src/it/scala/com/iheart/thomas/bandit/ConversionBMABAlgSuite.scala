@@ -4,6 +4,7 @@ package bandit
 import java.time.{Instant, OffsetDateTime}
 
 import cats.data.EitherT
+import cats.MonadError
 import cats.effect.{IO, Resource}
 import com.iheart.thomas.abtest.{AbtestAlg, DefaultAbtestAlg}
 import com.iheart.thomas.analysis.{
@@ -104,6 +105,18 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       .map(_.size) shouldBe List(0.5d, 0.5d)
     currentState.abtest.data.start
       .isBefore(Instant.now.plusSeconds(1))
+  }
+
+  test("invalid init should not leave corrupt data") {
+    val spec = createSpec(start = OffsetDateTime.now.minusDays(1))
+    val (init, r) = withAPI { api =>
+      for {
+        initialTry <- MonadError[IO, Throwable].attempt(api.init(spec).void)
+        r <- api.init(spec.copy(start = OffsetDateTime.now.plusMinutes(1)))
+      } yield (initialTry, r)
+    }
+    init.isLeft shouldBe true
+    r.feature shouldBe spec.feature
   }
 
   test("running bandits include running bandits") {

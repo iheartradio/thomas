@@ -3,7 +3,7 @@ package bandit
 package bayesian
 import java.time.{Instant, OffsetDateTime, ZoneOffset}
 
-import cats.Monoid
+import cats.{Monoid, NonEmptyParallel}
 import cats.implicits._
 import com.iheart.thomas.abtest.model.Abtest.Specialization
 import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group, GroupSize}
@@ -25,6 +25,7 @@ object ConversionBMABAlg {
       sampler: Sampler,
       rng: RNG,
       F: MonadThrowable[F],
+      P: NonEmptyParallel[F],
       assessmentAlg: BasicAssessmentAlg[
         F,
         BetaKPIDistribution,
@@ -92,6 +93,10 @@ object ConversionBMABAlg {
                 false
               )
           ).mapN((state, settings, a) => BayesianMAB(a, settings, state))
+            .onError {
+              case _ =>
+                delete(banditSpec.feature)
+            }
       }
 
       private def getConversionBandit(abtest: Entity[Abtest]): F[ConversionBandit] =
@@ -156,7 +161,6 @@ object ConversionBMABAlg {
           kpi <- kpiAPI.getSpecific[BetaKPIDistribution](
             current.settings.kpiName
           )
-          _ <- log(Initiated(current.state))
           distribution <- assessmentAlg.assessOptimumGroup(
             kpi,
             current.state.rewardState
@@ -184,14 +188,11 @@ object ConversionBMABAlg {
       }
 
       def delete(featureName: FeatureName): F[Unit] = {
-        for {
-          tests <- abtestAPI.getTestsByFeature(featureName)
-          _ <- tests.headOption.fold(F.unit)(
+        (abtestAPI.getTestsByFeature(featureName).flatMap { tests =>
+          tests.headOption.fold(F.unit)(
             test => abtestAPI.terminate(test._id).void
           )
-          _ <- settingsDao.remove(featureName)
-          _ <- stateDao.remove(featureName)
-        } yield ()
+        }, settingsDao.remove(featureName), stateDao.remove(featureName)).parTupled.void
       }
 
       def currentState(featureName: FeatureName): F[ConversionBandit] = {

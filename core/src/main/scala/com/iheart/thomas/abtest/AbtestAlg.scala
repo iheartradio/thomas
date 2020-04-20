@@ -499,10 +499,12 @@ final class DefaultAbtestAlg[F[_]](
   private def updateLock(
       fn: FeatureName,
       obtain: Boolean
-    ): F[Unit] =
-    (for {
-      feature <- ensureFeature(fn)
-      _ <- featureDao
+    ): F[Unit] = {
+    def error(cause: String): Error =
+      if (obtain) ConflictCreation(fn, cause) else FailedToReleaseLock(cause)
+
+    ensureFeature(fn).flatMap { feature =>
+      featureDao
         .update(
           Json.obj(
             "name" -> fn,
@@ -511,14 +513,12 @@ final class DefaultAbtestAlg[F[_]](
           feature.lens(_.data.locked).set(obtain),
           upsert = false
         )
-        .ensure(
-          Error
-            .ConflictCreation(fn + s" Locked: ${!obtain}")
-        )(identity)
-    } yield ()).adaptError {
-      case Error.FailedToPersist(_) | Error.DBLastError(_) =>
-        Error.ConflictCreation(fn)
-    }
+        .ensure(error("unexpected current lock status"))(identity)
+        .adaptError {
+          case e: Throwable => error(e.toString)
+        }
+    }.void
+  }
 
   private def createWithoutLock(
       testSpec: AbtestSpec,

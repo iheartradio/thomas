@@ -3,6 +3,7 @@ package kafka
 
 import java.time.Instant
 
+import cats.NonEmptyParallel
 import cats.effect._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.abtest.AbtestAlg
@@ -18,7 +19,7 @@ import scala.concurrent.duration._
 import dynamo.DynamoFormats._
 
 object ConversionBMABAlgResource {
-  def apply[F[_]: Timer: EventLogger](
+  def apply[F[_]: Timer: EventLogger: NonEmptyParallel](
       implicit ex: ExecutionContext,
       F: Concurrent[F],
       mongoDAOs: mongo.DAOs[F],
@@ -40,7 +41,7 @@ object ConversionBMABAlgResource {
     }
   }
 
-  def apply[F[_]: Timer: Concurrent: EventLogger](
+  def apply[F[_]: Timer: Concurrent: EventLogger: NonEmptyParallel](
       mongoConfig: Config
     )(implicit ex: ExecutionContext,
       amazonClient: AmazonDynamoDBAsync

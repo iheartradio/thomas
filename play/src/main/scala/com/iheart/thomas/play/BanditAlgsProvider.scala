@@ -25,6 +25,7 @@ class BanditAlgsProvider @Inject()(
     implicit val (ss, r) = (Sampler.default, RNG.default)
     implicit val nowF = IO.delay(Instant.now)
     implicit val t = IO.timer(ec)
+    implicit val cs = IO.contextShift(ec)
     implicit val dc = dcProvider.get()
     implicit val (sd, bsd, kpiApi, api, logger) = (
       DAOs.banditState[IO, Conversions],
