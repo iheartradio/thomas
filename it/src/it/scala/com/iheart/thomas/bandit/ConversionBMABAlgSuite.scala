@@ -4,6 +4,7 @@ package bandit
 import java.time.{Instant, OffsetDateTime}
 
 import cats.data.EitherT
+import cats.MonadError
 import cats.effect.{IO, Resource}
 import com.iheart.thomas.abtest.{AbtestAlg, DefaultAbtestAlg}
 import com.iheart.thomas.analysis.{
@@ -63,21 +64,25 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       minimumSizeChange: Double = 0.01,
       initialSampleSize: Int = 0,
       historyRetention: Option[FiniteDuration] = None
-    ) = BanditSpec(
-    feature = feature,
-    arms = arms,
-    author = author,
-    start = start,
-    title = title,
-    kpiName = kpiName,
-    minimumSizeChange = minimumSizeChange,
-    initialSampleSize = initialSampleSize,
-    historyRetention = historyRetention,
-    specificSettings = BanditSettings.Conversion(
-      eventChunkSize = 1,
-      reallocateEveryNChunk = 1
+    ) =
+    BanditSpec(
+      arms = arms,
+      start = start,
+      settings = BanditSettings(
+        feature = feature,
+        author = author,
+        title = title,
+        kpiName = kpiName,
+        minimumSizeChange = minimumSizeChange,
+        initialSampleSize = initialSampleSize,
+        historyRetention = historyRetention,
+        maintainExplorationSize = None,
+        distSpecificSettings = BanditSettings.Conversion(
+          eventChunkSize = 1,
+          reallocateEveryNChunk = 1
+        )
+      )
     )
-  )
 
   test("init state") {
     val spec = createSpec()
@@ -91,7 +96,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
     init.state.arms
       .map(_.likelihoodOptimum)
       .forall(_.p == 0) shouldBe true
-    init.settings.title shouldBe spec.title
+    init.settings.title shouldBe spec.settings.title
     init.abtest.data.specialization shouldBe Some(
       MultiArmBanditConversion
     )
@@ -102,11 +107,23 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       .isBefore(Instant.now.plusSeconds(1))
   }
 
+  test("invalid init should not leave corrupt data") {
+    val spec = createSpec(start = OffsetDateTime.now.minusDays(1))
+    val (init, r) = withAPI { api =>
+      for {
+        initialTry <- MonadError[IO, Throwable].attempt(api.init(spec).void)
+        r <- api.init(spec.copy(start = OffsetDateTime.now.plusMinutes(1)))
+      } yield (initialTry, r)
+    }
+    init.isLeft shouldBe true
+    r.feature shouldBe spec.feature
+  }
+
   test("running bandits include running bandits") {
     val spec = createSpec()
 
-    val spec2 = spec.copy(feature = "Another_new_feature")
-    val spec3 = spec.copy(feature = "Yet_Another_new_feature")
+    val spec2 = createSpec(feature = "Another_new_feature")
+    val spec3 = createSpec(feature = "Yet_Another_new_feature")
 
     val regularAb = AbtestSpec(
       name = "test",

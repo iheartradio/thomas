@@ -49,7 +49,11 @@ object Error {
 
   case object InconsistentTimeRange extends ValidationError
   case class ConflictTest(existing: Entity[Abtest]) extends Error
-  case class ConflictCreation(feature: FeatureName) extends Error
+  case class ConflictCreation(
+      feature: FeatureName,
+      cause: String)
+      extends Error
+  case class FailedToReleaseLock(cause: String) extends Error
   case object CannotScheduleTestBeforeNow extends ValidationError
   case object DuplicatedGroupName extends ValidationError
   case object GroupNameTooLong extends ValidationError

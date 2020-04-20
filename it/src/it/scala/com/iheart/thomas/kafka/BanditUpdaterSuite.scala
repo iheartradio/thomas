@@ -77,7 +77,8 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
               allowedBanditsStaleness = 100.milliseconds,
               kafka = KafkaConfig(
                 server,
-                topic
+                topic,
+                "test-bandits"
               )
             ),
             toEvent
@@ -91,20 +92,23 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
 
   def spec(
       chunkSize: Int = 2,
-      numOfChunksPerReallocate: Int = 100
+      numOfChunksPerReallocate: Int = 100,
+      feature: FeatureName = "feature1",
+      arms: List[GroupName] = List("A", "B")
     ) =
     IO.delay(
       BanditSpec(
-        feature = "feature1",
-        arms = List("A", "B"),
-        author = "Test Runner",
         start = OffsetDateTime.now,
-        title = "for integration tests",
-        kpiName = kpi.name,
-        historyRetention = None,
-        specificSettings = BanditSettings.Conversion(
-          eventChunkSize = chunkSize,
-          reallocateEveryNChunk = numOfChunksPerReallocate
+        arms = arms,
+        settings = BanditSettings(
+          feature = feature,
+          title = "for integration tests",
+          author = "Test Runner",
+          kpiName = kpi.name,
+          distSpecificSettings = BanditSettings.Conversion(
+            eventChunkSize = chunkSize,
+            reallocateEveryNChunk = numOfChunksPerReallocate
+          )
         )
       )
     )
@@ -319,12 +323,7 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
       createCustomTopic(topic)
 
       def spec2 =
-        spec().map(
-          _.copy(
-            feature = "feature2",
-            arms = List("A", "C")
-          )
-        )
+        spec(feature = "feature2", arms = List("A", "C"))
 
       val publish = Stream.fixedDelay(50.millis) >> Stream.eval(
         IO.delay {

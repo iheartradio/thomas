@@ -3,7 +3,7 @@ package bandit
 package bayesian
 import java.time.{Instant, OffsetDateTime, ZoneOffset}
 
-import cats.Monoid
+import cats.{Monoid, NonEmptyParallel}
 import cats.implicits._
 import com.iheart.thomas.abtest.model.Abtest.Specialization
 import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group, GroupSize}
@@ -25,6 +25,7 @@ object ConversionBMABAlg {
       sampler: Sampler,
       rng: RNG,
       F: MonadThrowable[F],
+      P: NonEmptyParallel[F],
       assessmentAlg: BasicAssessmentAlg[
         F,
         BetaKPIDistribution,
@@ -55,7 +56,7 @@ object ConversionBMABAlg {
       }
 
       def init(banditSpec: ConversionBanditSpec): F[ConversionBandit] = {
-        kpiAPI.getSpecific[BetaKPIDistribution](banditSpec.kpiName) >>
+        kpiAPI.getSpecific[BetaKPIDistribution](banditSpec.settings.kpiName) >>
           (
             stateDao
               .insert(
@@ -72,23 +73,13 @@ object ConversionBMABAlg {
                   version = 0L
                 )
               ),
-            settingsDao.insert(
-              BanditSettings(
-                feature = banditSpec.feature,
-                title = banditSpec.title,
-                author = banditSpec.author,
-                kpiName = banditSpec.kpiName,
-                minimumSizeChange = banditSpec.minimumSizeChange,
-                initialSampleSize = banditSpec.initialSampleSize,
-                distSpecificSettings = banditSpec.specificSettings
-              )
-            ),
+            settingsDao.insert(banditSpec.settings),
             abtestAPI
               .create(
                 AbtestSpec(
                   name = "Abtest for Bayesian MAB " + banditSpec.feature,
                   feature = banditSpec.feature,
-                  author = banditSpec.author,
+                  author = banditSpec.settings.author,
                   start = banditSpec.start,
                   end = None,
                   groups = banditSpec.arms.map(
@@ -102,6 +93,10 @@ object ConversionBMABAlg {
                 false
               )
           ).mapN((state, settings, a) => BayesianMAB(a, settings, state))
+            .onError {
+              case _ =>
+                delete(banditSpec.feature)
+            }
       }
 
       private def getConversionBandit(abtest: Entity[Abtest]): F[ConversionBandit] =
@@ -130,7 +125,8 @@ object ConversionBMABAlg {
         def resizeAbtest(bandit: ConversionBandit) = {
           val newGroups = allocateGroupSize(
             bandit.state.distribution,
-            bandit.settings.minimumSizeChange
+            bandit.settings.minimumSizeChange,
+            bandit.settings.maintainExplorationSize
           )
           if (newGroups.toSet == bandit.abtest.data.groups.toSet)
             bandit.pure[F]
@@ -165,7 +161,6 @@ object ConversionBMABAlg {
           kpi <- kpiAPI.getSpecific[BetaKPIDistribution](
             current.settings.kpiName
           )
-          _ <- log(Initiated(current.state))
           distribution <- assessmentAlg.assessOptimumGroup(
             kpi,
             current.state.rewardState
@@ -193,14 +188,11 @@ object ConversionBMABAlg {
       }
 
       def delete(featureName: FeatureName): F[Unit] = {
-        for {
-          tests <- abtestAPI.getTestsByFeature(featureName)
-          _ <- tests.headOption.fold(F.unit)(
+        (abtestAPI.getTestsByFeature(featureName).flatMap { tests =>
+          tests.headOption.fold(F.unit)(
             test => abtestAPI.terminate(test._id).void
           )
-          _ <- settingsDao.remove(featureName)
-          _ <- stateDao.remove(featureName)
-        } yield ()
+        }, settingsDao.remove(featureName), stateDao.remove(featureName)).parTupled.void
       }
 
       def currentState(featureName: FeatureName): F[ConversionBandit] = {
@@ -225,7 +217,8 @@ object ConversionBMABAlg {
 
   private[bayesian] def allocateGroupSize(
       optimalDistribution: Map[GroupName, Probability],
-      precision: GroupSize
+      precision: GroupSize,
+      maintainExplorationSize: Option[GroupSize]
     ): List[Group] = {
     val sizeCandidates =
       0.to((1d / precision).toInt + 1)
@@ -256,11 +249,14 @@ object ConversionBMABAlg {
     }
 
     optimalDistribution.toList
+      .sortBy(_._2.p)
       .foldLeft((sizeCandidates, List.empty[Group])) { (mp, gp) =>
         val (candidates, groups) = mp
         val (groupName, probability) = gp
-
-        val size = findClosest(probability.p, candidates)
+        val targetSize = maintainExplorationSize.fold(probability.p)(
+          s => Math.max(s.toDouble, probability.p)
+        )
+        val size = findClosest(targetSize, candidates)
         val newGroups = groups :+ Group(groupName, size)
         val remainder = 1d - newGroups.foldMap(_.size)
         (

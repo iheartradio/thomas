@@ -99,10 +99,12 @@ class AbtestService[F[_]: Async](
               s"Cannot change a test that already started at $start"
             )
           )
-        case ConflictCreation(fn) =>
+        case FailedToReleaseLock(cause) =>
+          serverError("failed to release lock when updating due to " + cause)
+        case ConflictCreation(fn, cause) =>
           Conflict(
             errorJson(
-              s"There is another test being created right now, could this one be a duplicate? $fn"
+              s"Couldn't obtain the lock due to $cause. There might be another test being created right now, could this one be a duplicate? $fn"
             )
           )
         case ConflictTest(existing) =>
