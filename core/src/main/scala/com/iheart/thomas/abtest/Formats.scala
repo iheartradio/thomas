@@ -25,7 +25,7 @@ object Formats {
     }
 
   implicit val jSpecialization: Format[Specialization] =
-    stringADTFormat(Specialization.MultiArmBanditConversion)
+    stringADTFormat(Specialization.MultiArmBandit)
 
   val j = Json.using[WithDefaultValues]
 

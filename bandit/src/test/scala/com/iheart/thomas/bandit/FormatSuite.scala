@@ -27,7 +27,7 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
         |    "historyRetention": ${72 * 3600 * 1000000},
         |    "distSpecificSettings": {
         |    	"eventChunkSize": 5,
-        |    	"reallocateEveryNChunk": 3
+        |    	"updatePolicyEveryNChunk": 3
         |    }
         |  }
         |}
@@ -48,7 +48,7 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
           historyRetention = Some(1501962240.nanos),
           distSpecificSettings = BanditSettings.Conversion(
             eventChunkSize = 5,
-            reallocateEveryNChunk = 3
+            updatePolicyEveryNChunk = 3
           )
         )
       )

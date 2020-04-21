@@ -69,7 +69,7 @@ object Resources {
   /**
     * An ConversionAPI resource that cleans up after
     */
-  lazy val apis: Resource[
+  def apis(implicit logger: EventLogger[IO] = EventLogger.noop[IO]): Resource[
     IO,
     (ConversionBMABAlg[IO], KPIDistributionApi[IO], AbtestAlg[IO])
   ] =
@@ -81,15 +81,14 @@ object Resources {
           implicit val isd = sd
           implicit val issd = ssd
 
-          implicit val logger = EventLogger.noop[IO]
           AbtestAlg.defaultResource[IO](refreshPeriod).map { implicit abtestAlg =>
             implicit val ss = Sampler.default
             implicit val rng = RNG.default
             implicit val nowF = IO.delay(Instant.now)
 
             (
-              ConversionBMABAlg.default[IO],
-              KPIDistributionApi.default[IO],
+              implicitly,
+              implicitly,
               abtestAlg
             )
           }

@@ -71,7 +71,7 @@ object BayesianBanditClient {
           )
         )
 
-      def reallocate(featureName: FeatureName): F[ConversionBandit] =
+      def updatePolicy(featureName: FeatureName): F[ConversionBandit] =
         c.expect(
           PUT(
             Uri.unsafeFromString(

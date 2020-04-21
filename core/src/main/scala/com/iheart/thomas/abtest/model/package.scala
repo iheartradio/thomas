@@ -118,7 +118,7 @@ package model {
     sealed trait Specialization extends Serializable with Product
 
     object Specialization {
-      case object MultiArmBanditConversion extends Specialization
+      case object MultiArmBandit extends Specialization
     }
 
     sealed trait Status extends Serializable with Product

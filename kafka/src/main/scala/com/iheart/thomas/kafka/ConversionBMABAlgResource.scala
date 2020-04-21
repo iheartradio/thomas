@@ -37,7 +37,7 @@ object ConversionBMABAlgResource {
       implicit val ss = Sampler.default
       implicit val rng = RNG.default
       implicit val nowF = F.delay(Instant.now)
-      ConversionBMABAlg.default[F]
+      implicitly
     }
   }
 
