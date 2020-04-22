@@ -10,7 +10,7 @@ trait RewardAnalytics[F[_], R] {
   def distribution(
       kpiName: KPIName,
       r: Map[ArmName, R],
-      lastIteration: Option[List[ArmState[R]]]
+      historical: Option[Map[ArmName, R]]
     ): F[Map[ArmName, Probability]]
   def validateKPI(kpiName: KPIName): F[KPIDistribution]
 
@@ -31,7 +31,7 @@ object RewardAnalytics {
       def distribution(
           kpiName: KPIName,
           r: Map[ArmName, Conversions],
-          lastIteration: Option[List[ArmState[Conversions]]]
+          historical: Option[Map[ArmName, Conversions]]
         ): F[Map[ArmName, Probability]] =
         kpiAPI
           .getSpecific[BetaKPIDistribution](
@@ -39,10 +39,10 @@ object RewardAnalytics {
           )
           .flatMap { kpi =>
             def getPrior(armName: ArmName) =
-              lastIteration
+              historical
                 .flatMap { le =>
-                  le.find(_.name == armName)
-                    .map(rs => kpi.updateFrom(rs.rewardState))
+                  le.get(armName)
+                    .map(rs => kpi.updateFrom(rs))
                 }
                 .getOrElse(kpi)
 

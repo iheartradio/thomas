@@ -310,9 +310,8 @@ class ConversionBMABAlgSuite extends ConversionBMABAlgSuiteBase {
       } yield (previous, current.state)
     }
 
-    currentState.lastIteration
-      .map(_.map(r => (r.name, r.rewardState)).toSet) shouldBe Some(
-      previousState.arms.map(r => (r.name, r.rewardState)).toSet
+    currentState.historical shouldBe Some(
+      previousState.rewardState
     )
     currentState.arms.size shouldBe previousState.arms.size
     currentState.arms.forall(_.rewardState.total == 0) shouldBe true
@@ -356,7 +355,9 @@ class ConversionBMABAlgSuite extends ConversionBMABAlgSuiteBase {
 
   }
 
-  test("updatePolicy use forgets data from two iterations ago") {
+  test(
+    "updatePolicy use forgets data from two iterations ago without oldHistoryWeight"
+  ) {
     val spec = createSpec(iterationDuration = Some(20.milliseconds))
 
     val currentPolicy = withAPI { api =>
@@ -395,6 +396,43 @@ class ConversionBMABAlgSuite extends ConversionBMABAlgSuiteBase {
 
     currentPolicy.getGroup("B").get.size shouldBe 1d
   }
+
+  test("updatePolicy keeps data from two iterations ago using old history weight") {
+    val spec = createSpec(
+      iterationDuration = Some(20.milliseconds),
+      oldHistoryWeight = Some(0.4)
+    )
+
+    val currentState = withAPI { api =>
+      for {
+        _ <- api.init(spec)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(400, 500),
+            "B" -> Conversions(10, 500)
+          )
+        )
+        _ <- timer.sleep(30.milliseconds) //one iteration
+
+        _ <- api.updatePolicy(spec.feature)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(25, 500),
+            "B" -> Conversions(20, 500)
+          )
+        )
+        _ <- timer.sleep(30.milliseconds) //second iteration
+
+        current <- api.updatePolicy(spec.feature)
+      } yield current.state
+    }
+
+    currentState.historical.get("B").total shouldBe 500
+    currentState.historical.get("B").converted shouldBe 16
+    currentState.historical.get("A").converted shouldBe 175
+  }
 }
 
 class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
@@ -431,7 +469,8 @@ class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
       minimumSizeChange: Double = 0.01,
       initialSampleSize: Int = 0,
       historyRetention: Option[FiniteDuration] = None,
-      iterationDuration: Option[FiniteDuration] = None
+      iterationDuration: Option[FiniteDuration] = None,
+      oldHistoryWeight: Option[Weight] = None
     ) =
     BanditSpec(
       arms = arms,
@@ -446,6 +485,7 @@ class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
         historyRetention = historyRetention,
         maintainExplorationSize = None,
         iterationDuration = iterationDuration,
+        oldHistoryWeight = oldHistoryWeight,
         distSpecificSettings = BanditSettings.Conversion(
           eventChunkSize = 1,
           updatePolicyEveryNChunk = 1

@@ -21,7 +21,8 @@ private[thomas] trait StateDAO[F[_], R] {
   def newIteration(
       featureName: FeatureName,
       expirationDuration: FiniteDuration,
-      newArms: List[ArmState[R]] => F[List[ArmState[R]]]
+      updateArmsHistory: (Option[Map[ArmName, R]],
+          List[ArmState[R]]) => F[(Map[ArmName, R], List[ArmState[R]])]
     ): F[Option[BanditState[R]]]
 
   def remove(featureName: FeatureName): F[Unit]
