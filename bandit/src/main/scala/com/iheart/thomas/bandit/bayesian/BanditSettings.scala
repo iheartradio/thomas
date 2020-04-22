@@ -25,11 +25,12 @@ case class BanditSettings[SpecificSettings](
     historyRetention: Option[FiniteDuration] = None,
     initialSampleSize: Int = 0,
     maintainExplorationSize: Option[GroupSize] = None,
+    iterationDuration: Option[FiniteDuration] = None,
     distSpecificSettings: SpecificSettings)
 
 object BanditSettings {
 
   case class Conversion(
       eventChunkSize: Int,
-      reallocateEveryNChunk: Int)
+      updatePolicyEveryNChunk: Int)
 }

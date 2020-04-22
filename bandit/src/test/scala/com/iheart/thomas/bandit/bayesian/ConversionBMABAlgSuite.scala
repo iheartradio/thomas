@@ -26,7 +26,7 @@ class ConversionBMABAlgSuite
   test("allocateGroupSize allocates to specific precision") {
     forAll { (distribution: Map[GroupName, Probability]) =>
       val precision = BigDecimal(0.01)
-      val groups = ConversionBMABAlg
+      val groups = BayesianMABAlg
         .allocateGroupSize(distribution, precision, None)
 
       groups.size shouldBe distribution.size
@@ -52,7 +52,7 @@ class ConversionBMABAlgSuite
     val distribution: Map[GroupName, Probability] =
       Map("A" -> Probability(0.001), "B" -> Probability(0.999))
     val precision = BigDecimal(0.01)
-    val groups = ConversionBMABAlg
+    val groups = BayesianMABAlg
       .allocateGroupSize(distribution, precision, Some(0.1d))
 
     groups.toSet shouldBe Set(

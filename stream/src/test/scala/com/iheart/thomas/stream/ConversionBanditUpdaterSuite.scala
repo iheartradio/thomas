@@ -82,7 +82,7 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
           kpiName = KPIName("blah"),
           minimumSizeChange = 0.1d,
           distSpecificSettings = BanditSettings
-            .Conversion(eventChunkSize = eventChunkSize, reallocateEveryNChunk = 1)
+            .Conversion(eventChunkSize = eventChunkSize, updatePolicyEveryNChunk = 1)
         ),
         null
       )
@@ -102,7 +102,7 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
 
         def getAll: IO[Vector[Bandit]] = ???
 
-        def reallocate(featureName: FeatureName): IO[Bandit] = ???
+        def updatePolicy(featureName: FeatureName): IO[Bandit] = ???
 
         def delete(featureName: FeatureName): IO[Unit] = ???
 

@@ -34,7 +34,7 @@ class BanditAlgsProvider @Inject()(
       abtestAPIProvider.api,
       EventLogger.noop[IO]
     )
-    ConversionBMABAlg.default[IO]
+    implicitly
 
   }
 
