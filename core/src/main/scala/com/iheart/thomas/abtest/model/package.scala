@@ -22,6 +22,7 @@ package object model {
   type GroupMeta = JsObject
   type GroupMetas = Map[GroupName, GroupMeta]
   type GroupSize = BigDecimal
+  type Weight = Double
   type Tag = String
   type UserMeta = Map[MetaFieldName, String]
 }

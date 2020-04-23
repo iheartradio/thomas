@@ -12,7 +12,7 @@ case class BanditState[R](
     arms: List[ArmState[R]],
     iterationStart: Instant,
     version: Long,
-    lastIteration: Option[List[ArmState[R]]] = None) {
+    historical: Option[Map[ArmName, R]] = None) {
 
   def rewardState: Map[ArmName, R] =
     arms.map(as => (as.name, as.rewardState)).toMap

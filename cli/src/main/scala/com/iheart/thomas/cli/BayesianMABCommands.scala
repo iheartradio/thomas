@@ -69,6 +69,12 @@ object BayesianMABCommands {
       Opts
         .option[FiniteDuration]("iterationDuration", "duration of each iteration")
         .orNone,
+      Opts
+        .option[Double](
+          "oldHistoryWeight",
+          "optional weight for history 2 iterations ago"
+        )
+        .orNone,
       conversionSettingsOps
     ).mapN(BanditSettings.apply[BanditSettings.Conversion])
 

@@ -7,6 +7,7 @@ import cats.effect.{Async, Timer}
 import cats.implicits._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.FeatureName
+import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.{
   ArmState,
   BanditSettings,
@@ -61,6 +62,7 @@ object DAOs extends ScanamoManagement {
       implicit dynamoClient: AmazonDynamoDBAsync,
       bsformat: DynamoFormat[BanditState[R]],
       armformat: DynamoFormat[ArmState[R]],
+      rFormat: DynamoFormat[R],
       T: Timer[F]
     ): StateDAO[F, R] =
     new ScanamoDAOHelperStringKey[F, BanditState[R]](
@@ -80,23 +82,26 @@ object DAOs extends ScanamoManagement {
       def newIteration(
           featureName: FeatureName,
           expirationDuration: FiniteDuration,
-          newArmsF: List[ArmState[R]] => F[List[ArmState[R]]]
+          updateArmsHistory: (Option[Map[ArmName, R]],
+              List[ArmState[R]]) => F[(Map[ArmName, R], List[ArmState[R]])]
         ): F[Option[BanditState[R]]] =
         updateSafe(featureName) { bs =>
           for {
             epochMS <- T.clock.realTime(TimeUnit.MILLISECONDS)
-            newArms <- newArmsF(bs.arms)
-          } yield
+            newArmsHistory <- updateArmsHistory(bs.historical, bs.arms)
+          } yield {
+            val (newHistory, newArms) = newArmsHistory
             if (bs.iterationStart
                   .plusNanos(expirationDuration.toNanos)
                   .toEpochMilli < epochMS)
               Some(
-                set("lastIteration" -> Some(bs.arms)) and set(
+                set("historical" -> Some(newHistory)) and set(
                   "iterationStart" ->
                     Instant.ofEpochMilli(epochMS)
                 ) and set("arms" -> newArms)
               )
             else None
+          }
         }.map(_._2)
 
       def updateSafe(

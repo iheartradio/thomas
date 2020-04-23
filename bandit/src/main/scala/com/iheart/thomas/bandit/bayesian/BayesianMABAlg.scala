@@ -214,7 +214,26 @@ object BayesianMABAlg {
                 stateDao.newIteration(
                   bandit.feature,
                   id,
-                  oldArms => emptyArmState(oldArms.map(_.name)).pure[F]
+                  (oldHistory, oldArms) => {
+
+                    def newHistory(arm: ArmState[R]): (ArmName, R) = {
+                      val weightedHistoryO =
+                        for {
+                          oldR <- oldHistory.flatMap(_.get(arm.name))
+                          oldWeight <- bandit.settings.oldHistoryWeight
+                        } yield RS.applyWeight(oldR, oldWeight) |+| RS.applyWeight(
+                          arm.rewardState,
+                          1d - oldWeight
+                        )
+
+                      (arm.name, weightedHistoryO.getOrElse(arm.rewardState))
+                    }
+
+                    (
+                      oldArms.map(newHistory).toMap,
+                      emptyArmState(oldArms.map(_.name))
+                    ).pure[F]
+                  }
                 )
             )
 
@@ -228,7 +247,7 @@ object BayesianMABAlg {
         distribution <- R.distribution(
           current.kpiName,
           current.state.rewardState,
-          current.state.lastIteration
+          current.state.historical
         )
         newState <- stateDao
           .updateArms(
