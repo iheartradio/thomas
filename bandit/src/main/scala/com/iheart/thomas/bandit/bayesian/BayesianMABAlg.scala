@@ -261,9 +261,10 @@ object BayesianMABAlg {
             ).pure[F]
           )
         _ <- log(Calculated(newState))
-        hasEnoughSamples = newState.arms.forall { r =>
-          R.sampleSize(r.rewardState) > current.settings.initialSampleSize
-        }
+        hasEnoughSamples = current.state.historical.isDefined || newState.arms
+          .forall { r =>
+            R.sampleSize(r.rewardState) > current.settings.initialSampleSize
+          }
         updatedBandit <- if (hasEnoughSamples)
           resizeAbtest(current.copy(state = newState)).flatMap(updateIteration)
         else

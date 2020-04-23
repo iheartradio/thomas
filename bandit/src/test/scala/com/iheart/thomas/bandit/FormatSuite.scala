@@ -25,6 +25,8 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
         |    "minimumSizeChange": 0.001,
         |    "initialSampleSize": 500,
         |    "historyRetention": ${72 * 3600 * 1000000},
+        |    "iterationDuration": ${12 * 3600 * 1000000},
+        |    "oldHistoryWeight": 0.5,
         |    "distSpecificSettings": {
         |    	"eventChunkSize": 5,
         |    	"updatePolicyEveryNChunk": 3
