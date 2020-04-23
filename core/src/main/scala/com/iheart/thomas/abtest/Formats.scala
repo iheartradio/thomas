@@ -6,9 +6,9 @@ import _root_.play.api.libs.json._
 import Json.WithDefaultValues
 import com.iheart.thomas.abtest.model.Abtest.Specialization
 import lihua.playJson.Formats._
-import _root_.play.api.libs.functional.InvariantFunctorOps
 
 import concurrent.duration._
+import scala.util.Try
 object Formats {
   def stringADTFormat[T](items: T*): Format[T] =
     new Format[T] {
@@ -41,7 +41,16 @@ object Formats {
     j.format[UserGroupQueryResult]
 
   implicit val finiteDurationFormat: Format[FiniteDuration] =
-    new InvariantFunctorOps(implicitly[Format[Long]]).inmap(_.nanos, _.toNanos)
+    Format[FiniteDuration](
+      Reads {
+        case JsString(ds) =>
+          Try(Duration(ds).asInstanceOf[FiniteDuration])
+            .fold(_ => JsError(s"Invalid duration string $ds"), JsSuccess(_))
+        case JsNumber(ns) => JsSuccess(ns.toLong.nanos)
+        case j            => JsError(s"Invalid json for duration $j")
+      },
+      Writes(d => JsString(d.toString))
+    )
 
   implicit val testsDataFormat = j.format[TestsData]
 

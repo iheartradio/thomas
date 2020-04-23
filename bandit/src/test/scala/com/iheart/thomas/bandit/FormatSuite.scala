@@ -24,11 +24,11 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
         |    "kpiName":  "Search Conversion 2",
         |    "minimumSizeChange": 0.001,
         |    "initialSampleSize": 500,
-        |    "historyRetention": ${72 * 3600 * 1000000},
-        |    "iterationDuration": ${12 * 3600 * 1000000},
+        |    "historyRetention": "32d",
+        |    "iterationDuration": "24h",
         |    "oldHistoryWeight": 0.5,
         |    "distSpecificSettings": {
-        |    	"eventChunkSize": 5,
+        |    	"eventChunkSize": 50,
         |    	"updatePolicyEveryNChunk": 3
         |    }
         |  }
@@ -47,9 +47,11 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
           kpiName = "Search Conversion 2",
           minimumSizeChange = 0.001,
           initialSampleSize = 500,
-          historyRetention = Some(1501962240.nanos),
+          oldHistoryWeight = Some(0.5d),
+          historyRetention = Some(32.days),
+          iterationDuration = Some(1.day),
           distSpecificSettings = BanditSettings.Conversion(
-            eventChunkSize = 5,
+            eventChunkSize = 50,
             updatePolicyEveryNChunk = 3
           )
         )
