@@ -433,6 +433,40 @@ class ConversionBMABAlgSuite extends ConversionBMABAlgSuiteBase {
     currentState.historical.get("B").converted shouldBe 16
     currentState.historical.get("A").converted shouldBe 175
   }
+
+  test("initialSampleSize guard includes historical data") {
+    val spec = createSpec(
+      iterationDuration = Some(20.milliseconds),
+      initialSampleSize = 100
+    )
+
+    val (firstAbtest, currentAbteset) = withAPI { api =>
+      for {
+        _ <- api.init(spec)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(40, 101),
+            "B" -> Conversions(10, 102)
+          )
+        )
+        _ <- timer.sleep(30.milliseconds) //one iteration
+
+        first <- api.updatePolicy(spec.feature)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(15, 30),
+            "B" -> Conversions(10, 20)
+          )
+        )
+
+        current <- api.updatePolicy(spec.feature)
+      } yield (first.abtest.data, current.abtest.data)
+    }
+
+    firstAbtest.groups.toSet should not be (currentAbteset.groups.toSet)
+  }
 }
 
 class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
