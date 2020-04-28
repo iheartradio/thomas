@@ -14,11 +14,11 @@ import lihua.Entity
 
 import scala.util.control.NoStackTrace
 
-sealed abstract class Error
-    extends RuntimeException
+sealed abstract class Error(cause: Throwable = null)
+    extends RuntimeException(cause)
     with NoStackTrace
     with Product
-    with Serializable
+    with Serializable {}
 
 object Error {
 
@@ -36,7 +36,8 @@ object Error {
 
   case class NotFound(override val getMessage: String) extends Error
 
-  case class DBException(e: Throwable) extends Error
+  case class DBException(cause: Throwable) extends Error(cause)
+
   case class DBLastError(override val getMessage: String) extends Error
 
   case class CannotToChangePastTest(start: Instant) extends Error {
