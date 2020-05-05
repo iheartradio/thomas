@@ -4,7 +4,7 @@ package http4s
 
 import abtest._
 import model._
-import Formats._
+import com.iheart.thomas.abtest.json.play.Formats._
 import cats.effect.{Async, Resource}
 import analysis.{KPIDistribution, KPIDistributionApi}
 import com.typesafe.config.{Config, ConfigFactory}

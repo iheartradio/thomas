@@ -27,7 +27,7 @@ object Factory {
       segRanges: List[GroupRange] = Nil,
       requiredTags: List[Tag] = Nil,
       groupMetas: GroupMetas = Map()
-  ): AbtestSpec = AbtestSpec(
+    ): AbtestSpec = AbtestSpec(
     name = "test",
     author = "kai",
     feature = feature,
@@ -35,7 +35,7 @@ object Factory {
     end = Some(now.plusDays(end.toLong)),
     groups = groups,
     alternativeIdName = alternativeIdName,
-    matchingUserMeta = matchingUserMeta,
+    userMetaCriteria = matchingUserMeta,
     segmentRanges = segRanges,
     requiredTags = requiredTags,
     groupMetas = groupMetas

@@ -25,6 +25,8 @@ package object model {
   type Weight = Double
   type Tag = String
   type UserMeta = Map[MetaFieldName, String]
+  type UserMetaCriteria = Option[UserMetaCriterion.And]
+
 }
 
 package model {
@@ -49,14 +51,14 @@ package model {
       ranges: GroupRanges,
       requiredTags: List[Tag] = Nil,
       alternativeIdName: Option[MetaFieldName] = None,
-      matchingUserMeta: UserMeta = Map(),
+      userMetaCriteria: UserMetaCriteria = None,
       salt: Option[String] = None,
       segmentRanges: List[GroupRange] = Nil,
       groupMetas: GroupMetas = Map(),
       specialization: Option[Abtest.Specialization] = None) {
 
     val hasEligibilityControl: Boolean =
-      requiredTags.nonEmpty || matchingUserMeta.nonEmpty
+      requiredTags.nonEmpty || userMetaCriteria.nonEmpty
 
     def statusAsOf(time: OffsetDateTime): Abtest.Status = statusAsOf(time.toInstant)
 
@@ -92,7 +94,7 @@ package model {
     * @param groups group definitions. group sizes don't have to add up to 1, but they cannot go beyond 1. If the sum group size is less than 1, it means that there is a portion (1 - the sum group size) of users won't be the in tests at all, you could make this group your control group.
     * @param requiredTags an array of string tags for eligibility control. Once set, only users having these tags (tags are passed in group assignment inquiry requests) are eligible for this test.
     * @param alternativeIdName by default Thomas uses the "userId" field passed in the group assignment inquiry request as the unique identification for segmenting users. In some A/B test cases, e.g. some features in the user registration process, a user Id might not be given yet. In such cases, you can choose to use any user meta field as the unique identification for users.
-    * @param matchingUserMeta this is more advanced eligibility control. You can set a field and regex pair to match user meta. Only users whose metadata field value matches the regex are eligible for the experiment.
+    * @param userMetaCriteria this is more advanced eligibility control. You can set a field and criterion pair to match user meta. Only users whose metadata field value matches the criterion are eligible for the experiment.
     * @param reshuffle by default Thomas will try to keep the user assignment consistent between different versions of experiments of a feature. Setting this field to true will redistribute users again among all groups.
     * @param segmentRanges his field is used for creating mutually exclusive tests. When Thomas segments users into different groups, it hashes the user Id to a number between 0 and 1. If an A/B test is set with a set of segment ranges, then only hashes within that range will be eligible for that test. Thus if two tests have non-overlapping segment ranges, they will be mutually exclusive, i.e. users who eligible for one will not be eligible for the other.
     */
@@ -105,7 +107,7 @@ package model {
       groups: List[Group],
       requiredTags: List[Tag] = Nil,
       alternativeIdName: Option[MetaFieldName] = None,
-      matchingUserMeta: UserMeta = Map(),
+      userMetaCriteria: UserMetaCriteria = None,
       reshuffle: Boolean = false,
       segmentRanges: List[GroupRange] = Nil,
       groupMetas: GroupMetas = Map(),
@@ -184,4 +186,5 @@ package model {
       at: Instant,
       groups: Map[FeatureName, GroupName],
       metas: Map[FeatureName, GroupMeta])
+
 }
