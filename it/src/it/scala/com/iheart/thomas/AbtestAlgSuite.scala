@@ -6,9 +6,11 @@ import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.iheart.thomas.abtest.{AssignGroups, TestsData}
 import com.iheart.thomas.abtest.AssignGroups.MissingEligibilityInfo
-import com.iheart.thomas.abtest.model.UserGroupQuery
+import com.iheart.thomas.abtest.model.UserMetaCriterion.ExactMatch
+import com.iheart.thomas.abtest.model.{UserGroupQuery, UserMetaCriterion}
 import com.iheart.thomas.testkit.Factory._
 import org.scalatest.matchers.should.Matchers
+
 import concurrent.duration._
 class AbtestAlgSuite extends AsyncIOSpec with Matchers {
   val algR = testkit.Resources.apis.map(_._3)
@@ -41,7 +43,13 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
       algR
         .use { alg =>
           for {
-            t <- alg.create(fakeAb(matchingUserMeta = Map("did" -> "aaa")), false)
+            t <- alg.create(
+              fakeAb(
+                userMetaCriteria =
+                  Some(UserMetaCriterion.and(ExactMatch("did", "aaa")))
+              ),
+              false
+            )
             r <- alg.getGroupsWithMeta(
               UserGroupQuery(
                 Some("random"),
@@ -66,7 +74,13 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
       algR
         .use { alg =>
           for {
-            t <- alg.create(fakeAb(matchingUserMeta = Map("did" -> "aaa")), false)
+            t <- alg.create(
+              fakeAb(
+                userMetaCriteria =
+                  Some(UserMetaCriterion.and(ExactMatch("did", "aaa")))
+              ),
+              false
+            )
             f <- alg.getOverrides(t.data.feature)
             r <- AssignGroups.assign[IO](
               TestsData(now.toInstant, Vector((t, f)), None),

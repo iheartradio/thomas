@@ -4,7 +4,7 @@ package analysis
 import java.time.Instant
 
 import cats.MonadError
-import com.iheart.thomas.abtest.Formats.j
+import com.iheart.thomas.abtest.json.play.Formats.j
 import com.iheart.thomas.analysis.AssessmentAlg.{
   BayesianAssessmentAlg,
   BayesianBasicAssessmentAlg

@@ -8,7 +8,7 @@ package play
 import java.time.{Instant, ZoneId, ZoneOffset}
 
 import abtest._
-import Formats._
+import com.iheart.thomas.abtest.json.play.Formats._
 import model._
 import cats.effect._
 import ThomasController.{Alerter, InvalidRequest}

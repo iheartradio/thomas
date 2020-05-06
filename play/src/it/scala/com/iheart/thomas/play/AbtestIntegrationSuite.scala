@@ -8,7 +8,7 @@ import cats.data.EitherT
 import cats.effect.IO
 import abtest._
 import model._
-import Formats._
+import com.iheart.thomas.abtest.json.play.Formats._
 import lihua.{Entity, EntityDAO, EntityId}
 import org.scalatest.BeforeAndAfter
 import org.scalatestplus.play.PlaySpec
@@ -21,12 +21,14 @@ import com.iheart.thomas.analysis.DistributionSpec.Normal
 import com.iheart.thomas.analysis._
 import _root_.play.api.libs.json.{JsObject, Json, Writes}
 import _root_.play.api.test.Helpers._
+import com.iheart.thomas.abtest.model.UserMetaCriterion.{ExactMatch, RegexMatch}
 import com.typesafe.config.ConfigFactory
 import lihua.mongo.JsonFormats._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Random
+import UserMetaCriterion.and
 
 class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
@@ -742,7 +744,9 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
   "Matching Meta integration" should {
     "not eligible to test if no matching meta" in {
-      val ab = createAbtestOnServer(fakeAb(matchingUserMeta = Map("sex" -> "M")))
+      val ab = createAbtestOnServer(
+        fakeAb(userMetaCriteria = Some(and(ExactMatch("sex", "M"))))
+      )
       getGroups(Some(randomUserId), Some(ab.data.start), Map()) must be(empty)
       getGroups(Some(randomUserId), Some(ab.data.start), Map("sex" -> "F")) must be(
         empty
@@ -750,20 +754,27 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     }
 
     "eligible to test if there is matching meta" in {
-      val ab = createAbtestOnServer(fakeAb(matchingUserMeta = Map("sex" -> "M")))
+      val ab = createAbtestOnServer(
+        fakeAb(userMetaCriteria = Some(and(ExactMatch("sex", "M"))))
+      )
       getGroups(Some(randomUserId), Some(ab.data.start), Map("sex" -> "M")).size mustBe 1
     }
 
     "eligible to test if there is matching meta with regex" in {
       val ab =
-        createAbtestOnServer(fakeAb(matchingUserMeta = Map("sex" -> "Male|^M$")))
+        createAbtestOnServer(
+          fakeAb(userMetaCriteria = Some(and(RegexMatch("sex", "Male|^M$"))))
+        )
       getGroups(Some(randomUserId), Some(ab.data.start), Map("sex" -> "Male")).size mustBe 1
       getGroups(Some(randomUserId), Some(ab.data.start), Map("sex" -> "M")).size mustBe 1
     }
 
     "Not eligible to test if there is one mismatch meta" in {
       val ab = createAbtestOnServer(
-        fakeAb(matchingUserMeta = Map("sex" -> "Male|^M$", "age" -> "^2\\d$"))
+        fakeAb(
+          userMetaCriteria =
+            Some(and(RegexMatch("sex", "Male|^M$"), RegexMatch("age", "^2\\d$")))
+        )
       )
       getGroups(
         Some(randomUserId),
@@ -774,7 +785,10 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
     "Eligible to test all criterion are met" in {
       val ab = createAbtestOnServer(
-        fakeAb(matchingUserMeta = Map("sex" -> "Male|^M$", "age" -> "^2\\d$"))
+        fakeAb(
+          userMetaCriteria =
+            Some(and(RegexMatch("sex", "Male|^M$"), RegexMatch("age", "^2\\d$")))
+        )
       )
       getGroups(
         Some(randomUserId),
@@ -1385,7 +1399,7 @@ class AbtestIntegrationSuiteBase
       feature: String = "AMakeUpFeature" + Random.alphanumeric.take(5).mkString,
       alternativeIdName: Option[MetaFieldName] = None,
       groups: List[Group] = List(Group("A", 0.5), Group("B", 0.5)),
-      matchingUserMeta: UserMeta = Map(),
+      userMetaCriteria: UserMetaCriteria = None,
       segRanges: List[GroupRange] = Nil,
       requiredTags: List[Tag] = Nil,
       groupMetas: GroupMetas = Map()
@@ -1397,7 +1411,7 @@ class AbtestIntegrationSuiteBase
     end = Some(OffsetDateTime.now.plusDays(end.toLong)),
     groups = groups,
     alternativeIdName = alternativeIdName,
-    matchingUserMeta = matchingUserMeta,
+    userMetaCriteria = userMetaCriteria,
     segmentRanges = segRanges,
     requiredTags = requiredTags,
     groupMetas = groupMetas

@@ -12,7 +12,7 @@ import com.iheart.thomas.abtest.model._
 import lihua.mongo.EitherTDAOFactory
 import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.collection.JSONCollection
-import abtest.Formats._
+import com.iheart.thomas.abtest.json.play.Formats._
 
 import scala.concurrent.ExecutionContext
 

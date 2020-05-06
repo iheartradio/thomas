@@ -13,7 +13,10 @@ Here are the core concepts in Thomas.
 * A/B test - represents a single experiment that gives different treatments to different groups of users for a certain feature during a period of time. It's often that people run multiple rounds of A/B tests to determine the optimal treatment for a feature. In Thomas, users can create one A/B test after another testing a specific feature. This series of A/B tests can be deemed as evolving versions of the experiment. The A/B test meta data becomes immutable after it starts. To revise a running A/B test experiment, user has to terminate it and start a new one. This immutability is required to guarantee the correctness of the history as well as enabling the distributed assignment computation. For more details about the metadata in an A/B test, check [the API documentation of AbtestSpec](https://iheartradio.github.io/thomas/api/com/iheart/thomas/model/AbtestSpec.html)
 
 
-* Eligibility Control - mechanism to determine which users are eligible for which experiments. When a feature is not available to certain users, it is desirable to avoid providing any group assignment for these users. For one thing, it would be simply incorrect and may become source of false report in analytic data. This also allows targeting a subset of all users for a certain experiment.
+* Eligibility Control - 
+mechanism to determine which users are eligible for which experiments. When a feature is not available to certain users, it is desirable to avoid providing any group assignment for these users. 
+For one thing, it may become a source of false report in analytic data. 
+This feature also allows targeting a subset of all users for a certain experiment.
 
     
 * Overrides - to fix group assignment for certain users. User assignment is stochastic which could be tricky when QAing an A/B tests. Overrides allow users to fix group assignments for certain users so that QA can test expected behavior from the product for those users.  

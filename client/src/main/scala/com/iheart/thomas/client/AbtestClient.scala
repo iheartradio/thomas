@@ -16,7 +16,7 @@ import _root_.play.api.libs.json._
 import cats.implicits._
 import com.iheart.thomas.abtest.{DataProvider, Error, TestsData}
 import com.iheart.thomas.analysis.KPIDistribution
-import abtest.Formats._
+import com.iheart.thomas.abtest.json.play.Formats._
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NoStackTrace
