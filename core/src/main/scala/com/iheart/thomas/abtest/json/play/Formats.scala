@@ -46,6 +46,10 @@ object Formats {
         obj: JsObject
       ): JsResult[UserMetaCriterion] = obj.fields match {
       case Seq(("$regex", JsString(r))) => JsSuccess(RegexMatch(f, r))
+      case Seq(("$gt", JsNumber(r)))    => JsSuccess(Greater(f, r.doubleValue()))
+      case Seq(("$ge", JsNumber(r)))    => JsSuccess(GreaterOrEqual(f, r.doubleValue()))
+      case Seq(("$lt", JsNumber(r)))    => JsSuccess(Less(f, r.doubleValue()))
+      case Seq(("$le", JsNumber(r)))    => JsSuccess(LessOrEqual(f, r.doubleValue()))
       case Seq(("$in", JsArray(seq))) =>
         seq.toList
           .traverse {
@@ -58,47 +62,72 @@ object Formats {
 
       case Seq(("$versionRange", JsArray(Seq(JsString(start), JsString(end))))) =>
         JsSuccess(VersionRange(f, start, Some(end)))
-      case j => JsError(s"Invalid JSON $j for user meta criteria for field $f")
+      case j =>
+        JsError(JsPath \ f, s"Invalid JSON $j for user meta criteria for field $f")
     }
 
-    def readSets(jo: JsObject): JsResult[Set[UserMetaCriterion]] = {
-      jo.fields.toList
-        .map {
-          case (f, JsString(s))        => JsSuccess(ExactMatch(f, s))
-          case ("$or", obj: JsObject)  => readSets(obj).map(Or(_))
-          case ("$and", obj: JsObject) => readSets(obj).map(And(_))
-          case (f, obj: JsObject)      => readFieldValue(f, obj)
-          case (f, j) =>
-            JsError(s"Invalid JSON $j for user meta criteria at field $f")
-        }
-        .sequence
-        .map(_.toSet)
-    }
-
-    def writeSets(criteria: Set[UserMetaCriterion]): JsObject = JsObject(
-      criteria.toSeq.map {
-        case ExactMatch(f, s) => f -> JsString(s)
-        case InMatch(f, ss) =>
-          f -> Json.obj(s"$$in" -> JsArray(ss.map(JsString(_)).toSeq))
-        case RegexMatch(f, s) => f -> Json.obj(s"$$regex" -> JsString(s))
-        case And(crit) =>
-          s"$$and" -> writeSets(crit)
-        case Or(crit) =>
-          s"$$or" -> writeSets(crit)
-        case VersionRange(f, start, Some(end)) =>
-          f -> Json.obj(s"$$versionRange" -> Json.arr(start, end))
-        case VersionRange(f, start, None) =>
-          f -> Json.obj(s"$$versionStart" -> start)
+    def readSets(jv: JsValue): JsResult[Set[UserMetaCriterion]] = {
+      def readFields(fields: List[(String, JsValue)]) =
+        fields
+          .map {
+            case (f, JsString(s))   => JsSuccess(ExactMatch(f, s))
+            case ("$or", jv)        => readSets(jv).map(Or(_))
+            case ("$and", jv)       => readSets(jv).map(And(_))
+            case (f, obj: JsObject) => readFieldValue(f, obj)
+            case (f, j) =>
+              JsError(s"Invalid JSON $j for user meta criteria at field $f")
+          }
+          .sequence
+          .map(_.toSet)
+      jv match {
+        case jo: JsObject => readFields(jo.fields.toList)
+        case ja: JsArray =>
+          ja.value.toList
+            .flatTraverse {
+              case jo: JsObject => JsSuccess(jo.fields.toList)
+              case unknown =>
+                JsError(s"expecting object in array but received: $unknown")
+            }
+            .flatMap(readFields)
+        case j => JsError(s"Invalid JSON $j for user meta criteria")
       }
-    )
+    }
+
+    def writeSets(criteria: Set[UserMetaCriterion]): JsArray = {
+      def writeField(fieldCriterion: FieldCriterion): (String, JsValue) = {
+        val value =
+          fieldCriterion match {
+            case ExactMatch(_, s) => JsString(s)
+            case InMatch(_, ss) =>
+              Json.obj(s"$$in" -> JsArray(ss.map(JsString(_)).toSeq))
+            case RegexMatch(_, s)     => Json.obj(s"$$regex" -> JsString(s))
+            case Greater(_, v)        => Json.obj(s"$$gt" -> JsNumber(v))
+            case GreaterOrEqual(_, v) => Json.obj(s"$$ge" -> JsNumber(v))
+            case Less(_, v)           => Json.obj(s"$$lt" -> JsNumber(v))
+            case LessOrEqual(f, v)    => Json.obj(s"$$le" -> JsNumber(v))
+            case VersionRange(_, start, Some(end)) =>
+              Json.obj(s"$$versionRange" -> Json.arr(start, end))
+            case VersionRange(_, start, None) =>
+              Json.obj(s"$$versionStart" -> start)
+          }
+        fieldCriterion.field -> value
+      }
+
+      JsArray(
+        criteria.toSeq
+          .map {
+            case And(crit) =>
+              s"$$and" -> writeSets(crit)
+            case Or(crit) =>
+              s"$$or" -> writeSets(crit)
+            case fc: FieldCriterion => writeField(fc)
+          }
+          .map(p => JsObject(Seq(p)))
+      )
+    }
 
     Format(
-      Reads {
-        case jo: JsObject =>
-          readSets(jo).map(And(_))
-        case j => JsError(s"Invalid JSON $j for user meta criteria")
-
-      },
+      Reads(readSets(_).map(And(_))),
       Writes(a => writeSets(a.criteria))
     )
   }
