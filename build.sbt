@@ -26,7 +26,7 @@ lazy val libs =
   .add(   name = "spark",                  version = "2.4.5", org = "org.apache.spark", "spark-sql", "spark-core")
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
   .addJVM(name = "play-json-derived-codecs", version = "7.0.0", org = "org.julienrf")
-  .addJVM(name = "newtype",               version = "0.4.3",  org = "io.estatico")
+  .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
   .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
   .addJVM(name = "decline",               version = "1.2.0",  org = "com.monovore")
   .addJVM(name = "mau",                   version = "0.2.2",  org = "com.kailuowang")
