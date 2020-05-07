@@ -39,7 +39,7 @@ This JSON object is expected to be flat with string values only.
 In A/B tests you can set a user meta criteria in field `userMetaCriteria`, this user meta criteria is Json object is
  similiar to MongoDB's json query. Other than exact match it supports `$regex`, `$in`, `$versionStart`, `$versionRange`, 
  as well as combinators `$and` and `$or`  
- Here is an example: 
+ The following example lists most of the criteria.  
   
 ```json
 {
@@ -59,6 +59,10 @@ In A/B tests you can set a user meta criteria in field `userMetaCriteria`, this 
          "city": "LA",
          "state": "NY"
        },
+       
+       "age" : {
+          "$gt" : 32                       //matches age older than 32, other compartor includes $ge, $lt and $le
+       },
 
        "clientVer": {
          "$versionStart" : "1.0.0"         //special filter for version strings. Matches users whose "clientVer" is later than "1.0.0"
@@ -69,8 +73,19 @@ In A/B tests you can set a user meta criteria in field `userMetaCriteria`, this 
        }
    }
 }
+```
 
-```     
+The combinator `$or` here is written as an object, which is convenient but also means field names cannot be duplicated.
+In case where you need to have multiple criteria on the same field within an `$or`, you also use an array of objects. 
+For example: 
+```json
+{
+   "$or": [                            
+       { "city": "LA" },
+       { "city": "NY" }
+   ]
+}
+```      
 
 # How to do a feature roll out
 

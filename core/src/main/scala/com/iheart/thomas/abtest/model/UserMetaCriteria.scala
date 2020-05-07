@@ -7,24 +7,55 @@ sealed trait UserMetaCriterion extends Serializable with Product {
   def eligible(userMeta: UserMeta): Boolean
 }
 
-sealed trait FieldCriterion extends UserMetaCriterion {
-  def field: MetaFieldName
-
-  protected def valueEligible(value: Option[String]): Boolean
-
-  def eligible(userMeta: UserMeta): Boolean = valueEligible(userMeta.get(field))
-
-}
-
 object UserMetaCriterion {
+
+  sealed private[abtest] abstract class FieldCriterion extends UserMetaCriterion {
+    def field: MetaFieldName
+
+    protected def valueEligible(value: Option[String]): Boolean
+
+    def eligible(userMeta: UserMeta): Boolean = valueEligible(userMeta.get(field))
+  }
+
   case class RegexMatch(
       field: MetaFieldName,
       r: String)
       extends FieldCriterion {
-
     protected def valueEligible(value: Option[String]): Boolean =
       value.fold(false)(v => new Regex(r).findFirstMatchIn(v).isDefined)
   }
+
+  sealed abstract class NumCompare extends FieldCriterion {
+    protected def valueEligible(value: Option[String]): Boolean =
+      value.flatMap(v => Try(v.toDouble).toOption).fold(false) { v =>
+        this match {
+          case Greater(_, t)        => v > t
+          case GreaterOrEqual(_, t) => v >= t
+          case Less(_, t)           => v < t
+          case LessOrEqual(_, t)    => v <= t
+        }
+      }
+  }
+
+  case class Greater(
+      field: MetaFieldName,
+      threshold: Double)
+      extends NumCompare
+
+  case class GreaterOrEqual(
+      field: MetaFieldName,
+      threshold: Double)
+      extends NumCompare
+
+  case class Less(
+      field: MetaFieldName,
+      threshold: Double)
+      extends NumCompare
+
+  case class LessOrEqual(
+      field: MetaFieldName,
+      threshold: Double)
+      extends NumCompare
 
   case class VersionRange(
       field: MetaFieldName,

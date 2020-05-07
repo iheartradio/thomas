@@ -39,17 +39,19 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
       |   "segmentRanges": [],
       |   "userMetaCriteria": {
       |     "sex" : "female",
+      |     "age" : {
+      |       "$$gt" : 32
+      |     },
       |     "description" : {
       |        "$$regex" : "shinny"
       |     },
       |     "device" : {
       |       "$$in": ["iphone","ipad"]
       |     },
-      |     "$$or": {
-      |       "city": "LA",
-      |       "state": "NY"
-      |     },
-      |
+      |     "$$or": [
+      |       { "city": "LA" },
+      |       { "city": "NY" }
+      |     ],
       |     "clientVer": {
       |       "$$versionStart" : "1.0.0"
       |     },
@@ -74,8 +76,9 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
   test("reads userMetaCriteria") {
     userMetaCriteria.criteria should contain(ExactMatch("sex", "female"))
     userMetaCriteria.criteria should contain(RegexMatch("description", "shinny"))
+    userMetaCriteria.criteria should contain(Greater("age", 32d))
     userMetaCriteria.criteria should contain(
-      or(ExactMatch("city", "LA"), ExactMatch("state", "NY"))
+      or(ExactMatch("city", "LA"), ExactMatch("city", "NY"))
     )
     userMetaCriteria.criteria should contain(VersionRange("clientVer", "1.0.0"))
     userMetaCriteria.criteria should contain(

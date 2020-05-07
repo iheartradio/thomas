@@ -68,6 +68,57 @@ class UserMetaCriterionSuite extends AnyFreeSpec with Matchers {
       }
     }
 
+    "NumCompare" - {
+
+      "GreaterOrEqual" - {
+        "returns false if empty or non numerical value " in {
+          GreaterOrEqual("f", 1d).eligible(Map()) shouldBe false
+          GreaterOrEqual("f", 1d).eligible(Map("f" -> "not a number")) shouldBe false
+        }
+        "returns according to value" in {
+          GreaterOrEqual("f", 1d).eligible(Map("f" -> "2")) shouldBe true
+          GreaterOrEqual("f", 1d).eligible(Map("f" -> "1")) shouldBe true
+          GreaterOrEqual("f", 1d).eligible(Map("f" -> "0")) shouldBe false
+        }
+      }
+
+      "Greater" - {
+        "returns false if empty or non numerical value " in {
+          Greater("f", 1d).eligible(Map()) shouldBe false
+          Greater("f", 1d).eligible(Map("f" -> "not a number")) shouldBe false
+        }
+        "returns according to value" in {
+          Greater("f", 1d).eligible(Map("f" -> "2")) shouldBe true
+          Greater("f", 1d).eligible(Map("f" -> "1")) shouldBe false
+          Greater("f", 1d).eligible(Map("f" -> "0")) shouldBe false
+        }
+      }
+
+      "Less" - {
+        "returns false if empty or non numerical value " in {
+          Less("f", 1d).eligible(Map()) shouldBe false
+          Less("f", 1d).eligible(Map("f" -> "not a number")) shouldBe false
+        }
+        "returns according to value" in {
+          Less("f", 1d).eligible(Map("f" -> "0")) shouldBe true
+          Less("f", 1d).eligible(Map("f" -> "1")) shouldBe false
+          Less("f", 1d).eligible(Map("f" -> "2")) shouldBe false
+        }
+      }
+
+      "LessOrEqual" - {
+        "returns false if empty or non numerical value " in {
+          LessOrEqual("f", 1d).eligible(Map()) shouldBe false
+          LessOrEqual("f", 1d).eligible(Map("f" -> "not a number")) shouldBe false
+        }
+        "returns according to value" in {
+          LessOrEqual("f", 1d).eligible(Map("f" -> "0")) shouldBe true
+          LessOrEqual("f", 1d).eligible(Map("f" -> "1")) shouldBe true
+          LessOrEqual("f", 1d).eligible(Map("f" -> "2")) shouldBe false
+        }
+      }
+    }
+
     "InMatch" - {
       "returns true if there is one value match" in {
         in("f", "blah1", "blah2").eligible(Map("f" -> "blah2")) shouldBe true
