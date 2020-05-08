@@ -8,6 +8,7 @@ import _root_.play.api.libs.json._
 import Json.WithDefaultValues
 import com.iheart.thomas.abtest.model.Abtest.Specialization
 import com.iheart.thomas.abtest.model.UserMetaCriterion.ExactMatch
+import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 import lihua.playJson.Formats._
 
 import concurrent.duration._
@@ -153,5 +154,8 @@ object Formats {
     )
 
   implicit val testsDataFormat = j.format[TestsData]
+
+  implicit val formatUpdateUserMetaCriteriaRequest
+      : Format[UpdateUserMetaCriteriaRequest] = Json.format
 
 }

@@ -261,4 +261,18 @@ GET   /KPIs/:name   controllers.MyAbtestController.getKPIDistribution(name: Stri
 POST   /KPIs/    controllers.MyAbtestController.updateKPIDistribution
 
 
+###
+#  summary: Add an group meta to a group
+#  parameters:
+#    - name: body
+#      schema:
+#        $ref: '#/definitions/com.iheart.thomas.play.AbtestController.UpdateUserMetaCriteriaRequest'
+#  responses:
+#    200:
+#      schema:
+#        $ref: '#/definitions/com.iheart.thomas.abtest.model.Abtest'
+###
+PUT       /tests/:testId/userMetaCriteria    controllers.MyAbtestController.updateUserMetaCriteria(testId: String)
+
+
 ->   /           publicEndpoints.Routes

@@ -93,4 +93,22 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
     Json.toJson(abtest).as[Abtest] shouldBe abtest
   }
 
+  test("can read empty user meta criteria") {
+    val emptyJson =
+      """
+
+        |{
+        |   "name": "xxx",
+        |   "feature": "xxxx",
+        |   "author": "Kai",
+        |   "start": "2020-04-28T13:36:01.141Z",
+        |   "groups": []
+        |}
+        |""".stripMargin
+    val result = implicitly[Format[AbtestSpec]]
+      .reads(Json.parse(emptyJson))
+    if (result.isError) println(result)
+    result.get.userMetaCriteria shouldBe None
+  }
+
 }

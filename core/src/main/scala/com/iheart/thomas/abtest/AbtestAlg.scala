@@ -137,6 +137,12 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
       auto: Boolean
     ): F[Entity[Abtest]]
 
+  def updateUserMetaCriteria(
+      testId: TestId,
+      userMetaCriteria: UserMetaCriteria,
+      auto: Boolean
+    ): F[Entity[Abtest]]
+
   def removeGroupMetas(
       test: TestId,
       auto: Boolean
@@ -402,18 +408,17 @@ final class DefaultAbtestAlg[F[_]](
   private def delete(testId: TestId): F[Unit] =
     abTestDao.remove(testId)
 
-  def addGroupMetas(
+  /**
+    *
+    * @param testId
+    * @param auto create a new test if the current one of the testId is no longer mutable
+    * @param f
+    * @return
+    */
+  def updateAbtest(
       testId: TestId,
-      metas: Map[GroupName, GroupMeta],
       auto: Boolean
-    ): F[Entity[Abtest]] =
-    errorToF(metas.isEmpty.option(EmptyGroupMeta)) *>
-      updateGroupMetas(testId, metas, auto)
-
-  private def updateGroupMetas(
-      testId: TestId,
-      metas: Map[GroupName, GroupMeta],
-      auto: Boolean
+    )(f: Abtest => F[Abtest]
     ): F[Entity[Abtest]] =
     for {
       now <- nowF
@@ -434,21 +439,47 @@ final class DefaultAbtestAlg[F[_]](
           CannotToChangePastTest(candidate.data.start)
             .raiseError[F, Entity[Abtest]]
       )
-      _ <- errorsOToF(
+      toUpdate <- f(test.data).map(t => test.copy(data = t))
+      updated <- abTestDao.update(toUpdate)
+    } yield updated
+
+  def updateUserMetaCriteria(
+      testId: TestId,
+      userMetaCriteria: UserMetaCriteria,
+      auto: Boolean
+    ): F[Entity[Abtest]] =
+    updateAbtest(testId, auto)(
+      _.copy(userMetaCriteria = userMetaCriteria).pure[F]
+    )
+
+  def addGroupMetas(
+      testId: TestId,
+      metas: Map[GroupName, GroupMeta],
+      auto: Boolean
+    ): F[Entity[Abtest]] =
+    errorToF(metas.isEmpty.option(EmptyGroupMeta)) *>
+      updateGroupMetas(testId, metas, auto)
+
+  private def updateGroupMetas(
+      testId: TestId,
+      metas: Map[GroupName, GroupMeta],
+      auto: Boolean
+    ): F[Entity[Abtest]] =
+    updateAbtest(testId, auto) { test =>
+      errorsOToF(
         metas.keys.toList.map(
           gn =>
-            (!test.data.groups.exists(_.name === gn))
+            (!test.groups.exists(_.name === gn))
               .option(Error.GroupNameDoesNotExist(gn))
         )
-      )
-      updated <- abTestDao.update(
+      ).as(
         test
-          .lens(_.data.groupMetas)
+          .lens(_.groupMetas)
           .modify { existing =>
             if (metas.nonEmpty) existing ++ metas else metas
           }
       )
-    } yield updated
+    }
 
   def removeGroupMetas(
       testId: TestId,

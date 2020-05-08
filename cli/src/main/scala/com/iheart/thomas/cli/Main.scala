@@ -10,6 +10,7 @@ object Main extends IOApp {
     val cmd = Command("thomas", "Thomas cli")(
       Opts.subcommands(
         new GroupMetaCommands[IO].groupMetaCommand,
+        new EligibilityControlCommand[IO].userMetaCriteriaCommand,
         BayesianMABCommands.conversionBMABCommand[IO]
       )
     )
