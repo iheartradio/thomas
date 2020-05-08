@@ -22,7 +22,7 @@ import com.iheart.thomas.analysis._
 import _root_.play.api.libs.json.{JsObject, Json, Writes}
 import _root_.play.api.test.Helpers._
 import UserMetaCriterion.{And, ExactMatch, RegexMatch, and}
-import com.iheart.thomas.play.AbtestController.UpdateUserMetaCriteriaRequest
+import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 import com.typesafe.config.ConfigFactory
 import lihua.mongo.JsonFormats._
 
