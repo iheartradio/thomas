@@ -33,13 +33,13 @@ trait AbtestClient[F[_]] extends DataProvider[F] {
   def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]]
 
   def addGroupMeta(
-      tid: TestId,
+      tidOrFeature: Either[TestId, FeatureName],
       gm: JsObject,
       auto: Boolean
     ): F[Entity[Abtest]]
 
   def removeGroupMetas(
-      tid: TestId,
+      tidOrFeature: Either[TestId, FeatureName],
       auto: Boolean
     ): F[Entity[Abtest]]
 
@@ -85,10 +85,11 @@ trait AbtestClient[F[_]] extends DataProvider[F] {
     tidOrFeatureOp(tidOrFeature)(getTest(_)).map(_.data.userMetaCriteria)
 
   def getGroupMeta(
-      tid: TestId
-    )(implicit F: Functor[F]
+      tidOrFeature: Either[TestId, FeatureName]
+    )(implicit F: MonadThrowable[F]
     ): F[Map[GroupName, GroupMeta]] =
-    getTest(tid).map(_.data.groupMetas)
+    tidOrFeatureOp(tidOrFeature)(getTest(_)).map(_.data.groupMetas)
+
 }
 
 import org.http4s.client.{Client => HClient}
@@ -96,7 +97,7 @@ import org.http4s.client.{Client => HClient}
 class Http4SAbtestClient[F[_]: Sync](
     c: HClient[F],
     urls: HttpServiceUrls)
-    extends PlayJsonHttp4sClient[F]
+    extends PlayJsonHttp4sClient[F](c)
     with AbtestClient[F] {
   import org.http4s.{Method, Uri}
   import Method._
@@ -104,18 +105,18 @@ class Http4SAbtestClient[F[_]: Sync](
   implicit def stringToUri(str: String) = Uri.unsafeFromString(str)
 
   def getKPI(name: String): F[KPIDistribution] =
-    c.expect[KPIDistribution](urls.kPIs + "/" + name).adaptError {
+    expect[KPIDistribution](GET(urls.kPIs + "/" + name)).adaptError {
       case UnexpectedStatus(status) if status == Status.NotFound =>
         Error.NotFound("KPI " + name + " is not found")
     }
 
   def saveKPI(kd: KPIDistribution): F[KPIDistribution] =
-    c.expect(POST(kd, Uri.unsafeFromString(urls.kPIs)))
+    expect(POST(kd, Uri.unsafeFromString(urls.kPIs)))
 
   def tests(asOf: Option[Instant] = None): F[Vector[(Entity[Abtest], Feature)]] = {
     val baseUrl: Uri = Uri.unsafeFromString(urls.tests)
-    c.expect(
-      baseUrl +?? ("at", asOf.map(ao => ao.toEpochMilli.toString))
+    expect(
+      GET(baseUrl +?? ("at", asOf.map(ao => ao.toEpochMilli.toString)))
     )
   }
 
@@ -124,7 +125,7 @@ class Http4SAbtestClient[F[_]: Sync](
       userMetaCriteria: UserMetaCriteria,
       auto: Boolean
     ): F[Entity[Abtest]] = tidOrFeatureOp(tidOrFeature) { testId =>
-    c.expect(
+    expect(
       PUT(
         UpdateUserMetaCriteriaRequest(userMetaCriteria, auto),
         stringToUri(urls.userMetaCriteria(testId))
@@ -140,7 +141,7 @@ class Http4SAbtestClient[F[_]: Sync](
       ("atEpochMilli", at.toEpochMilli.toString) +?? ("durationMillisecond",
     duration.map(_.toMillis.toString))
 
-    c.expect(url)
+    expect(GET(url))
   }
 
   def getTest(tid: TestId): F[Entity[Abtest]] =
@@ -150,21 +151,32 @@ class Http4SAbtestClient[F[_]: Sync](
     } yield test
 
   def addGroupMeta(
-      tid: TestId,
+      tidOrFeature: Either[TestId, FeatureName],
       gm: JsObject,
       auto: Boolean
     ): F[Entity[Abtest]] =
-    c.expect(PUT(gm, stringToUri(urls.groupMeta(tid)) +? ("auto", auto)))
+    tidOrFeatureOp(tidOrFeature) { tid =>
+      expect(PUT(gm, stringToUri(urls.groupMeta(tid)) +? ("auto", auto)))
+    }
 
   def removeGroupMetas(
-      tid: TestId,
+      tidOrFeature: Either[TestId, FeatureName],
       auto: Boolean
     ): F[Entity[Abtest]] =
-    c.expect(DELETE(stringToUri(urls.groupMeta(tid)) +? ("auto", auto)))
+    tidOrFeatureOp(tidOrFeature) { tid =>
+      expect(DELETE(stringToUri(urls.groupMeta(tid)) +? ("auto", auto)))
+    }
 
   def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]] =
-    c.expect(urls.featureTests(feature))
+    expect(GET(urls.featureTests(feature)))
 
+  def getGroupMeta(
+      tidOrFeature: Either[TestId, FeatureName]
+    )(implicit F: Functor[F]
+    ): F[Map[GroupName, GroupMeta]] =
+    tidOrFeatureOp(tidOrFeature) { tid =>
+      getTest(tid).map(_.data.groupMetas)
+    }
 }
 
 object Http4SAbtestClient {

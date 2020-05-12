@@ -16,7 +16,7 @@ import com.iheart.thomas.TimeUtil
 import Error._
 import cats.effect.{Concurrent, Resource, Timer}
 import com.iheart.thomas.abtest.AssignGroups.{AssignmentResult, AssignmentWithMeta}
-import model.Abtest.Specialization
+import model.Abtest.{Specialization, Status}
 import model._
 import lihua._
 import monocle.macros.syntax.lens._
@@ -419,29 +419,36 @@ final class DefaultAbtestAlg[F[_]](
       testId: TestId,
       auto: Boolean
     )(f: Abtest => F[Abtest]
-    ): F[Entity[Abtest]] =
+    ): F[Entity[Abtest]] = {
     for {
       now <- nowF
       candidate <- abTestDao.get(testId)
-      test <- candidate.data.canChange.fold(
-        F.pure(candidate),
-        if (auto)
-          create(
-            candidate.data
-              .to[AbtestSpec]
-              .set(
-                start = now.atOffset(ZoneOffset.UTC),
-                end = candidate.data.end.map(_.atOffset(ZoneOffset.UTC))
-              ),
-            auto = true
-          )
-        else
-          CannotToChangePastTest(candidate.data.start)
-            .raiseError[F, Entity[Abtest]]
-      )
+      test <- candidate.data
+        .canChange(now)
+        .fold(
+          F.pure(candidate),
+          if (auto) {
+            if (candidate.data.statusAsOf(now) == Status.Expired)
+              CannotUpdateExpiredTest(candidate.data.end.get) //this should be safe since it's already expired and thus must have an end date
+                .raiseError[F, Entity[Abtest]]
+            else
+              create(
+                candidate.data
+                  .to[AbtestSpec]
+                  .set(
+                    start = now.atOffset(ZoneOffset.UTC),
+                    end = candidate.data.end.map(_.atOffset(ZoneOffset.UTC))
+                  ),
+                auto = true
+              )
+          } else
+            CannotChangePastTest(candidate.data.start)
+              .raiseError[F, Entity[Abtest]]
+        )
       toUpdate <- f(test.data).map(t => test.copy(data = t))
       updated <- abTestDao.update(toUpdate)
     } yield updated
+  }
 
   def updateUserMetaCriteria(
       testId: TestId,
@@ -585,6 +592,7 @@ final class DefaultAbtestAlg[F[_]](
   private def createAuto(ts: AbtestSpec): F[Entity[Abtest]] =
     for {
       lastOne <- lastTest(ts)
+      now <- nowF
       r <- lastOne.fold(doCreate(ts, None)) { lte =>
         val lt = lte.data
         lt.statusAsOf(ts.start) match {
@@ -594,7 +602,7 @@ final class DefaultAbtestAlg[F[_]](
               false
             )
           case Abtest.Status.InProgress => //when the exiting test has overlap with the new test
-            tryUpdate(lte, ts).getOrElse(
+            tryUpdate(lte, ts, now).getOrElse(
               continueWith(ts, lte)
             )
           case Abtest.Status.Expired => //when the existing test is before the new test.
@@ -605,9 +613,10 @@ final class DefaultAbtestAlg[F[_]](
 
   private def tryUpdate(
       toUpdate: Entity[Abtest],
-      updateWith: AbtestSpec
+      updateWith: AbtestSpec,
+      now: Instant
     ): Option[F[Entity[Abtest]]] =
-    if (toUpdate.data.canChange && toUpdate.data.groups
+    if (toUpdate.data.canChange(now) && toUpdate.data.groups
           .sortBy(_.name) == updateWith.groups
           .sortBy(_.name))
       Some(

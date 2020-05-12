@@ -1073,6 +1073,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       test.userMetaCriteria mustBe Some(and(RegexMatch("a", "a")))
 
     }
+
   }
 
   "PUT /tests/overrides" should {

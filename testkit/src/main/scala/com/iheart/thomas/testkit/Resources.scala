@@ -32,6 +32,7 @@ object Resources {
   val timer = IO.timer(global)
   implicit private val _timer = timer
 
+  val defaultNowF = IO.delay(Instant.now)
   lazy val mangoDAOs =
     Resource.liftF(IO(ConfigFactory.load(getClass.getClassLoader))).flatMap {
       config =>
@@ -69,7 +70,10 @@ object Resources {
   /**
     * An ConversionAPI resource that cleans up after
     */
-  def apis(implicit logger: EventLogger[IO] = EventLogger.noop[IO]): Resource[
+  def apis(
+      implicit logger: EventLogger[IO] = EventLogger.noop[IO],
+      nowF: IO[Instant] = defaultNowF
+    ): Resource[
     IO,
     (ConversionBMABAlg[IO], KPIDistributionApi[IO], AbtestAlg[IO])
   ] =
@@ -84,7 +88,6 @@ object Resources {
           AbtestAlg.defaultResource[IO](refreshPeriod).map { implicit abtestAlg =>
             implicit val ss = Sampler.default
             implicit val rng = RNG.default
-            implicit val nowF = IO.delay(Instant.now)
 
             (
               implicitly,

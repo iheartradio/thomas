@@ -14,5 +14,9 @@ object SharedOpts {
     * Either a test id or a feature name
     */
   val tidOrFnOps: Opts[Either[TestId, FeatureName]] = tidOpts.either(fnOpts)
-
+  def show(tidOrFeature: Either[TestId, FeatureName]) =
+    tidOrFeature.fold(
+      tid => s"Test Id: $tid",
+      feature => s"Latest test for Feature : $feature"
+    )
 }

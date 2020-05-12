@@ -40,29 +40,29 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
       |   "userMetaCriteria": {
       |     "sex" : "female",
       |     "age" : {
-      |       "$$gt" : 32
+      |       "%gt" : 32
       |     },
       |     "description" : {
-      |        "$$regex" : "shinny"
+      |        "%regex" : "shinny"
       |     },
       |     "device" : {
-      |       "$$in": ["iphone","ipad"]
+      |       "%in": ["iphone","ipad"]
       |     },
-      |     "$$or": [
+      |     "%or": [
       |       { "city": "LA" },
       |       { "city": "NY" }
       |     ],
       |     "clientVer": {
-      |       "$$versionStart" : "1.0.0"
+      |       "%versionStart" : "1.0.0"
       |     },
       |
       |     "androidVer": {
-      |       "$$versionRange" : ["2.0", "3.1"]
+      |       "%versionRange" : ["2.0", "3.1"]
       |     }
       |   },
       |   "groupMetas": {},
       |   "_id": {
-      |       "$$oid": "5ea831411600005f84197e28"
+      |       "%oid": "5ea831411600005f84197e28"
       |   }
       |}
       |""".stripMargin

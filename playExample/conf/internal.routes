@@ -266,7 +266,7 @@ POST   /KPIs/    controllers.MyAbtestController.updateKPIDistribution
 #  parameters:
 #    - name: body
 #      schema:
-#        $ref: '#/definitions/com.iheart.thomas.play.AbtestController.UpdateUserMetaCriteriaRequest'
+#        $ref: '#/definitions/com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest'
 #  responses:
 #    200:
 #      schema:
