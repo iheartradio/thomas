@@ -21,14 +21,14 @@ import com.iheart.thomas.analysis.DistributionSpec.Normal
 import com.iheart.thomas.analysis._
 import _root_.play.api.libs.json.{JsObject, Json, Writes}
 import _root_.play.api.test.Helpers._
-import com.iheart.thomas.abtest.model.UserMetaCriterion.{ExactMatch, RegexMatch}
+import UserMetaCriterion.{And, ExactMatch, RegexMatch, and}
+import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 import com.typesafe.config.ConfigFactory
 import lihua.mongo.JsonFormats._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Random
-import UserMetaCriterion.and
 
 class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
@@ -1040,6 +1040,40 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
       subSequent.data.groupMetas mustBe newMetas
     }
+  }
+
+  "PUT /tests/tid/userMetaCriteria" should {
+
+    "delete userMetaCriteria if there is no body" in {
+      val ab =
+        createAbtestOnServer(
+          fakeAb(start = 1, userMetaCriteria = Some(and(RegexMatch("a", "a"))))
+        )
+      val r = controller.updateUserMetaCriteria(ab._id)(
+        jsonRequest(
+          UpdateUserMetaCriteriaRequest(None, false)
+        )
+      )
+      val test = contentAsJson(r).as[Entity[Abtest]].data
+      test.userMetaCriteria mustBe None
+
+    }
+
+    "update userMetaCriteria" in {
+      val ab =
+        createAbtestOnServer(
+          fakeAb(start = 1)
+        )
+      val r = controller.updateUserMetaCriteria(ab._id)(
+        jsonRequest(
+          UpdateUserMetaCriteriaRequest(Some(and(RegexMatch("a", "a"))), false)
+        )
+      )
+      val test = contentAsJson(r).as[Entity[Abtest]].data
+      test.userMetaCriteria mustBe Some(and(RegexMatch("a", "a")))
+
+    }
+
   }
 
   "PUT /tests/overrides" should {

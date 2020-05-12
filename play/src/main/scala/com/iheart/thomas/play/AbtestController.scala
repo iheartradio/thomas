@@ -16,6 +16,7 @@ import _root_.play.api.libs.json._
 import _root_.play.api.mvc._
 import cats.implicits._
 import com.iheart.thomas.analysis.{KPIDistribution, KPIDistributionApi}
+import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 import lihua.{Entity, EntityId}
 import lihua.mongo.JsonFormats._
 
@@ -140,6 +141,11 @@ class AbtestController[F[_]](
       (metas: Map[GroupName, GroupMeta]) =>
         api.addGroupMetas(EntityId(testId), metas, auto)
     )
+
+  def updateUserMetaCriteria(testId: String) =
+    jsonAction { (r: UpdateUserMetaCriteriaRequest) =>
+      api.updateUserMetaCriteria(EntityId(testId), r.criteria, r.auto)
+    }
 
   def removeGroupMetas(
       testId: String,

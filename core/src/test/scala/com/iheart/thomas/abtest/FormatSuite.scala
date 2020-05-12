@@ -40,29 +40,29 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
       |   "userMetaCriteria": {
       |     "sex" : "female",
       |     "age" : {
-      |       "$$gt" : 32
+      |       "%gt" : 32
       |     },
       |     "description" : {
-      |        "$$regex" : "shinny"
+      |        "%regex" : "shinny"
       |     },
       |     "device" : {
-      |       "$$in": ["iphone","ipad"]
+      |       "%in": ["iphone","ipad"]
       |     },
-      |     "$$or": [
+      |     "%or": [
       |       { "city": "LA" },
       |       { "city": "NY" }
       |     ],
       |     "clientVer": {
-      |       "$$versionStart" : "1.0.0"
+      |       "%versionStart" : "1.0.0"
       |     },
       |
       |     "androidVer": {
-      |       "$$versionRange" : ["2.0", "3.1"]
+      |       "%versionRange" : ["2.0", "3.1"]
       |     }
       |   },
       |   "groupMetas": {},
       |   "_id": {
-      |       "$$oid": "5ea831411600005f84197e28"
+      |       "%oid": "5ea831411600005f84197e28"
       |   }
       |}
       |""".stripMargin
@@ -91,6 +91,24 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
 
   test("read write identity") {
     Json.toJson(abtest).as[Abtest] shouldBe abtest
+  }
+
+  test("can read empty user meta criteria") {
+    val emptyJson =
+      """
+
+        |{
+        |   "name": "xxx",
+        |   "feature": "xxxx",
+        |   "author": "Kai",
+        |   "start": "2020-04-28T13:36:01.141Z",
+        |   "groups": []
+        |}
+        |""".stripMargin
+    val result = implicitly[Format[AbtestSpec]]
+      .reads(Json.parse(emptyJson))
+    if (result.isError) println(result)
+    result.get.userMetaCriteria shouldBe None
   }
 
 }

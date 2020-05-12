@@ -17,6 +17,7 @@ import cats.implicits._
 import com.iheart.thomas.abtest.{DataProvider, Error, TestsData}
 import com.iheart.thomas.analysis.KPIDistribution
 import com.iheart.thomas.abtest.json.play.Formats._
+import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NoStackTrace
@@ -29,6 +30,31 @@ import scala.concurrent.duration.FiniteDuration
 trait AbtestClient[F[_]] extends DataProvider[F] {
   def tests(asOf: Option[Instant] = None): F[Vector[(Entity[Abtest], Feature)]]
 
+  def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]]
+
+  def addGroupMeta(
+      tidOrFeature: Either[TestId, FeatureName],
+      gm: JsObject,
+      auto: Boolean
+    ): F[Entity[Abtest]]
+
+  def removeGroupMetas(
+      tidOrFeature: Either[TestId, FeatureName],
+      auto: Boolean
+    ): F[Entity[Abtest]]
+
+  def getKPI(name: String): F[KPIDistribution]
+
+  def saveKPI(KPIDistribution: KPIDistribution): F[KPIDistribution]
+
+  def getTest(tid: TestId): F[Entity[Abtest]]
+
+  def updateUserMetaCriteria(
+      tidOrFeature: Either[TestId, FeatureName],
+      userMetaCriteria: UserMetaCriteria,
+      auto: Boolean
+    ): F[Entity[Abtest]]
+
   def test(
       feature: FeatureName,
       asOf: Option[Instant] = None
@@ -38,8 +64,6 @@ trait AbtestClient[F[_]] extends DataProvider[F] {
       case (test, Feature(`feature`, _, _, _, _)) => test
     })
 
-  def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]]
-
   def featureLatestTest(
       feature: FeatureName
     )(implicit F: MonadError[F, Throwable]
@@ -48,22 +72,23 @@ trait AbtestClient[F[_]] extends DataProvider[F] {
       _.headOption.liftTo[F](Error.NotFound(s"No tests found under $feature"))
     )
 
-  def getGroupMeta(tid: TestId): F[Map[GroupName, GroupMeta]]
+  def tidOrFeatureOp[A](
+      tidOrFeature: Either[TestId, FeatureName]
+    )(f: TestId => F[A]
+    )(implicit F: MonadThrowable[F]
+    ): F[A] = tidOrFeature.fold(f, featureLatestTest(_).flatMap(t => f(t._id)))
 
-  def addGroupMeta(
-      tid: TestId,
-      gm: JsObject,
-      auto: Boolean
-    ): F[Entity[Abtest]]
+  def getUserMetaCriteria(
+      tidOrFeature: Either[TestId, FeatureName]
+    )(implicit F: MonadThrowable[F]
+    ): F[UserMetaCriteria] =
+    tidOrFeatureOp(tidOrFeature)(getTest(_)).map(_.data.userMetaCriteria)
 
-  def removeGroupMetas(
-      tid: TestId,
-      auto: Boolean
-    ): F[Entity[Abtest]]
-
-  def getKPI(name: String): F[KPIDistribution]
-
-  def saveKPI(KPIDistribution: KPIDistribution): F[KPIDistribution]
+  def getGroupMeta(
+      tidOrFeature: Either[TestId, FeatureName]
+    )(implicit F: MonadThrowable[F]
+    ): F[Map[GroupName, GroupMeta]] =
+    tidOrFeatureOp(tidOrFeature)(getTest(_)).map(_.data.groupMetas)
 
 }
 
@@ -72,24 +97,39 @@ import org.http4s.client.{Client => HClient}
 class Http4SAbtestClient[F[_]: Sync](
     c: HClient[F],
     urls: HttpServiceUrls)
-    extends PlayJsonHttp4sClient[F]
+    extends PlayJsonHttp4sClient[F](c)
     with AbtestClient[F] {
   import org.http4s.{Method, Uri}
   import Method._
 
+  implicit def stringToUri(str: String) = Uri.unsafeFromString(str)
+
   def getKPI(name: String): F[KPIDistribution] =
-    c.expect[KPIDistribution](urls.kPIs + "/" + name).adaptError {
+    expect[KPIDistribution](GET(urls.kPIs + "/" + name)).adaptError {
       case UnexpectedStatus(status) if status == Status.NotFound =>
         Error.NotFound("KPI " + name + " is not found")
     }
 
   def saveKPI(kd: KPIDistribution): F[KPIDistribution] =
-    c.expect(POST(kd, Uri.unsafeFromString(urls.kPIs)))
+    expect(POST(kd, Uri.unsafeFromString(urls.kPIs)))
 
   def tests(asOf: Option[Instant] = None): F[Vector[(Entity[Abtest], Feature)]] = {
     val baseUrl: Uri = Uri.unsafeFromString(urls.tests)
-    c.expect(
-      baseUrl +?? ("at", asOf.map(ao => ao.toEpochMilli.toString))
+    expect(
+      GET(baseUrl +?? ("at", asOf.map(ao => ao.toEpochMilli.toString)))
+    )
+  }
+
+  def updateUserMetaCriteria(
+      tidOrFeature: Either[TestId, FeatureName],
+      userMetaCriteria: UserMetaCriteria,
+      auto: Boolean
+    ): F[Entity[Abtest]] = tidOrFeatureOp(tidOrFeature) { testId =>
+    expect(
+      PUT(
+        UpdateUserMetaCriteriaRequest(userMetaCriteria, auto),
+        stringToUri(urls.userMetaCriteria(testId))
+      )
     )
   }
 
@@ -97,35 +137,46 @@ class Http4SAbtestClient[F[_]: Sync](
       at: Instant,
       duration: Option[FiniteDuration]
     ): F[TestsData] = {
-    val url = Uri.unsafeFromString(urls.testsData) +?
+    val url = stringToUri(urls.testsData) +?
       ("atEpochMilli", at.toEpochMilli.toString) +?? ("durationMillisecond",
     duration.map(_.toMillis.toString))
 
-    c.expect(url)
+    expect(GET(url))
   }
 
-  def getGroupMeta(tid: TestId): F[Map[GroupName, GroupMeta]] =
+  def getTest(tid: TestId): F[Entity[Abtest]] =
     for {
-      req <- GET(Uri.unsafeFromString(urls.test(tid)))
+      req <- GET(urls.test(tid))
       test <- c.expect[Entity[Abtest]](req)
-    } yield test.data.groupMetas
+    } yield test
 
   def addGroupMeta(
-      tid: TestId,
+      tidOrFeature: Either[TestId, FeatureName],
       gm: JsObject,
       auto: Boolean
     ): F[Entity[Abtest]] =
-    c.expect(PUT(gm, Uri.unsafeFromString(urls.groupMeta(tid)) +? ("auto", auto)))
+    tidOrFeatureOp(tidOrFeature) { tid =>
+      expect(PUT(gm, stringToUri(urls.groupMeta(tid)) +? ("auto", auto)))
+    }
 
   def removeGroupMetas(
-      tid: TestId,
+      tidOrFeature: Either[TestId, FeatureName],
       auto: Boolean
     ): F[Entity[Abtest]] =
-    c.expect(DELETE(Uri.unsafeFromString(urls.groupMeta(tid)) +? ("auto", auto)))
+    tidOrFeatureOp(tidOrFeature) { tid =>
+      expect(DELETE(stringToUri(urls.groupMeta(tid)) +? ("auto", auto)))
+    }
 
   def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]] =
-    c.expect(urls.featureTests(feature))
+    expect(GET(urls.featureTests(feature)))
 
+  def getGroupMeta(
+      tidOrFeature: Either[TestId, FeatureName]
+    )(implicit F: Functor[F]
+    ): F[Map[GroupName, GroupMeta]] =
+    tidOrFeatureOp(tidOrFeature) { tid =>
+      getTest(tid).map(_.data.groupMetas)
+    }
 }
 
 object Http4SAbtestClient {
@@ -158,6 +209,8 @@ object AbtestClient {
 
     def groupMeta(testId: TestId): String
 
+    def userMetaCriteria(testId: TestId): String
+
     def featureTests(featureName: FeatureName): String
   }
 
@@ -174,6 +227,9 @@ object AbtestClient {
     def kPIs: String = root + "/KPIs"
 
     def groupMeta(testId: TestId) = root + "/tests/" + testId + "/groups/metas"
+
+    def userMetaCriteria(testId: TestId) =
+      root + "/tests/" + testId + "/userMetaCriteria"
 
     def test(testId: TestId) = root + "/tests/" + testId
 

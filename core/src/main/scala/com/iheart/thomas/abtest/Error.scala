@@ -40,8 +40,13 @@ object Error {
 
   case class DBLastError(override val getMessage: String) extends Error
 
-  case class CannotToChangePastTest(start: Instant) extends Error {
+  case class CannotChangePastTest(start: Instant) extends Error {
     override def getMessage = s"Cannot change tests that are already started $start"
+  }
+
+  case class CannotUpdateExpiredTest(expired: Instant) extends Error {
+    override def getMessage =
+      s"Cannot auto create new test from expired test (expired $expired)"
   }
 
   sealed trait ValidationError extends Product with Serializable

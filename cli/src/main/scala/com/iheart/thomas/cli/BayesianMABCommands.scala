@@ -88,7 +88,7 @@ object BayesianMABCommands {
   def conversionBMABCommand[F[_]](
       implicit F: ConcurrentEffect[F],
       ec: ExecutionContext
-    ) =
+    ): Command[F[String]] =
     Command(
       "conversionBMAB",
       "manage conversion based Bayesian Multi Arm Bandits"
@@ -97,7 +97,7 @@ object BayesianMABCommands {
         Command("init", "init a new conversion KPI Bayesian MAB") {
           (banditSpecOpts, conversionClientOpts[F]).mapN { (spec, clientR) =>
             clientR.use { client =>
-              client.init(spec)
+              client.init(spec).map(b => s"Successfully created $b")
             }
           }
         },
@@ -105,23 +105,19 @@ object BayesianMABCommands {
           "show",
           "show an existing conversion KPI based Bayesian MAB"
         ) {
-          (fnOpts, conversionClientOpts[F]).mapN { (feature, clientR) =>
-            clientR.use { client =>
-              client
-                .currentState(feature)
-                .flatMap(
-                  s =>
-                    F.delay {
-                      println(
-                        "=========== Bayesian State Start ============"
-                      )
-                      println(s)
-                      println(
-                        "=========== Bayesian State End ============="
-                      )
-                    }
-                )
-            }
+          (fnOpts, conversionClientOpts[F]).mapN {
+            (feature, clientR) =>
+              clientR.use { client =>
+                client
+                  .currentState(feature)
+                  .map(
+                    s => s"""
+                      |=========== Bayesian State Start ============
+                      |$s
+                      |=========== Bayesian State End =============
+                      |""".stripMargin
+                  )
+              }
           }
         },
         Command(
@@ -130,7 +126,7 @@ object BayesianMABCommands {
         ) {
           (fnOpts, conversionClientOpts[F]).mapN { (feature, clientR) =>
             clientR.use { client =>
-              client.updatePolicy(feature)
+              client.updatePolicy(feature).as(s"Policy for $feature is updated")
             }
           }
         }

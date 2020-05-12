@@ -16,7 +16,7 @@ import com.iheart.thomas.TimeUtil
 import Error._
 import cats.effect.{Concurrent, Resource, Timer}
 import com.iheart.thomas.abtest.AssignGroups.{AssignmentResult, AssignmentWithMeta}
-import model.Abtest.Specialization
+import model.Abtest.{Specialization, Status}
 import model._
 import lihua._
 import monocle.macros.syntax.lens._
@@ -134,6 +134,12 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
   def addGroupMetas(
       test: TestId,
       metas: Map[GroupName, GroupMeta],
+      auto: Boolean
+    ): F[Entity[Abtest]]
+
+  def updateUserMetaCriteria(
+      testId: TestId,
+      userMetaCriteria: UserMetaCriteria,
       auto: Boolean
     ): F[Entity[Abtest]]
 
@@ -402,6 +408,57 @@ final class DefaultAbtestAlg[F[_]](
   private def delete(testId: TestId): F[Unit] =
     abTestDao.remove(testId)
 
+  /**
+    *
+    * @param testId
+    * @param auto create a new test if the current one of the testId is no longer mutable
+    * @param f
+    * @return
+    */
+  def updateAbtest(
+      testId: TestId,
+      auto: Boolean
+    )(f: Abtest => F[Abtest]
+    ): F[Entity[Abtest]] = {
+    for {
+      now <- nowF
+      candidate <- abTestDao.get(testId)
+      test <- candidate.data
+        .canChange(now)
+        .fold(
+          F.pure(candidate),
+          if (auto) {
+            if (candidate.data.statusAsOf(now) == Status.Expired)
+              CannotUpdateExpiredTest(candidate.data.end.get) //this should be safe since it's already expired and thus must have an end date
+                .raiseError[F, Entity[Abtest]]
+            else
+              create(
+                candidate.data
+                  .to[AbtestSpec]
+                  .set(
+                    start = now.atOffset(ZoneOffset.UTC),
+                    end = candidate.data.end.map(_.atOffset(ZoneOffset.UTC))
+                  ),
+                auto = true
+              )
+          } else
+            CannotChangePastTest(candidate.data.start)
+              .raiseError[F, Entity[Abtest]]
+        )
+      toUpdate <- f(test.data).map(t => test.copy(data = t))
+      updated <- abTestDao.update(toUpdate)
+    } yield updated
+  }
+
+  def updateUserMetaCriteria(
+      testId: TestId,
+      userMetaCriteria: UserMetaCriteria,
+      auto: Boolean
+    ): F[Entity[Abtest]] =
+    updateAbtest(testId, auto)(
+      _.copy(userMetaCriteria = userMetaCriteria).pure[F]
+    )
+
   def addGroupMetas(
       testId: TestId,
       metas: Map[GroupName, GroupMeta],
@@ -415,40 +472,21 @@ final class DefaultAbtestAlg[F[_]](
       metas: Map[GroupName, GroupMeta],
       auto: Boolean
     ): F[Entity[Abtest]] =
-    for {
-      now <- nowF
-      candidate <- abTestDao.get(testId)
-      test <- candidate.data.canChange.fold(
-        F.pure(candidate),
-        if (auto)
-          create(
-            candidate.data
-              .to[AbtestSpec]
-              .set(
-                start = now.atOffset(ZoneOffset.UTC),
-                end = candidate.data.end.map(_.atOffset(ZoneOffset.UTC))
-              ),
-            auto = true
-          )
-        else
-          CannotToChangePastTest(candidate.data.start)
-            .raiseError[F, Entity[Abtest]]
-      )
-      _ <- errorsOToF(
+    updateAbtest(testId, auto) { test =>
+      errorsOToF(
         metas.keys.toList.map(
           gn =>
-            (!test.data.groups.exists(_.name === gn))
+            (!test.groups.exists(_.name === gn))
               .option(Error.GroupNameDoesNotExist(gn))
         )
-      )
-      updated <- abTestDao.update(
+      ).as(
         test
-          .lens(_.data.groupMetas)
+          .lens(_.groupMetas)
           .modify { existing =>
             if (metas.nonEmpty) existing ++ metas else metas
           }
       )
-    } yield updated
+    }
 
   def removeGroupMetas(
       testId: TestId,
@@ -554,6 +592,7 @@ final class DefaultAbtestAlg[F[_]](
   private def createAuto(ts: AbtestSpec): F[Entity[Abtest]] =
     for {
       lastOne <- lastTest(ts)
+      now <- nowF
       r <- lastOne.fold(doCreate(ts, None)) { lte =>
         val lt = lte.data
         lt.statusAsOf(ts.start) match {
@@ -563,7 +602,7 @@ final class DefaultAbtestAlg[F[_]](
               false
             )
           case Abtest.Status.InProgress => //when the exiting test has overlap with the new test
-            tryUpdate(lte, ts).getOrElse(
+            tryUpdate(lte, ts, now).getOrElse(
               continueWith(ts, lte)
             )
           case Abtest.Status.Expired => //when the existing test is before the new test.
@@ -574,9 +613,10 @@ final class DefaultAbtestAlg[F[_]](
 
   private def tryUpdate(
       toUpdate: Entity[Abtest],
-      updateWith: AbtestSpec
+      updateWith: AbtestSpec,
+      now: Instant
     ): Option[F[Entity[Abtest]]] =
-    if (toUpdate.data.canChange && toUpdate.data.groups
+    if (toUpdate.data.canChange(now) && toUpdate.data.groups
           .sortBy(_.name) == updateWith.groups
           .sortBy(_.name))
       Some(
