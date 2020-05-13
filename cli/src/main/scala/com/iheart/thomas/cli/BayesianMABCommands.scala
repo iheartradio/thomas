@@ -4,15 +4,16 @@ package cli
 import java.time.OffsetDateTime
 
 import cats.effect.ConcurrentEffect
-import com.monovore.decline.{Command, Opts}
+import com.monovore.decline.{Argument, Command, Opts}
 import cats.implicits._
 import com.iheart.thomas.bandit.BanditSpec
 import com.monovore.decline.time._
 import BayesianBanditHttpClientOpts.conversionClientOpts
-import cats.data.Validated
+import cats.data.{Validated, ValidatedNel}
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.bandit.bayesian.BanditSettings
 import io.estatico.newtype.ops._
+import com.monovore.decline.time._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -33,6 +34,17 @@ object BayesianMABCommands {
       .withDefault(3)
   ).mapN(BanditSettings.Conversion.apply)
 
+  implicit val durationArg: Argument[FiniteDuration] = new Argument[FiniteDuration] {
+
+    override def read(string: String): ValidatedNel[String, FiniteDuration] =
+      Validated
+        .fromTry(Try(Duration(string).asInstanceOf[FiniteDuration]))
+        .leftMap(_.getMessage)
+        .toValidatedNel
+
+    override def defaultMetavar: String = "duration string"
+  }
+
   private val banditSettingsOps =
     (
       fnOpts,
@@ -43,22 +55,25 @@ object BayesianMABCommands {
         .option[Double]("minimumSizeChange", "minimum group size change")
         .withDefault(0.005d),
       Opts
-        .option[String](
+        .option[FiniteDuration](
           "historyRetention",
           "how long does older versions of A/B tests be kept"
         )
-        .mapValidated { s =>
-          Validated
-            .fromTry(Try(Duration(s).asInstanceOf[FiniteDuration]))
-            .leftMap(_.getMessage)
-            .toValidatedNel
-        }
         .orNone,
       Opts
         .option[Int]("initialSampleSize", "required sample size to start allocating")
         .withDefault(0),
       Opts
         .option[BigDecimal]("maintainExploration", "maintain an exploration size")
+        .orNone,
+      Opts
+        .option[FiniteDuration]("iterationDuration", "duration of each iteration")
+        .orNone,
+      Opts
+        .option[Double](
+          "oldHistoryWeight",
+          "optional weight for history 2 iterations ago"
+        )
         .orNone,
       conversionSettingsOps
     ).mapN(BanditSettings.apply[BanditSettings.Conversion])
@@ -73,7 +88,7 @@ object BayesianMABCommands {
   def conversionBMABCommand[F[_]](
       implicit F: ConcurrentEffect[F],
       ec: ExecutionContext
-    ) =
+    ): Command[F[String]] =
     Command(
       "conversionBMAB",
       "manage conversion based Bayesian Multi Arm Bandits"
@@ -82,7 +97,7 @@ object BayesianMABCommands {
         Command("init", "init a new conversion KPI Bayesian MAB") {
           (banditSpecOpts, conversionClientOpts[F]).mapN { (spec, clientR) =>
             clientR.use { client =>
-              client.init(spec)
+              client.init(spec).map(b => s"Successfully created $b")
             }
           }
         },
@@ -90,23 +105,19 @@ object BayesianMABCommands {
           "show",
           "show an existing conversion KPI based Bayesian MAB"
         ) {
-          (fnOpts, conversionClientOpts[F]).mapN { (feature, clientR) =>
-            clientR.use { client =>
-              client
-                .currentState(feature)
-                .flatMap(
-                  s =>
-                    F.delay {
-                      println(
-                        "=========== Bayesian State Start ============"
-                      )
-                      println(s)
-                      println(
-                        "=========== Bayesian State End ============="
-                      )
-                    }
-                )
-            }
+          (fnOpts, conversionClientOpts[F]).mapN {
+            (feature, clientR) =>
+              clientR.use { client =>
+                client
+                  .currentState(feature)
+                  .map(
+                    s => s"""
+                      |=========== Bayesian State Start ============
+                      |$s
+                      |=========== Bayesian State End =============
+                      |""".stripMargin
+                  )
+              }
           }
         },
         Command(
@@ -115,7 +126,7 @@ object BayesianMABCommands {
         ) {
           (fnOpts, conversionClientOpts[F]).mapN { (feature, clientR) =>
             clientR.use { client =>
-              client.reallocate(feature)
+              client.updatePolicy(feature).as(s"Policy for $feature is updated")
             }
           }
         }

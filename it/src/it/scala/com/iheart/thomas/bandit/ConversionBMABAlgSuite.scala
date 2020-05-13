@@ -24,65 +24,18 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuiteLike
 import _root_.play.api.libs.json.{JsObject, Json}
 import cats.implicits._
-import com.iheart.thomas.abtest.model.Abtest.Specialization.MultiArmBanditConversion
+import com.iheart.thomas.abtest.model.Abtest.Specialization.MultiArmBandit
 import com.iheart.thomas.abtest.model.{AbtestSpec, Group}
+import com.iheart.thomas.bandit.tracking.EventLogger
+import com.iheart.thomas.testkit.Resources.timer
 import com.stripe.rainier.sampler.RNG
 import lihua.dynamo.testkit.LocalDynamo
 
 import concurrent.duration._
 
-class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
+class ConversionBMABAlgSuite extends ConversionBMABAlgSuiteBase {
 
   import testkit.Resources._
-
-  val kpi = BetaKPIDistribution(
-    "test kpi",
-    alphaPrior = 1000,
-    betaPrior = 100000
-  )
-
-  def withAPI[A](
-      f: (ConversionBMABAlg[IO], KPIDistributionApi[IO], AbtestAlg[IO]) => IO[A]
-    ): A =
-    apis
-      .use {
-        case (conversionBMABAlg, kPIApi, abtestAlg) =>
-          kPIApi.upsert(kpi) >> f(conversionBMABAlg, kPIApi, abtestAlg)
-      }
-      .unsafeRunSync()
-
-  def withAPI[A](f: ConversionBMABAlg[IO] => IO[A]): A =
-    withAPI((api, _, _) => f(api))
-
-  def createSpec(
-      feature: FeatureName = "A_new_Feature",
-      arms: List[ArmName] = List("A", "B"),
-      author: String = "Test Runner",
-      start: OffsetDateTime = OffsetDateTime.now,
-      title: String = "for integration tests",
-      kpiName: KPIName = kpi.name,
-      minimumSizeChange: Double = 0.01,
-      initialSampleSize: Int = 0,
-      historyRetention: Option[FiniteDuration] = None
-    ) =
-    BanditSpec(
-      arms = arms,
-      start = start,
-      settings = BanditSettings(
-        feature = feature,
-        author = author,
-        title = title,
-        kpiName = kpiName,
-        minimumSizeChange = minimumSizeChange,
-        initialSampleSize = initialSampleSize,
-        historyRetention = historyRetention,
-        maintainExplorationSize = None,
-        distSpecificSettings = BanditSettings.Conversion(
-          eventChunkSize = 1,
-          reallocateEveryNChunk = 1
-        )
-      )
-    )
 
   test("init state") {
     val spec = createSpec()
@@ -98,7 +51,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
       .forall(_.p == 0) shouldBe true
     init.settings.title shouldBe spec.settings.title
     init.abtest.data.specialization shouldBe Some(
-      MultiArmBanditConversion
+      MultiArmBandit
     )
     currentState.state shouldBe init.state
     currentState.abtest.data.groups
@@ -187,7 +140,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
 
   }
 
-  test("reallocate update the state with latest possibilities") {
+  test("updatePolicy update the state with latest possibilities") {
     val spec = createSpec()
 
     val currentState = withAPI { api =>
@@ -200,7 +153,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
             "B" -> Conversions(10, 43)
           )
         )
-        _ <- api.reallocate(spec.feature)
+        _ <- api.updatePolicy(spec.feature)
         current <- api.currentState(spec.feature)
       } yield current
     }
@@ -211,7 +164,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
 
   }
 
-  test("reallocate clean up last tests") {
+  test("updatePolicy clean up last tests") {
     val spec = createSpec(
       historyRetention = Some(50.milliseconds)
     )
@@ -219,11 +172,11 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
     val currentTests = withAPI { (api, _, abtestAlg) =>
       for {
         _ <- api.init(spec)
-        _ <- api.reallocate(spec.feature)
-        _ <- api.reallocate(spec.feature)
-        _ <- api.reallocate(spec.feature)
+        _ <- api.updatePolicy(spec.feature)
+        _ <- api.updatePolicy(spec.feature)
+        _ <- api.updatePolicy(spec.feature)
         _ <- timer.sleep(300.milliseconds)
-        _ <- api.reallocate(spec.feature)
+        _ <- api.updatePolicy(spec.feature)
         tests <- abtestAlg.getTestsByFeature(spec.feature)
 
       } yield tests
@@ -233,9 +186,8 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
 
   }
 
-  test("reallocate reallocate the size of the abtest groups") {
-    val spec = createSpec(
-      )
+  test("updatePolicy resizes abtest groups") {
+    val spec = createSpec()
 
     val currentState = withAPI { api =>
       for {
@@ -247,7 +199,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
             "B" -> Conversions(10, 43)
           )
         )
-        _ <- api.reallocate(spec.feature)
+        _ <- api.updatePolicy(spec.feature)
         current <- api.currentState(spec.feature)
       } yield current
     }
@@ -261,7 +213,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
 
   }
 
-  test("reallocate does not reallocate groups until it hits enough samples") {
+  test("updatePolicy does not reallocate groups until it hits enough samples") {
     val spec = createSpec(
       minimumSizeChange = 0.0001,
       initialSampleSize = 100
@@ -277,7 +229,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
             "B" -> Conversions(1, total = 5)
           )
         )
-        _ <- api.reallocate(spec.feature)
+        _ <- api.updatePolicy(spec.feature)
         beforeHittingMinmumSampleSize <- api.currentState(spec.feature)
         _ <- api.updateRewardState(
           spec.feature,
@@ -286,7 +238,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
             "B" -> Conversions(3, total = 97)
           )
         )
-        _ <- api.reallocate(spec.feature)
+        _ <- api.updatePolicy(spec.feature)
         afterHittingMinmumSampleSize <- api.currentState(spec.feature)
       } yield (
         is.abtest,
@@ -301,7 +253,7 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
   }
 
   test(
-    "reallocate does not reallocate groups if the new group size remains the same"
+    "updatePolicy does not updatePolicy groups if the new group size remains the same"
   ) {
     val spec = createSpec(
       minimumSizeChange = 0.02
@@ -317,8 +269,8 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
             "B" -> Conversions(500, total = 5000)
           )
         )
-        _ <- api.reallocate(spec.feature)
-        firstReallocate <- api.currentState(spec.feature)
+        _ <- api.updatePolicy(spec.feature)
+        firstupdatePolicy <- api.currentState(spec.feature)
         _ <- api.updateRewardState(
           spec.feature,
           Map(
@@ -326,16 +278,253 @@ class ConversionBMABAlgSuite extends AnyFunSuiteLike with Matchers {
             "B" -> Conversions(300, total = 3000)
           )
         )
-        _ <- api.reallocate(spec.feature)
-        secondReallocate <- api.currentState(spec.feature)
+        _ <- api.updatePolicy(spec.feature)
+        secondupdatePolicy <- api.currentState(spec.feature)
       } yield (
-        firstReallocate.abtest,
-        secondReallocate.abtest
+        firstupdatePolicy.abtest,
+        secondupdatePolicy.abtest
       )
     }
 
     first shouldBe second
 
   }
+
+  test("updatePolicy update iterations") {
+    val spec = createSpec(iterationDuration = Some(10.milliseconds))
+
+    val (previousState, currentState) = withAPI { api =>
+      for {
+        _ <- api.init(spec)
+        previous <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(2, 12),
+            "B" -> Conversions(10, 43)
+          )
+        )
+
+        _ <- timer.sleep(50.milliseconds)
+        _ <- api.updatePolicy(spec.feature)
+        current <- api.currentState(spec.feature)
+      } yield (previous, current.state)
+    }
+
+    currentState.historical shouldBe Some(
+      previousState.rewardState
+    )
+    currentState.arms.size shouldBe previousState.arms.size
+    currentState.arms.forall(_.rewardState.total == 0) shouldBe true
+    currentState.iterationStart
+      .isAfter(previousState.iterationStart) shouldBe true
+
+  }
+
+  test("updatePolicy use last iteration as prior") {
+    val spec = createSpec(iterationDuration = Some(400.milliseconds))
+
+    val currentState = withAPI { api =>
+      for {
+        _ <- api.init(spec)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(20, 500),
+            "B" -> Conversions(100, 500)
+          )
+        )
+        _ <- timer.sleep(500.milliseconds) //one iteration
+
+        _ <- api.updatePolicy(spec.feature)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(100, 500),
+            "B" -> Conversions(20, 500)
+          )
+        )
+        current <- api.updatePolicy(spec.feature)
+      } yield current.state
+    }
+
+    currentState.arms
+      .find(_.name == "B")
+      .get
+      .likelihoodOptimum
+      .p shouldBe 0.5d +- 0.1d
+
+  }
+
+  test(
+    "updatePolicy use forgets data from two iterations ago without oldHistoryWeight"
+  ) {
+    val spec = createSpec(iterationDuration = Some(20.milliseconds))
+
+    val currentPolicy = withAPI { api =>
+      for {
+        _ <- api.init(spec)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(400, 500),
+            "B" -> Conversions(1, 500)
+          )
+        )
+        _ <- timer.sleep(30.milliseconds) //one iteration
+
+        _ <- api.updatePolicy(spec.feature)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(1, 500),
+            "B" -> Conversions(20, 500)
+          )
+        )
+        _ <- timer.sleep(30.milliseconds) //second iteration
+
+        _ <- api.updatePolicy(spec.feature)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(1, 500),
+            "B" -> Conversions(20, 500)
+          )
+        )
+        current <- api.updatePolicy(spec.feature)
+      } yield current.abtest.data
+    }
+
+    currentPolicy.getGroup("B").get.size shouldBe 1d
+  }
+
+  test("updatePolicy keeps data from two iterations ago using old history weight") {
+    val spec = createSpec(
+      iterationDuration = Some(20.milliseconds),
+      oldHistoryWeight = Some(0.4)
+    )
+
+    val currentState = withAPI { api =>
+      for {
+        _ <- api.init(spec)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(400, 500),
+            "B" -> Conversions(10, 500)
+          )
+        )
+        _ <- timer.sleep(30.milliseconds) //one iteration
+
+        _ <- api.updatePolicy(spec.feature)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(25, 500),
+            "B" -> Conversions(20, 500)
+          )
+        )
+        _ <- timer.sleep(30.milliseconds) //second iteration
+
+        current <- api.updatePolicy(spec.feature)
+      } yield current.state
+    }
+
+    currentState.historical.get("B").total shouldBe 500
+    currentState.historical.get("B").converted shouldBe 16
+    currentState.historical.get("A").converted shouldBe 175
+  }
+
+  test("initialSampleSize guard includes historical data") {
+    val spec = createSpec(
+      iterationDuration = Some(20.milliseconds),
+      initialSampleSize = 100
+    )
+
+    val (firstAbtest, currentAbteset) = withAPI { api =>
+      for {
+        _ <- api.init(spec)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(40, 101),
+            "B" -> Conversions(10, 102)
+          )
+        )
+        _ <- timer.sleep(30.milliseconds) //one iteration
+
+        first <- api.updatePolicy(spec.feature)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(15, 30),
+            "B" -> Conversions(10, 20)
+          )
+        )
+
+        current <- api.updatePolicy(spec.feature)
+      } yield (first.abtest.data, current.abtest.data)
+    }
+
+    firstAbtest.groups.toSet should not be (currentAbteset.groups.toSet)
+  }
+}
+
+class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
+
+  import testkit.Resources._
+
+//  implicit val logger: EventLogger[IO] = EventLogger.stdout
+  val kpi = BetaKPIDistribution(
+    "test kpi",
+    alphaPrior = 1000,
+    betaPrior = 100000
+  )
+
+  def withAPI[A](
+      f: (ConversionBMABAlg[IO], KPIDistributionApi[IO], AbtestAlg[IO]) => IO[A]
+    ): A =
+    apis
+      .use {
+        case (conversionBMABAlg, kPIApi, abtestAlg) =>
+          kPIApi.upsert(kpi) >> f(conversionBMABAlg, kPIApi, abtestAlg)
+      }
+      .unsafeRunSync()
+
+  def withAPI[A](f: ConversionBMABAlg[IO] => IO[A]): A =
+    withAPI((api, _, _) => f(api))
+
+  def createSpec(
+      feature: FeatureName = "A_new_Feature",
+      arms: List[ArmName] = List("A", "B"),
+      author: String = "Test Runner",
+      start: OffsetDateTime = OffsetDateTime.now,
+      title: String = "for integration tests",
+      kpiName: KPIName = kpi.name,
+      minimumSizeChange: Double = 0.01,
+      initialSampleSize: Int = 0,
+      historyRetention: Option[FiniteDuration] = None,
+      iterationDuration: Option[FiniteDuration] = None,
+      oldHistoryWeight: Option[Weight] = None
+    ) =
+    BanditSpec(
+      arms = arms,
+      start = start,
+      settings = BanditSettings(
+        feature = feature,
+        author = author,
+        title = title,
+        kpiName = kpiName,
+        minimumSizeChange = minimumSizeChange,
+        initialSampleSize = initialSampleSize,
+        historyRetention = historyRetention,
+        maintainExplorationSize = None,
+        iterationDuration = iterationDuration,
+        oldHistoryWeight = oldHistoryWeight,
+        distSpecificSettings = BanditSettings.Conversion(
+          eventChunkSize = 1,
+          updatePolicyEveryNChunk = 1
+        )
+      )
+    )
 
 }

@@ -6,7 +6,7 @@ import com.iheart.thomas.bandit.bayesian._
 import _root_.play.api.libs.json.{Format, Json}
 import io.estatico.newtype.ops._
 import lihua.playJson.Formats._
-import com.iheart.thomas.abtest.Formats._
+import com.iheart.thomas.abtest.json.play.Formats._
 import play.api.libs.json.Json.WithDefaultValues
 object Formats {
   val j = Json.using[WithDefaultValues]

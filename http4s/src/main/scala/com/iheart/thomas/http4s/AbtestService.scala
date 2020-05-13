@@ -4,7 +4,7 @@ package http4s
 
 import abtest._
 import model._
-import Formats._
+import com.iheart.thomas.abtest.json.play.Formats._
 import cats.effect.{Async, Resource}
 import analysis.{KPIDistribution, KPIDistributionApi}
 import com.typesafe.config.{Config, ConfigFactory}
@@ -93,12 +93,10 @@ class AbtestService[F[_]: Async](
           serverError("Failed to save to DB: " + msg)
         case DBException(t) => serverError("DB Error" + t.getMessage)
         case DBLastError(t) => serverError("DB Operation Rejected" + t)
-        case CannotToChangePastTest(start) =>
-          BadRequest(
-            errorJson(
-              s"Cannot change a test that already started at $start"
-            )
-          )
+        case e @ CannotChangePastTest(_) =>
+          BadRequest(errorJson(e.getMessage))
+        case e @ CannotUpdateExpiredTest(_) =>
+          BadRequest(errorJson(e.getMessage))
         case FailedToReleaseLock(cause) =>
           serverError("failed to release lock when updating due to " + cause)
         case ConflictCreation(fn, cause) =>

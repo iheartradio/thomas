@@ -107,7 +107,7 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
           kpiName = kpi.name,
           distSpecificSettings = BanditSettings.Conversion(
             eventChunkSize = chunkSize,
-            reallocateEveryNChunk = numOfChunksPerReallocate
+            updatePolicyEveryNChunk = numOfChunksPerReallocate
           )
         )
       )

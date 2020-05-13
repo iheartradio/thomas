@@ -11,11 +11,8 @@ import java.time.OffsetDateTime
 import cats.implicits._
 import cats.kernel.Semigroup
 import cats.{Applicative, Id, Monad}
-import com.iheart.thomas.abtest
 import com.iheart.thomas.abtest.model.Abtest.Status.InProgress
-import model._
-
-import scala.util.matching.Regex
+import com.iheart.thomas.abtest.model._
 import henkan.convert.Syntax._
 
 trait EligibilityControl[F[_]] {
@@ -81,7 +78,7 @@ private[thomas] sealed abstract class EligibilityControlInstances0
     }
 
   lazy val byUserEligibility: EligibilityControl[Id] =
-    byTestEligibilityType or (byUserEligibilityInfoAvailability and byGroupMeta and byRequiredTags)
+    byTestEligibilityType or (byUserEligibilityInfoAvailability and byUserMeta and byRequiredTags)
 
   lazy val byTestEligibilityType: EligibilityControl[Id] =
     abtest.EligibilityControl[Id](
@@ -92,15 +89,9 @@ private[thomas] sealed abstract class EligibilityControlInstances0
       (u, _) => u.eligibilityInfoIncluded
     )
 
-  lazy val byGroupMeta: EligibilityControl[Id] =
+  lazy val byUserMeta: EligibilityControl[Id] =
     abtest.EligibilityControl[Id](
-      (query, test) =>
-        test.matchingUserMeta.forall {
-          case (k, r) =>
-            query.meta
-              .get(k)
-              .fold(false)(v => new Regex(r).findFirstMatchIn(v).isDefined)
-        }
+      (query, test) => test.userMetaCriteria.fold(true)(_.eligible(query.meta))
     )
 
   lazy val byRequiredTags: EligibilityControl[Id] =

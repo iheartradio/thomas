@@ -7,9 +7,10 @@ import cats.implicits._
 import concurrent.ExecutionContext.Implicits.global
 object Main extends IOApp {
   def run(args: List[String]): IO[ExitCode] = {
-    val cmd = Command("thomas", "Thomas cli")(
+    val cmd: Command[IO[String]] = Command("thomas", "Thomas cli")(
       Opts.subcommands(
         new GroupMetaCommands[IO].groupMetaCommand,
+        new EligibilityControlCommand[IO].userMetaCriteriaCommand,
         BayesianMABCommands.conversionBMABCommand[IO]
       )
     )
@@ -24,8 +25,18 @@ object Main extends IOApp {
       cmd
         .parse(args)
         .fold(
-          help => IO(System.err.println(help)).as(ExitCode.Error),
-          _.as(ExitCode.Success)
+          help => IO(println(help)).as(ExitCode.Error),
+          _.flatMap(r => IO(println(r))).as(ExitCode.Success).onError {
+            case e =>
+              IO(println(s"""
+                |$errorSign
+                |!!!!!!!!!!!!!!!!!!!!!!!!!!!ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                |
+                |$e
+                |
+                |!!!!!!!!!!!!!!!!!!!!!!!!!!!ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                |""".stripMargin))
+          }
         )
   }
 
@@ -58,4 +69,14 @@ object Main extends IOApp {
     """.stripMargin('t')
   )
 
+  val errorSign =
+    """
+      |
+      |████████ ██   ██ ██ ███████     ██ ███████      █████  ██     ██ ██   ██ ██     ██  █████  ██████  ██████ 
+      |   ██    ██   ██ ██ ██          ██ ██          ██   ██ ██     ██ ██  ██  ██     ██ ██   ██ ██   ██ ██   ██ 
+      |   ██    ███████ ██ ███████     ██ ███████     ███████ ██  █  ██ █████   ██  █  ██ ███████ ██████  ██   ██ 
+      |   ██    ██   ██ ██      ██     ██      ██     ██   ██ ██ ███ ██ ██  ██  ██ ███ ██ ██   ██ ██   ██ ██   ██ 
+      |   ██    ██   ██ ██ ███████     ██ ███████     ██   ██  ███ ███  ██   ██  ███ ███  ██   ██ ██   ██ ██████ 
+      |
+      |""".stripMargin
 }

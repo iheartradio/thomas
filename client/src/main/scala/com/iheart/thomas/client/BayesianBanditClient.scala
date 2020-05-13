@@ -29,7 +29,7 @@ object BayesianBanditClient {
       c: HClient[F],
       rootUrl: String
     ): ConversionBMABAlg[F] =
-    new PlayJsonHttp4sClient[F]
+    new PlayJsonHttp4sClient[F](c)
     with BayesianMABAlg[F, Conversions, BanditSettings.Conversion] {
 
       import org.http4s.{Method, Uri}
@@ -71,7 +71,7 @@ object BayesianBanditClient {
           )
         )
 
-      def reallocate(featureName: FeatureName): F[ConversionBandit] =
+      def updatePolicy(featureName: FeatureName): F[ConversionBandit] =
         c.expect(
           PUT(
             Uri.unsafeFromString(

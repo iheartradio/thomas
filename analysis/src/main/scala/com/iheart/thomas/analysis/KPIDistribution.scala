@@ -4,7 +4,7 @@ package analysis
 import java.time.Instant
 
 import cats.MonadError
-import com.iheart.thomas.abtest.Formats.j
+import com.iheart.thomas.abtest.json.play.Formats.j
 import com.iheart.thomas.analysis.AssessmentAlg.{
   BayesianAssessmentAlg,
   BayesianBasicAssessmentAlg
@@ -46,7 +46,13 @@ case class BetaKPIDistribution(
     name: KPIName,
     alphaPrior: Double,
     betaPrior: Double)
-    extends KPIDistribution
+    extends KPIDistribution {
+  def updateFrom(conversions: Conversions): BetaKPIDistribution =
+    copy(
+      alphaPrior = conversions.converted + 1d,
+      betaPrior = conversions.total - conversions.converted + 1d
+    )
+}
 
 object BetaKPIDistribution {
 
@@ -83,10 +89,7 @@ object BetaKPIDistribution {
         ): F[(BetaKPIDistribution, Double)] =
         B.measureHistory(kpi, start, end).map { conversions =>
           (
-            kpi.copy(
-              alphaPrior = conversions.converted + 1d,
-              betaPrior = conversions.total - conversions.converted + 1d
-            ),
+            kpi.updateFrom(conversions),
             0d
           )
         }

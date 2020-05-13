@@ -75,7 +75,7 @@ class BayesianMABController[F[_]](
   }
 
   def reallocate(featureName: FeatureName) = action {
-    api.reallocate(
+    api.updatePolicy(
       featureName
     )
   }

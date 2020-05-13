@@ -1,51 +1,24 @@
 package com.iheart.thomas
 package cli
 
-import cats.effect.{ConcurrentEffect, Resource}
+import cats.effect.ConcurrentEffect
 import cats.implicits._
 import com.iheart.thomas.cli.OptsSyntax._
-import com.iheart.thomas.client.AbtestClient
-import com.iheart.thomas.abtest.model.TestId
 import com.monovore.decline._
-import lihua.EntityId
 import _root_.play.api.libs.json.Json.{prettyPrint, toJson}
+import SharedOpts._
+import play.api.libs.json.JsObject
 
 class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
 
-  val tidOpts = Opts.option[String]("id", "test id", "i").map(EntityId(_))
-  val fnOpts = Opts.option[String]("feature", "test feature", "f")
-
-  /**
-    * Either a test id or a feature name
-    */
-  val tidOrFnOps: Opts[F[Either[TestId, FeatureName]]] = tidOpts.either[F](fnOpts)
-
   val showCommand = Command("show", "show group metas") {
-    (tidOrFnOps, AbtestHttpClientOpts.opts[F]).mapN { (tidOrFeature, client) =>
-      tidOrFeature.flatMap { tidOrF =>
-        client.use { c =>
-          def getGMForTest(tid: TestId) = {
-            c.getGroupMeta(tid).flatMap { r =>
-              F.delay(println(s"""
-                     |Group Meta:
-                     | ${prettyPrint(toJson(r))}
-             """.stripMargin))
-            }
-          }
-
-          tidOrF.fold(
-            getGMForTest,
-            f =>
-              for {
-                t <- c.featureLatestTest(f)
-                _ <- F.delay(
-                  println(
-                    s"Latest test under $f is ${t._id.value} \nstart: ${t.data.start}"
-                  )
-                )
-                r <- getGMForTest(t._id)
-              } yield r
-          )
+    (tidOrFnOps, AbtestHttpClientOpts.opts[F]).mapN { (tidOrF, client) =>
+      client.use {
+        _.getGroupMeta(tidOrF).map { r =>
+          s"""
+             |Group Meta for ${show(tidOrF)}:
+             | ${prettyPrint(toJson(r))}
+           """.stripMargin
         }
       }
     }
@@ -56,7 +29,8 @@ class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
       "meta",
       "A Json object representing the group metas to be added. \nIt's root level keys are the group names, whose values are the corresponding meta object."
     )
-    .asJsObject
+    .parseJson[JsObject]
+
   val newRevOpts = Opts
     .flag("new", "create a new revision if the current one has already started")
     .orFalse
@@ -64,9 +38,9 @@ class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
   val addCommand = Command("add", "add group metas") {
     (tidOrFnOps, metaOpts, newRevOpts, AbtestHttpClientOpts.opts[F]).mapN {
       (tidOrFeature, gm, nt, clientR) =>
-        updateGroupMeta(tidOrFeature, clientR, nt) { (c, tid) =>
-          c.addGroupMeta(tid, gm, nt)
-            .as(s"Successfully added group meta for test id: ${tid}")
+        clientR.use { c =>
+          c.addGroupMeta(tidOrFeature, gm, nt)
+            .as(s"Successfully added group meta for test: ${show(tidOrFeature)}")
         }
     }
   }
@@ -74,40 +48,14 @@ class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
   val removeCommand = Command("remove", "remove group metas") {
     (tidOrFnOps, newRevOpts, AbtestHttpClientOpts.opts[F]).mapN {
       (tidOrFeature, nt, clientR) =>
-        updateGroupMeta(tidOrFeature, clientR, nt) { (c, tid) =>
-          c.removeGroupMetas(tid, nt)
-            .as(s"Successfully removed group meta for test id: ${tid}")
+        clientR.use { c =>
+          c.removeGroupMetas(tidOrFeature, nt)
+            .as(s"Successfully removed group meta for ${show(tidOrFeature)}")
         }
     }
   }
 
-  def updateGroupMeta(
-      tidOrFeature: F[Either[TestId, FeatureName]],
-      client: Resource[F, AbtestClient[F]],
-      auto: Boolean
-    )(op: (AbtestClient[F], TestId) => F[String]
-    ): F[Unit] =
-    tidOrFeature.flatMap { tidOrF =>
-      client.use { c =>
-        tidOrF
-          .fold(
-            tid => op(c, tid),
-            f =>
-              for {
-                t <- c.featureLatestTest(f)
-                r <- if (!t.data.canChange && !auto)
-                  F.pure(
-                    "The latest test is already started, if you want to automatically create a new revision, please run the command again with \"--new\" flag"
-                  )
-                else
-                  op(c, t._id)
-              } yield r
-          )
-          .flatMap(toPrint => F.delay(println(toPrint)))
-      }
-    }
-
-  val groupMetaCommand = Command(
+  val groupMetaCommand: Command[F[String]] = Command(
     "groupMeta",
     "managing group meta"
   ) {

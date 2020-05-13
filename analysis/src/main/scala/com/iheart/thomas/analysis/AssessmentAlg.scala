@@ -26,6 +26,11 @@ trait BasicAssessmentAlg[F[_], K, M] {
   def assessOptimumGroup(
       k: K,
       measurements: Map[GroupName, M]
+    ): F[Map[GroupName, Probability]] =
+    assessOptimumGroup(measurements.mapValues((_, k)))
+
+  def assessOptimumGroup(
+      measurements: Map[GroupName, (M, K)]
     ): F[Map[GroupName, Probability]]
 }
 
@@ -95,14 +100,13 @@ object AssessmentAlg {
       ): Indicator
 
     def assessOptimumGroup(
-        k: K,
-        allMeasurement: Map[GroupName, M]
+        allMeasurement: Map[GroupName, (M, K)]
       ): F[Map[GroupName, Probability]] =
       NonEmptyList
         .fromList(allMeasurement.toList)
         .map {
           _.nonEmptyTraverse {
-            case (gn, ms) => sampleIndicator(k, ms).map((gn, _))
+            case (gn, (ms, k)) => sampleIndicator(k, ms).map((gn, _))
           }
         }
         .fold(F.pure(Map.empty[GroupName, Probability])) { rvGroupResults =>

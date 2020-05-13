@@ -80,9 +80,9 @@ object ConversionBanditUpdater {
                   .void
             },
           (i: Stream[F, Map[ArmName, Conversions]]) =>
-            i.chunkN(settings.distSpecificSettings.reallocateEveryNChunk).evalMap {
+            i.chunkN(settings.distSpecificSettings.updatePolicyEveryNChunk).evalMap {
               _ =>
-                cbm.reallocate(settings.feature).void
+                cbm.updatePolicy(settings.feature).void
             }
         )
       }

@@ -26,23 +26,22 @@ lazy val libs =
   .add(   name = "spark",                  version = "2.4.5", org = "org.apache.spark", "spark-sql", "spark-core")
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
   .addJVM(name = "play-json-derived-codecs", version = "7.0.0", org = "org.julienrf")
-  .addJVM(name = "newtype",               version = "0.4.3",  org = "io.estatico")
+  .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
   .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
   .addJVM(name = "decline",               version = "1.2.0",  org = "com.monovore")
-  .addJVM(name = "mau",                   version = "0.2.1",  org = "com.kailuowang")
+  .addJVM(name = "mau",                   version = "0.2.2",  org = "com.kailuowang")
   .addJVM(name = "scala-java8-compat",    version = "0.9.1",  org = "org.scala-lang.modules")
-  .addJVM(name = "log4cats",              version = "1.0.1",  org = "io.chrisdavenport", "log4cats-slf4j", "log4cats-core")
+  .addJVM(name = "log4cats",              version = "1.1.1",  org = "io.chrisdavenport", "log4cats-slf4j", "log4cats-core")
   .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
   .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
   .addJVM(name = "akka-slf4j",            version = "2.6.3", org = "com.typesafe.akka")
-  .add(   name = "http4s",                version = "0.21.3")
   .add(   name = "scalacheck-1-14",       version = "3.1.1.1",org = "org.scalatestplus")
-  .add(   name = "scalatestplus-play",    version = "5.0.0",  org = "org.scalatestplus.play")
+  .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
   .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
   .addJVM(name = "fs2-kafka",             version = "1.0.0", org = "com.github.fd4s")
   .add(   name = "jawn",                  version = "1.0.0", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
-  .addJVM( name = "embedded-kafka",       version = "2.4.1.1",  org = "io.github.embeddedkafka")
-  .add(   name = "pureconfig",            version = "0.12.3", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
+  .addJVM( name = "embedded-kafka",       version = "2.5.0",  org = "io.github.embeddedkafka")
+  .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
   .add(   name = "cats-retry",            version = "1.1.0", org = "com.github.cb372")
 // format: on
 
@@ -360,7 +359,7 @@ lazy val playExample = project
       guice,
       ws,
       filters,
-      "org.webjars" % "swagger-ui" % "3.25.0"
+      "org.webjars" % "swagger-ui" % "3.25.2"
     ),
     dockerExposedPorts in Docker := Seq(9000),
     swaggerDomainNameSpaces := Seq("com.iheart.thomas"),

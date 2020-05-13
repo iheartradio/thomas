@@ -1,4 +1,5 @@
 dynamodb-local
+crit.json
 derby.log
 metastore_db
 logs

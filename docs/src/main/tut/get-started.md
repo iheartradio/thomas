@@ -12,10 +12,14 @@ position: 10
 
 Thomas needs a basic data store to store test metadata. Since the amount of data is quite small and Thomas strives keep the data in memory, the requirement for this data store is minimum. Thomas is designed in a way so that it can support different data stores. As of now, only one MongoDB is supported through the module `thomas-mongo`. For local development, you just need to install and run a MongoDB instance locally.  
 
+You can run one locally using docker
+```bash
+docker run -p 27017-27019:27017-27019 --name mongodb mongo
+```
 ### Step 1a (Optional) setup dynamo cluster
 
 If you want to try the Multi Arm Bandit Engine you need a dynamo cluster, you can use Docker to run one locally
-```
+```bash
 docker run -p 8042:8000 amazon/dynamodb-local
 ``` 
 

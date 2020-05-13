@@ -90,7 +90,7 @@ class BanditService[F[_]: Async: Timer] private (
       }
 
     case PUT -> Root / "conversions" / "features" / feature / "reallocate" =>
-      apiAlg.reallocate(feature)
+      apiAlg.updatePolicy(feature)
 
     case GET -> Root / "conversions" / "features" / feature =>
       apiAlg.currentState(feature)

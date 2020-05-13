@@ -113,10 +113,10 @@ class HttpResults[F[_]](alerter: Option[Alerter[F]])(implicit F: Async[F]) {
         serverError("Failed to save to DB: " + msg)
       case DBException(t) => serverError("DB Error" + t.getMessage)
       case DBLastError(t) => serverError("DB Operation Rejected" + t)
-      case CannotToChangePastTest(start) =>
-        BadRequest(
-          errorJson(s"Cannot change a test that already started at $start")
-        ).pure[F]
+      case e @ CannotChangePastTest(_) =>
+        BadRequest(errorJson(e.getMessage)).pure[F]
+      case e @ CannotUpdateExpiredTest(_) =>
+        BadRequest(errorJson(e.getMessage)).pure[F]
       case ConflictCreation(fn, _) =>
         Conflict(
           errorJson(

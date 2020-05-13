@@ -14,11 +14,11 @@ import lihua.Entity
 
 import scala.util.control.NoStackTrace
 
-sealed abstract class Error
-    extends RuntimeException
+sealed abstract class Error(cause: Throwable = null)
+    extends RuntimeException(cause)
     with NoStackTrace
     with Product
-    with Serializable
+    with Serializable {}
 
 object Error {
 
@@ -36,11 +36,17 @@ object Error {
 
   case class NotFound(override val getMessage: String) extends Error
 
-  case class DBException(e: Throwable) extends Error
+  case class DBException(cause: Throwable) extends Error(cause)
+
   case class DBLastError(override val getMessage: String) extends Error
 
-  case class CannotToChangePastTest(start: Instant) extends Error {
+  case class CannotChangePastTest(start: Instant) extends Error {
     override def getMessage = s"Cannot change tests that are already started $start"
+  }
+
+  case class CannotUpdateExpiredTest(expired: Instant) extends Error {
+    override def getMessage =
+      s"Cannot auto create new test from expired test (expired $expired)"
   }
 
   sealed trait ValidationError extends Product with Serializable

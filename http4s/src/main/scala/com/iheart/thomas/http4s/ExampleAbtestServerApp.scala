@@ -6,7 +6,6 @@ import cats.effect._
 
 import org.http4s.server.blaze._
 import scala.concurrent.ExecutionContext.Implicits.global
-import cats.implicits._
 
 object ExampleAbtestServerApp extends IOApp {
   def run(args: List[String]): IO[ExitCode] =

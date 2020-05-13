@@ -10,6 +10,8 @@ case class Conversions(
   )
   def rate = converted.toDouble / total.toDouble
 
+  def sampleSize: Long = total
+
   override def toString: String =
     s"Conversions(converted: $converted, total: $total, rate: ${(rate * 100).formatted("%.2f")}%)"
 }

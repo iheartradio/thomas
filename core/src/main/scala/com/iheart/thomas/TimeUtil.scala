@@ -7,13 +7,14 @@ package com.iheart.thomas
 
 import java.time._
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.TimeUnit
 
+import cats.Functor
+import cats.effect.Timer
+import cats.implicits._
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS}
 import scala.util.Try
 object TimeUtil {
-
-  def defaultOffset: ZoneOffset =
-    ZoneId.systemDefault().getRules.getOffset(Instant.now())
 
   def toDateTime(epochSecond: Long): OffsetDateTime =
     OffsetDateTime.ofInstant(
@@ -32,7 +33,10 @@ object TimeUtil {
 
   }
 
-  def parse(value: String): Option[OffsetDateTime] =
+  def parse(
+      value: String,
+      defaultOffset: ZoneOffset
+    ): Option[OffsetDateTime] =
     Try(
       ZonedDateTime
         .parse(value, DateTimeFormatter.ISO_ZONED_DATE_TIME)
@@ -61,17 +65,6 @@ object TimeUtil {
         )
         .map(_.atOffset(defaultOffset))
 
-  def currentMinute: OffsetDateTime = {
-    val now = OffsetDateTime.now
-    OffsetDateTime.of(
-      now.getYear,
-      now.getMonthValue,
-      now.getDayOfMonth,
-      now.getHour,
-      now.getMinute,
-      0,
-      0,
-      TimeUtil.defaultOffset
-    )
-  }
+  def now[F[_]: Functor](implicit T: Timer[F]): F[Instant] =
+    T.clock.realTime(TimeUnit.MILLISECONDS).map(Instant.ofEpochMilli)
 }

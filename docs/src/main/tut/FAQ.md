@@ -10,6 +10,8 @@ position: 80
 * [How to add an override](#how-to-add-an-override)
 * [How to get the test Id](#how-to-get-the-test-id)
 * [How to terminate an A/B test](#how-to-terminate-an-ab-test)
+* [How to manage user eligibility](#how-to-manage-user-eligibility)
+* [How to manage group meta](#how-to-manage-group-meta)
 * [How to do a feature roll out](#how-to-do-a-feature-roll-out)
 * [How to run distributed group assignments](#how-to-run-distributed-group-assignments)
 * [How to run Bayesian Analysis](#how-to-run-bayesian-analysis)
@@ -29,6 +31,104 @@ A/B tests are organized around "feature"s, you can run multiple A/B tests for th
 # How to terminate/delete an A/B test
 
 You would need the testId to use [this method](https://iheartradio.github.io/thomas/api/com/iheart/thomas/API.html#terminate(test:com.iheart.thomas.model.TestId):F[Option[lihua.Entity[com.iheart.thomas.model.Abtest]]]). If a test already started, the test will be expired immediately. If the test is schedule to run in the future, it will be removed from the database. 
+
+
+# How to manage user eligibility
+
+When you query abtest assignment, you can pass in the field `meta` a JSON object as `meta` information for that user. 
+This JSON object is expected to be flat with string values only. 
+In A/B tests you can set a user meta criteria in field `userMetaCriteria`, this user meta criteria is Json object is
+ similiar to MongoDB's json query. Other than exact match it supports `$regex`, `$in`, `$versionStart`, `$versionRange`, 
+ as well as combinators `$and` and `$or`  
+ The following example lists most of the criteria.  
+  
+```json
+{
+   "userMetaCriteria": {
+     
+       "sex" : "female",                   //matches users whose "sex" field is exactly "female"
+       
+       "description" : {                  
+          "%regex" : "[shinny|fancy]"      //matches users whose "description" field matches a regex "[shinny|fancy]"
+       },
+       
+       "device" : {
+         "%in": ["iphone","ipad"]          //matches users whose "device" is one of the two strings "iphone" and "ipad"
+       },
+       
+       "%or": {                            //matches users whose "city" is "LA" or "state" is "NY"
+         "city": "LA",
+         "state": "NY"
+       },
+       
+       "age" : {
+          "%gt" : 32                       //matches age older than 32, other compartor includes %ge, %lt and %le
+       },
+
+       "clientVer": {
+         "%versionStart" : "1.0.0"         //special filter for version strings. Matches users whose "clientVer" is later than "1.0.0"
+       },
+
+       "androidVer": {
+         "%versionRange" : ["2.0", "3.1"] //special filter for version strings. Matches users whose "androidVer" is between than "2.0" and "3.1"
+       }
+   }
+}
+```
+
+The combinator `%or` here is written as an object, which is convenient but also means field names cannot be duplicated.
+In case where you need to have multiple criteria on the same field within an `%or`, you also use an array of objects. 
+For example: 
+```json
+{
+   "%or": [                            
+       { "city": "LA" },
+       { "city": "NY" }
+   ]
+}
+```
+
+You can manage this user criteria using the CLI which can be found and downloaded [here](https://github.com/iheartradio/thomas/releases/latest). 
+
+Then to show the current User meta criteria for a feature run 
+```bash
+./thomas-cli_XXX.jar userMetaCriteria show -f MY_FEATUR_ENAME --host YOUR_HOST --rootPath YOUR_ROOT_PATH 
+```
+
+To update it you can write your criteria json in a file and use the following command to update 
+
+ ```bash
+ ./thomas-cli_XXX.jar userMetaCriteria update --criteriaFile crit.json --new -f MY_FEATUR_ENAME --host YOUR_HOST --rootPath YOUR_ROOT_PATH 
+ ```
+
+
+# How to manage group meta
+
+Optionally when you get a group assignment, the service can return the associated group metadata you set the group. 
+The best way to manage group meta is to use the thomas CLI which can be found and downloaded [here](https://github.com/iheartradio/thomas/releases/latest).
+
+Download that `thomas-cli_XXX.jar` and give it the execution permission. 
+```bash
+chmod +x thomas-cli_XXX.jar
+```
+Then to show the current group meta for a feature run 
+```bash
+./thomas-cli_XXX.jar groupMeta show -f MY_FEATUR_ENAME --host YOUR_HOST --rootPath YOUR_ROOT_PATH
+```
+
+
+To edit/add a group meta
+```bash
+./thomas-cli_XXX.jar groupMeta  add --meta '{ "A" : {"newFeature":  2 }, "B" : { "newFeature":  1 }}' -f MY_FEATUR_ENAME  --host YOUR_HOST --rootPath YOUR_ROOT_PATH
+```
+if the test already started, you will get an error message
+
+>The latest test is already started, if you want to automatically create a new revision, please run the command again with "--new" flag
+
+As the message suggest, if you want to create a new revision of the test that starts immediately, run the same command again but add a `--new` flag. 
+```bash
+./thomas-cli_XXX.jar groupMeta  add --new --meta '{ "A" : {"newFeature":  2 }, "B" : { "newFeature":  1 }}' -f MY_FEATUR_ENAME  --host YOUR_HOST --rootPath YOUR_ROOT_PATH
+```
 
 
 # How to do a feature roll out
