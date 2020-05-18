@@ -9,7 +9,7 @@ import com.iheart.thomas.analysis.AssessmentAlg.{
   BayesianAssessmentAlg,
   BayesianBasicAssessmentAlg
 }
-import com.iheart.thomas.analysis.DistributionSpec.Normal
+import com.iheart.thomas.analysis.DistributionSpec.{Normal, Uniform}
 import com.stripe.rainier.compute.Real
 import com.stripe.rainier.core._
 import com.stripe.rainier.sampler.{RNG, Sampler}
@@ -110,6 +110,7 @@ object BetaKPIDistribution {
     }
 }
 
+//todo: remove this flawed model once LogNormal is ready for prime time.
 case class GammaKPIDistribution(
     name: KPIName,
     shapePrior: Normal,
@@ -179,5 +180,84 @@ object GammaKPIDistribution {
           (updated, ksStatistics)
         }
 
+    }
+}
+
+/**
+  * https://stats.stackexchange.com/questions/30369/priors-for-log-normal-models
+  * @param name
+  * @param locationPrior
+  * @param scaleLnPrior
+  */
+case class LogNormalDistribution(
+    name: KPIName,
+    locationPrior: Normal,
+    scaleLnPrior: Uniform)
+
+object LogNormalDistribution {
+
+  implicit def logNormalInstances[F[_]](
+      implicit
+      sampler: Sampler,
+      rng: RNG,
+      K: Measurable[F, Measurements, LogNormalDistribution],
+      F: MonadError[F, Throwable]
+    ): AssessmentAlg[F, LogNormalDistribution]
+    with UpdatableKPI[F, LogNormalDistribution] =
+    new BayesianAssessmentAlg[F, LogNormalDistribution, Measurements]
+    with UpdatableKPI[F, LogNormalDistribution] {
+
+      private def fitModel(
+          logNormal: LogNormalDistribution,
+          data: List[Double]
+        ): Variable[(Real, Real)] = {
+        val location = logNormal.locationPrior.distribution.latent
+        val scale = logNormal.scaleLnPrior.distribution.latent.exp
+        val g = Model.observe(data, LogNormal(location, scale))
+        Variable((location, scale), g)
+      }
+
+      def sampleIndicator(
+          logNormalDistribution: LogNormalDistribution,
+          data: List[Double]
+        ): Indicator = {
+        fitModel(logNormalDistribution, data).map {
+          case (location, scale) => (location + scale.pow(2d) / 2d).exp
+        }
+      }
+
+      def updateFromData(
+          k: LogNormalDistribution,
+          start: Instant,
+          end: Instant
+        ): F[(LogNormalDistribution, Double)] =
+        K.measureHistory(k, start, end).map { data =>
+          val model = fitModel(k, data)
+
+          val (locationSample, scaleSample) =
+            model.predict().foldLeft((List.empty[Double], List.empty[Double])) {
+              (memo, p) =>
+                (p._1 :: memo._1, p._2 :: memo._2)
+            }
+
+          val updated = k.copy(
+            locationPrior = Normal.fit(locationSample),
+            scaleLnPrior = Uniform(
+              0,
+              Math.log(
+                scaleSample.maximumOption.map(_ * 2).getOrElse(k.scaleLnPrior.to)
+              )
+            )
+          )
+
+          val ksTest = new KolmogorovSmirnovTest()
+          val gd = new org.apache.commons.math3.distribution.LogNormalDistribution(
+            updated.locationPrior.location,
+            scaleSample.sum / scaleSample.size.toDouble
+          )
+          val ksStatistics = ksTest.kolmogorovSmirnovStatistic(gd, data.toArray)
+
+          (updated, ksStatistics)
+        }
     }
 }
