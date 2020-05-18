@@ -21,43 +21,44 @@ import _root_.play.api.libs.json._
 import cats.effect.Sync
 import cats.implicits._
 
-sealed trait KPIDistribution extends Serializable with Product {
+sealed trait KPIModel extends Serializable with Product {
   def name: KPIName
 }
 
-object KPIDistribution {
+object KPIModel {
   import julienrf.json.derived
 
   implicit private val normalDistFormat: Format[Normal] = j.format[Normal]
+  implicit private val uniformDistFormat: Format[Uniform] = j.format[Uniform]
 
   implicit private def coercibleFormat[A, B](
       implicit ev: Coercible[Format[A], Format[B]],
       A: Format[A]
     ): Format[B] = ev(A)
 
-  implicit val mdFormat: Format[KPIDistribution] =
-    derived.flat.oformat[KPIDistribution]((__ \ "type").format[String])
+  implicit val mdFormat: Format[KPIModel] =
+    derived.flat.oformat[KPIModel]((__ \ "type").format[String])
 
-  implicit val bkpidFormat: Format[BetaKPIDistribution] =
-    j.format[BetaKPIDistribution]
+  implicit val bkpidFormat: Format[BetaKPIModel] =
+    j.format[BetaKPIModel]
 }
 
-case class BetaKPIDistribution(
+case class BetaKPIModel(
     name: KPIName,
     alphaPrior: Double,
     betaPrior: Double)
-    extends KPIDistribution {
-  def updateFrom(conversions: Conversions): BetaKPIDistribution =
+    extends KPIModel {
+  def updateFrom(conversions: Conversions): BetaKPIModel =
     copy(
       alphaPrior = conversions.converted + 1d,
       betaPrior = conversions.total - conversions.converted + 1d
     )
 }
 
-object BetaKPIDistribution {
+object BetaKPIModel {
 
   def sample(
-      b: BetaKPIDistribution,
+      b: BetaKPIModel,
       data: Conversions
     ): Indicator = {
     val postAlpha = b.alphaPrior + data.converted
@@ -69,24 +70,23 @@ object BetaKPIDistribution {
       implicit
       sampler: Sampler,
       rng: RNG,
-      B: Measurable[F, Conversions, BetaKPIDistribution],
+      B: Measurable[F, Conversions, BetaKPIModel],
       F: MonadError[F, Throwable]
-    ): AssessmentAlg[F, BetaKPIDistribution]
-    with UpdatableKPI[F, BetaKPIDistribution] =
-    new BayesianAssessmentAlg[F, BetaKPIDistribution, Conversions]
-    with UpdatableKPI[F, BetaKPIDistribution] {
+    ): AssessmentAlg[F, BetaKPIModel] with UpdatableKPI[F, BetaKPIModel] =
+    new BayesianAssessmentAlg[F, BetaKPIModel, Conversions]
+    with UpdatableKPI[F, BetaKPIModel] {
 
       protected def sampleIndicator(
-          b: BetaKPIDistribution,
+          b: BetaKPIModel,
           data: Conversions
         ) =
         sample(b, data)
 
       def updateFromData(
-          kpi: BetaKPIDistribution,
+          kpi: BetaKPIModel,
           start: Instant,
           end: Instant
-        ): F[(BetaKPIDistribution, Double)] =
+        ): F[(BetaKPIModel, Double)] =
         B.measureHistory(kpi, start, end).map { conversions =>
           (
             kpi.updateFrom(conversions),
@@ -100,10 +100,10 @@ object BetaKPIDistribution {
       sampler: Sampler,
       rng: RNG,
       F: Sync[F]
-    ): BasicAssessmentAlg[F, BetaKPIDistribution, Conversions] =
-    new BayesianBasicAssessmentAlg[F, BetaKPIDistribution, Conversions] {
+    ): BasicAssessmentAlg[F, BetaKPIModel, Conversions] =
+    new BayesianBasicAssessmentAlg[F, BetaKPIModel, Conversions] {
       protected def sampleIndicator(
-          b: BetaKPIDistribution,
+          b: BetaKPIModel,
           data: Conversions
         ) =
         sample(b, data)
@@ -111,32 +111,31 @@ object BetaKPIDistribution {
 }
 
 //todo: remove this flawed model once LogNormal is ready for prime time.
-case class GammaKPIDistribution(
+case class GammaKPIModel(
     name: KPIName,
     shapePrior: Normal,
     scalePrior: Normal)
-    extends KPIDistribution {
-  def scalePriors(by: Double): GammaKPIDistribution = {
+    extends KPIModel {
+  def scalePriors(by: Double): GammaKPIModel = {
     val g = this.lens(_.shapePrior.scale).modify(_ * by)
     g.lens(_.scalePrior.scale).modify(_ * by)
   }
 }
 
-object GammaKPIDistribution {
+object GammaKPIModel {
 
   implicit def gammaKPIInstances[F[_]](
       implicit
       sampler: Sampler,
       rng: RNG,
-      K: Measurable[F, Measurements, GammaKPIDistribution],
+      K: Measurable[F, Measurements, GammaKPIModel],
       F: MonadError[F, Throwable]
-    ): AssessmentAlg[F, GammaKPIDistribution]
-    with UpdatableKPI[F, GammaKPIDistribution] =
-    new BayesianAssessmentAlg[F, GammaKPIDistribution, Measurements]
-    with UpdatableKPI[F, GammaKPIDistribution] {
+    ): AssessmentAlg[F, GammaKPIModel] with UpdatableKPI[F, GammaKPIModel] =
+    new BayesianAssessmentAlg[F, GammaKPIModel, Measurements]
+    with UpdatableKPI[F, GammaKPIModel] {
 
       private def fitModel(
-          gk: GammaKPIDistribution,
+          gk: GammaKPIModel,
           data: List[Double]
         ): Variable[(Real, Real)] = {
         val shape = gk.shapePrior.distribution.latent
@@ -146,7 +145,7 @@ object GammaKPIDistribution {
       }
 
       def sampleIndicator(
-          gk: GammaKPIDistribution,
+          gk: GammaKPIModel,
           data: List[Double]
         ): Indicator = {
         fitModel(gk, data).map {
@@ -155,10 +154,10 @@ object GammaKPIDistribution {
       }
 
       def updateFromData(
-          k: GammaKPIDistribution,
+          k: GammaKPIModel,
           start: Instant,
           end: Instant
-        ): F[(GammaKPIDistribution, Double)] =
+        ): F[(GammaKPIModel, Double)] =
         K.measureHistory(k, start, end).map { data =>
           val model = fitModel(k, data)
 
@@ -189,26 +188,26 @@ object GammaKPIDistribution {
   * @param locationPrior
   * @param scaleLnPrior
   */
-case class LogNormalDistribution(
+case class LogNormalKPIModel(
     name: KPIName,
     locationPrior: Normal,
     scaleLnPrior: Uniform)
+    extends KPIModel
 
-object LogNormalDistribution {
+object LogNormalKPIModel {
 
   implicit def logNormalInstances[F[_]](
       implicit
       sampler: Sampler,
       rng: RNG,
-      K: Measurable[F, Measurements, LogNormalDistribution],
+      K: Measurable[F, Measurements, LogNormalKPIModel],
       F: MonadError[F, Throwable]
-    ): AssessmentAlg[F, LogNormalDistribution]
-    with UpdatableKPI[F, LogNormalDistribution] =
-    new BayesianAssessmentAlg[F, LogNormalDistribution, Measurements]
-    with UpdatableKPI[F, LogNormalDistribution] {
+    ): AssessmentAlg[F, LogNormalKPIModel] with UpdatableKPI[F, LogNormalKPIModel] =
+    new BayesianAssessmentAlg[F, LogNormalKPIModel, Measurements]
+    with UpdatableKPI[F, LogNormalKPIModel] {
 
       private def fitModel(
-          logNormal: LogNormalDistribution,
+          logNormal: LogNormalKPIModel,
           data: List[Double]
         ): Variable[(Real, Real)] = {
         val location = logNormal.locationPrior.distribution.latent
@@ -218,7 +217,7 @@ object LogNormalDistribution {
       }
 
       def sampleIndicator(
-          logNormalDistribution: LogNormalDistribution,
+          logNormalDistribution: LogNormalKPIModel,
           data: List[Double]
         ): Indicator = {
         fitModel(logNormalDistribution, data).map {
@@ -227,10 +226,10 @@ object LogNormalDistribution {
       }
 
       def updateFromData(
-          k: LogNormalDistribution,
+          k: LogNormalKPIModel,
           start: Instant,
           end: Instant
-        ): F[(LogNormalDistribution, Double)] =
+        ): F[(LogNormalKPIModel, Double)] =
         K.measureHistory(k, start, end).map { data =>
           val model = fitModel(k, data)
 

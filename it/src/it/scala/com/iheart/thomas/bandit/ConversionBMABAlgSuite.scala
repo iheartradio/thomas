@@ -7,12 +7,7 @@ import cats.data.EitherT
 import cats.MonadError
 import cats.effect.{IO, Resource}
 import com.iheart.thomas.abtest.{AbtestAlg, DefaultAbtestAlg}
-import com.iheart.thomas.analysis.{
-  BetaKPIDistribution,
-  Conversions,
-  KPIDistributionApi,
-  KPIName
-}
+import com.iheart.thomas.analysis.{BetaKPIModel, Conversions, KPIModelApi, KPIName}
 import com.iheart.thomas.bandit.bayesian.{
   BanditSettings,
   BanditState,
@@ -474,14 +469,14 @@ class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
   import testkit.Resources._
 
 //  implicit val logger: EventLogger[IO] = EventLogger.stdout
-  val kpi = BetaKPIDistribution(
+  val kpi = BetaKPIModel(
     "test kpi",
     alphaPrior = 1000,
     betaPrior = 100000
   )
 
   def withAPI[A](
-      f: (ConversionBMABAlg[IO], KPIDistributionApi[IO], AbtestAlg[IO]) => IO[A]
+      f: (ConversionBMABAlg[IO], KPIModelApi[IO], AbtestAlg[IO]) => IO[A]
     ): A =
     apis
       .use {

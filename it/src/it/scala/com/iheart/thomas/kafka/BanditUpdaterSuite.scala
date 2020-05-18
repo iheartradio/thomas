@@ -59,7 +59,7 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
       }
     }
 
-  val kpi = BetaKPIDistribution(
+  val kpi = BetaKPIModel(
     "test kpi",
     alphaPrior = 1000,
     betaPrior = 100000
@@ -86,7 +86,7 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
         }
         .evalTap { _ =>
           implicit val kpiDAO = daos._3
-          KPIDistributionApi.default.upsert(kpi)
+          KPIModelApi.default.upsert(kpi)
         }
     }
 

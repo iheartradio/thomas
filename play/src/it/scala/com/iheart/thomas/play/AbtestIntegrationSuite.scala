@@ -1365,34 +1365,34 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 class AssessmentAlgIntegrationSuite extends AbtestIntegrationSuiteBase {
   "Get KPI" should {
     "return 404 when there is no distribution" in {
-      val r = controller.getKPIDistribution("non-exist")(FakeRequest())
+      val r = controller.getKPIModel("non-exist")(FakeRequest())
       status(r) mustBe NOT_FOUND
     }
 
     "create one when there isn't one already" in {
-      val kpi: KPIDistribution =
-        GammaKPIDistribution(KPIName("new KPI"), Normal(1d, 0.1d), Normal(3d, 0.3d))
-      val r = controller.updateKPIDistribution(jsonRequest(kpi))
+      val kpi: KPIModel =
+        GammaKPIModel(KPIName("new KPI"), Normal(1d, 0.1d), Normal(3d, 0.3d))
+      val r = controller.updateKPIModel(jsonRequest(kpi))
       status(r) mustBe OK
-      contentAsJson(r).as[KPIDistribution] mustBe kpi
+      contentAsJson(r).as[KPIModel] mustBe kpi
     }
 
     "update one" in {
       val gkpi =
-        GammaKPIDistribution(
+        GammaKPIModel(
           KPIName("another KPI"),
           Normal(1d, 0.1d),
           Normal(3d, 0.3d)
         )
-      val kpi: KPIDistribution = gkpi
-      val kpiUpdated: KPIDistribution = gkpi.copy(shapePrior = Normal(1.3, 0.13d))
+      val kpi: KPIModel = gkpi
+      val kpiUpdated: KPIModel = gkpi.copy(shapePrior = Normal(1.3, 0.13d))
 
-      toServer(controller.updateKPIDistribution, jsonRequest(kpi))
+      toServer(controller.updateKPIModel, jsonRequest(kpi))
 
-      toServer(controller.updateKPIDistribution, jsonRequest(kpiUpdated))
+      toServer(controller.updateKPIModel, jsonRequest(kpiUpdated))
 
-      val r = controller.getKPIDistribution("another KPI")(FakeRequest())
-      contentAsJson(r).as[KPIDistribution] mustBe kpiUpdated
+      val r = controller.getKPIModel("another KPI")(FakeRequest())
+      contentAsJson(r).as[KPIModel] mustBe kpiUpdated
 
     }
   }

@@ -6,12 +6,12 @@ import lihua.mongo.EitherTDAOFactory
 import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.collection.JSONCollection
 import cats.implicits._
-import com.iheart.thomas.analysis.KPIDistribution
+import com.iheart.thomas.analysis.KPIModel
 
 import scala.concurrent.ExecutionContext
 
-class KPIDistributionDAOFactory[F[_]: Async](implicit ec: ExecutionContext)
-    extends EitherTDAOFactory[KPIDistribution, F]("abtest", "KPIDistributions") {
+class KPIModelDAOFactory[F[_]: Async](implicit ec: ExecutionContext)
+    extends EitherTDAOFactory[KPIModel, F]("abtest", "KPIModels") {
   protected def ensure(collection: JSONCollection): F[Unit] = {
     implicit def contextShiftIO = IO.contextShift(ec)
     IO.fromFuture(

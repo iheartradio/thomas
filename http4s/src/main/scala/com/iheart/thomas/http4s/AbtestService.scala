@@ -6,7 +6,7 @@ import abtest._
 import model._
 import com.iheart.thomas.abtest.json.play.Formats._
 import cats.effect.{Async, Resource}
-import analysis.{KPIDistribution, KPIDistributionApi}
+import analysis.{KPIModel, KPIModelApi}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes, Response}
 import org.http4s.dsl.Http4sDsl
@@ -31,7 +31,7 @@ import scala.compat.java8.DurationConverters._
 
 class AbtestService[F[_]: Async](
     api: AbtestAlg[F],
-    kpiAPI: KPIDistributionApi[F])
+    kpiAPI: KPIModelApi[F])
     extends Http4sDsl[F] {
 
   implicit val jsonObjectEncoder: EntityEncoder[F, JsObject] =
@@ -211,7 +211,7 @@ class AbtestService[F[_]: Async](
       respondOption(kpiAPI.get(name), s"No Kpi under name $name")
 
     case req @ POST -> Root / "KPIs" =>
-      req.as[KPIDistribution] >>= (k => respond(kpiAPI.upsert(k)))
+      req.as[KPIModel] >>= (k => respond(kpiAPI.upsert(k)))
   }
 
 }
@@ -233,7 +233,7 @@ object AbtestService {
 
     } yield {
       implicit val (_, _, kpiDAO) = daos
-      new AbtestService(alg, KPIDistributionApi.default[F])
+      new AbtestService(alg, KPIModelApi.default[F])
     }
   }
 

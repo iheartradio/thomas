@@ -12,7 +12,7 @@ import com.iheart.thomas.abtest.Error.NotFound
 
 import scala.util.control.NoStackTrace
 
-trait AnalysisAPI[F[_], K <: KPIDistribution] {
+trait AnalysisAPI[F[_], K <: KPIModel] {
   def updateKPI(
       name: KPIName,
       start: Instant,
@@ -44,17 +44,17 @@ trait AnalysisAPI[F[_], K <: KPIDistribution] {
 
 object AnalysisAPI {
 
-  abstract class AnalysisAPIWithClient[F[_], K <: KPIDistribution](
+  abstract class AnalysisAPIWithClient[F[_], K <: KPIModel](
       implicit UK: UpdatableKPI[F, K],
       abtestKPI: AssessmentAlg[F, K],
       client: AbtestClient[F],
       F: MonadError[F, Throwable])
       extends AnalysisAPI[F, K] {
 
-    def validateKPIType(k: KPIDistribution): F[K] =
+    def validateKPIType(k: KPIModel): F[K] =
       narrowToK.lift.apply(k).liftTo[F](KPINotFound)
 
-    def narrowToK: PartialFunction[KPIDistribution, K]
+    def narrowToK: PartialFunction[KPIModel, K]
 
     def updateKPI(
         name: KPIName,
@@ -88,29 +88,29 @@ object AnalysisAPI {
 
   implicit def defaultGamma[F[_]](
       implicit
-      G: Measurable[F, Measurements, GammaKPIDistribution],
+      G: Measurable[F, Measurements, GammaKPIModel],
       sampler: Sampler = Sampler.default,
       rng: RNG = RNG.default,
       client: AbtestClient[F],
       F: MonadError[F, Throwable]
-    ): AnalysisAPI[F, GammaKPIDistribution] =
-    new AnalysisAPIWithClient[F, GammaKPIDistribution] {
-      def narrowToK: PartialFunction[KPIDistribution, GammaKPIDistribution] = {
-        case g: GammaKPIDistribution => g
+    ): AnalysisAPI[F, GammaKPIModel] =
+    new AnalysisAPIWithClient[F, GammaKPIModel] {
+      def narrowToK: PartialFunction[KPIModel, GammaKPIModel] = {
+        case g: GammaKPIModel => g
       }
     }
 
   implicit def defaultBeta[F[_]](
       implicit
-      G: Measurable[F, Conversions, BetaKPIDistribution],
+      G: Measurable[F, Conversions, BetaKPIModel],
       sampler: Sampler = Sampler.default,
       rng: RNG = RNG.default,
       client: AbtestClient[F],
       F: MonadError[F, Throwable]
-    ): AnalysisAPI[F, BetaKPIDistribution] =
-    new AnalysisAPIWithClient[F, BetaKPIDistribution] {
-      def narrowToK: PartialFunction[KPIDistribution, BetaKPIDistribution] = {
-        case b: BetaKPIDistribution => b
+    ): AnalysisAPI[F, BetaKPIModel] =
+    new AnalysisAPIWithClient[F, BetaKPIModel] {
+      def narrowToK: PartialFunction[KPIModel, BetaKPIModel] = {
+        case b: BetaKPIModel => b
       }
     }
 

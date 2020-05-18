@@ -27,17 +27,17 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
   def mock(
       abTestData: Map[GroupName, Measurements] = Map(),
       historical: Measurements = Nil
-    ): Measurable[F, Measurements, GammaKPIDistribution] =
-    new Measurable[F, Measurements, GammaKPIDistribution] {
+    ): Measurable[F, Measurements, GammaKPIModel] =
+    new Measurable[F, Measurements, GammaKPIModel] {
       def measureAbtest(
-          k: GammaKPIDistribution,
+          k: GammaKPIModel,
           abtest: Abtest,
           start: Option[Instant] = None,
           end: Option[Instant] = None
         ): F[Map[GroupName, Measurements]] =
         abTestData.asRight
       def measureHistory(
-          k: GammaKPIDistribution,
+          k: GammaKPIModel,
           start: Instant,
           end: Instant
         ): F[Measurements] = historical.asRight
@@ -54,7 +54,7 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
         "B" -> Random.shuffle(Gamma(0.5, 3).latent.sample).take(n)
       )
     )
-    val resultEither = GammaKPIDistribution(
+    val resultEither = GammaKPIModel(
       KPIName("test"),
       Normal(0.5, 0.1),
       Normal(3, 0.1)
@@ -82,7 +82,7 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
       )
     )
 
-    val resultEither = GammaKPIDistribution(
+    val resultEither = GammaKPIModel(
       KPIName("test"),
       Normal(0.5, 0.1),
       Normal(3, 0.1)
@@ -107,7 +107,7 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
 //        "B" -> Random.shuffle(Model.sample(Gamma(0.55, 3).latent)).take(n)
 //      )
 //    )
-//    val result = GammaKPIDistribution(
+//    val result = GammakpiModel(
 //      KPIName("test"),
 //      Normal(0.5, 0.1),
 //      Normal(3, 0.1)
@@ -135,7 +135,7 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
       )
 
     val resultEither =
-      GammaKPIDistribution(KPIName("test"), Normal(0.8, 0.2), Normal(6, 1))
+      GammaKPIModel(KPIName("test"), Normal(0.8, 0.2), Normal(6, 1))
         .updateFromData[F](
           Instant.now.minus(1, ChronoUnit.DAYS),
           Instant.now
