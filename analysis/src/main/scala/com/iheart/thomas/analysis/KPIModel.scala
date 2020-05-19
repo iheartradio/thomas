@@ -14,8 +14,6 @@ import com.stripe.rainier.compute.Real
 import com.stripe.rainier.core._
 import com.stripe.rainier.sampler.{RNG, Sampler}
 import io.estatico.newtype.Coercible
-import monocle.macros.syntax.lens._
-import org.apache.commons.math3.distribution.GammaDistribution
 import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
 import _root_.play.api.libs.json._
 import cats.effect.Sync
@@ -110,78 +108,6 @@ object BetaKPIModel {
     }
 }
 
-//todo: remove this flawed model once LogNormal is ready for prime time.
-case class GammaKPIModel(
-    name: KPIName,
-    shapePrior: Normal,
-    scalePrior: Normal)
-    extends KPIModel {
-  def scalePriors(by: Double): GammaKPIModel = {
-    val g = this.lens(_.shapePrior.scale).modify(_ * by)
-    g.lens(_.scalePrior.scale).modify(_ * by)
-  }
-}
-
-object GammaKPIModel {
-
-  implicit def gammaKPIInstances[F[_]](
-      implicit
-      sampler: Sampler,
-      rng: RNG,
-      K: Measurable[F, Measurements, GammaKPIModel],
-      F: MonadError[F, Throwable]
-    ): AssessmentAlg[F, GammaKPIModel] with UpdatableKPI[F, GammaKPIModel] =
-    new BayesianAssessmentAlg[F, GammaKPIModel, Measurements]
-    with UpdatableKPI[F, GammaKPIModel] {
-
-      private def fitModel(
-          gk: GammaKPIModel,
-          data: List[Double]
-        ): Variable[(Real, Real)] = {
-        val shape = gk.shapePrior.distribution.latent
-        val scale = gk.scalePrior.distribution.latent
-        val g = Model.observe(data, Gamma(shape, scale))
-        Variable((shape, scale), g)
-      }
-
-      def sampleIndicator(
-          gk: GammaKPIModel,
-          data: List[Double]
-        ): Indicator = {
-        fitModel(gk, data).map {
-          case (shape, scale) => shape * scale
-        }
-      }
-
-      def updateFromData(
-          k: GammaKPIModel,
-          start: Instant,
-          end: Instant
-        ): F[(GammaKPIModel, Double)] =
-        K.measureHistory(k, start, end).map { data =>
-          val model = fitModel(k, data)
-
-          val shapeSample = model.map(_._1).predict()
-          val scaleSample = model.map(_._2).predict()
-
-          val updated = k.copy(
-            shapePrior = Normal.fit(shapeSample),
-            scalePrior = Normal.fit(scaleSample)
-          )
-
-          val ksTest = new KolmogorovSmirnovTest()
-          val gd = new GammaDistribution(
-            updated.shapePrior.location,
-            updated.scalePrior.location
-          )
-          val ksStatistics = ksTest.kolmogorovSmirnovStatistic(gd, data.toArray)
-
-          (updated, ksStatistics)
-        }
-
-    }
-}
-
 /**
   * https://stats.stackexchange.com/questions/30369/priors-for-log-normal-models
   * @param name
@@ -198,8 +124,8 @@ object LogNormalKPIModel {
 
   implicit def logNormalInstances[F[_]](
       implicit
-      sampler: Sampler,
-      rng: RNG,
+      sampler: Sampler = Sampler.default,
+      rng: RNG = RNG.default,
       K: Measurable[F, Measurements, LogNormalKPIModel],
       F: MonadError[F, Throwable]
     ): AssessmentAlg[F, LogNormalKPIModel] with UpdatableKPI[F, LogNormalKPIModel] =

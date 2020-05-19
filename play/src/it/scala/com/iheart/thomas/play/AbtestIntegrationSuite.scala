@@ -17,7 +17,7 @@ import _root_.play.api.mvc.{Action, ControllerComponents, Request, Result}
 import _root_.play.api.test.FakeRequest
 import _root_.play.api.test.Helpers.status
 import org.scalatestplus.play._
-import com.iheart.thomas.analysis.DistributionSpec.Normal
+import com.iheart.thomas.analysis.DistributionSpec.{Normal, Uniform}
 import com.iheart.thomas.analysis._
 import _root_.play.api.libs.json.{JsObject, Json, Writes}
 import _root_.play.api.test.Helpers._
@@ -1371,7 +1371,7 @@ class AssessmentAlgIntegrationSuite extends AbtestIntegrationSuiteBase {
 
     "create one when there isn't one already" in {
       val kpi: KPIModel =
-        GammaKPIModel(KPIName("new KPI"), Normal(1d, 0.1d), Normal(3d, 0.3d))
+        BetaKPIModel(KPIName("new KPI"), 1d, 3d)
       val r = controller.updateKPIModel(jsonRequest(kpi))
       status(r) mustBe OK
       contentAsJson(r).as[KPIModel] mustBe kpi
@@ -1379,13 +1379,13 @@ class AssessmentAlgIntegrationSuite extends AbtestIntegrationSuiteBase {
 
     "update one" in {
       val gkpi =
-        GammaKPIModel(
+        LogNormalKPIModel(
           KPIName("another KPI"),
-          Normal(1d, 0.1d),
-          Normal(3d, 0.3d)
+          Normal(0d, 0.1d),
+          Uniform(0d, 0.6d)
         )
       val kpi: KPIModel = gkpi
-      val kpiUpdated: KPIModel = gkpi.copy(shapePrior = Normal(1.3, 0.13d))
+      val kpiUpdated: KPIModel = gkpi.copy(locationPrior = Normal(1.3, 0.13d))
 
       toServer(controller.updateKPIModel, jsonRequest(kpi))
 
