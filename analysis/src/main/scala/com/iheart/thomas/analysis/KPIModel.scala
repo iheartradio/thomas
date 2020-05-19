@@ -242,7 +242,9 @@ object LogNormalKPIModel {
           val updated = k.copy(
             locationPrior = Normal.fit(locationSample),
             scaleLnPrior = Uniform(
-              0,
+              Math.log(
+                scaleSample.minimumOption.map(_ / 10).getOrElse(k.scaleLnPrior.from)
+              ),
               Math.log(
                 scaleSample.maximumOption.map(_ * 2).getOrElse(k.scaleLnPrior.to)
               )
