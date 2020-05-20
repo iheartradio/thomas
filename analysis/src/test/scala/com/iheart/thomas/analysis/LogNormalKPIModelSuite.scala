@@ -51,7 +51,7 @@ class LogNormalKPIModelSuite extends AnyFunSuiteLike with Matchers {
 
     val n = 10000
     val location = 0d
-    val locationA = location + 0.05d
+    val locationA = location + 0.1d
     val scale = 0.5d
     val data =
       Map(
