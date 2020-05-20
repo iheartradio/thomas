@@ -44,7 +44,6 @@ In A/B tests you can set a user meta criteria in field `userMetaCriteria`, this 
   
 ```json
 {
-   "userMetaCriteria": {
      
        "sex" : "female",                   //matches users whose "sex" field is exactly "female"
        
@@ -72,7 +71,7 @@ In A/B tests you can set a user meta criteria in field `userMetaCriteria`, this 
        "androidVer": {
          "%versionRange" : ["2.0", "3.1"] //special filter for version strings. Matches users whose "androidVer" is between than "2.0" and "3.1"
        }
-   }
+   
 }
 ```
 
