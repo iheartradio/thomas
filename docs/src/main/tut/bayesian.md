@@ -51,9 +51,9 @@ To use these utilities users need to implement integration with data retrieval f
  
 The core class that provides the Bayesian analysis is [AnalysisAPI](https://iheartradio.github.io/thomas/api/com/iheart/thomas/client/AnalysisAPI.html) provided in `thomas-client`
  
-This API is parameterized to the effect type `F[_]` and KPI's distribution type `K`   
+This API is parameterized to the effect type `F[_]` and KPI model  type `K`   
 ```scala
- trait AnalysisAPI[F[_], K <: KPIDistribution] 
+ trait AnalysisAPI[F[_], K <: KPIModel] 
 ```
 KPI stands for Key Performance Indicator, it is what we use to evaluate the effect of a treatment. One example is the conversion (or click through) rate, another example is average user engagement time. Each KPI can be modeled as a certain type of distribution. For example conversion rate is often modeled using the Beta distribution. One can choose to use the Gamma distribution to model the user engagement time. In fact these are two types of KPI distributions Thomas supports out of box at the time of writing. User can implement their own `KPIDistribution`, it will require knowledge of Bayesian inference and [Rainier](https://github.com/stripe/rainier) the MCMC library used in Thomas.
 
@@ -63,7 +63,7 @@ Thus depending on which type of KPI you are analyzing, you need to instantiate d
 import com.iheart.thomas.client._
 import com.iheart.thomas.client.AbtestClient.HttpServiceUrlsPlay
 import cats.effect.IO
-import com.iheart.thomas.analysis.Measurable.GammaMeasurable
+import com.iheart.thomas.analysis._
 import concurrent.ExecutionContext.Implicits.global
 
 
@@ -72,8 +72,8 @@ val httpServiceUrl = new HttpServiceUrlsPlay("http://localhost/internal")
 implicit val conextShift = IO.contextShift(global)
 
 Http4SAbtestClient.resource[IO](httpServiceUrl, global).use { implicit client =>
-  implicit val measurable: GammaMeasurable[IO] = null  //user needs to implement a GammaMeasurable, null used here so that code compiles 
-  val analysisAPI = AnalysisAPI.defaultGamma[IO]
+  implicit val measurable: Measurable[IO, Measurements, LogNormalKPIModel] = null  //user needs to implement a Measurable, null used here so that code compiles 
+  val analysisAPI: AnalysisAPI[IO, LogNormalKPIModel] = implicitly
   //do something with analysisAPI
   IO(println("done")) 
 }.unsafeRunSync

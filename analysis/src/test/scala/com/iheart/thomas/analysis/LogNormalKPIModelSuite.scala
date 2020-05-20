@@ -1,43 +1,39 @@
 package com.iheart.thomas
 package analysis
 
-import java.io.File
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-import cats.{Applicative, Id}
-import cats.effect.IO
-import io.estatico.newtype.ops._
-import implicits._
-import com.iheart.thomas.analysis.DistributionSpec.Normal
-import com.iheart.thomas.abtest.model.Abtest
-import com.stripe.rainier.core.{Gamma, Model}
-import com.stripe.rainier.sampler._
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.funsuite.AnyFunSuiteLike
 import cats.implicits._
+import com.iheart.thomas.abtest.model.Abtest
+import com.iheart.thomas.analysis.DistributionSpec.{Normal, Uniform}
+import com.iheart.thomas.analysis.implicits._
+import com.stripe.rainier.core.{LogNormal, Model}
+import com.stripe.rainier.sampler._
+import org.scalatest.funsuite.AnyFunSuiteLike
+import org.scalatest.matchers.should.Matchers
 
 import scala.util.Random
 
-class GammaKPISuite extends AnyFunSuiteLike with Matchers {
+class LogNormalKPIModelSuite extends AnyFunSuiteLike with Matchers {
   implicit val rng = RNG.default
-  implicit val sampler = Sampler.default
+  implicit val sampler = Sampler.default //.copy(iterations = 10000)
 
   type F[A] = Either[Throwable, A]
   def mock(
       abTestData: Map[GroupName, Measurements] = Map(),
       historical: Measurements = Nil
-    ): Measurable[F, Measurements, GammaKPIDistribution] =
-    new Measurable[F, Measurements, GammaKPIDistribution] {
+    ): Measurable[F, Measurements, LogNormalKPIModel] =
+    new Measurable[F, Measurements, LogNormalKPIModel] {
       def measureAbtest(
-          k: GammaKPIDistribution,
+          kmodel: LogNormalKPIModel,
           abtest: Abtest,
           start: Option[Instant] = None,
           end: Option[Instant] = None
         ): F[Map[GroupName, Measurements]] =
         abTestData.asRight
       def measureHistory(
-          k: GammaKPIDistribution,
+          k: LogNormalKPIModel,
           start: Instant,
           end: Instant
         ): F[Measurements] = historical.asRight
@@ -45,19 +41,32 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
 
   val mockAb: Abtest = null
 
+  def meanLogNormal(
+      location: Double,
+      scale: Double
+    ): Double =
+    Math.exp(location + (Math.pow(scale, 2d) / 2d))
+
   test("Measure one group against control generates result") {
 
-    val n = 1000
-    implicit val measurable = mock(
+    val n = 10000
+    val location = 0d
+    val locationA = location + 0.1d
+    val scale = 0.5d
+    val data =
       Map(
-        "A" -> Random.shuffle(Gamma(0.55, 3).latent.sample).take(n),
-        "B" -> Random.shuffle(Gamma(0.5, 3).latent.sample).take(n)
+        "A" -> Random
+          .shuffle(LogNormal(locationA, scale).latent.sample)
+          .take(n),
+        "B" -> Random.shuffle(LogNormal(location, scale).latent.sample).take(n)
       )
-    )
-    val resultEither = GammaKPIDistribution(
+
+    implicit val measurable = mock(data)
+
+    val resultEither = LogNormalKPIModel(
       KPIName("test"),
-      Normal(0.5, 0.1),
-      Normal(3, 0.1)
+      Normal(location, 0.3),
+      Uniform(0, scale * 3)
     ).assess(mockAb, "B")
 
     resultEither.isRight shouldBe true
@@ -65,9 +74,15 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
 
     result.keys should contain("A")
 
-    result("A").expectedEffect.d shouldBe (0.15 +- 0.2)
-    result("A").probabilityOfImprovement.p shouldBe (0.9 +- 0.5)
-    result("A").riskOfUsing.d shouldBe (0.1 +- 0.3)
+    val expectedEffect = meanLogNormal(locationA, scale) - meanLogNormal(
+      location,
+      scale
+    )
+
+    (result("A").expectedEffect.d > 0) shouldBe (expectedEffect > 0)
+    result("A").expectedEffect.d / expectedEffect shouldBe (1d +- 2d)
+    result("A").probabilityOfImprovement.p shouldBe (0.9 +- 0.2)
+    result("A").riskOfUsing.d shouldBe (0.01 +- 0.1)
 
   }
 
@@ -76,16 +91,16 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
     val n = 100
     implicit val measurable = mock(
       Map(
-        "A" -> Random.shuffle(Gamma(0.5, 3).latent.sample).take(n),
-        "B" -> Random.shuffle(Gamma(0.55, 3).latent.sample).take(n),
-        "C" -> Random.shuffle(Gamma(0.55, 3).latent.sample).take(n)
+        "A" -> Random.shuffle(LogNormal(0.5, 3).latent.sample).take(n),
+        "B" -> Random.shuffle(LogNormal(0.55, 3).latent.sample).take(n),
+        "C" -> Random.shuffle(LogNormal(0.55, 3).latent.sample).take(n)
       )
     )
 
-    val resultEither = GammaKPIDistribution(
+    val resultEither = LogNormalKPIModel(
       KPIName("test"),
       Normal(0.5, 0.1),
-      Normal(3, 0.1)
+      Uniform(0, 5)
     ).assess(mockAb, "A")
 
     resultEither.isRight shouldBe true
@@ -107,7 +122,7 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
 //        "B" -> Random.shuffle(Model.sample(Gamma(0.55, 3).latent)).take(n)
 //      )
 //    )
-//    val result = GammaKPIDistribution(
+//    val result = LogNormalKPIModel(
 //      KPIName("test"),
 //      Normal(0.5, 0.1),
 //      Normal(3, 0.1)
@@ -124,18 +139,15 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
 //    new File(path).delete()
 //  }
 
-  test("updated with new piror") {
+  test("updated with new prior") {
 
     implicit val measurable =
       mock(
-        historical = Random.shuffle(
-          Model
-            .sample(Gamma(0.55, 3).latent, Sampler.default.copy(iterations = 5000))
-        )
+        historical = Random.shuffle(LogNormal(0.01, 0.3).latent.sample)
       )
 
     val resultEither =
-      GammaKPIDistribution(KPIName("test"), Normal(0.8, 0.2), Normal(6, 1))
+      LogNormalKPIModel(KPIName("test"), Normal(2, 12), Uniform(3, 5))
         .updateFromData[F](
           Instant.now.minus(1, ChronoUnit.DAYS),
           Instant.now
@@ -144,8 +156,8 @@ class GammaKPISuite extends AnyFunSuiteLike with Matchers {
     resultEither.isRight shouldBe true
 
     val result = resultEither.right.get
-    result._1.shapePrior.location shouldBe (0.55 +- 0.1)
-    result._1.scalePrior.location shouldBe (3d +- 1d)
+    result._1.locationPrior.location shouldBe (0.01 +- 0.1)
+    result._1.scaleLnPrior.from shouldBe (0d +- 1d)
     result._2 shouldBe <(0.5)
 
   }

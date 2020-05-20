@@ -240,25 +240,25 @@ GET      /utils/epoch                                               controllers.
 
 
 ###
-#  summary: get a KPI Distribution by name
+#  summary: get a KPI Model by name
 #  responses:
 #    200:
-#      description: KPI Distribution found
+#      description: KPI Model found
 ###
-GET   /KPIs/:name   controllers.MyAbtestController.getKPIDistribution(name: String)
+GET   /KPIs/:name   controllers.MyAbtestController.getKPIModel(name: String)
 
 ###
-#  summary: get a KPI Distribution by name
+#  summary: get a KPI Model by name
 #  parameters:
 #    - name: body
 #      required: true
 #      description: >
-#        json representation of the KPI distribution
+#        json representation of the KPI Model
 #  responses:
 #    200:
-#      description: KPI Distribution added
+#      description: KPI Model added
 ###
-POST   /KPIs/    controllers.MyAbtestController.updateKPIDistribution
+POST   /KPIs/    controllers.MyAbtestController.updateKPIModel
 
 
 ###

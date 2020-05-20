@@ -15,25 +15,25 @@ import ThomasController.{Alerter, InvalidRequest}
 import _root_.play.api.libs.json._
 import _root_.play.api.mvc._
 import cats.implicits._
-import com.iheart.thomas.analysis.{KPIDistribution, KPIDistributionApi}
+import com.iheart.thomas.analysis.{KPIModel, KPIModelApi}
 import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 import lihua.{Entity, EntityId}
 import lihua.mongo.JsonFormats._
 
 class AbtestController[F[_]](
     api: AbtestAlg[F],
-    kpiAPI: KPIDistributionApi[F],
+    kpiAPI: KPIModelApi[F],
     components: ControllerComponents,
     alerter: Option[Alerter[F]]
   )(implicit
     F: Effect[F])
     extends ThomasController(components, alerter) {
 
-  def getKPIDistribution(name: String) = action(
+  def getKPIModel(name: String) = action(
     liftOption(kpiAPI.get(name), s"Cannot find KPI named $name")
   )
 
-  val updateKPIDistribution = jsonAction { (kpi: KPIDistribution) =>
+  val updateKPIModel = jsonAction { (kpi: KPIModel) =>
     kpiAPI.upsert(kpi)
   }
 

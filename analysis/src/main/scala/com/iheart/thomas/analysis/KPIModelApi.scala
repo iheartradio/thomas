@@ -12,33 +12,30 @@ import com.iheart.thomas.abtest.Error.NotFound
 import scala.reflect.ClassTag
 
 @autoFunctorK
-trait KPIDistributionApi[F[_]] {
-  def get(name: KPIName): F[Option[Entity[KPIDistribution]]]
+trait KPIModelApi[F[_]] {
+  def get(name: KPIName): F[Option[Entity[KPIModel]]]
 
-  def getAll: F[Vector[Entity[KPIDistribution]]]
+  def getAll: F[Vector[Entity[KPIModel]]]
 
-  def getSpecific[K <: KPIDistribution](
-      name: KPIName
-    )(implicit classTag: ClassTag[K]
-    ): F[K]
+  def getSpecific[K <: KPIModel](name: KPIName)(implicit classTag: ClassTag[K]): F[K]
 
-  def upsert(kpi: KPIDistribution): F[Entity[KPIDistribution]]
+  def upsert(kpi: KPIModel): F[Entity[KPIModel]]
 }
 
-object KPIDistributionApi {
+object KPIModelApi {
 
   implicit def default[F[_]](
-      implicit dao: EntityDAO[F, KPIDistribution, JsObject],
+      implicit dao: EntityDAO[F, KPIModel, JsObject],
       F: MonadThrowable[F]
-    ): KPIDistributionApi[F] = new KPIDistributionApi[F] {
+    ): KPIModelApi[F] = new KPIModelApi[F] {
     import com.iheart.thomas.abtest.QueryDSL._
-    def get(name: KPIName): F[Option[Entity[KPIDistribution]]] =
+    def get(name: KPIName): F[Option[Entity[KPIModel]]] =
       dao.findOneOption('name -> name)
 
-    def getAll: F[Vector[Entity[KPIDistribution]]] =
+    def getAll: F[Vector[Entity[KPIModel]]] =
       dao.all
 
-    def getSpecific[K <: KPIDistribution](
+    def getSpecific[K <: KPIModel](
         name: KPIName
       )(implicit classTag: ClassTag[K]
       ): F[K] =
@@ -50,7 +47,7 @@ object KPIDistributionApi {
           )
       }
 
-    def upsert(kpi: KPIDistribution): F[Entity[KPIDistribution]] =
+    def upsert(kpi: KPIModel): F[Entity[KPIModel]] =
       dao
         .findOne('name -> kpi.name.n)
         .flatMap(e => dao.update(e.copy(data = kpi)))

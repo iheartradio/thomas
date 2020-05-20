@@ -10,7 +10,7 @@ import java.time.Instant
 import abtest._
 import javax.inject._
 import cats.effect.IO
-import com.iheart.thomas.analysis.KPIDistributionApi
+import com.iheart.thomas.analysis.KPIModelApi
 import lihua.mongo._
 import _root_.play.api.Configuration
 import _root_.play.api.inject.ApplicationLifecycle
@@ -63,9 +63,9 @@ class APIProviderBase(
   lifecycle.addStopHook(() => refreshRef.cancel.unsafeToFuture())
 
   implicit val nowF = IO.delay(Instant.now)
-  lazy val (api: AbtestAlg[IO], kpiApi: KPIDistributionApi[IO]) = {
+  lazy val (api: AbtestAlg[IO], kpiApi: KPIModelApi[IO]) = {
     implicit val (abtestDAO, featureDAO, kpiDAO) = daos
-    (new DefaultAbtestAlg[IO](refreshRate), KPIDistributionApi.default)
+    (new DefaultAbtestAlg[IO](refreshRate), KPIModelApi.default)
   }
 }
 

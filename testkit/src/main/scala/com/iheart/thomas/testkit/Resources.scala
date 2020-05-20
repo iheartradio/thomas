@@ -6,7 +6,7 @@ import java.time.Instant
 import cats.effect.{IO, Resource}
 import cats.implicits._
 import com.iheart.thomas.abtest.AbtestAlg
-import com.iheart.thomas.analysis.{Conversions, KPIDistributionApi}
+import com.iheart.thomas.analysis.{Conversions, KPIModelApi}
 import com.iheart.thomas.bandit.bayesian.{
   BanditSettings,
   BanditSettingsDAO,
@@ -75,7 +75,7 @@ object Resources {
       nowF: IO[Instant] = defaultNowF
     ): Resource[
     IO,
-    (ConversionBMABAlg[IO], KPIDistributionApi[IO], AbtestAlg[IO])
+    (ConversionBMABAlg[IO], KPIModelApi[IO], AbtestAlg[IO])
   ] =
     (mangoDAOs, dynamoDAOS).tupled
       .flatMap {
