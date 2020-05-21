@@ -82,7 +82,7 @@ class LogNormalKPIModelSuite extends AnyFunSuiteLike with Matchers {
     (result("A").expectedEffect.d > 0) shouldBe (expectedEffect > 0)
     result("A").expectedEffect.d / expectedEffect shouldBe (1d +- 2d)
     result("A").probabilityOfImprovement.p shouldBe (0.9 +- 0.2)
-    result("A").riskOfUsing.d shouldBe (0.01 +- 0.1)
+    result("A").riskOfUsing.d shouldBe (0.01 +- 0.15)
 
   }
 

@@ -28,6 +28,9 @@ object Formats {
   implicit val jfAS: Format[ArmState[Conversions]] =
     j.format[ArmState[Conversions]]
 
+  implicit val jfArmSpec: Format[ArmSpec] =
+    j.format[ArmSpec]
+
   implicit val jfBS: Format[ConversionBanditSpec] =
     j.format[BanditSpec[BanditSettings.Conversion]]
 
