@@ -5,9 +5,18 @@ section: "Bayesian"
 position: 100
 ---
 
-Thomas provides a module thomas-analysis that can be used to perform Bayesian analysis for A/B test results. This library is built using the wonderful [Bayesian inference library Rainier](https://github.com/stripe/rainier).  Using this thomas-analysis, users can write analysis tools that compute a posterior distribution of the effect of the treatment v.s. control using Markov Chain Monte Carlo. 
+Thomas provides a module thomas-analysis that can be used to perform Bayesian analysis for A/B test results.
+ This library is built using the wonderful [Bayesian inference library Rainier](https://github.com/stripe/rainier)
+ .  Using this thomas-analysis, users can write analysis tools that compute a posterior distribution of the effect
+  of the treatment v.s. control using Markov Chain Monte Carlo. 
 
-In its essence, the A/B test analysis's main task is that, given the observed difference in analytics results between multiple treatment groups, pick the treatment that works best towards the goal for the product. The traditional frequentist approach has been trying to determine whether the difference observed is statistically significantly or not. The Bayesian analysis allows us to answer a different question: given the observed difference, what will be the risk of picking one treatment over another. In another sentence, what will be the maximum reduction of KPI in the scenario when one treatment is chosen over another but the real difference is the opposite of the one saw in the experiment.     
+In its essence, the A/B test analysis's main task is that, given the observed difference in analytics results 
+between multiple treatment groups, pick the treatment that works best towards the goal for the product. 
+The traditional frequentist approach has been trying to determine whether the difference observed is statistically
+ significantly or not. The Bayesian analysis allows us to answer a different question: given the observed difference, 
+ what will be the risk of picking one treatment over another. In another sentence, what will be the maximum reduction 
+ of KPI in the scenario when one treatment is chosen over another but the real difference is the opposite of the one
+  saw in the experiment.     
 
 
 The Bayesian A/B analysis tool in Thomas produces results that look like the following.
