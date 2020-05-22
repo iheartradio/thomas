@@ -31,17 +31,28 @@ class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
     )
     .parseJson[JsObject]
 
+  val metaFileOpts = Opts
+    .option[String](
+      "metaFile",
+      "The file location for the whole group meta json as in meta"
+    )
+    .readJsonFile[JsObject]
+
   val newRevOpts = Opts
     .flag("new", "create a new revision if the current one has already started")
     .orFalse
 
   val addCommand = Command("add", "add group metas") {
-    (tidOrFnOps, metaOpts, newRevOpts, AbtestHttpClientOpts.opts[F]).mapN {
-      (tidOrFeature, gm, nt, clientR) =>
-        clientR.use { c =>
-          c.addGroupMeta(tidOrFeature, gm, nt)
-            .as(s"Successfully added group meta for test: ${show(tidOrFeature)}")
-        }
+    (
+      tidOrFnOps,
+      metaOpts orElse metaFileOpts,
+      newRevOpts,
+      AbtestHttpClientOpts.opts[F]
+    ).mapN { (tidOrFeature, gm, nt, clientR) =>
+      clientR.use { c =>
+        c.addGroupMeta(tidOrFeature, gm, nt)
+          .as(s"Successfully added group meta for test: ${show(tidOrFeature)}")
+      }
     }
   }
 

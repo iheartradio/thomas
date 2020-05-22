@@ -1,19 +1,15 @@
 package com.iheart.thomas
 package cli
 
-import java.time.OffsetDateTime
-
+import cats.data.{Validated, ValidatedNel}
 import cats.effect.ConcurrentEffect
-import com.monovore.decline.{Argument, Command, Opts}
 import cats.implicits._
 import com.iheart.thomas.bandit.BanditSpec
-import com.monovore.decline.time._
-import BayesianBanditHttpClientOpts.conversionClientOpts
-import cats.data.{Validated, ValidatedNel}
-import com.iheart.thomas.analysis.KPIName
+import com.iheart.thomas.bandit.Formats._
 import com.iheart.thomas.bandit.bayesian.BanditSettings
-import io.estatico.newtype.ops._
-import com.monovore.decline.time._
+import com.iheart.thomas.cli.BayesianBanditHttpClientOpts.conversionClientOpts
+import com.iheart.thomas.cli.OptsSyntax._
+import com.monovore.decline.{Argument, Command, Opts}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -45,45 +41,12 @@ object BayesianMABCommands {
     override def defaultMetavar: String = "duration string"
   }
 
-  private val banditSettingsOps =
-    (
-      fnOpts,
-      Opts.option[String]("author", "author name", "u"),
-      Opts.option[String]("title", "author name", "u"),
-      Opts.option[String]("kpi", "KPI name", "k").coerce[Opts[KPIName]],
-      Opts
-        .option[Double]("minimumSizeChange", "minimum group size change")
-        .withDefault(0.005d),
-      Opts
-        .option[FiniteDuration](
-          "historyRetention",
-          "how long does older versions of A/B tests be kept"
-        )
-        .orNone,
-      Opts
-        .option[Int]("initialSampleSize", "required sample size to start allocating")
-        .withDefault(0),
-      Opts
-        .option[BigDecimal]("maintainExploration", "maintain an exploration size")
-        .orNone,
-      Opts
-        .option[FiniteDuration]("iterationDuration", "duration of each iteration")
-        .orNone,
-      Opts
-        .option[Double](
-          "oldHistoryWeight",
-          "optional weight for history 2 iterations ago"
-        )
-        .orNone,
-      conversionSettingsOps
-    ).mapN(BanditSettings.apply[BanditSettings.Conversion])
-
-  private val banditSpecOpts =
-    (
-      Opts.options[String]("arms", "list of arms", "a").map(_.toList),
-      Opts.option[OffsetDateTime]("start", "start time of the MAB"),
-      banditSettingsOps
-    ).mapN(BanditSpec.apply[BanditSettings.Conversion])
+  private val banditSpecOpts = Opts
+    .option[String](
+      "banditSpecFile",
+      "the location of the file containing the json file of the bandit spec"
+    )
+    .readJsonFile[BanditSpec[BanditSettings.Conversion]]
 
   def conversionBMABCommand[F[_]](
       implicit F: ConcurrentEffect[F],

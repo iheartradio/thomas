@@ -48,6 +48,27 @@ trait BayesianMABAlg[F[_], R, S] {
 }
 object BayesianMABAlg {
 
+  private[bayesian] def createTestSpec[F[_]: MonadThrowable](
+      from: BanditSpec[_]
+    ): F[AbtestSpec] = {
+    val defaultSize = (1d - from.arms
+      .flatMap(_.initialSize)
+      .sum) / from.arms.count(_.initialSize.isEmpty).toDouble
+
+    AbtestSpec(
+      name = "Abtest for Bayesian MAB " + from.feature,
+      feature = from.feature,
+      author = from.settings.author,
+      start = from.start,
+      end = None,
+      groups = from.arms.map(
+        as => Group(as.name, as.initialSize.getOrElse(defaultSize))
+      ),
+      specialization = Some(Specialization.MultiArmBandit),
+      groupMetas = from.arms.mapFilter(as => as.meta.map((as.name, _))).toMap
+    ).pure[F]
+  }
+
   implicit def apply[F[_], R, S](
       implicit stateDao: StateDAO[F, R],
       log: EventLogger[F],
@@ -128,9 +149,10 @@ object BayesianMABAlg {
         ArmState(
           _,
           RS.empty,
-          Probability(0d)
+          None
         )
       )
+
     def init(banditSpec: BanditSpec[S]): F[Bandit] = {
       R.validateKPI(banditSpec.settings.kpiName) >>
         (
@@ -138,30 +160,15 @@ object BayesianMABAlg {
             .insert(
               BanditState[R](
                 feature = banditSpec.feature,
-                arms = emptyArmState(banditSpec.arms),
+                arms = emptyArmState(banditSpec.arms.map(_.name)),
                 iterationStart = banditSpec.start.toInstant,
                 version = 0L
               )
             ),
           settingsDao.insert(banditSpec.settings),
-          abtestAPI
-            .create(
-              AbtestSpec(
-                name = "Abtest for Bayesian MAB " + banditSpec.feature,
-                feature = banditSpec.feature,
-                author = banditSpec.settings.author,
-                start = banditSpec.start,
-                end = None,
-                groups = banditSpec.arms.map(
-                  Group(
-                    _,
-                    1d / banditSpec.arms.size.toDouble
-                  )
-                ),
-                specialization = Some(Specialization.MultiArmBandit)
-              ),
-              false
-            )
+          createTestSpec[F](banditSpec).flatMap(
+            abtestAPI.create(_, false)
+          )
         ).mapN((state, settings, a) => BayesianMAB(a, settings, state))
           .onError {
             case _ =>
@@ -173,11 +180,16 @@ object BayesianMABAlg {
       import Event.BanditPolicyUpdate._
 
       def resizeAbtest(bandit: Bandit) = {
+
+        val reservedGroups = bandit.abtest.data.groups
+          .filter(g => bandit.settings.reservedGroups.contains(g.name))
+
         val newGroups = allocateGroupSize(
           bandit.state.distribution,
           bandit.settings.minimumSizeChange,
-          bandit.settings.maintainExplorationSize
-        )
+          bandit.settings.maintainExplorationSize,
+          availableSize = BigDecimal(1) - reservedGroups.map(_.size).sum
+        ) ++ reservedGroups
         if (newGroups.toSet == bandit.abtest.data.groups.toSet)
           bandit.pure[F]
         else
@@ -246,7 +258,7 @@ object BayesianMABAlg {
         current <- currentState(feature)
         distribution <- R.distribution(
           current.kpiName,
-          current.state.rewardState,
+          current.state.rewardState.filterKeys(!current.settings.reservedGroups(_)),
           current.state.historical
         )
         newState <- stateDao
@@ -256,7 +268,7 @@ object BayesianMABAlg {
               arm =>
                 arm.copy(
                   likelihoodOptimum =
-                    distribution.getOrElse(arm.name, arm.likelihoodOptimum)
+                    distribution.get(arm.name) orElse arm.likelihoodOptimum
                 )
             ).pure[F]
           )
@@ -279,13 +291,15 @@ object BayesianMABAlg {
   private[bayesian] def allocateGroupSize(
       optimalDistribution: Map[GroupName, Probability],
       precision: GroupSize,
-      maintainExplorationSize: Option[GroupSize]
+      maintainExplorationSize: Option[GroupSize],
+      availableSize: BigDecimal
     ): List[Group] = {
+    assert(availableSize <= BigDecimal(1))
     val sizeCandidates =
-      0.to((1d / precision).toInt + 1)
+      0.to((availableSize / precision).toInt + 1)
         .toList
         .map(BigDecimal(_) * precision)
-        .filter(_ < 1d) :+ BigDecimal(1)
+        .filter(_ < availableSize) :+ availableSize
 
     @tailrec
     def findClosest(
@@ -314,12 +328,13 @@ object BayesianMABAlg {
       .foldLeft((sizeCandidates, List.empty[Group])) { (mp, gp) =>
         val (candidates, groups) = mp
         val (groupName, probability) = gp
-        val targetSize = maintainExplorationSize.fold(probability.p)(
-          s => Math.max(s.toDouble, probability.p)
+        val sizeFromOptimalLikelyHood = probability.p * availableSize
+        val targetSize = maintainExplorationSize.fold(sizeFromOptimalLikelyHood)(
+          s => Math.max(s.toDouble, sizeFromOptimalLikelyHood.toDouble)
         )
         val size = findClosest(targetSize, candidates)
         val newGroups = groups :+ Group(groupName, size)
-        val remainder = 1d - newGroups.foldMap(_.size)
+        val remainder = availableSize - newGroups.foldMap(_.size)
         (
           candidates.filter(_ <= remainder),
           newGroups

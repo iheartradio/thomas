@@ -6,7 +6,7 @@ import java.time.OffsetDateTime
 import cats.effect.{ContextShift, IO, Sync, Timer}
 import cats.implicits._
 import com.iheart.thomas.analysis._
-import com.iheart.thomas.bandit.BanditSpec
+import com.iheart.thomas.bandit.{ArmSpec, BanditSpec}
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.{ArmState, BanditSettings}
 import com.iheart.thomas.bandit.tracking.EventLogger
@@ -99,7 +99,7 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
     IO.delay(
       BanditSpec(
         start = OffsetDateTime.now,
-        arms = arms,
+        arms = arms.map(ArmSpec(_)),
         settings = BanditSettings(
           feature = feature,
           title = "for integration tests",
@@ -198,8 +198,8 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
           .unsafeRunSync()
 
       resultState.state.arms.toSet shouldBe Set(
-        ArmState("A", Conversions(1, 2), Probability(0d)),
-        ArmState("B", Conversions(2, 4), Probability(0d))
+        ArmState("A", Conversions(1, 2), None),
+        ArmState("B", Conversions(2, 4), None)
       )
     }
 

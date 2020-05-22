@@ -7,7 +7,13 @@ import cats.data.EitherT
 import cats.MonadError
 import cats.effect.{IO, Resource}
 import com.iheart.thomas.abtest.{AbtestAlg, DefaultAbtestAlg}
-import com.iheart.thomas.analysis.{BetaKPIModel, Conversions, KPIModelApi, KPIName}
+import com.iheart.thomas.analysis.{
+  BetaKPIModel,
+  Conversions,
+  KPIModelApi,
+  KPIName,
+  Probability
+}
 import com.iheart.thomas.bandit.bayesian.{
   BanditSettings,
   BanditState,
@@ -43,7 +49,7 @@ class ConversionBMABAlgSuite extends ConversionBMABAlgSuiteBase {
     init.state.arms.size shouldBe 2
     init.state.arms
       .map(_.likelihoodOptimum)
-      .forall(_.p == 0) shouldBe true
+      .forall(_.isEmpty) shouldBe true
     init.settings.title shouldBe spec.settings.title
     init.abtest.data.specialization shouldBe Some(
       MultiArmBandit
@@ -153,8 +159,8 @@ class ConversionBMABAlgSuite extends ConversionBMABAlgSuiteBase {
       } yield current
     }
 
-    currentState.state.getArm("B").get.likelihoodOptimum.p shouldBe >(
-      currentState.state.getArm("A").get.likelihoodOptimum.p
+    currentState.state.getArm("B").get.likelihoodOptimum.get.p shouldBe >(
+      currentState.state.getArm("A").get.likelihoodOptimum.get.p
     )
 
   }
@@ -346,6 +352,7 @@ class ConversionBMABAlgSuite extends ConversionBMABAlgSuiteBase {
       .find(_.name == "B")
       .get
       .likelihoodOptimum
+      .get
       .p shouldBe 0.5d +- 0.1d
 
   }
@@ -462,6 +469,46 @@ class ConversionBMABAlgSuite extends ConversionBMABAlgSuiteBase {
 
     firstAbtest.groups.toSet should not be (currentAbteset.groups.toSet)
   }
+
+  test("updatePolicy ignores reserved groups") {
+    val spec = createSpec(
+      arms = List(ArmSpec("A"), ArmSpec("B"), ArmSpec("C", initialSize = Some(0.3))),
+      reservedGroups = Set("C")
+    )
+
+    val current = withAPI { api =>
+      for {
+        _ <- api.init(spec)
+        _ <- api.updateRewardState(
+          spec.feature,
+          Map(
+            "A" -> Conversions(100, 500),
+            "B" -> Conversions(100, 500),
+            "C" -> Conversions(500, 500)
+          )
+        )
+        _ <- api.updatePolicy(spec.feature)
+        current <- api.updatePolicy(spec.feature)
+      } yield current
+    }
+
+    current.state.arms
+      .find(_.name == "C")
+      .get
+      .likelihoodOptimum shouldBe None
+    println(current.abtest.data.groups)
+    current.abtest.data.groups.find(_.name == "C").get.size shouldBe BigDecimal(0.3)
+    current.abtest.data.groups.find(_.name == "B").get.size.toDouble should be(
+      0.35d +- 0.02d
+    )
+    current.abtest.data.groups.find(_.name == "A").get.size.toDouble should be(
+      0.35d +- 0.02d
+    )
+
+    current.abtest.data.groups.map(_.size).sum shouldBe BigDecimal(1)
+
+  }
+
 }
 
 class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
@@ -490,7 +537,7 @@ class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
 
   def createSpec(
       feature: FeatureName = "A_new_Feature",
-      arms: List[ArmName] = List("A", "B"),
+      arms: List[ArmSpec] = List(ArmSpec("A"), ArmSpec("B")),
       author: String = "Test Runner",
       start: OffsetDateTime = OffsetDateTime.now,
       title: String = "for integration tests",
@@ -499,7 +546,8 @@ class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
       initialSampleSize: Int = 0,
       historyRetention: Option[FiniteDuration] = None,
       iterationDuration: Option[FiniteDuration] = None,
-      oldHistoryWeight: Option[Weight] = None
+      oldHistoryWeight: Option[Weight] = None,
+      reservedGroups: Set[GroupName] = Set.empty
     ) =
     BanditSpec(
       arms = arms,
@@ -515,6 +563,7 @@ class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
         maintainExplorationSize = None,
         iterationDuration = iterationDuration,
         oldHistoryWeight = oldHistoryWeight,
+        reservedGroups = reservedGroups,
         distSpecificSettings = BanditSettings.Conversion(
           eventChunkSize = 1,
           updatePolicyEveryNChunk = 1
