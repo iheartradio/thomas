@@ -359,7 +359,7 @@ lazy val playExample = project
       guice,
       ws,
       filters,
-      "org.webjars" % "swagger-ui" % "3.25.3"
+      "org.webjars" % "swagger-ui" % "3.25.4"
     ),
     dockerExposedPorts in Docker := Seq(9000),
     swaggerDomainNameSpaces := Seq("com.iheart.thomas"),
