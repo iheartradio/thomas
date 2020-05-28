@@ -12,16 +12,16 @@ trait RewardAnalytics[F[_], R] {
       r: Map[ArmName, R],
       historical: Option[Map[ArmName, R]]
     ): F[Map[ArmName, Probability]]
-  def validateKPI(kpiName: KPIName): F[KPIDistribution]
+  def validateKPI(kpiName: KPIName): F[KPIModel]
 
 }
 
 object RewardAnalytics {
   implicit def metricDataConversions[F[_]: FlatMap](
-      implicit kpiAPI: KPIDistributionApi[F],
+      implicit kpiAPI: KPIModelApi[F],
       assessmentAlg: BasicAssessmentAlg[
         F,
-        BetaKPIDistribution,
+        BetaKPIModel,
         Conversions
       ]
     ): RewardAnalytics[F, Conversions] =
@@ -34,7 +34,7 @@ object RewardAnalytics {
           historical: Option[Map[ArmName, Conversions]]
         ): F[Map[ArmName, Probability]] =
         kpiAPI
-          .getSpecific[BetaKPIDistribution](
+          .getSpecific[BetaKPIModel](
             kpiName
           )
           .flatMap { kpi =>
@@ -55,8 +55,8 @@ object RewardAnalytics {
 
           }
 
-      def validateKPI(kpiName: KPIName): F[KPIDistribution] =
-        kpiAPI.getSpecific[BetaKPIDistribution](kpiName).widen
+      def validateKPI(kpiName: KPIName): F[KPIModel] =
+        kpiAPI.getSpecific[BetaKPIModel](kpiName).widen
 
     }
 }

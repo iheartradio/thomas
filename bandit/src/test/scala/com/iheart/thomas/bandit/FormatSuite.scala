@@ -16,7 +16,13 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
       s"""
         |{
         |  "start": "2020-03-09T16:15:00.000-05:00",
-        |  "arms": ["T1", "T2", "T3", "T4", "T5", "T6"],
+        |  "arms": [
+        |  { "name" : "T1"},
+        |  { "name" : "T2"},
+        |  { "name" : "T3"},
+        |  { "name" : "T4"},
+        |  { "name" : "T5"},
+        |  { "name" : "T6"}],
         |  "settings": {
         |    "feature": "Search_Opt_Alpha",
         |    "author": "Kai",
@@ -39,7 +45,7 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
       .reads(Json.parse(json)) shouldBe JsSuccess(
       BanditSpec(
         start = OffsetDateTime.parse("2020-03-09T16:15:00.000-05:00"),
-        arms = List("T1", "T2", "T3", "T4", "T5", "T6"),
+        arms = List("T1", "T2", "T3", "T4", "T5", "T6").map(ArmSpec(_)),
         settings = BanditSettings(
           feature = "Search_Opt_Alpha",
           author = "Kai",

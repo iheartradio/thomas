@@ -19,7 +19,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.play._
 import bandit.Formats._
 import lihua.mongo.JsonFormats._
-import com.iheart.thomas.analysis.{KPIDistribution, KPIDistributionApi}
+import com.iheart.thomas.analysis.{KPIModel, KPIModelApi}
 import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.dynamo.ClientConfig
 import com.typesafe.config.Config
@@ -33,7 +33,7 @@ import cats.NonEmptyParallel
 
 class BanditService[F[_]: Async: Timer] private (
     apiAlg: ConversionBMABAlg[F],
-    kpiDistApi: KPIDistributionApi[F],
+    kpiDistApi: KPIModelApi[F],
     banditUpdater: BanditUpdater[F]
   )(implicit log: EventLogger[F])
     extends Http4sDsl[F] {
@@ -47,8 +47,8 @@ class BanditService[F[_]: Async: Timer] private (
     Router(
       "/bandits" -> HttpRoutes
         .of[F](managementRoutes orElse updaterRoutes),
-      "/kpiDistributions" -> HttpRoutes
-        .of[F](kpiDistributionsRoutes)
+      "/kpiModels" -> HttpRoutes
+        .of[F](kpiModelsRoutes)
     )
 
   private def updaterRoutes = {
@@ -68,7 +68,7 @@ class BanditService[F[_]: Async: Timer] private (
 
   }: PartialRoutes
 
-  private def kpiDistributionsRoutes = {
+  private def kpiModelsRoutes = {
     case GET -> Root =>
       kpiDistApi.getAll
 
@@ -76,7 +76,7 @@ class BanditService[F[_]: Async: Timer] private (
       kpiDistApi.get(kpiName)
 
     case req @ POST -> Root =>
-      req.as[KPIDistribution].flatMap(kpiDistApi.upsert _)
+      req.as[KPIModel].flatMap(kpiDistApi.upsert _)
 
   }: PartialRoutes
 
@@ -178,7 +178,7 @@ object BanditService {
       BanditUpdater.create[F](buConfig).map { bu =>
         new BanditService[F](
           conversionBMAB,
-          KPIDistributionApi.default[F],
+          KPIModelApi.default[F],
           bu
         )
       }

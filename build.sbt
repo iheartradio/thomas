@@ -35,13 +35,15 @@ lazy val libs =
   .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
   .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
   .addJVM(name = "akka-slf4j",            version = "2.6.3", org = "com.typesafe.akka")
-  .add(   name = "scalacheck-1-14",       version = "3.1.1.1",org = "org.scalatestplus")
+  .add(   name = "scalacheck-1-14",       version = "3.1.2.0",org = "org.scalatestplus")
   .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
   .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
   .addJVM(name = "fs2-kafka",             version = "1.0.0", org = "com.github.fd4s")
   .add(   name = "jawn",                  version = "1.0.0", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
   .addJVM( name = "embedded-kafka",       version = "2.5.0",  org = "io.github.embeddedkafka")
-  .add(   name = "pureconfig",            version = "0.12.3", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
+  .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
+  .addJVM(   name = "evilplot",           version = "0.6.3", org = "com.cibo")
+  .addJVM(   name = "scala-view",         version = "0.5", org = "com.github.darrenjw")
   .add(   name = "cats-retry",            version = "1.1.0", org = "com.github.cb372")
 // format: on
 
@@ -57,6 +59,7 @@ lazy val thomas = project
   .aggregate(
     playExample,
     play,
+    plot,
     client,
     bandit,
     it,
@@ -149,20 +152,24 @@ lazy val analysis = project
   .settings(rootSettings)
   .settings(taglessSettings)
   .settings(
-    sources in (Compile, doc) := Nil, //disable scaladoc due to scalameta not working in scaladoc
-    resolvers += Resolver.bintrayRepo("cibotech", "public"),
     libs.testDependencies("scalacheck", "cats-effect-testing-scalatest"),
     libs.dependencies(
       "rainier-core",
       "cats-effect",
-      //"rainier-cats",
       "newtype",
       "breeze",
       "commons-math3",
       "play-json-derived-codecs"
     )
-//    ,
-//    libs.dependency("rainier-evilplot", Some(Optional.name))
+  )
+
+lazy val plot = project
+  .dependsOn(analysis)
+  .settings(name := "thomas-plot")
+  .settings(rootSettings)
+  .settings(
+    resolvers += Resolver.bintrayRepo("cibotech", "public"),
+    libs.dependencies("evilplot", "scala-view")
   )
 
 lazy val docs = project
@@ -359,7 +366,7 @@ lazy val playExample = project
       guice,
       ws,
       filters,
-      "org.webjars" % "swagger-ui" % "3.25.2"
+      "org.webjars" % "swagger-ui" % "3.25.3"
     ),
     dockerExposedPorts in Docker := Seq(9000),
     swaggerDomainNameSpaces := Seq("com.iheart.thomas"),

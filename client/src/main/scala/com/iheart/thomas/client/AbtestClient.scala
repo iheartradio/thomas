@@ -15,7 +15,7 @@ import lihua.Entity
 import _root_.play.api.libs.json._
 import cats.implicits._
 import com.iheart.thomas.abtest.{DataProvider, Error, TestsData}
-import com.iheart.thomas.analysis.KPIDistribution
+import com.iheart.thomas.analysis.KPIModel
 import com.iheart.thomas.abtest.json.play.Formats._
 import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 
@@ -43,9 +43,9 @@ trait AbtestClient[F[_]] extends DataProvider[F] {
       auto: Boolean
     ): F[Entity[Abtest]]
 
-  def getKPI(name: String): F[KPIDistribution]
+  def getKPI(name: String): F[KPIModel]
 
-  def saveKPI(KPIDistribution: KPIDistribution): F[KPIDistribution]
+  def saveKPI(model: KPIModel): F[KPIModel]
 
   def getTest(tid: TestId): F[Entity[Abtest]]
 
@@ -104,14 +104,14 @@ class Http4SAbtestClient[F[_]: Sync](
 
   implicit def stringToUri(str: String) = Uri.unsafeFromString(str)
 
-  def getKPI(name: String): F[KPIDistribution] =
-    expect[KPIDistribution](GET(urls.kPIs + "/" + name)).adaptError {
+  def getKPI(name: String): F[KPIModel] =
+    expect[KPIModel](GET(Uri.encode(urls.kPIs + "/" + name))).adaptError {
       case UnexpectedStatus(status) if status == Status.NotFound =>
         Error.NotFound("KPI " + name + " is not found")
     }
 
-  def saveKPI(kd: KPIDistribution): F[KPIDistribution] =
-    expect(POST(kd, Uri.unsafeFromString(urls.kPIs)))
+  def saveKPI(model: KPIModel): F[KPIModel] =
+    expect(POST(model, Uri.unsafeFromString(urls.kPIs)))
 
   def tests(asOf: Option[Instant] = None): F[Vector[(Entity[Abtest], Feature)]] = {
     val baseUrl: Uri = Uri.unsafeFromString(urls.tests)
@@ -201,7 +201,7 @@ object AbtestClient {
     def testsData: String
 
     /**
-      * Service URL corresponding to [[analysis.KPIDistributionApi]].get
+      * Service URL corresponding to [[analysis.KPIModelApi]].get
       */
     def kPIs: String
 

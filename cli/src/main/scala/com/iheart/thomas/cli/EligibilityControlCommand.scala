@@ -1,7 +1,6 @@
 package com.iheart.thomas
 package cli
 
-import cats.data.Validated
 import cats.effect.ConcurrentEffect
 import cats.implicits._
 import com.iheart.thomas.abtest.json.play.Formats._
@@ -10,9 +9,6 @@ import com.iheart.thomas.cli.OptsSyntax._
 import com.iheart.thomas.cli.SharedOpts._
 import com.monovore.decline._
 import play.api.libs.json.Json.{prettyPrint, toJson}
-
-import scala.io.Source
-import scala.util.Try
 
 class EligibilityControlCommand[F[_]](implicit F: ConcurrentEffect[F]) {
 
@@ -42,13 +38,7 @@ class EligibilityControlCommand[F[_]](implicit F: ConcurrentEffect[F]) {
       "criteriaFile",
       "the location of the file containing the json criteria"
     )
-    .mapValidated { fileLocation =>
-      Validated
-        .fromTry(Try(Source.fromFile(fileLocation).getLines().mkString("\n")))
-        .leftMap(_.getMessage)
-        .toValidatedNel
-    }
-    .parseJson[UserMetaCriterion.And]
+    .readJsonFile[UserMetaCriterion.And]
 
   val newRevOpts = Opts
     .flag("new", "create a new revision if the current one has already started")

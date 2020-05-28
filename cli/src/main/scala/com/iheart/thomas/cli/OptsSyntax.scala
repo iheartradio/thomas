@@ -7,6 +7,7 @@ import _root_.play.api.libs.json.{JsObject, JsValue, Reads}
 import _root_.play.api.libs.json.Json.parse
 import cats.data.Validated.Valid
 
+import scala.io.Source
 import scala.util.Try
 import scala.util.control.NoStackTrace
 
@@ -73,6 +74,16 @@ object OptsSyntax {
             )
       }
     }
+
+    def readJsonFile[A: Reads]: Opts[A] =
+      self
+        .mapValidated { fileLocation =>
+          Validated
+            .fromTry(Try(Source.fromFile(fileLocation).getLines().mkString("\n")))
+            .leftMap(_.getMessage)
+            .toValidatedNel
+        }
+        .parseJson[A]
   }
 
 }

@@ -18,7 +18,7 @@ case class BanditState[R](
     arms.map(as => (as.name, as.rewardState)).toMap
 
   def distribution: Map[ArmName, Probability] =
-    arms.map(as => (as.name, as.likelihoodOptimum)).toMap
+    arms.mapFilter(as => as.likelihoodOptimum.map((as.name, _))).toMap
 
   def getArm(armName: ArmName): Option[ArmState[R]] =
     arms.find(_.name === armName)
@@ -28,4 +28,4 @@ case class BanditState[R](
 case class ArmState[R](
     name: ArmName,
     rewardState: R,
-    likelihoodOptimum: Probability)
+    likelihoodOptimum: Option[Probability])
