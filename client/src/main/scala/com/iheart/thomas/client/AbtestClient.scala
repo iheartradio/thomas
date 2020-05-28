@@ -105,7 +105,7 @@ class Http4SAbtestClient[F[_]: Sync](
   implicit def stringToUri(str: String) = Uri.unsafeFromString(str)
 
   def getKPI(name: String): F[KPIModel] =
-    expect[KPIModel](GET(urls.kPIs + "/" + name)).adaptError {
+    expect[KPIModel](GET(Uri.encode(urls.kPIs + "/" + name))).adaptError {
       case UnexpectedStatus(status) if status == Status.NotFound =>
         Error.NotFound("KPI " + name + " is not found")
     }

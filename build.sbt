@@ -42,6 +42,8 @@ lazy val libs =
   .add(   name = "jawn",                  version = "1.0.0", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
   .addJVM( name = "embedded-kafka",       version = "2.5.0",  org = "io.github.embeddedkafka")
   .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
+  .addJVM(   name = "evilplot",           version = "0.6.3", org = "com.cibo")
+  .addJVM(   name = "scala-view",         version = "0.5", org = "com.github.darrenjw")
   .add(   name = "cats-retry",            version = "1.1.0", org = "com.github.cb372")
 // format: on
 
@@ -57,6 +59,7 @@ lazy val thomas = project
   .aggregate(
     playExample,
     play,
+    plot,
     client,
     bandit,
     it,
@@ -149,20 +152,24 @@ lazy val analysis = project
   .settings(rootSettings)
   .settings(taglessSettings)
   .settings(
-    sources in (Compile, doc) := Nil, //disable scaladoc due to scalameta not working in scaladoc
-    resolvers += Resolver.bintrayRepo("cibotech", "public"),
     libs.testDependencies("scalacheck", "cats-effect-testing-scalatest"),
     libs.dependencies(
       "rainier-core",
       "cats-effect",
-      //"rainier-cats",
       "newtype",
       "breeze",
       "commons-math3",
       "play-json-derived-codecs"
     )
-//    ,
-//    libs.dependency("rainier-evilplot", Some(Optional.name))
+  )
+
+lazy val plot = project
+  .dependsOn(analysis)
+  .settings(name := "thomas-plot")
+  .settings(rootSettings)
+  .settings(
+    resolvers += Resolver.bintrayRepo("cibotech", "public"),
+    libs.dependencies("evilplot", "scala-view")
   )
 
 lazy val docs = project

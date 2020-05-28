@@ -4,10 +4,13 @@ import cats.effect.Sync
 import org.http4s.client.dsl.Http4sClientDsl
 import _root_.play.api.libs.json.{JsObject, Reads, Writes}
 import cats.implicits._
-import org.http4s.{InvalidResponseException, Request}
+import org.http4s.{InvalidResponseException, Request, Uri}
 
-private[client] abstract class PlayJsonHttp4sClient[F[_]: Sync](
-    c: org.http4s.client.Client[F])
+/**
+  * Utility class for writing http4 based client using play json
+  * @tparam F
+  */
+abstract class PlayJsonHttp4sClient[F[_]: Sync](c: org.http4s.client.Client[F])
     extends Http4sClientDsl[F]
     with lihua.playJson.Formats {
   import org.http4s.play._
@@ -31,5 +34,8 @@ private[client] abstract class PlayJsonHttp4sClient[F[_]: Sync](
             )
         )
     }
+
+  def encode(urlString: String): Uri =
+    Uri.unsafeFromString(Uri.encode(urlString))
 
 }
