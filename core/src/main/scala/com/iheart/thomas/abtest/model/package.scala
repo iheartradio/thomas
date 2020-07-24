@@ -159,7 +159,7 @@ package model {
       description: Option[String],
       overrides: Overrides,
       overrideEligibility: Boolean = false,
-      locked: Boolean = false)
+      lockedAt: Option[Instant] = None)
 
   /**
     *

@@ -23,6 +23,7 @@ import monocle.macros.syntax.lens._
 import mouse.all._
 import henkan.convert.Syntax._
 import mau.RefreshRef
+import play.api.libs.json.Json.JsValueWrapper
 
 import scala.concurrent.duration._
 import scala.util.Random
@@ -534,29 +535,41 @@ final class DefaultAbtestAlg[F[_]](
       Bucketing.getGroup(uid, test.data).map((uid, _))
     }.toMap ++ feature.data.overrides).toList
 
-  private def updateLock(
-      fn: FeatureName,
-      obtain: Boolean
-    ): F[Unit] = {
-    def error(cause: String): Error =
-      if (obtain) ConflictCreation(fn, cause) else FailedToReleaseLock(cause)
+  private def obtainLock(
+      feature: Entity[Feature],
+      gracePeriod: Option[FiniteDuration]
+    ): F[Boolean] = {
+    import TimeUtil.InstantOps
+    val noLock: (String, JsValueWrapper) = "lockedAt" -> Json.obj("$exists" -> false)
+    nowF.flatMap { now =>
+      val lockCheck: (String, JsValueWrapper) =
+        gracePeriod.fold(
+          noLock
+        ) { gp =>
+          "$or" -> Json.arr(
+            Json.obj(noLock),
+            Json.obj(
+              "lockedAt" ->
+                Json.obj("$lt" -> now.plusDuration(gp.inverse))
+            )
+          )
+        }
 
-    ensureFeature(fn).flatMap { feature =>
       featureDao
         .update(
           Json.obj(
-            "name" -> fn,
-            "locked" -> Json.obj("$ne" -> obtain)
+            "name" -> feature.data.name,
+            lockCheck
           ),
-          feature.lens(_.data.locked).set(obtain),
+          feature.lens(_.data.lockedAt).set(Some(now)),
           upsert = false
         )
-        .ensure(error("unexpected current lock status"))(identity)
-        .adaptError {
-          case e: Throwable => error(e.toString)
-        }
-    }.void
+    }
+
   }
+  private def releaseLock(feature: Entity[Feature]): F[Entity[Feature]] =
+    featureDao
+      .update(feature.lens(_.data.lockedAt).set(None))
 
   private def createWithoutLock(
       testSpec: AbtestSpec,
@@ -579,13 +592,21 @@ final class DefaultAbtestAlg[F[_]](
     } yield created
 
   private def addTestWithLock(
-      fn: FeatureName
+      fn: FeatureName,
+      gracePeriod: Option[FiniteDuration] = Some(30.seconds)
     )(add: F[Entity[Abtest]]
     ): F[Entity[Abtest]] =
     for {
-      _ <- updateLock(fn, true)
+      f <- ensureFeature(fn)
+      _ <- obtainLock(f, gracePeriod)
+        .adaptErr {
+          case e => ConflictCreation(fn, e.getMessage)
+        }
+        .ensure(
+          ConflictCreation(fn, "Another process is adding a test to this feature")
+        )(identity)
       attempt <- F.attempt(add)
-      _ <- updateLock(fn, false)
+      _ <- releaseLock(f)
       t <- F.fromEither(attempt)
     } yield t
 
