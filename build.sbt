@@ -374,7 +374,7 @@ lazy val playExample = project
   )
 
 lazy val noPublishing = Seq(skip in publish := true)
-lazy val defaultScalaVer = libs.vers("scalac_2.12")
+lazy val defaultScalaVer = "2.12.10"
 
 lazy val developerKai = Developer(
   "Kailuo Wang",
