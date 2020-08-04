@@ -18,7 +18,7 @@ lazy val libs =
   .addJVM(name = "lihua",                 version = "0.35",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-dynamo-testkit", "lihua-play-json")
   .addJVM(name = "scanamo",               version = "1.0.0-M12-1", org ="org.scanamo", "scanamo-testkit")
   .addJVM(name = "rainier",               version = "0.3.0",  org ="com.stripe", "rainier-core", "rainier-cats")
-  .addJVM(name = "breeze",                version = "1.0",    org ="org.scalanlp", "breeze", "breeze-viz")
+  .addJVM(name = "breeze",                version = "1.1",    org ="org.scalanlp", "breeze", "breeze-viz")
   .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
   .add(   name = "play-json",             version = "2.8.1",  org = "com.typesafe.play")
   .add(   name = "play",                  version = "2.8.1",  org = "com.typesafe.play")
