@@ -1,0 +1,10 @@
+
+@import com.iheart.thomas.abtest.model.Abtest
+@import lihua.Entity
+
+@(tests: Vector[Entity[Abtest]])
+
+
+@main("tests") {
+  @tests.size
+}

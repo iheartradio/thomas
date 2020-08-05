@@ -13,7 +13,7 @@ val gh = GitHubSettings(
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
 // format: off
-lazy val libs =
+lazy val libs = {
   org.typelevel.libraries
   .addJVM(name = "lihua",                 version = "0.35",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-dynamo-testkit", "lihua-play-json")
   .addJVM(name = "scanamo",               version = "1.0.0-M12-1", org ="org.scanamo", "scanamo-testkit")
@@ -45,6 +45,8 @@ lazy val libs =
   .addJVM(   name = "evilplot",           version = "0.6.3", org = "com.cibo")
   .addJVM(   name = "scala-view",         version = "0.5", org = "com.github.darrenjw")
   .add(   name = "cats-retry",            version = "1.1.0", org = "com.github.cb372")
+  .addModule("http4s", "http4s-twirl")
+}
 // format: on
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
@@ -274,16 +276,19 @@ lazy val spark = project
 lazy val http4s = project
   .dependsOn(kafka)
   .aggregate(kafka)
+  .enablePlugins(SbtTwirl)
   .dependsOn(testkit % Test)
   .settings(name := "thomas-http4s")
   .settings(rootSettings)
   .settings(taglessSettings)
   .settings(
     libs.testDependencies("scalacheck", "scalatest"),
+    TwirlKeys.templateImports := Seq(),
     libs.dependencies(
       "logback-classic",
       "http4s-blaze-server",
       "http4s-dsl",
+      "http4s-twirl",
       "http4s-play-json",
       "scala-java8-compat",
       "log4cats-slf4j",
