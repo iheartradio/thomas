@@ -275,7 +275,6 @@ lazy val spark = project
 
 lazy val http4s = project
   .dependsOn(kafka)
-  .aggregate(kafka)
   .enablePlugins(SbtTwirl)
   .dependsOn(testkit % Test)
   .settings(name := "thomas-http4s")
@@ -284,6 +283,7 @@ lazy val http4s = project
   .settings(
     libs.testDependencies("scalacheck", "scalatest"),
     TwirlKeys.templateImports := Seq(),
+    mainClass in reStart := Some("com.iheart.thomas.http4s.ExampleAbtestAdminUIApp"),
     libs.dependencies(
       "logback-classic",
       "http4s-blaze-server",

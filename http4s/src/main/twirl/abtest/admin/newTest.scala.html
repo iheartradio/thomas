@@ -1,0 +1,66 @@
+@import com.iheart.thomas.abtest.model.AbtestSpec
+
+@(draft: Option[AbtestSpec])
+
+
+@main("Create New Test") {
+
+
+<form action="tests" method="post">
+  <div class="container">
+    <div class="row">
+      <div class="col-md">
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">A/B Test Basics</h5>
+
+            <div class="form-group">
+              <label for="testName">Name</label>
+              <input name="name" class="form-control" id="testName" type="text" value="@draft.map(_.name)"/>
+            </div>
+            <div class="form-group">
+              <label for="testFeature">Feature</label>
+              <input name="feature" class="form-control" id="testFeature" type="text" value="@draft.map(_.feature)"/>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">A/B Test Groups</h5>
+
+            <div class="form-group">
+              <label for="testGroupName">Group Name</label>
+              <input name="groups[][name]" class="form-control"
+                     id="testGroupName" type="text"/>
+              <label for="testGroupSize">Size</label>
+              <input name="groups[][size]:number" class="form-control"
+                     id="testGroupSize" type="number" max="1" min="0" step="0.01"/>
+            </div>
+            <div class="form-group">
+              <label for="testGroupName2">Group Name</label>
+              <input name="groups[][name]" class="form-control"
+                     id="testGroupName2" type="text"/>
+              <label for="testGroupSize2">Size</label>
+              <input name="groups[][size]:number" class="form-control"
+                     id="testGroupSize2" type="number"
+                     max="1" min="0" step="0.01"/>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+      <div class="col-md">
+        explain why
+      </div>
+
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+  </div>
+
+
+</form>
+
+
+}
