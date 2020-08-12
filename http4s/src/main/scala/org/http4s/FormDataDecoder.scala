@@ -5,8 +5,6 @@
  */
 
 package org.http4s
-package server
-package middleware
 
 import cats.Applicative
 import cats.data.Validated.Valid
@@ -15,13 +13,13 @@ import cats.effect.Sync
 import cats.implicits._
 
 /**
-  * A simple middle ware that uses [[QueryParamDecoder]] to decode values in [[org.http4s.UrlForm]]
+  * A decoder ware that uses [[QueryParamDecoder]] to decode values in [[org.http4s.UrlForm]]
   *
   * @example
   * {{{
   * scala> import cats.implicits._
   * scala> import cats.data._
-  * scala> import org.http4s.server.middleware.FormDataDecoder._
+  * scala> import org.http4s.FormDataDecoder._
   * scala> import org.http4s.ParseFailure
   * scala> case class Foo(a: String, b: Boolean)
   * scala> case class Bar(fs: List[Foo], f: Foo, d: Boolean)
@@ -46,6 +44,21 @@ import cats.implicits._
   *      |    "d" -> Chain("true"))
   *      | )
   * res1: ValidatedNel[ParseFailure, Bar] = Valid(Bar(List(Foo(a1,true), Foo(a2,false)),Foo(fa,false),true))
+  *
+  * }}}
+  *
+  * This combined with UrlForm can decode case classes from
+  * HTML form parameters. There is a convenient method in [[FormDataDecoder]] that
+  * provides an [[EntityEncoder]], so that you can write
+  * @example
+  * {{{
+  *   HttpRoutes
+  *    .of[F] {
+  *      case req @ POST -> Root =>
+  *        req.as[MyEntity].flatMap { entity =>
+  *          Ok()
+  *        }
+  *    }
   * }}}
   */
 sealed trait FormDataDecoder[A] {
@@ -95,6 +108,13 @@ object FormDataDecoder {
 
     def optional: FormDataDecoder[Option[A]] =
       decoder.map(_.map(Some(_)).getOrElse(None))
+
+    /**
+      * Use a default value when the field is missing
+      * @param defaultValue
+      */
+    def default(defaultValue: A): FormDataDecoder[A] =
+      decoder.map(_.getOrElse(defaultValue))
   }
 
   def fieldEither[A](
@@ -103,19 +123,29 @@ object FormDataDecoder {
       qpd: QueryParamDecoder[A]
     ): FormDataDecoder[Either[String, A]] =
     apply[String, A] { data =>
-      data
+      nonEmptyFields(data)
         .get(key)
         .flatMap(_.headOption)
-        .toRight(s"$key is missing")
+        .toRight(s"$key is missing" + data.toString)
     }(v => qpd.decode(QueryParameterValue(v)))
 
   def field[A: QueryParamDecoder](key: String) = fieldEither(key).required
 
   def fieldOptional[A: QueryParamDecoder](key: String) = fieldEither(key).optional
 
+  /**
+    * For nested, this decoder assumes that the form parameter name use "." as deliminator for levels.
+    * E.g. For a field named "bar" inside a nested class under the field "foo",
+    * the parameter name is "foo.bar".
+    */
   def nested[A: FormDataDecoder](key: String): FormDataDecoder[A] =
     nestedEither(key).required
 
+  /**
+    * For nested, this decoder assumes that the form parameter name use "." as deliminator for levels.
+    * E.g. For a field named "bar" inside a nested class under the field "foo",
+    * the parameter name is "foo.bar".
+    */
   def nestedOptional[A: FormDataDecoder](key: String): FormDataDecoder[Option[A]] =
     nestedEither(key).optional
 
@@ -156,17 +186,28 @@ object FormDataDecoder {
         .traverse(d => A(d))
     )
 
+  /**
+    * For repeated nested values, assuming that the form parameter name use "[]." as a suffix
+    * E.g. "foos[].bar"
+    */
   def list[A: FormDataDecoder](key: String) =
     chain(key).map(_.toList)
 
+  /**
+    * For repeated primitive values, assuming that the form parameter name use "[]" as a suffix
+    * E.g. "foos[]"
+    */
   def listOf[A](key: String)(implicit A: QueryParamDecoder[A]) =
     chainOf(key)(A).map(_.toList)
+
+  private def nonEmptyFields(data: FormData): FormData =
+    data.filter(_._2.exists(_.nonEmpty))
 
   private def extractPrefix(
       prefix: String
     )(data: FormData
     ): Either[String, FormData] = {
-    val extracted = data.toList.mapFilter {
+    val extracted = nonEmptyFields(data).toList.mapFilter {
       case (k, v) =>
         if (k.startsWith(prefix))
           Some((k.stripPrefix(prefix), v))

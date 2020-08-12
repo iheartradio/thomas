@@ -15,7 +15,7 @@ import org.http4s.HttpRoutes
 
 import scala.concurrent.ExecutionContext
 import FormDecoders._
-import org.http4s.server.middleware.FormDataDecoder.formEntityDecoder
+import org.http4s.FormDataDecoder.formEntityDecoder
 
 class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
 

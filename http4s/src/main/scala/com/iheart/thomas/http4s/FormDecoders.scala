@@ -1,23 +1,45 @@
 package com.iheart.thomas
 package http4s
 
-import java.time.OffsetDateTime
+import java.time.{OffsetDateTime, ZonedDateTime}
+import java.time.format.DateTimeFormatter
 
 import cats.data.NonEmptyList
+import cats.data.Validated.Valid
 import cats.implicits._
 import com.iheart.thomas.abtest.json.play.Formats._
 import com.iheart.thomas.abtest.model.Abtest.Specialization
-import com.iheart.thomas.abtest.model._
-import org.http4s.server.middleware.FormDataDecoder
-import org.http4s.server.middleware.FormDataDecoder._
-import org.http4s.{ParseFailure, QueryParamDecoder, QueryParameterValue}
+import com.iheart.thomas.abtest.model.{Abtest, _}
+import org.http4s.FormDataDecoder._
+import org.http4s.{
+  FormDataDecoder,
+  ParseFailure,
+  QueryParamDecoder,
+  QueryParameterValue
+}
 import play.api.libs.json.{Json, Reads}
-object FormDecoders {
 
-  implicit val offsetDateTimeQueryParamDecoder: QueryParamDecoder[OffsetDateTime] =
+import scala.util.Try
+
+object FormDecoders {
+  val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z")
+
+  implicit val offsetDateTimeQueryParamDecoder: QueryParamDecoder[OffsetDateTime] = {
     QueryParamDecoder.fromUnsafeCast(
-      qp => OffsetDateTime.parse(qp.value)
+      qp => ZonedDateTime.parse(qp.value, dateTimeFormatter).toOffsetDateTime
     )("OffsetDateTime")
+  }
+
+  implicit def tags(key: String): FormDataDecoder[List[Tag]] =
+    FormDataDecoder[List[Tag]] { map =>
+      Valid(
+        map
+          .get(key)
+          .flatMap(_.headOption)
+          .map(_.split(",").toList.map(_.trim))
+          .getOrElse(Nil)
+      )
+    }
 
   implicit val bigDecimalQPD: QueryParamDecoder[BigDecimal] =
     QueryParamDecoder.fromUnsafeCast[BigDecimal](
@@ -26,18 +48,23 @@ object FormDecoders {
 
   def jsonEntityQueryParamDecoder[A](implicit A: Reads[A]): QueryParamDecoder[A] =
     (qp: QueryParameterValue) =>
-      A.reads(Json.parse(qp.value))
-        .asEither
-        .leftMap { e =>
-          NonEmptyList.fromListUnsafe(e.map {
-            case (path, errors) =>
-              ParseFailure(
-                "Json field parse failed",
-                s"$path: ${errors.map(_.message).mkString(";")}"
-              )
-          }.toList)
+      Try(Json.parse(qp.value)).toEither
+        .leftMap(e => ParseFailure("Invalid Json", e.getMessage))
+        .toValidatedNel
+        .andThen { json =>
+          A.reads(json)
+            .asEither
+            .leftMap { e =>
+              NonEmptyList.fromListUnsafe(e.map {
+                case (path, errors) =>
+                  ParseFailure(
+                    "Json field parse failed",
+                    s"$path: ${errors.map(_.message).mkString(";")}"
+                  )
+              }.toList)
+            }
+            .toValidated
         }
-        .toValidated
 
   implicit val userMetaCriteriaQueryParamDecoder
       : QueryParamDecoder[UserMetaCriterion.And] =
@@ -72,9 +99,9 @@ object FormDecoders {
       listOf[Tag]("requiredTags"),
       fieldOptional[MetaFieldName]("alternativeIdName"),
       fieldOptional[UserMetaCriterion.And]("userMetaCriteria"),
-      field[Boolean]("reshuffle"),
+      fieldEither[Boolean]("reshuffle").default(false),
       list[GroupRange]("segmentRanges"),
-      field[GroupMetas]("groupMetas"),
-      fieldOptional[Abtest.Specialization]("specialization")
+      fieldEither[GroupMetas]("groupMetas").default(Map.empty),
+      none[Abtest.Specialization].pure[FormDataDecoder]
     ).mapN(AbtestSpec.apply)
 }
