@@ -1,5 +1,6 @@
 @import com.iheart.thomas.abtest.model._
-@import com.iheart.thomas.http4s.FormDecoders.dateTimeFormatter
+@import com.iheart.thomas.abtest.json.play.Formats._
+@import com.iheart.thomas.http4s.FormDecoders.{formatDate, formatJSON}
 
 @(draft: Option[AbtestSpec])
 
@@ -86,7 +87,7 @@
                 <div class="form-group">
                   <label for="testStart">Start</label>
                   <input name="start" class="form-control" id="testStart" type="text"
-                         value="@draft.map(_.start.format(dateTimeFormatter))"/>
+                         value="@draft.map(_.start).map(formatDate)"/>
                 </div>
 
               </div>
@@ -95,7 +96,7 @@
                 <div class="form-group">
                   <label for="testEnd">End</label>
                   <input name="end" class="form-control" id="testEnd" type="text"
-                         value="@draft.flatMap(_.end.map(_.format(dateTimeFormatter)))"/>
+                         value="@draft.flatMap(_.end).map(formatDate)"/>
                 </div>
 
               </div>
@@ -118,7 +119,7 @@
             <div class="form-group">
               <label for="testUserMetaCriteria">User Meta Criteria</label>
               <textarea name="userMetaCriteria" class="form-control" id="testUserMetaCriteria"
-                     value="@draft.map(_.userMetaCriteria)"></textarea>
+                     value="@draft.map(_.userMetaCriteria).map(formatJSON(_))"></textarea>
             </div>
 
             <div class="form-group form-check">
@@ -160,8 +161,9 @@
 
             <div class="form-group">
               <label for="testGroupMetas">Group Meta</label>
-              <textarea name="groupMetas" class="form-control" id="testGroupMetas"
-                        value="@draft.map(_.groupMetas)"></textarea>
+              <textarea name="groupMetas" rows="10"
+                        class="form-control"
+                        id="testGroupMetas">@draft.map(_.groupMetas).map(formatJSON(_))</textarea>
             </div>
 
 

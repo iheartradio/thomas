@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package http4s
 
-import java.time.{OffsetDateTime, ZonedDateTime}
+import java.time.{OffsetDateTime, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
 
 import cats.data.NonEmptyList
@@ -17,12 +17,19 @@ import org.http4s.{
   QueryParamDecoder,
   QueryParameterValue
 }
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.json.{Json, Reads, Writes}
 
 import scala.util.Try
 
 object FormDecoders {
   val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z")
+
+  def formatDate(date: OffsetDateTime): String = {
+    date.toInstant.atZone(ZoneId.systemDefault).format(dateTimeFormatter)
+  }
+  def formatJSON[A](a: A)(implicit w: Writes[A]): String = {
+    Json.prettyPrint(w.writes(a))
+  }
 
   implicit val offsetDateTimeQueryParamDecoder: QueryParamDecoder[OffsetDateTime] = {
     QueryParamDecoder.fromUnsafeCast(

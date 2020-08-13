@@ -68,13 +68,13 @@ sealed trait FormDataDecoder[A] {
     FormDataDecoder(this(_).andThen(f))
 
   /**
-    * Filter out empty strings
+    * Filter out empty strings including spaces
     * Note that these might result in empty Chains as values which will be treated as missing fields.
     * @return
     */
   def sanitized: FormDataDecoder[A] = FormDataDecoder { data =>
     this(data.map {
-      case (k, v) => (k, v.filter(_.nonEmpty))
+      case (k, v) => (k, v.filter(_.trim.nonEmpty))
     })
   }
 
