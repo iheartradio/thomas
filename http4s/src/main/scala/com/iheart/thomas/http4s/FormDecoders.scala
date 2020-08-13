@@ -103,5 +103,5 @@ object FormDecoders {
       list[GroupRange]("segmentRanges"),
       fieldEither[GroupMetas]("groupMetas").default(Map.empty),
       none[Abtest.Specialization].pure[FormDataDecoder]
-    ).mapN(AbtestSpec.apply)
+    ).mapN(AbtestSpec.apply).sanitized
 }

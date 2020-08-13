@@ -67,6 +67,17 @@ sealed trait FormDataDecoder[A] {
   def mapValidated[B](f: A => ValidatedNel[ParseFailure, B]): FormDataDecoder[B] =
     FormDataDecoder(this(_).andThen(f))
 
+  /**
+    * Filter out empty strings
+    * Note that these might result in empty Chains as values which will be treated as missing fields.
+    * @return
+    */
+  def sanitized: FormDataDecoder[A] = FormDataDecoder { data =>
+    this(data.map {
+      case (k, v) => (k, v.filter(_.nonEmpty))
+    })
+  }
+
 }
 
 object FormDataDecoder {
@@ -201,7 +212,7 @@ object FormDataDecoder {
     chainOf(key)(A).map(_.toList)
 
   private def nonEmptyFields(data: FormData): FormData =
-    data.filter(_._2.exists(_.nonEmpty))
+    data.filter(_._2.nonEmpty)
 
   private def extractPrefix(
       prefix: String
