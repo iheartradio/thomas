@@ -13,16 +13,16 @@
       <label for="testGroupName">Group Name</label>
       <input name="groups[].name" class="form-control"
              id="testGroupName" type="text"
-             value="@group.map(_.name)" />
+             value="@group.map(_.name)"/>
     </div>
   </div>
   <div class="col-md">
     <div class="form-group">
       <label for="testGroupSize">Size</label>
-          <input name="groups[].size" class="form-control"
+      <input name="groups[].size" class="form-control"
              id="testGroupSize" type="number"
              value="@group.map(_.size)"
-             min="0" step="0.01" max="1" />
+             min="0" step="0.01" max="1"/>
     </div>
   </div>
 </div>
@@ -36,7 +36,7 @@
       <input name="segmentRanges[].start" class="form-control"
              id="testGroupRangeStart" type="number"
              value="@rg.map(_.start)"
-             min="0" step="0.001" max="1" />
+             min="0" step="0.001" max="1"/>
     </div>
   </div>
   <div class="col-md">
@@ -45,7 +45,7 @@
       <input name="segmentRanges[].end" class="form-control"
              id="testGroupRangeEnd" type="number"
              value="@rg.map(_.end)"
-           min="0" step="0.001" max="1" />
+             min="0" step="0.001" max="1"/>
     </div>
   </div>
 </div>
@@ -107,57 +107,61 @@
             <div class="form-group">
               <label for="testRequiredTags">Tags</label>
               <input name="requiredTags" class="form-control" id="testRequiredTags" type="text"
-                     value="@draft.map(_.requiredTags.mkString(", "))"/>
+                     value="@draft.map(_.requiredTags.mkString(" , "))"/>
             </div>
 
             <div class="form-group">
               <label for="testAlternativeIdName">Alternative Id Name</label>
               <input name="alternativeIdName" class="form-control" id="testAlternativeIdName" type="text"
-                     value="@draft.map(_.alternativeIdName)" />
+                     value="@draft.map(_.alternativeIdName)"/>
             </div>
-            
+
             <div class="form-group">
               <label for="testUserMetaCriteria">User Meta Criteria</label>
               <textarea name="userMetaCriteria" class="form-control" id="testUserMetaCriteria"
-                     value="@draft.map(_.userMetaCriteria).map(formatJSON(_))"></textarea>
+                        value="@draft.map(_.userMetaCriteria).map(formatJSON(_))"></textarea>
             </div>
 
             <div class="form-group form-check">
               <input name="reshuffle" class="form-check-input" id="testReshuffle" type="checkbox"
-              value="@draft.map(_.reshuffle).getOrElse(false)" />
+                     value="@draft.map(_.reshuffle).getOrElse(false)"/>
               <label for="testReshuffle">Reshuffle</label>
             </div>
-
 
 
             <div class="card">
               <div class="card-body">
                 <h5 class="card-title">Groups</h5>
-                @for( g <- draft.map(_.groups).getOrElse(Nil)) {
-                  @group(Some(g))
+                <div id="testGroups">
+                @for( g <- draft.map(_.groups.map(Some(_))).getOrElse(List(None, None))) {
+                @group(g)
                 }
-
-                <h6>New Test Group</h6>
-                <div id="newTestGroup">
+                </div>
+                <button type="button" id="btn-new-test-group"
+                        onclick="newButtonAppend('#newTestGroup','#testGroups')"
+                        class="btn btn-secondary">New Group</button>
+                <div id="newTestGroup" style="display: none">
                   @group(None)
                 </div>
               </div>
             </div>
-
+            
             <div class="card">
               <div class="card-body">
-                <h5 class="card-title">Ranges</h5>
-                @for( g <- draft.map(_.segmentRanges).getOrElse(Nil)) {
-                  @range(Some(g))
-                }
-
-                <h6>New Test Range</h6>
-                <div id="newTestRange">
+                <h5 class="card-title">Segment Ranges For Mutual Exclusive Tests</h5>
+                <div id="testSegmentRanges">
+                  @for( g <- draft.map(_.segmentRanges).getOrElse(Nil)) {
+                    @range(Some(g))
+                  }
+                </div>
+                <button type="button" id="btn-new-test-segment-range"
+                        onclick="newButtonAppend('#newTestSegmentRange','#testSegmentRanges')"
+                        class="btn btn-secondary">New Range</button>
+                <div id="newTestSegmentRange" style="display: none">
                   @range(None)
                 </div>
               </div>
             </div>
-
 
             <div class="form-group">
               <label for="testGroupMetas">Group Meta</label>
@@ -189,8 +193,13 @@
   var pickerSettings =  {
     'format': 'Y-m-d H:i:s T'
   };
-  jQuery('#testStart').datetimepicker(pickerSettings);
-  jQuery('#testEnd').datetimepicker(pickerSettings);
+  $('#testStart').datetimepicker(pickerSettings);
+  $('#testEnd').datetimepicker(pickerSettings);
+
+  function newButtonAppend(newDiv, appendToDiv) {
+      $(newDiv).clone().show().appendTo(appendToDiv);
+  };
+
 
 </script>
 
