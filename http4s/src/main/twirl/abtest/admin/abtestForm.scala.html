@@ -2,7 +2,7 @@
 @import com.iheart.thomas.abtest.json.play.Formats._
 @import com.iheart.thomas.http4s.FormDecoders.{formatDate, formatJSON}
 
-@(draft: Option[AbtestSpec])
+@(draft: Option[AbtestSpec], errorMsg: Option[String] = None)
 
 
 @group(group: Option[Group]) = {
@@ -54,7 +54,6 @@
 
 @main("Create New Test") {
 
-
 <form action="tests" method="post">
   <div class="container">
     <div class="row">
@@ -63,6 +62,12 @@
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">A/B Test Basics</h5>
+
+            @for(msg <- errorMsg)  {
+            <div id="error-msg" class="alert alert-warning" role="alert">
+              @msg
+            </div>
+            }
 
             <div class="form-group">
               <label for="testName">Name</label>

@@ -1,0 +1,14 @@
+
+@(msg: String)
+
+
+
+
+@main("Error!") {
+<div id="error-msg" class="alert alert-warning" role="alert">
+  @msg
+</div>
+
+<button type="submit" class="btn btn-primary" onclick="window.history.back()">Go Back</button>
+}
+

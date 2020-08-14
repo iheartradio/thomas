@@ -21,6 +21,7 @@ import scala.concurrent.ExecutionContext
 import _root_.play.api.libs.json.Json.toJson
 import cats.implicits._
 import Error.{NotFound => APINotFound, _}
+import com.iheart.thomas.http4s.AbtestService.validationErrorMsg
 import lihua.EntityId
 import org.http4s.dsl.impl.{
   OptionalQueryParamDecoderMatcher,
@@ -61,29 +62,6 @@ class AbtestService[F[_]: Async](
     }
 
     def errResponse(error: abtest.Error): F[Response[F]] = {
-
-      val validationErrorMsg: ValidationError => String = {
-        case InconsistentGroupSizes(sizes) =>
-          s"Input group sizes (${sizes.mkString(",")}) add up to more than 1 (${sizes.sum})"
-        case InconsistentTimeRange => "tests must end after start."
-        case CannotScheduleTestBeforeNow =>
-          "Cannot schedule a test that starts in the past, confusing history"
-        case ContinuationGap(le, st) =>
-          s"Cannot schedule a continuation ($st) after the last test expires ($le)"
-        case ContinuationBefore(ls, st) =>
-          s"Cannot schedule a continuation ($st) before the last test starts ($ls)"
-        case DuplicatedGroupName => "group names must be unique."
-        case EmptyGroups         => "There must be at least one group."
-        case GroupNameTooLong    => "Group names must be less than 256 chars."
-        case GroupNameDoesNotExist(gn) =>
-          s"The group name $gn does not exist in the test."
-        case EmptyGroupMeta => s"Cannot update with an empty group meta"
-        case InvalidFeatureName =>
-          s"Feature name can only consist of alphanumeric _, - and ."
-        case InvalidAlternativeIdName =>
-          s"AlternativeIdName can only consist of alphanumeric _, - and ."
-        case EmptyUserId => s"User id cannot be an empty string."
-      }
 
       error match {
         case ValidationErrors(detail) =>
@@ -217,6 +195,29 @@ class AbtestService[F[_]: Async](
 }
 
 object AbtestService {
+
+  val validationErrorMsg: ValidationError => String = {
+    case InconsistentGroupSizes(sizes) =>
+      s"Input group sizes (${sizes.mkString(",")}) add up to more than 1 (${sizes.sum})"
+    case InconsistentTimeRange => "tests must end after start."
+    case CannotScheduleTestBeforeNow =>
+      "Cannot schedule a test that starts in the past, confusing history"
+    case ContinuationGap(le, st) =>
+      s"Cannot schedule a continuation ($st) after the last test expires ($le)"
+    case ContinuationBefore(ls, st) =>
+      s"Cannot schedule a continuation ($st) before the last test starts ($ls)"
+    case DuplicatedGroupName => "group names must be unique."
+    case EmptyGroups         => "There must be at least one group."
+    case GroupNameTooLong    => "Group names must be less than 256 chars."
+    case GroupNameDoesNotExist(gn) =>
+      s"The group name $gn does not exist in the test."
+    case EmptyGroupMeta => s"Cannot update with an empty group meta"
+    case InvalidFeatureName =>
+      s"Feature name can only consist of alphanumeric _, - and ."
+    case InvalidAlternativeIdName =>
+      s"AlternativeIdName can only consist of alphanumeric _, - and ."
+    case EmptyUserId => s"User id cannot be an empty string."
+  }
 
   def fromMongo[F[_]: Timer](
       implicit F: Concurrent[F],
