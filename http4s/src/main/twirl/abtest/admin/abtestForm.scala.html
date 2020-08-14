@@ -133,30 +133,37 @@
               <div class="card-body">
                 <h5 class="card-title">Groups</h5>
                 <div id="testGroups">
-                @for( g <- draft.map(_.groups.map(Some(_))).getOrElse(List(None, None))) {
-                @group(g)
-                }
+                  @for( g <- draft.map(_.groups.map(Some(_))).getOrElse(List(None, None))) {
+                  @group(g)
+                  }
                 </div>
-                <button type="button" id="btn-new-test-group"
-                        onclick="newButtonAppend('#newTestGroup','#testGroups')"
-                        class="btn btn-secondary">New Group</button>
+                <div class="float-right">
+                  <button type="button" id="btn-new-test-group"
+                          onclick="newButtonAppend('#newTestGroup','#testGroups')"
+                          class="btn btn-secondary">New Group
+                  </button>
+                </div>
                 <div id="newTestGroup" style="display: none">
                   @group(None)
                 </div>
               </div>
             </div>
-            
+
+
             <div class="card">
               <div class="card-body">
                 <h5 class="card-title">Segment Ranges For Mutual Exclusive Tests</h5>
                 <div id="testSegmentRanges">
                   @for( g <- draft.map(_.segmentRanges).getOrElse(Nil)) {
-                    @range(Some(g))
+                  @range(Some(g))
                   }
                 </div>
-                <button type="button" id="btn-new-test-segment-range"
-                        onclick="newButtonAppend('#newTestSegmentRange','#testSegmentRanges')"
-                        class="btn btn-secondary">New Range</button>
+                <div class="float-right">
+                  <button type="button" id="btn-new-test-segment-range"
+                          onclick="newButtonAppend('#newTestSegmentRange','#testSegmentRanges')"
+                          class="btn btn-secondary">New Range
+                  </button>
+                </div>
                 <div id="newTestSegmentRange" style="display: none">
                   @range(None)
                 </div>
@@ -169,8 +176,6 @@
                         class="form-control"
                         id="testGroupMetas">@draft.map(_.groupMetas).map(formatJSON(_))</textarea>
             </div>
-
-
           </div>
 
 
@@ -199,7 +204,6 @@
   function newButtonAppend(newDiv, appendToDiv) {
       $(newDiv).clone().show().appendTo(appendToDiv);
   };
-
 
 </script>
 

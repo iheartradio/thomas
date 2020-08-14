@@ -28,11 +28,11 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
               Ok(abtest.admin.html.index(tests))
             }
           case GET -> Root / "new" =>
-            Ok(abtest.admin.html.newTest(None))
+            Ok(abtest.admin.html.abtestForm(None))
 
           case req @ POST -> Root / "tests" =>
             req.as[AbtestSpec].flatMap { spec =>
-              Ok(abtest.admin.html.newTest(Some(spec)))
+              Ok(abtest.admin.html.abtestForm(Some(spec)))
             }
 
         }
