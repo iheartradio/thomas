@@ -1,5 +1,7 @@
 package com.iheart.thomas.http4s
 
+import java.time.OffsetDateTime
+
 import cats.effect.{Async, Concurrent, Resource, Timer}
 import cats.implicits._
 import com.iheart.thomas
@@ -19,21 +21,24 @@ import org.http4s.HttpRoutes
 import scala.concurrent.ExecutionContext
 import FormDecoders._
 import com.iheart.thomas.abtest.Error.ValidationErrors
+import com.iheart.thomas.http4s.AbtestAdminUI.endAfter
 import org.http4s.FormDataDecoder.formEntityDecoder
+import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 
 class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
 
   def routes = {
-    val testsList =
-      alg.getAllTests(None).flatMap { tests =>
-        Ok(abtest.admin.html.index(tests))
+    def testsList(endAfter: Option[OffsetDateTime] = None) =
+      alg.getAllTestsEndAfter(endAfter.getOrElse(OffsetDateTime.now)).flatMap {
+        tests =>
+          Ok(abtest.admin.html.index(tests, endAfter))
       }
 
     val adminRoutes =
       HttpRoutes
         .of[F] {
-          case GET -> Root =>
-            testsList
+          case GET -> Root / "tests" :? endAfter(ea) =>
+            testsList(ea)
 
           case GET -> Root / "new" =>
             Ok(abtest.admin.html.abtestForm(None))
@@ -44,7 +49,7 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
               .flatMap { spec =>
                 alg
                   .create(spec, false)
-                  .flatMap(_ => testsList)
+                  .flatMap(_ => testsList())
                   .handleErrorWith { e =>
                     val errorMsg = e match {
                       case ValidationErrors(detail) =>
@@ -80,4 +85,7 @@ object AbtestAdminUI {
       new AbtestAdminUI[F](alg)
     }
   }
+
+  object endAfter
+      extends OptionalQueryParamDecoderMatcher[OffsetDateTime]("endAfter")
 }
