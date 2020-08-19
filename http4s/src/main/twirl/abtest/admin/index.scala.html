@@ -1,9 +1,55 @@
-@import com.iheart.thomas.abtest.model.Abtest
+@import com.iheart.thomas.abtest.model._
 @import lihua.Entity
-@import java.time.OffsetDateTime
 @import com.iheart.thomas.http4s.Formatters._
+@import com.iheart.thomas.FeatureName
+@import com.iheart.thomas.http4s.AbtestAdminUI.Filters
 
-@(tests: Vector[Entity[Abtest]], endAfter: Option[OffsetDateTime] = None)
+@(tests: List[(FeatureName, List[Entity[Abtest]])], filters: Filters)
+
+
+
+@featureCard(feature: FeatureName, tests: List[Entity[Abtest]]) = {
+
+
+  <a href="#" class="list-group-item list-group-item-secondary mt-2">
+    <span class="font-weight-light h6">Feature</span>
+    <span class="font-weight-heavy h4">@feature</span>
+  </a>
+  @for(test <- tests) {
+
+  <a href="tests/@test._id" class="list-group-item list-group-item-action flex-column align-items-start">
+    <div class="d-flex w-100 justify-content-between">
+      <div class="container">
+        <div class="row">
+          <div class="col-sm">
+
+            <span class="mb-1 h5 font-weight-light">@test.data.name</span>
+            <span class="badge ml-3 badge-@formatStatus(test)._2">
+              @formatStatus(test)._1
+            </span>
+          </div>
+
+          <div class="col-sm text-sm-right">
+            <small>
+              <span class="font-weight-heavy"></span>
+              @formatDate(test.data.start, dateTimeFormatterShort)
+              -
+              @test.data.end.map(formatDate(_, dateTimeFormatterShort)).getOrElse("Indefinitely")
+            </small>
+            <small><span class="font-weight-light ml-3">
+              Author: </span>
+              <span class="font-weight-heavy"> @test.data.author</span>
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </a>
+
+  }
+
+}
+
 
 
 @main("tests") {
@@ -13,35 +59,15 @@
   <label for="testEndAfter">Show tests that end after</label>
   <input name="endAfter" class="form-control" id="testEndAfter"
          type="text"
-         value="@endAfter.map(formatDate)"/>
+         value="@filters.endsAfter.map(formatDate)"/>
   <button class="btn btn-primary" type="submit">Apply</button>
 </form>
 
-<div class="list-group">
-  @for(test <- tests) {
 
-  <a href="tests/@test._id" class="list-group-item list-group-item-action flex-column align-items-start">
-    <div class="d-flex w-100 justify-content-between">
-      <h5 class="mb-1">@test.data.feature : <span class="font-weight-light">@test.data.name</span></h5>
-
-    </div>
-    <span class="badge badge-@formatStatus(test)._2">
-      @formatStatus(test)._1
-    </span>
-    <small>
-      <span class="font-weight-heavy">Start: </span>
-        @formatDate(test.data.start, dateTimeFormatterShort)
-    </small>
-    @for(end <- test.data.end) {
-    <small><span class="font-weight-heavy">
-        End: </span>
-      @formatDate(end, dateTimeFormatterShort)</small>
-    }
-    <small><span class="font-weight-heavy">
-      Author: </span>@test.data.author
-    </small>
-  </a>
-  }
+<div class="abtests list-group">
+  @for(featureTests <- tests) {
+    @featureCard(featureTests._1, featureTests._2)
+}
 </div>
 <a href="tests/new">
   <button class="btn btn-primary">New Test</button>
