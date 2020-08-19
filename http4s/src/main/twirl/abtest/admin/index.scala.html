@@ -4,7 +4,7 @@
 @import com.iheart.thomas.FeatureName
 @import com.iheart.thomas.http4s.AbtestAdminUI.Filters
 
-@(tests: List[(FeatureName, List[Entity[Abtest]])], filters: Filters)
+@(tests: List[(FeatureName, List[Entity[Abtest]])], features: List[FeatureName], filters: Filters)
 
 
 
@@ -56,11 +56,31 @@
 <h4>Abtests</h4>
 
 <form id="tests-filters" action="tests" method="get">
-  <label for="testEndAfter">Show tests that end after</label>
-  <input name="endAfter" class="form-control" id="testEndAfter"
-         type="text"
-         value="@filters.endsAfter.map(formatDate)"/>
-  <button class="btn btn-primary" type="submit">Apply</button>
+    <div class="form-row">
+      <div class="form-group col-sm">
+        <label for="testEndsAfter">Show tests that end after</label>
+        <input name="endsAfter" class="form-control" id="testEndsAfter"
+               type="text"
+               value="@formatDate(filters.endsAfter)"/>
+        <button class="btn btn-primary" type="submit">Apply</button>
+      </div>
+      <div class="form-group col-sm" >
+        <label for="testsFeature">Show Feature</label>
+        <select id="testsFeature" name="feature" class="form-control">
+          <option value="_ALL_FEATURES_">All</option>
+          @for(feature <- features) {
+            <option value="@feature"
+              @if(filters.feature.fold(false)(_ == feature)){
+                selected
+              }
+
+            >@feature</option>
+          }
+        </select>
+      </div>
+    </div>
+
+
 </form>
 
 
@@ -79,6 +99,6 @@
   var pickerSettings =  {
     'format': 'Y-m-d H:i:s T'
   };
-  $('#testEndAfter').datetimepicker(pickerSettings);
+  $('#testEndsAfter').datetimepicker(pickerSettings);
 
 </script>

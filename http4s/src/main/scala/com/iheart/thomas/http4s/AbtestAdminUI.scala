@@ -22,33 +22,36 @@ import scala.concurrent.ExecutionContext
 import FormDecoders._
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.abtest.Error.ValidationErrors
-import com.iheart.thomas.http4s.AbtestAdminUI.{Filters, endAfter}
+import com.iheart.thomas.http4s.AbtestAdminUI.{Filters, endsAfter, feature}
 import org.http4s.FormDataDecoder.formEntityDecoder
 import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
+import org.http4s.dsl.io.QueryParamDecoderMatcher
 
 class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
 
   def routes = {
 
     def testsList(filters: Filters = Filters()) =
-      alg
-        .getAllTestsEndAfter(filters.endsAfter.getOrElse(OffsetDateTime.now))
-        .flatMap { tests =>
-          val toShow =
-            filters.feature
-              .fold(tests)(f => tests.filter(_.data.feature == f))
-              .groupBy(_.data.feature)
-              .mapValues(_.sortBy(_.data.start).toList)
-              .toList
-              .sortBy(_._1)
-          Ok(abtest.admin.html.index(toShow, filters))
-        }
+      (
+        alg
+          .getAllTestsEndAfter(filters.endsAfter),
+        alg.getAllFeatures
+      ).mapN { (tests, features) =>
+        val toShow =
+          filters.feature
+            .fold(tests)(f => tests.filter(_.data.feature == f))
+            .groupBy(_.data.feature)
+            .mapValues(_.sortBy(_.data.start).toList)
+            .toList
+            .sortBy(_._1)
+        Ok(abtest.admin.html.index(toShow, features, filters))
+      }.flatten
 
     val adminRoutes =
       HttpRoutes
         .of[F] {
-          case GET -> Root / "tests" :? endAfter(ea) =>
-            testsList(Filters(ea))
+          case GET -> Root / "tests" :? endsAfter(ea) +& feature(fn) =>
+            testsList(Filters(ea, fn.filter(_ != "_ALL_FEATURES_")))
 
           case GET -> Root / "new" =>
             Ok(abtest.admin.html.abtestForm(None))
@@ -81,7 +84,7 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
 object AbtestAdminUI {
 
   case class Filters(
-      endsAfter: Option[OffsetDateTime] = None,
+      endsAfter: OffsetDateTime = OffsetDateTime.now.minusDays(10),
       feature: Option[FeatureName] = None)
 
   def fromMongo[F[_]: Timer](
@@ -101,6 +104,7 @@ object AbtestAdminUI {
     }
   }
 
-  object endAfter
-      extends OptionalQueryParamDecoderMatcher[OffsetDateTime]("endAfter")
+  object endsAfter extends QueryParamDecoderMatcher[OffsetDateTime]("endsAfter")
+
+  object feature extends OptionalQueryParamDecoderMatcher[FeatureName]("feature")
 }
