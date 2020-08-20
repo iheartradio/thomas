@@ -7,14 +7,19 @@ import cats.effect.Timer
 import cats.implicits._
 import com.iheart.thomas.TimeUtil._
 import com.iheart.thomas.abtest.model.Abtest.Specialization
-import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group, GroupSize}
+import com.iheart.thomas.abtest.model.{
+  Abtest,
+  AbtestSpec,
+  GroupSpec,
+  Group,
+  GroupSize
+}
 import com.iheart.thomas.analysis.Probability
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.tracking.Event.BanditPolicyUpdate.Reallocated
 import com.iheart.thomas.bandit.tracking.{Event, EventLogger}
 import com.iheart.thomas.bandit.{AbtestNotFound, BanditSpec, RewardState}
 import com.iheart.thomas.{FeatureName, GroupName, MonadThrowable, abtest}
-import henkan.convert.Syntax._
 import lihua.Entity
 
 import scala.annotation.tailrec
@@ -62,10 +67,9 @@ object BayesianMABAlg {
       start = from.start,
       end = None,
       groups = from.arms.map(
-        as => Group(as.name, as.initialSize.getOrElse(defaultSize))
+        as => GroupSpec(as.name, as.initialSize.getOrElse(defaultSize), as.meta)
       ),
-      specialization = Some(Specialization.MultiArmBandit),
-      groupMetas = from.arms.mapFilter(as => as.meta.map((as.name, _))).toMap
+      specialization = Some(Specialization.MultiArmBandit)
     ).pure[F]
   }
 
@@ -197,11 +201,11 @@ object BayesianMABAlg {
             nowT <- now[F].map(_.atOffset(ZoneOffset.UTC))
             abtest <- abtestAPI.continue(
               bandit.abtest.data
-                .to[AbtestSpec]
-                .set(
+                .copy(groups = newGroups)
+                .toSpec
+                .copy(
                   start = nowT,
-                  end = bandit.abtest.data.end.map(_.atOffset(ZoneOffset.UTC)),
-                  groups = newGroups
+                  end = bandit.abtest.data.end.map(_.atOffset(ZoneOffset.UTC))
                 )
             )
             _ <- bandit.settings.historyRetention.fold(F.unit)(

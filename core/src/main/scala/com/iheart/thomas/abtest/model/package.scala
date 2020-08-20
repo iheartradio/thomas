@@ -12,6 +12,8 @@ import cats.implicits._
 import _root_.play.api.libs.json.JsObject
 import lihua.EntityId
 import java.time.Instant
+import henkan.convert.Syntax._
+import TimeUtil._
 
 package object model {
   type TestId = EntityId
@@ -54,7 +56,7 @@ package model {
       userMetaCriteria: UserMetaCriteria = None,
       salt: Option[String] = None,
       segmentRanges: List[GroupRange] = Nil,
-      groupMetas: GroupMetas = Map(),
+      groupMetas: GroupMetas = Map(), //todo: migrate data into Group
       specialization: Option[Abtest.Specialization] = None) {
 
     val hasEligibilityControl: Boolean =
@@ -81,6 +83,15 @@ package model {
 
     def idToUse(ui: UserInfo): Option[String] =
       alternativeIdName.fold(ui.userId)(ui.meta.get)
+
+    def toSpec: AbtestSpec =
+      this
+        .to[AbtestSpec]
+        .set(
+          start = start.toOffsetDateTimeSystemDefault,
+          end = end.map(_.toOffsetDateTimeSystemDefault),
+          groups = Abtest.toGroupSpecs(groups, groupMetas)
+        )
   }
 
   /**
@@ -104,17 +115,20 @@ package model {
       author: String,
       start: OffsetDateTime,
       end: Option[OffsetDateTime],
-      groups: List[Group],
+      groups: List[GroupSpec],
       requiredTags: List[Tag] = Nil,
       alternativeIdName: Option[MetaFieldName] = None,
       userMetaCriteria: UserMetaCriteria = None,
       reshuffle: Boolean = false,
       segmentRanges: List[GroupRange] = Nil,
-      groupMetas: GroupMetas = Map(),
       specialization: Option[Abtest.Specialization] = None) {
 
     val startI = start.toInstant
     val endI = end.map(_.toInstant)
+    def groupMetas: GroupMetas =
+      groups.mapFilter(gs => gs.meta.map((gs.name, _))).toMap
+
+    def groupsWithoutMeta = groups.map(gs => Group(gs.name, gs.size))
   }
 
   object Abtest {
@@ -133,11 +147,23 @@ package model {
       implicit val eq: Eq[Status] = Eq.fromUniversalEquals
     }
 
+    def toGroupSpecs(
+        groups: List[Group],
+        groupMetas: GroupMetas
+      ): List[GroupSpec] =
+      groups.map(g => GroupSpec(g.name, g.size, groupMetas.get(g.name)))
+
   }
 
   case class Group(
       name: GroupName,
       size: GroupSize)
+
+  //todo: remove once meta is moved into Group
+  case class GroupSpec(
+      name: GroupName,
+      size: GroupSize,
+      meta: Option[GroupMeta])
 
   case class GroupRange(
       start: BigDecimal,

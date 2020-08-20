@@ -35,6 +35,7 @@ object Formats {
   val j = Json.using[WithDefaultValues]
 
   implicit val groupFormat = j.format[Group]
+  implicit val groupSpecFormat = j.format[GroupSpec]
 
   implicit val groupRangeFormat = j.format[GroupRange]
 

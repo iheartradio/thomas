@@ -65,7 +65,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       val test1 = createAbtestOnServer(fakeAb().copy(start = startTime))
       val test2 = createAbtestOnServer(
         Some(
-          fakeAb(feature = test1.data.feature, groups = List(Group("A", 0.2)))
+          fakeAb(feature = test1.data.feature, groups = List(group("A", 0.2)))
             .copy(start = startTime)
         ),
         auto = true
@@ -83,7 +83,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       val test1 = createAbtestOnServer(fakeAb().copy(start = startTime))
       val test2 = createAbtestOnServer(
         Some(
-          fakeAb(feature = test1.data.feature, groups = List(Group("A", 0.2)))
+          fakeAb(feature = test1.data.feature, groups = List(group("A", 0.2)))
             .copy(start = startTime, end = None)
         ),
         auto = true
@@ -176,7 +176,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       val invalidAB = fakeAb(
         start = -3,
         end = -4,
-        groups = Group("C", 0.2) :: ab.groups,
+        groups = group("C", 0.2) :: ab.groups,
         feature = "invalid feature with space"
       )
 
@@ -257,7 +257,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
         2,
         5,
         feature = featureName,
-        groups = List(Group("A", 0.7), Group("B", 0.3))
+        groups = List(group("A", 0.7), group("B", 0.3))
       )
 
       val creation = create(ab, true)
@@ -277,7 +277,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
         1,
         5,
         feature = featureName,
-        groups = List(Group("A", 0.7), Group("B", 0.3))
+        groups = List(group("A", 0.7), group("B", 0.3))
       )
 
       val attempt1 = create(ab, true)
@@ -362,13 +362,13 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     "continue a test" in {
       val test1 =
         fakeAb(0, 100, "feature1").copy(
-          groups = List(Group("A", 0.2), Group("B", 0.4))
+          groups = List(group("A", 0.2), group("B", 0.4))
         )
       val test1Created = createAbtestOnServer(test1)
 
       val test2 =
         fakeAb(1, 100, "feature1").copy(
-          groups = List(Group("A", 0.6), Group("B", 0.4))
+          groups = List(group("A", 0.6), group("B", 0.4))
         )
 
       val r = controller.continue(jsonRequest(test2))
@@ -676,7 +676,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
   "AlternativeId Integration" should {
     val n = 20
     val testUsingAlternativeId = fakeAb(
-      groups = (1 to n).toList.map(i => Group(s"Group$i", 1d / n.toDouble)),
+      groups = (1 to n).toList.map(i => group(s"Group$i", 1d / n.toDouble)),
       alternativeIdName = Some("deviceId")
     )
     val userIds = (1 to 20).map(_ => randomUserId)
@@ -725,7 +725,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
     "works with overrides" in {
       val ab = createAbtestOnServer(
-        testUsingAlternativeId.copy(groups = List(Group("A", 1), Group("B", 0)))
+        testUsingAlternativeId.copy(groups = List(group("A", 1), group("B", 0)))
       )
       val deviceId = randomUserId
       toServer(controller.addOverride(ab.data.feature, deviceId, "B"))
@@ -954,7 +954,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       resultTests.size mustBe 2
 
       val testResult = contentAsJson(
-        controller.get(resultTests.head._id.value)(FakeRequest())
+        controller.get(resultTests.head._id)(FakeRequest())
       ).as[Entity[Abtest]]
       testResult.data.groupMetas mustBe Map(
         "A" -> Json.obj("ff" -> "a"),
@@ -979,7 +979,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     }
 
     "does not return meta that doesn't come with one" in {
-      val ab = createAbtestOnServer(fakeAb.copy(groups = List(Group("A", 1))))
+      val ab = createAbtestOnServer(fakeAb.copy(groups = List(group("A", 1))))
       val result = contentAsJson(
         controller.getGroupsWithMeta(
           jsonRequest(
@@ -1016,9 +1016,17 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     }
 
     "subsequent test from spec inherits meta settings when new spec has empty meta" in {
-
       val metas = Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
-      val ab = createAbtestOnServer(fakeAb(1, 20, groupMetas = metas))
+      val ab = createAbtestOnServer(
+        fakeAb(
+          1,
+          20,
+          groups = List(
+            GroupSpec("A", 0.5, metas.get("A")),
+            GroupSpec("B", 0.5, metas.get("B"))
+          )
+        )
+      )
 
       val subSequent =
         createAbtestOnServer(fakeAb(21, 25, feature = ab.data.feature))
@@ -1029,13 +1037,30 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     "subsequent test from spec rewrite meta settings " in {
 
       val metas = Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
-      val ab = createAbtestOnServer(fakeAb(1, 20, groupMetas = metas))
+      val ab = createAbtestOnServer(
+        fakeAb(
+          1,
+          20,
+          groups = List(
+            GroupSpec("A", 0.5, metas.get("A")),
+            GroupSpec("B", 0.5, metas.get("B"))
+          )
+        )
+      )
 
       val newMetas =
         Map("A" -> Json.obj("ff" -> "aa"), "B" -> Json.obj("ff" -> "bb"))
 
       val subSequent = createAbtestOnServer(
-        fakeAb(21, 25, feature = ab.data.feature, groupMetas = newMetas)
+        fakeAb(
+          21,
+          25,
+          feature = ab.data.feature,
+          groups = List(
+            GroupSpec("A", 0.5, newMetas.get("A")),
+            GroupSpec("B", 0.5, newMetas.get("B"))
+          )
+        )
       )
 
       subSequent.data.groupMetas mustBe newMetas
@@ -1103,7 +1128,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     "override honor eligibility control" in {
 
       val ab = createAbtestOnServer(
-        fakeAb(groups = List(Group("A", 0)), requiredTags = List("tag1"))
+        fakeAb(groups = List(group("A", 0)), requiredTags = List("tag1"))
       )
 
       val userId = "1"
@@ -1117,7 +1142,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     "override overrides eligibility control when set so" in {
 
       val ab = createAbtestOnServer(
-        fakeAb(groups = List(Group("A", 0)), requiredTags = List("tag1"))
+        fakeAb(groups = List(group("A", 0)), requiredTags = List("tag1"))
       )
 
       val userId = "1"
@@ -1134,7 +1159,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       val overrideGroup = "B"
 
       val ab = createAbtestOnServer(
-        fakeAb(1, 20).copy(groups = List(Group("A", 1), Group(overrideGroup, 0)))
+        fakeAb(1, 20).copy(groups = List(group("A", 1), group(overrideGroup, 0)))
       )
 
       toServer(
@@ -1239,15 +1264,15 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     "Inherits as many users from previous test as possible" in {
       val ab1 = createAbtestOnServer(
         fakeAb(1, 2, "a_feature")
-          .copy(groups = List(Group("A", 0.3), Group("B", 0.3), Group("C", 0.2)))
+          .copy(groups = List(group("A", 0.3), group("B", 0.3), group("C", 0.2)))
       )
       val ab2 = createAbtestOnServer(
         fakeAb(3, 4, "a_feature")
-          .copy(groups = List(Group("D", 0.2), Group("A", 0.5), Group("B", 0.2)))
+          .copy(groups = List(group("D", 0.2), group("A", 0.5), group("B", 0.2)))
       )
       val ab3 = createAbtestOnServer(
         fakeAb(5, 6, "a_feature")
-          .copy(groups = List(Group("B", 0.1), Group("A", 0.6), Group("C", 0.2)))
+          .copy(groups = List(group("B", 0.1), group("A", 0.6), group("C", 0.2)))
       )
 
       val ids = (0 to 1000).toList.map(_.toString)
@@ -1270,7 +1295,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
           1,
           2,
           "a_feature",
-          groups = List(Group("A", 0.3), Group("B", 0.3), Group("C", 0.2))
+          groups = List(group("A", 0.3), group("B", 0.3), group("C", 0.2))
         )
       )
       val ab2 = createAbtestOnServer(
@@ -1278,7 +1303,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
           3,
           4,
           "a_feature",
-          groups = List(Group("D", 0.2), Group("A", 0.5), Group("B", 0.2))
+          groups = List(group("D", 0.2), group("A", 0.5), group("B", 0.2))
         )
       )
       val ab3 = createAbtestOnServer(
@@ -1286,7 +1311,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
           5,
           6,
           "a_feature",
-          groups = List(Group("B", 0.1), Group("A", 0.6), Group("C", 0.2))
+          groups = List(group("B", 0.1), group("A", 0.6), group("C", 0.2))
         )
       )
 
@@ -1326,7 +1351,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
 
     "regression range evolution" in {
       val originalSpec =
-        fakeAb(start = 1, groups = List(Group("A", 0), Group("B", 0)))
+        fakeAb(start = 1, groups = List(group("A", 0), group("B", 0)))
       createAbtestOnServer(originalSpec)
 
       val continued = createAbtestOnServer(
@@ -1334,7 +1359,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
           fakeAb(
             feature = originalSpec.feature,
             start = 2,
-            groups = List(Group("A", 0.1), Group("B", 0.1))
+            groups = List(group("A", 0.1), group("B", 0.1))
           )
         ),
         auto = true
@@ -1347,7 +1372,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
     }
 
     "zero sized group has no range" in {
-      val spec = fakeAb(start = 1, groups = List(Group("A", 0), Group("B", 0)))
+      val spec = fakeAb(start = 1, groups = List(group("A", 0), group("B", 0)))
       val created = createAbtestOnServer(spec)
       created.data.ranges.values.map { range =>
         range must be(empty)
@@ -1403,8 +1428,10 @@ class AbtestIntegrationSuiteBase
     with GuiceOneAppPerSuite
     with BeforeAndAfter {
 
+  import io.estatico.newtype.ops._
+
   implicit def toEntityId(sid: String): EntityId = EntityId(sid)
-  implicit def toString(eid: EntityId): String = eid.value
+  implicit def toString(eid: EntityId): String = eid.coerce
 
   type F[A] = IO[A]
 
@@ -1427,16 +1454,22 @@ class AbtestIntegrationSuiteBase
 
   def fakeAb: AbtestSpec = fakeAb()
 
+  def group(
+      name: GroupName,
+      size: GroupSize
+    ) =
+    GroupSpec(name, size, None)
+
   def fakeAb(
       start: Int = 0,
       end: Int = 100,
       feature: String = "AMakeUpFeature" + Random.alphanumeric.take(5).mkString,
       alternativeIdName: Option[MetaFieldName] = None,
-      groups: List[Group] = List(Group("A", 0.5), Group("B", 0.5)),
+      groups: List[GroupSpec] = List(GroupSpec("A", 0.5, None), GroupSpec("B", 0.5,
+              None)),
       userMetaCriteria: UserMetaCriteria = None,
       segRanges: List[GroupRange] = Nil,
-      requiredTags: List[Tag] = Nil,
-      groupMetas: GroupMetas = Map()
+      requiredTags: List[Tag] = Nil
     ): AbtestSpec = AbtestSpec(
     name = "test",
     author = "kai",
@@ -1447,8 +1480,7 @@ class AbtestIntegrationSuiteBase
     alternativeIdName = alternativeIdName,
     userMetaCriteria = userMetaCriteria,
     segmentRanges = segRanges,
-    requiredTags = requiredTags,
-    groupMetas = groupMetas
+    requiredTags = requiredTags
   )
 
   after {

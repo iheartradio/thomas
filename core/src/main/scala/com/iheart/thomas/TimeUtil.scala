@@ -23,7 +23,10 @@ object TimeUtil {
     )
 
   implicit class InstantOps(private val me: Instant) extends AnyVal {
-    def toODT = me.atOffset(ZoneOffset.UTC)
+    def toOffsetDateTimeUTC = me.atOffset(ZoneOffset.UTC)
+
+    def toOffsetDateTimeSystemDefault =
+      me.atZone(ZoneId.systemDefault()).toOffsetDateTime
 
     def durationTo(that: Instant): FiniteDuration =
       FiniteDuration(Duration.between(me, that).toNanos, NANOSECONDS)

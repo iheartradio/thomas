@@ -434,9 +434,8 @@ final class DefaultAbtestAlg[F[_]](
                 .raiseError[F, Entity[Abtest]]
             else
               create(
-                candidate.data
-                  .to[AbtestSpec]
-                  .set(
+                candidate.data.toSpec
+                  .copy(
                     start = now.atOffset(ZoneOffset.UTC),
                     end = candidate.data.end.map(_.atOffset(ZoneOffset.UTC))
                   ),
@@ -632,32 +631,6 @@ final class DefaultAbtestAlg[F[_]](
       }
     } yield r
 
-  private def tryUpdate(
-      toUpdate: Entity[Abtest],
-      updateWith: AbtestSpec,
-      now: Instant
-    ): Option[F[Entity[Abtest]]] =
-    if (toUpdate.data.canChange(now) && toUpdate.data.groups
-          .sortBy(_.name) == updateWith.groups
-          .sortBy(_.name))
-      Some(
-        abTestDao.update(
-          toUpdate.copy(
-            data = updateWith
-              .to[Abtest]
-              .set(
-                start = updateWith.startI,
-                end = updateWith.endI,
-                ranges = toUpdate.data.ranges,
-                salt =
-                  (if (updateWith.reshuffle) Option(newSalt)
-                   else toUpdate.data.salt)
-              )
-          )
-        )
-      )
-    else None
-
   private def newSalt =
     Random.alphanumeric.take(10).mkString
 
@@ -712,36 +685,70 @@ final class DefaultAbtestAlg[F[_]](
       assignment <- AssignGroups.assign[F](td, query, staleTimeout)
     } yield (assignment, td.at)
 
+  private def testFromSpec(
+      spec: AbtestSpec,
+      basedOn: Option[Entity[Abtest]],
+      newRange: Boolean
+    ): Abtest = {
+    spec
+      .to[Abtest]
+      .set(
+        start = spec.startI,
+        end = spec.endI,
+        groups = spec.groupsWithoutMeta,
+        ranges =
+          if (newRange || basedOn.isEmpty)
+            Bucketing.newRanges(
+              spec.groupsWithoutMeta,
+              basedOn
+                .map(_.data.ranges)
+                .getOrElse(Map.empty)
+            )
+          else basedOn.get.data.ranges,
+        salt =
+          (if (spec.reshuffle) Option(newSalt)
+           else basedOn.flatMap(_.data.salt)),
+        groupMetas =
+          (if (spec.groupMetas.isEmpty)
+             basedOn
+               .map(_.data.groupMetas)
+               .getOrElse(Map.empty)
+           else spec.groupMetas)
+      )
+
+  }
+
   private def doCreate(
-      newSpec: AbtestSpec,
+      spec: AbtestSpec,
       inheritFrom: Option[Entity[Abtest]]
     ): F[Entity[Abtest]] = {
     for {
       newTest <- abTestDao.insert(
-        newSpec
-          .to[Abtest]
-          .set(
-            start = newSpec.start.toInstant,
-            end = newSpec.end.map(_.toInstant),
-            ranges = Bucketing.newRanges(
-              newSpec.groups,
-              inheritFrom
-                .map(_.data.ranges)
-                .getOrElse(Map.empty)
-            ),
-            salt =
-              (if (newSpec.reshuffle) Option(newSalt)
-               else inheritFrom.flatMap(_.data.salt)),
-            groupMetas =
-              (if (newSpec.groupMetas.isEmpty)
-                 inheritFrom
-                   .map(_.data.groupMetas)
-                   .getOrElse(Map.empty)
-               else newSpec.groupMetas)
-          )
+        testFromSpec(spec, inheritFrom, true)
       )
-      _ <- ensureFeature(newSpec.feature)
+      _ <- ensureFeature(spec.feature)
     } yield newTest
+  }
+
+  private def tryUpdate(
+      toUpdate: Entity[Abtest],
+      updateWith: AbtestSpec,
+      now: Instant
+    ): Option[F[Entity[Abtest]]] = {
+    val groupsUnchanged = toUpdate.data.groups
+      .sortBy(_.name) == updateWith.groups
+      .sortBy(_.name)
+      .map(gs => model.Group(gs.name, gs.size))
+
+    if (toUpdate.data.canChange(now) && groupsUnchanged)
+      Some(
+        abTestDao.update(
+          toUpdate.copy(
+            data = testFromSpec(updateWith, Some(toUpdate), false)
+          )
+        )
+      )
+    else None
   }
 
   private def validateForCreation(testSpec: AbtestSpec): F[Unit] =
