@@ -59,14 +59,13 @@
     <div class="form-row">
       <div class="form-group col-sm">
         <label for="testEndsAfter">Show tests that end after</label>
-        <input name="endsAfter" class="form-control" id="testEndsAfter"
+        <input name="endsAfter" class="form-control form-filter" id="testEndsAfter"
                type="text"
                value="@formatDate(filters.endsAfter)"/>
-        <button class="btn btn-primary" type="submit">Apply</button>
       </div>
       <div class="form-group col-sm" >
         <label for="testsFeature">Show Feature</label>
-        <select id="testsFeature" name="feature" class="form-control">
+        <select id="testsFeature" name="feature" class="form-control form-filter">
           <option value="_ALL_FEATURES_">All</option>
           @for(feature <- features) {
             <option value="@feature"
@@ -96,9 +95,15 @@
 
 
 <script>
+$(document).ready(function() {
   var pickerSettings =  {
     'format': 'Y-m-d H:i:s T'
   };
   $('#testEndsAfter').datetimepicker(pickerSettings);
+
+  $('.form-filter').on('change', function() {
+     document.forms['tests-filters'].submit();
+  });
+});
 
 </script>

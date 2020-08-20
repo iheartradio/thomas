@@ -200,6 +200,7 @@
 </form>
 
 <script>
+$(document).ready(function() {
   var pickerSettings =  {
     'format': 'Y-m-d H:i:s T'
   };
@@ -209,6 +210,8 @@
   function newButtonAppend(newDiv, appendToDiv) {
       $(newDiv).clone().show().appendTo(appendToDiv);
   };
+});
+
 
 </script>
 

@@ -53,7 +53,7 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
           case GET -> Root / "tests" :? endsAfter(ea) +& feature(fn) =>
             testsList(Filters(ea, fn.filter(_ != "_ALL_FEATURES_")))
 
-          case GET -> Root / "new" =>
+          case GET -> Root / "tests" / "new" =>
             Ok(abtest.admin.html.abtestForm(None))
 
           case req @ POST -> Root / "tests" =>
