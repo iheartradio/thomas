@@ -16,7 +16,7 @@ import org.http4s.{
   QueryParamDecoder,
   QueryParameterValue
 }
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.json.{JsObject, Json, Reads}
 
 import scala.util.Try
 
@@ -69,16 +69,17 @@ object FormDecoders {
       : QueryParamDecoder[UserMetaCriterion.And] =
     jsonEntityQueryParamDecoder
 
-  implicit val groupMetasQueryParamDecoder: QueryParamDecoder[GroupMetas] =
+  implicit val specializationQueryParamDecoder: QueryParamDecoder[Specialization] =
     jsonEntityQueryParamDecoder
 
-  implicit val specializationQueryParamDecoder: QueryParamDecoder[Specialization] =
+  implicit val jsObjectQueryParamDecoder: QueryParamDecoder[JsObject] =
     jsonEntityQueryParamDecoder
 
   implicit def groupFormDecoder: FormDataDecoder[Group] =
     (
       field[GroupName]("name"),
-      field[GroupSize]("size")
+      field[GroupSize]("size"),
+      fieldOptional[JsObject]("meta")
     ).mapN(Group.apply)
 
   implicit def groupRangeFormDecoder: FormDataDecoder[GroupRange] =
@@ -100,7 +101,7 @@ object FormDecoders {
       fieldOptional[UserMetaCriterion.And]("userMetaCriteria"),
       fieldEither[Boolean]("reshuffle").default(false),
       list[GroupRange]("segmentRanges"),
-      fieldEither[GroupMetas]("groupMetas").default(Map.empty),
-      none[Abtest.Specialization].pure[FormDataDecoder]
+      none[Abtest.Specialization].pure[FormDataDecoder],
+      Map.empty[GroupName, GroupMeta].pure[FormDataDecoder]
     ).mapN(AbtestSpec.apply).sanitized
 }

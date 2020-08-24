@@ -1,5 +1,6 @@
 package com.iheart.thomas.bandit.bayesian
 
+import java.time.temporal.ChronoUnit
 import java.time.{OffsetDateTime, ZoneOffset}
 
 import cats.NonEmptyParallel
@@ -7,13 +8,7 @@ import cats.effect.Timer
 import cats.implicits._
 import com.iheart.thomas.TimeUtil._
 import com.iheart.thomas.abtest.model.Abtest.Specialization
-import com.iheart.thomas.abtest.model.{
-  Abtest,
-  AbtestSpec,
-  GroupSpec,
-  Group,
-  GroupSize
-}
+import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group, GroupSize}
 import com.iheart.thomas.analysis.Probability
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.tracking.Event.BanditPolicyUpdate.Reallocated
@@ -67,7 +62,7 @@ object BayesianMABAlg {
       start = from.start,
       end = None,
       groups = from.arms.map(
-        as => GroupSpec(as.name, as.initialSize.getOrElse(defaultSize), as.meta)
+        as => Group(as.name, as.initialSize.getOrElse(defaultSize), as.meta)
       ),
       specialization = Some(Specialization.MultiArmBandit)
     ).pure[F]
@@ -165,7 +160,8 @@ object BayesianMABAlg {
               BanditState[R](
                 feature = banditSpec.feature,
                 arms = emptyArmState(banditSpec.arms.map(_.name)),
-                iterationStart = banditSpec.start.toInstant,
+                iterationStart =
+                  banditSpec.start.toInstant.truncatedTo(ChronoUnit.MILLIS),
                 version = 0L
               )
             ),
@@ -337,7 +333,7 @@ object BayesianMABAlg {
           s => Math.max(s.toDouble, sizeFromOptimalLikelyHood.toDouble)
         )
         val size = findClosest(targetSize, candidates)
-        val newGroups = groups :+ Group(groupName, size)
+        val newGroups = groups :+ Group(groupName, size, None)
         val remainder = availableSize - newGroups.foldMap(_.size)
         (
           candidates.filter(_ <= remainder),

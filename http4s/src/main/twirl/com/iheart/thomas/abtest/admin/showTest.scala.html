@@ -1,0 +1,21 @@
+@import com.iheart.thomas.abtest.model._
+@import lihua._
+@import java.time.Instant
+
+@(test: Entity[Abtest])
+
+@main("ABTest for feature " + test.data.feature) {
+<form action="/admin/tests/@test._id" method="post">
+
+  @abtestForm(Some(test.data.toSpec), None)
+
+  <button type="submit" class="btn btn-primary mt-5">
+  @if(test.data.canChange(Instant.now)) {
+    Edit
+  } else {
+    New Revision
+  }
+  </button>
+
+</form>
+}

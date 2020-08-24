@@ -465,34 +465,42 @@ final class DefaultAbtestAlg[F[_]](
       auto: Boolean
     ): F[Entity[Abtest]] =
     errorToF(metas.isEmpty.option(EmptyGroupMeta)) *>
-      updateGroupMetas(testId, metas, auto)
-
-  private def updateGroupMetas(
-      testId: TestId,
-      metas: Map[GroupName, GroupMeta],
-      auto: Boolean
-    ): F[Entity[Abtest]] =
-    updateAbtest(testId, auto) { test =>
-      errorsOToF(
-        metas.keys.toList.map(
-          gn =>
-            (!test.groups.exists(_.name === gn))
-              .option(Error.GroupNameDoesNotExist(gn))
+      updateAbtest(testId, auto) { test =>
+        errorsOToF(
+          metas.keys.toList.map(
+            gn =>
+              (!test.groups.exists(_.name === gn))
+                .option(Error.GroupNameDoesNotExist(gn))
+          )
+        ).as(
+          test.copy(
+            groups = test.groups.map { group =>
+              group.copy(
+                meta =
+                  if (metas.nonEmpty)
+                    metas.get(group.name) orElse group.meta orElse test.groupMetas
+                      .get(group.name)
+                  else
+                    None
+              )
+            },
+            groupMetas = Map()
+          )
         )
-      ).as(
-        test
-          .lens(_.groupMetas)
-          .modify { existing =>
-            if (metas.nonEmpty) existing ++ metas else metas
-          }
-      )
-    }
+      }
 
   def removeGroupMetas(
       testId: TestId,
       auto: Boolean
     ): F[Entity[Abtest]] =
-    updateGroupMetas(testId, Map.empty, auto)
+    updateAbtest(testId, auto) { test =>
+      test
+        .copy(
+          groups = test.groups.map(_.copy(meta = None)),
+          groupMetas = Map()
+        )
+        .pure[F]
+    }
 
   def getGroupsWithMeta(query: UserGroupQuery): F[UserGroupQueryResult] =
     validate(query) >> {
@@ -690,16 +698,24 @@ final class DefaultAbtestAlg[F[_]](
       basedOn: Option[Entity[Abtest]],
       newRange: Boolean
     ): Abtest = {
+    val groupsWithLegacyMeta: List[model.Group] =
+      spec.groups.map { group =>
+        group.copy(
+          meta = group.meta orElse
+            spec.groupMetas.get(group.name) orElse
+            basedOn.flatMap(_.data.getGroupMetas.get(group.name)) //ensures that by default spec doesn't remove group Meta
+        )
+      }
     spec
       .to[Abtest]
       .set(
         start = spec.startI,
         end = spec.endI,
-        groups = spec.groupsWithoutMeta,
+        groups = groupsWithLegacyMeta,
         ranges =
           if (newRange || basedOn.isEmpty)
             Bucketing.newRanges(
-              spec.groupsWithoutMeta,
+              spec.groups,
               basedOn
                 .map(_.data.ranges)
                 .getOrElse(Map.empty)
@@ -708,12 +724,7 @@ final class DefaultAbtestAlg[F[_]](
         salt =
           (if (spec.reshuffle) Option(newSalt)
            else basedOn.flatMap(_.data.salt)),
-        groupMetas =
-          (if (spec.groupMetas.isEmpty)
-             basedOn
-               .map(_.data.groupMetas)
-               .getOrElse(Map.empty)
-           else spec.groupMetas)
+        groupMetas = Map.empty[String, GroupMeta]
       )
 
   }
@@ -735,12 +746,10 @@ final class DefaultAbtestAlg[F[_]](
       updateWith: AbtestSpec,
       now: Instant
     ): Option[F[Entity[Abtest]]] = {
-    val groupsUnchanged = toUpdate.data.groups
-      .sortBy(_.name) == updateWith.groups
-      .sortBy(_.name)
-      .map(gs => model.Group(gs.name, gs.size))
+    val groupsSizesUnchanged = toUpdate.data.groups.map(_.copy(meta = None)).toSet ==
+      updateWith.groups.map(_.copy(meta = None)).toSet
 
-    if (toUpdate.data.canChange(now) && groupsUnchanged)
+    if (toUpdate.data.canChange(now) && groupsSizesUnchanged)
       Some(
         abTestDao.update(
           toUpdate.copy(

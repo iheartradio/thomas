@@ -56,7 +56,7 @@ package model {
       userMetaCriteria: UserMetaCriteria = None,
       salt: Option[String] = None,
       segmentRanges: List[GroupRange] = Nil,
-      groupMetas: GroupMetas = Map(), //todo: migrate data into Group
+      groupMetas: GroupMetas = Map(), //todo: legacy data, migrate data into Group
       specialization: Option[Abtest.Specialization] = None) {
 
     val hasEligibilityControl: Boolean =
@@ -84,13 +84,20 @@ package model {
     def idToUse(ui: UserInfo): Option[String] =
       alternativeIdName.fold(ui.userId)(ui.meta.get)
 
+    def getGroupMetas: GroupMetas =
+      groupMetas ++ groupMetaMap
+
+    def groupMetaMap = groups.mapFilter(g => g.meta.map((g.name, _))).toMap
+
     def toSpec: AbtestSpec =
       this
         .to[AbtestSpec]
         .set(
           start = start.toOffsetDateTimeSystemDefault,
           end = end.map(_.toOffsetDateTimeSystemDefault),
-          groups = Abtest.toGroupSpecs(groups, groupMetas)
+          groups =
+            groups.map(g => g.copy(meta = g.meta orElse groupMetas.get(g.name))),
+          groupMetas = groupMetaMap
         )
   }
 
@@ -115,52 +122,46 @@ package model {
       author: String,
       start: OffsetDateTime,
       end: Option[OffsetDateTime],
-      groups: List[GroupSpec],
+      groups: List[Group],
       requiredTags: List[Tag] = Nil,
       alternativeIdName: Option[MetaFieldName] = None,
       userMetaCriteria: UserMetaCriteria = None,
       reshuffle: Boolean = false,
       segmentRanges: List[GroupRange] = Nil,
-      specialization: Option[Abtest.Specialization] = None) {
+      specialization: Option[Abtest.Specialization] = None,
+      groupMetas: GroupMetas = Map()) { //todo: legacy data, migrate data into Group
 
     val startI = start.toInstant
     val endI = end.map(_.toInstant)
-    def groupMetas: GroupMetas =
-      groups.mapFilter(gs => gs.meta.map((gs.name, _))).toMap
 
-    def groupsWithoutMeta = groups.map(gs => Group(gs.name, gs.size))
   }
 
   object Abtest {
+
     sealed trait Specialization extends Serializable with Product
 
     object Specialization {
+
       case object MultiArmBandit extends Specialization
+
     }
 
     sealed trait Status extends Serializable with Product
 
     object Status {
+
       case object Scheduled extends Status
+
       case object InProgress extends Status
+
       case object Expired extends Status
+
       implicit val eq: Eq[Status] = Eq.fromUniversalEquals
     }
-
-    def toGroupSpecs(
-        groups: List[Group],
-        groupMetas: GroupMetas
-      ): List[GroupSpec] =
-      groups.map(g => GroupSpec(g.name, g.size, groupMetas.get(g.name)))
 
   }
 
   case class Group(
-      name: GroupName,
-      size: GroupSize)
-
-  //todo: remove once meta is moved into Group
-  case class GroupSpec(
       name: GroupName,
       size: GroupSize,
       meta: Option[GroupMeta])

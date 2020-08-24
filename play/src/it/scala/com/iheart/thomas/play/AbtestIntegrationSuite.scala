@@ -384,7 +384,10 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
         contentAsJson(controller.get(test2Created._id)(FakeRequest()))
           .as[Entity[Abtest]]
 
-      test2Found.data.groups mustBe List(Group("A", 0.6), Group("B", 0.4))
+      test2Found.data.groups mustBe List(
+        Group("A", 0.6, None),
+        Group("B", 0.4, None)
+      )
 
     }
 
@@ -956,7 +959,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       val testResult = contentAsJson(
         controller.get(resultTests.head._id)(FakeRequest())
       ).as[Entity[Abtest]]
-      testResult.data.groupMetas mustBe Map(
+      testResult.data.getGroupMetas mustBe Map(
         "A" -> Json.obj("ff" -> "a"),
         "B" -> Json.obj("ff" -> "b")
       )
@@ -1022,8 +1025,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
           1,
           20,
           groups = List(
-            GroupSpec("A", 0.5, metas.get("A")),
-            GroupSpec("B", 0.5, metas.get("B"))
+            Group("A", 0.5, metas.get("A")),
+            Group("B", 0.5, metas.get("B"))
           )
         )
       )
@@ -1031,7 +1034,7 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
       val subSequent =
         createAbtestOnServer(fakeAb(21, 25, feature = ab.data.feature))
 
-      subSequent.data.groupMetas mustBe metas
+      subSequent.data.getGroupMetas mustBe metas
     }
 
     "subsequent test from spec rewrite meta settings " in {
@@ -1042,8 +1045,8 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
           1,
           20,
           groups = List(
-            GroupSpec("A", 0.5, metas.get("A")),
-            GroupSpec("B", 0.5, metas.get("B"))
+            Group("A", 0.5, metas.get("A")),
+            Group("B", 0.5, metas.get("B"))
           )
         )
       )
@@ -1057,13 +1060,13 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
           25,
           feature = ab.data.feature,
           groups = List(
-            GroupSpec("A", 0.5, newMetas.get("A")),
-            GroupSpec("B", 0.5, newMetas.get("B"))
+            Group("A", 0.5, newMetas.get("A")),
+            Group("B", 0.5, newMetas.get("B"))
           )
         )
       )
 
-      subSequent.data.groupMetas mustBe newMetas
+      subSequent.data.getGroupMetas mustBe newMetas
     }
   }
 
@@ -1387,6 +1390,34 @@ class AbtestIntegrationSuite extends AbtestIntegrationSuiteBase {
   }
 }
 
+class RegressionIntegrationSuite extends AbtestIntegrationSuiteBase {
+  "new group meta" should {
+    "reserve group metas on round trips" in {
+      val metas = Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
+      val initSpec = fakeAb().copy(groupMetas = metas)
+      val init = createAbtestOnServer(initSpec)
+      val retried = getTestFromServer(init._id)
+
+      init.data.groupMetaMap mustBe metas
+      retried.data.groupMetaMap mustBe metas
+
+      val continue = createAbtestOnServer(
+        Some(retried.data.toSpec.copy(start = OffsetDateTime.now.plusSeconds(2))),
+        true
+      )
+      val continueRetried = getTestFromServer(continue._id)
+
+      continueRetried._id must not be (init._id)
+
+      continueRetried.data.groupMetas mustBe Map()
+
+      continueRetried.data.groupMetaMap mustBe metas
+
+    }
+  }
+
+}
+
 class AssessmentAlgIntegrationSuite extends AbtestIntegrationSuiteBase {
   "Get KPI" should {
     "return 404 when there is no distribution" in {
@@ -1458,15 +1489,14 @@ class AbtestIntegrationSuiteBase
       name: GroupName,
       size: GroupSize
     ) =
-    GroupSpec(name, size, None)
+    Group(name, size, None)
 
   def fakeAb(
       start: Int = 0,
       end: Int = 100,
       feature: String = "AMakeUpFeature" + Random.alphanumeric.take(5).mkString,
       alternativeIdName: Option[MetaFieldName] = None,
-      groups: List[GroupSpec] = List(GroupSpec("A", 0.5, None), GroupSpec("B", 0.5,
-              None)),
+      groups: List[Group] = List(Group("A", 0.5, None), Group("B", 0.5, None)),
       userMetaCriteria: UserMetaCriteria = None,
       segRanges: List[GroupRange] = Nil,
       requiredTags: List[Tag] = Nil

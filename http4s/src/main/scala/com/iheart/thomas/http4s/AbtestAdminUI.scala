@@ -1,4 +1,5 @@
-package com.iheart.thomas.http4s
+package com.iheart.thomas
+package http4s
 
 import java.time.OffsetDateTime
 
@@ -22,16 +23,22 @@ import scala.concurrent.ExecutionContext
 import FormDecoders._
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.abtest.Error.ValidationErrors
-import com.iheart.thomas.http4s.AbtestAdminUI.{Filters, endsAfter, feature}
+import com.iheart.thomas.http4s.AbtestAdminUI.{
+  Filters,
+  defaultEndsAfter,
+  endsAfter,
+  feature
+}
 import org.http4s.FormDataDecoder.formEntityDecoder
 import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
-import org.http4s.dsl.io.QueryParamDecoderMatcher
+import io.estatico.newtype.ops._
+import lihua.EntityId
 
 class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
 
   def routes = {
 
-    def testsList(filters: Filters = Filters()) =
+    def testsList(filters: Filters = Filters(defaultEndsAfter)) =
       (
         alg
           .getAllTestsEndAfter(filters.endsAfter),
@@ -51,10 +58,20 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
       HttpRoutes
         .of[F] {
           case GET -> Root / "tests" :? endsAfter(ea) +& feature(fn) =>
-            testsList(Filters(ea, fn.filter(_ != "_ALL_FEATURES_")))
+            testsList(
+              Filters(
+                ea.getOrElse(OffsetDateTime.now.minusDays(10)),
+                fn.filter(_ != "_ALL_FEATURES_")
+              )
+            )
 
           case GET -> Root / "tests" / "new" =>
-            Ok(abtest.admin.html.abtestForm(None))
+            Ok(abtest.admin.html.newTest(None))
+
+          case GET -> Root / "tests" / testId =>
+            alg.getTest(testId.coerce[EntityId]).flatMap { t =>
+              Ok(abtest.admin.html.showTest(t))
+            }
 
           case req @ POST -> Root / "tests" =>
             req
@@ -69,7 +86,7 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
                         detail.toList.map(validationErrorMsg).mkString("<br/>")
                       case _ => e.getMessage
                     }
-                    Ok(abtest.admin.html.abtestForm(Some(spec), Some(errorMsg)))
+                    Ok(abtest.admin.html.newTest(Some(spec), Some(errorMsg)))
                   }
               }
               .handleErrorWith { e =>
@@ -82,9 +99,9 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
 }
 
 object AbtestAdminUI {
-
+  val defaultEndsAfter = OffsetDateTime.now.minusDays(10)
   case class Filters(
-      endsAfter: OffsetDateTime = OffsetDateTime.now.minusDays(10),
+      endsAfter: OffsetDateTime,
       feature: Option[FeatureName] = None)
 
   def fromMongo[F[_]: Timer](
@@ -104,7 +121,8 @@ object AbtestAdminUI {
     }
   }
 
-  object endsAfter extends QueryParamDecoderMatcher[OffsetDateTime]("endsAfter")
+  object endsAfter
+      extends OptionalQueryParamDecoderMatcher[OffsetDateTime]("endsAfter")
 
   object feature extends OptionalQueryParamDecoderMatcher[FeatureName]("feature")
 }

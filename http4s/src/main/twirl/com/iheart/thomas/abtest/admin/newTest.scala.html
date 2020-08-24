@@ -1,0 +1,12 @@
+@import com.iheart.thomas.abtest.model._
+
+@(draft: Option[AbtestSpec], errorMsg: Option[String] = None)
+
+@main("Create New Test") {
+<form action="/admin/tests" method="post">
+
+  @abtestForm(draft, errorMsg)
+
+  <button type="submit" class="btn btn-primary mt-5">Submit</button>
+</form>
+}
