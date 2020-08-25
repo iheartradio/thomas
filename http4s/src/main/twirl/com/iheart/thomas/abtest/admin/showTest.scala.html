@@ -3,6 +3,7 @@
 @import java.time.Instant
 @import com.iheart.thomas.html._
 @(test: Entity[Abtest])
+@import com.iheart.thomas.http4s.Formatters._
 
 @main("A/B Test for feature " + test.data.feature) {
 
@@ -11,7 +12,9 @@
 </a>
 
 <form action="#" method="post">
-
+<span class="badge ml-3 mb-3 badge-@formatStatus(test)._2">
+              @formatStatus(test)._1
+            </span>
   @abtestForm(Some(test.data.toSpec), None, true)
 
 
