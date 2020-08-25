@@ -15,8 +15,7 @@
 <span class="badge ml-3 mb-3 badge-@formatStatus(test)._2">
               @formatStatus(test)._1
             </span>
-  @abtestForm(Some(test.data.toSpec), None, true)
-
+  @abtestForm(test.data.feature, Some(test.data.toSpec), None, true)
 
 </form>
 

@@ -8,7 +8,7 @@
 @main("Edit test for feature " + test.data.feature) {
 <form action="/admin/tests/@test._id" method="post">
 
-  @abtestForm(spec.orElse(Some(test.data.toSpec)), errMessage)
+  @abtestForm(test.data.feature, spec.orElse(Some(test.data.toSpec)), errMessage, false)
 
   <button type="submit" class="btn btn-primary mt-5">
     @if(test.data.canChange(Instant.now)) {

@@ -8,77 +8,76 @@
 @(tests: List[(FeatureName, List[Entity[Abtest]])], features: List[FeatureName], filters: Filters)
 
 
-
 @featureCard(feature: FeatureName, tests: List[Entity[Abtest]]) = {
 
 
-  <a href="#" class="list-group-item list-group-item-secondary mt-2">
-    <span class="font-weight-light h6">Feature</span>
-    <span class="font-weight-heavy h4">@feature</span>
-  </a>
-  @for(test <- tests) {
+<a href="#" class="list-group-item list-group-item-secondary mt-2">
+  <span class="font-weight-light h6">Feature</span>
+  <span class="font-weight-heavy h4">@feature</span>
+</a>
+@for(test <- tests) {
 
-  <a href="tests/@test._id" class="list-group-item list-group-item-action flex-column align-items-start">
-    <div class="d-flex w-100 justify-content-between">
-      <div class="container">
-        <div class="row">
-          <div class="col-sm">
+<a href="tests/@test._id" class="list-group-item list-group-item-action flex-column align-items-start">
+  <div class="d-flex w-100 justify-content-between">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm">
 
-            <span class="mb-1 h5 font-weight-light">@test.data.name</span>
-            <span class="badge ml-3 badge-@formatStatus(test)._2">
+          <span class="mb-1 h5 font-weight-light">@test.data.name</span>
+          <span class="badge ml-3 badge-@formatStatus(test)._2">
               @formatStatus(test)._1
             </span>
-          </div>
+        </div>
 
-          <div class="col-sm text-sm-right">
-            <small>
-              <span class="font-weight-heavy"></span>
-              @formatDate(test.data.start, dateTimeFormatterShort)
-              -
-              @test.data.end.map(formatDate(_, dateTimeFormatterShort)).getOrElse("Indefinitely")
-            </small>
-            <small><span class="font-weight-light ml-3">
+        <div class="col-sm text-sm-right">
+          <small>
+            <span class="font-weight-heavy"></span>
+            @formatDate(test.data.start, dateTimeFormatterShort)
+            -
+            @test.data.end.map(formatDate(_, dateTimeFormatterShort)).getOrElse("Indefinitely")
+          </small>
+          <small><span class="font-weight-light ml-3">
               Author: </span>
-              <span class="font-weight-heavy"> @test.data.author</span>
-            </small>
-          </div>
+            <span class="font-weight-heavy"> @test.data.author</span>
+          </small>
         </div>
       </div>
     </div>
-  </a>
+  </div>
+</a>
 
-  }
+}
 
 }
 
 
-
 @main("tests") {
-<h4>Abtests</h4>
+<h4>A/B tests</h4>
 
 <form id="tests-filters" action="tests" method="get">
-    <div class="form-row">
-      <div class="form-group col-sm">
-        <label for="testEndsAfter">Show tests that end after</label>
-        <input name="endsAfter" class="form-control form-filter" id="testEndsAfter"
-               type="text"
-               value="@formatDate(filters.endsAfter)"/>
-      </div>
-      <div class="form-group col-sm" >
-        <label for="testsFeature">Show Feature</label>
-        <select id="testsFeature" name="feature" class="form-control form-filter">
-          <option value="_ALL_FEATURES_">All</option>
-          @for(feature <- features) {
-            <option value="@feature"
-              @if(filters.feature.fold(false)(_ == feature)){
-                selected
-              }
-
-            >@feature</option>
-          }
-        </select>
-      </div>
+  <div class="form-row"  style="width: 40rem;">
+    <div class="form-group col-sm">
+      <label for="testEndsAfter">Show tests that end after</label>
+      <input name="endsAfter" class="form-control form-filter" id="testEndsAfter"
+             type="text"
+             value="@formatDate(filters.endsAfter)"/>
     </div>
+    <div class="form-group col-sm">
+      <label for="testsFeature">Show Feature</label>
+      <select id="testsFeature" name="feature" class="form-control form-filter" >
+        <option value="_ALL_FEATURES_">All</option>
+        @for(feature <- features) {
+        <option value="@feature"
+                @if(filters.feature.fold(false)(_== feature)){
+                selected
+                }
+
+        >@feature
+        </option>
+        }
+      </select>
+    </div>
+  </div>
 
 
 </form>
@@ -86,12 +85,47 @@
 
 <div class="abtests list-group">
   @for(featureTests <- tests) {
-    @featureCard(featureTests._1, featureTests._2)
-}
+  @featureCard(featureTests._1, featureTests._2)
+  }
 </div>
-<a href="tests/new">
-  <button class="btn btn-primary mt-4">New Test</button>
-</a>
+
+<div class="row mt-4">
+
+  <div class="col-sm"></div>
+  <div class="col-sm d-flex flex-row-reverse">
+    <div class="card"  style="width: 22rem;">
+      <form action="/admin/tests/new" method="get">
+        <div class="card-body">
+          <h5 class="card-title">Create Test</h5>
+          <div class="form-row">
+            <div class="form-group col-sm">
+              <label for="newFeature">For a new feature</label>
+
+              <input name="feature" class="form-control" id="newFeature" type="text"/>
+
+            </div>
+          </div>
+
+          <div class="form-row">
+
+            <div class="form-group col-sm">
+              <label for="featuresSelect">Or for an existing feature</label>
+              <select id="featuresSelect" name="feature" class="form-control form-filter">
+                @for(feature <- features) {
+                <option value="@feature">@feature</option>
+                }
+              </select>
+            </div>
+          </div>
+
+
+          <button type="submit" class="btn btn-primary">New Test</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
 }
 
 
@@ -100,11 +134,23 @@ $(document).ready(function() {
   var pickerSettings =  {
     'format': 'Y-m-d H:i:s T'
   };
+
   $('#testEndsAfter').datetimepicker(pickerSettings);
 
   $('.form-filter').on('change', function() {
      document.forms['tests-filters'].submit();
   });
+
+  $('#newFeature').keyup(function() {
+    $("#featuresSelect").val(null);
+  });
+
+  $("#featuresSelect").change(function(){
+    $('#newFeature').val(null);
+    $('#newFeature').removeAttr('value');
+  });
 });
+
+
 
 </script>

@@ -29,10 +29,14 @@ import com.iheart.thomas.http4s.AbtestAdminUI.{
   Filters,
   defaultEndsAfter,
   endsAfter,
-  feature
+  feature,
+  featureReq
 }
 import org.http4s.FormDataDecoder.formEntityDecoder
-import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
+import org.http4s.dsl.impl.{
+  OptionalQueryParamDecoderMatcher,
+  QueryParamDecoderMatcher
+}
 import io.estatico.newtype.ops._
 import lihua.{Entity, EntityId}
 
@@ -82,8 +86,8 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
               )
             )
 
-          case GET -> Root / "tests" / "new" =>
-            Ok(newTest(None))
+          case GET -> Root / "tests" / "new" :? featureReq(fn) =>
+            Ok(newTest(fn, None))
 
           case GET -> Root / "tests" / testId =>
             get(testId).flatMap { t =>
@@ -143,7 +147,9 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
                       )
                     )
                     .handleErrorWith { e =>
-                      BadRequest(newTest(Some(spec), Some(displayError(e))))
+                      BadRequest(
+                        newTest(spec.feature, Some(spec), Some(displayError(e)))
+                      )
                     }
               )
 
@@ -180,4 +186,5 @@ object AbtestAdminUI {
       extends OptionalQueryParamDecoderMatcher[OffsetDateTime]("endsAfter")
 
   object feature extends OptionalQueryParamDecoderMatcher[FeatureName]("feature")
+  object featureReq extends QueryParamDecoderMatcher[FeatureName]("feature")
 }
