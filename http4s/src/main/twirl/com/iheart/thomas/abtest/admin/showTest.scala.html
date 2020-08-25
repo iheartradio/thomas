@@ -24,28 +24,20 @@
 
 @if(test.data.canChange(Instant.now)) {
 <a href="@test._id/edit" >
-  <button class="btn btn-primary mt-5">
-    Edit
-  </button>
+  <button class="btn btn-primary mt-5">Edit</button>
 </a>
 <a href="@test._id/delete"
    onclick="return confirm('Are you sure you would like to delete this test?');">
-  <button class="btn btn-warning mt-5">
-    Delete
-  </button>
+  <button class="btn btn-warning mt-5">Delete</button>
 </a>
 } else {
 <a href="@test._id/edit" >
-  <button class="btn btn-primary mt-5">
-    New Revision
-  </button>
+  <button class="btn btn-primary mt-5">New Revision</button>
 </a>
 @if(test.data.statusAsOf(Instant.now) == Abtest.Status.InProgress) {
 <a href="@test._id/delete"
    onclick="return confirm('Are you sure you would like to terminate this test?');">
-  <button class="btn btn-warning mt-5">
-    Terminate
-  </button>
+  <button class="btn btn-warning mt-5">Terminate</button>
 </a>
 }
 
