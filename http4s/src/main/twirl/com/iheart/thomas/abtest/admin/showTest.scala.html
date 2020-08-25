@@ -1,21 +1,56 @@
 @import com.iheart.thomas.abtest.model._
 @import lihua._
 @import java.time.Instant
-
+@import com.iheart.thomas.html._
 @(test: Entity[Abtest])
 
-@main("ABTest for feature " + test.data.feature) {
-<form action="/admin/tests/@test._id" method="post">
+@main("A/B Test for feature " + test.data.feature) {
 
-  @abtestForm(Some(test.data.toSpec), None)
+<a href="../tests">
+  <h5 class="mb-4 mt-4"><< Back to tests</h5>
+</a>
 
-  <button type="submit" class="btn btn-primary mt-5">
-  @if(test.data.canChange(Instant.now)) {
-    Edit
-  } else {
-    New Revision
-  }
-  </button>
+<form action="#" method="post">
+
+  @abtestForm(Some(test.data.toSpec), None, true)
+
 
 </form>
+
+
+
+@if(test.data.canChange(Instant.now)) {
+<a href="@test._id/edit" >
+  <button class="btn btn-primary mt-5">
+    Edit
+  </button>
+</a>
+<a href="@test._id/delete"
+   onclick="return confirm('Are you sure you would like to delete this test?');">
+  <button class="btn btn-warning mt-5">
+    Delete
+  </button>
+</a>
+} else {
+<a href="@test._id/edit" >
+  <button class="btn btn-primary mt-5">
+    New Revision
+  </button>
+</a>
+@if(test.data.statusAsOf(Instant.now) == Abtest.Status.InProgress) {
+<a href="@test._id/delete"
+   onclick="return confirm('Are you sure you would like to terminate this test?');">
+  <button class="btn btn-warning mt-5">
+    Terminate
+  </button>
+</a>
 }
+
+}
+
+
+
+
+}
+
+

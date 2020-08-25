@@ -2,7 +2,7 @@
 @import com.iheart.thomas.abtest.json.play.Formats._
 @import com.iheart.thomas.http4s.Formatters.{formatDate, formatJSON}
 
-@(draft: Option[AbtestSpec], errorMsg: Option[String] = None)
+@(draft: Option[AbtestSpec], errorMsg: Option[String] = None, readonly: Boolean = false)
 
 
 @group(group: Option[Group]) = {
@@ -61,7 +61,7 @@
 }
 
 
-<div class="container">
+<div class="container" id="test-form">
   <div class="row">
     <div class="col-md">
 
@@ -200,12 +200,20 @@ $(document).ready(function() {
   var pickerSettings =  {
     'format': 'Y-m-d H:i:s T'
   };
-  $('#testStart').datetimepicker(pickerSettings);
-  $('#testEnd').datetimepicker(pickerSettings);
 
   function newButtonAppend(newDiv, appendToDiv) {
-      $(newDiv).clone().show().appendTo(appendToDiv);
+    $(newDiv).clone().show().appendTo(appendToDiv);
   };
+
+  @if(readonly) {
+    $('#test-form input').attr('readonly', 'readonly');
+    $('#test-form textarea').attr('readonly', 'readonly');
+    $('#test-form button').hide();
+  } else {
+    $('#testStart').datetimepicker(pickerSettings);
+    $('#testEnd').datetimepicker(pickerSettings);
+  }
+
 });
 
 

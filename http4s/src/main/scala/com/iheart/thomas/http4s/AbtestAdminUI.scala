@@ -5,9 +5,11 @@ import java.time.OffsetDateTime
 
 import cats.effect.{Async, Concurrent, Resource, Timer}
 import cats.implicits._
+import abtest.admin.html._
+import html._
 import com.iheart.thomas
 import com.iheart.thomas.abtest.AbtestAlg
-import com.iheart.thomas.abtest.model.AbtestSpec
+import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec}
 import com.iheart.thomas.http4s.AbtestService.{
   abtestAlgFromMongo,
   validationErrorMsg
@@ -32,12 +34,27 @@ import com.iheart.thomas.http4s.AbtestAdminUI.{
 import org.http4s.FormDataDecoder.formEntityDecoder
 import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import io.estatico.newtype.ops._
-import lihua.EntityId
+import lihua.{Entity, EntityId}
 
 class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
 
-  def routes = {
+  private def get(testId: String) =
+    alg.getTest(testId.coerce[EntityId])
 
+  private def displayError(e: Throwable): String =
+    e match {
+      case ValidationErrors(detail) =>
+        detail.toList.map(validationErrorMsg).mkString("<br/>")
+      case _ => e.getMessage
+    }
+
+  def redirectToTest(
+      test: Entity[Abtest],
+      msg: String
+    ) =
+    Ok(redirect(s"/admin/tests/${test._id}", msg))
+
+  def routes = {
     def testsList(filters: Filters = Filters(defaultEndsAfter)) =
       (
         alg
@@ -51,7 +68,7 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
             .mapValues(_.sortBy(_.data.start).toList)
             .toList
             .sortBy(_._1)
-        Ok(abtest.admin.html.index(toShow, features, filters))
+        Ok(index(toShow, features, filters))
       }.flatten
 
     val adminRoutes =
@@ -60,38 +77,76 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
           case GET -> Root / "tests" :? endsAfter(ea) +& feature(fn) =>
             testsList(
               Filters(
-                ea.getOrElse(OffsetDateTime.now.minusDays(10)),
+                ea.getOrElse(defaultEndsAfter),
                 fn.filter(_ != "_ALL_FEATURES_")
               )
             )
 
           case GET -> Root / "tests" / "new" =>
-            Ok(abtest.admin.html.newTest(None))
+            Ok(newTest(None))
 
           case GET -> Root / "tests" / testId =>
-            alg.getTest(testId.coerce[EntityId]).flatMap { t =>
-              Ok(abtest.admin.html.showTest(t))
+            get(testId).flatMap { t =>
+              Ok(showTest(t))
             }
+          case GET -> Root / "tests" / testId / "edit" =>
+            get(testId).flatMap { t =>
+              Ok(editTest(t))
+            }
+
+          case GET -> Root / "tests" / testId / "delete" =>
+            alg.terminate(testId.coerce[EntityId]).flatMap { ot =>
+              val message = ot.fold(s"deleted test $testId")(
+                t => s"terminated running test for feature ${t.data.feature}"
+              )
+
+              Ok(redirect("/admin/tests", s"Successfully $message."))
+            }
+
+          case req @ POST -> Root / "tests" / testId =>
+            req
+              .as[AbtestSpec]
+              .redeemWith(
+                e =>
+                  get(testId).flatMap { t =>
+                    BadRequest(editTest(t, Some(displayError(e))))
+                  },
+                spec =>
+                  alg
+                    .create(spec, true)
+                    .flatMap(
+                      redirectToTest(
+                        _,
+                        s"Successfully updated test for ${spec.feature}"
+                      )
+                    )
+                    .handleErrorWith(
+                      e =>
+                        get(testId).flatMap { t =>
+                          BadRequest(editTest(t, Some(displayError(e)), Some(spec)))
+                        }
+                    )
+              )
 
           case req @ POST -> Root / "tests" =>
             req
               .as[AbtestSpec]
-              .flatMap { spec =>
-                alg
-                  .create(spec, false)
-                  .flatMap(_ => testsList())
-                  .handleErrorWith { e =>
-                    val errorMsg = e match {
-                      case ValidationErrors(detail) =>
-                        detail.toList.map(validationErrorMsg).mkString("<br/>")
-                      case _ => e.getMessage
+              .redeemWith(
+                e => BadRequest(errorMsg(e.getMessage)),
+                spec =>
+                  alg
+                    .create(spec, false)
+                    .flatMap(
+                      redirectToTest(
+                        _,
+                        s"Successfully created test for ${spec.feature}"
+                      )
+                    )
+                    .handleErrorWith { e =>
+                      BadRequest(newTest(Some(spec), Some(displayError(e))))
                     }
-                    Ok(abtest.admin.html.newTest(Some(spec), Some(errorMsg)))
-                  }
-              }
-              .handleErrorWith { e =>
-                Ok(abtest.admin.html.errorMsg(e.getMessage))
-              }
+              )
+
         }
     Router("/admin/" -> adminRoutes).orNotFound
   }

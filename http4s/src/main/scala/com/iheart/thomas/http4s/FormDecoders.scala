@@ -90,8 +90,8 @@ object FormDecoders {
 
   implicit def AbtestSpecFormDecoder: FormDataDecoder[AbtestSpec] =
     (
-      field[TestName]("name"),
       field[FeatureName]("name"),
+      field[TestName]("feature"),
       field[String]("author"),
       field[OffsetDateTime]("start"),
       fieldOptional[OffsetDateTime]("end"),
