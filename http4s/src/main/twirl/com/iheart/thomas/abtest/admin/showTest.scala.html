@@ -26,22 +26,24 @@
 
 <div class="row d-flex flex-row-reverse mt-5">
   <div class="mr-4">
-    @if(test.data.canChange(Instant.now)) {
-    <a href="@test._id/edit" >
-      <button class="btn btn-primary">Edit</button>
+    @if(test.data.isScheduled(Instant.now)) {
+    <a href="@test._id/edit" class="btn btn-primary" role="button" >
+      Edit
     </a>
     <a href="@test._id/delete"
-       onclick="return confirm('Are you sure you would like to delete this test?');">
-      <button class="btn btn-warning">Delete</button>
+       onclick="return confirm('Are you sure you would like to delete this test?');"
+       class="btn btn-warning" role="button">
+      Delete
     </a>
     } else {
-    <a href="@test._id/edit" >
-      <button class="btn btn-primary">New Revision</button>
+    <a href="@test._id/new_revision" class="btn btn-primary" role="button">
+      New Revision
     </a>
     @if(test.data.statusAsOf(Instant.now) == Abtest.Status.InProgress) {
     <a href="@test._id/delete"
-       onclick="return confirm('Are you sure you would like to terminate this test?');">
-      <button class="btn btn-warning">Terminate</button>
+       onclick="return confirm('Are you sure you would like to terminate this test?');"
+       class="btn btn-warning" role="button">
+      Terminate
     </a>
     }
 

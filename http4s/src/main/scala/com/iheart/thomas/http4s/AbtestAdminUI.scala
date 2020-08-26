@@ -89,6 +89,21 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
           case GET -> Root / "tests" / "new" :? featureReq(fn) =>
             Ok(newTest(fn, None))
 
+          case GET -> Root / "tests" / testId / "new_revision" =>
+            get(testId).flatMap { test =>
+              Ok(
+                newTest(
+                  test.data.feature,
+                  Some(
+                    test.data.toSpec.copy(
+                      start = OffsetDateTime.now,
+                      end = None
+                    )
+                  )
+                )
+              )
+            }
+
           case GET -> Root / "tests" / testId =>
             get(testId).flatMap { t =>
               Ok(showTest(t))
@@ -117,7 +132,7 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
                   },
                 spec =>
                   alg
-                    .create(spec, true)
+                    .updateTest(testId.coerce[EntityId], spec)
                     .flatMap(
                       redirectToTest(
                         _,
@@ -143,7 +158,7 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
                     .flatMap(
                       redirectToTest(
                         _,
-                        s"Successfully created test for ${spec.feature}"
+                        s"Successfully created a new test for ${spec.feature}"
                       )
                     )
                     .handleErrorWith { e =>

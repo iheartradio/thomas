@@ -49,6 +49,11 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
 
   def getTest(test: TestId): F[Entity[Abtest]]
 
+  def updateTest(
+      testId: TestId,
+      spec: AbtestSpec
+    ): F[Entity[Abtest]]
+
   /**
     *
     * @param feature
@@ -209,6 +214,45 @@ final class DefaultAbtestAlg[F[_]](
     addTestWithLock(testSpec.feature)(
       createWithoutLock(testSpec, auto)
     )
+
+  def updateTest(
+      testId: TestId,
+      spec: AbtestSpec
+    ): F[Entity[Abtest]] =
+    for {
+      _ <- validateForCreation(spec)
+      test <- getTest(testId)
+      _ <- ensure(test.data.feature == spec.feature, FeatureCannotBeChanged)
+      now <- nowF
+      _ <- ensure(test.data.isScheduled(now), CannotChangePastTest(now))
+      tests <- getTestsByFeature(spec.feature)
+      (beforeO, afterO) = {
+        val index = tests.indexWhere(_._id == test._id)
+        (tests.get(index.toLong + 1L), tests.get(index.toLong - 1L))
+      }
+      _ <- beforeO.fold(F.unit)(
+        before =>
+          ensure(
+            before.data.end.fold(false)(_.isBefore(spec.startI)),
+            ConflictTest(before)
+          )
+      )
+      _ <- afterO.fold(F.unit)(
+        after =>
+          ensure(
+            spec.endI.fold(false)(_.isBefore(after.data.start)),
+            ConflictTest(after)
+          ) *>
+            ensure(
+              groupsEqualSizes(spec.groups, test.data.groups),
+              CannotChangeGroupSizeWithFollowUpTest(after)
+            )
+      )
+      r <- addTestWithLock(spec.feature)(
+        abTestDao.update(test.copy(data = testFromSpec(spec, Some(test))))
+      )
+
+    } yield r
 
   def continue(testSpec: AbtestSpec): F[Entity[Abtest]] =
     addTestWithLock(testSpec.feature) {
@@ -416,7 +460,7 @@ final class DefaultAbtestAlg[F[_]](
     * @param f
     * @return
     */
-  def updateAbtest(
+  private def updateAbtestTrivial(
       testId: TestId,
       auto: Boolean
     )(f: Abtest => F[Abtest]
@@ -425,7 +469,7 @@ final class DefaultAbtestAlg[F[_]](
       now <- nowF
       candidate <- abTestDao.get(testId)
       test <- candidate.data
-        .canChange(now)
+        .isScheduled(now)
         .fold(
           F.pure(candidate),
           if (auto) {
@@ -455,7 +499,7 @@ final class DefaultAbtestAlg[F[_]](
       userMetaCriteria: UserMetaCriteria,
       auto: Boolean
     ): F[Entity[Abtest]] =
-    updateAbtest(testId, auto)(
+    updateAbtestTrivial(testId, auto)(
       _.copy(userMetaCriteria = userMetaCriteria).pure[F]
     )
 
@@ -465,7 +509,7 @@ final class DefaultAbtestAlg[F[_]](
       auto: Boolean
     ): F[Entity[Abtest]] =
     errorToF(metas.isEmpty.option(EmptyGroupMeta)) *>
-      updateAbtest(testId, auto) { test =>
+      updateAbtestTrivial(testId, auto) { test =>
         errorsOToF(
           metas.keys.toList.map(
             gn =>
@@ -493,7 +537,7 @@ final class DefaultAbtestAlg[F[_]](
       testId: TestId,
       auto: Boolean
     ): F[Entity[Abtest]] =
-    updateAbtest(testId, auto) { test =>
+    updateAbtestTrivial(testId, auto) { test =>
       test
         .copy(
           groups = test.groups.map(_.copy(meta = None)),
@@ -695,8 +739,7 @@ final class DefaultAbtestAlg[F[_]](
 
   private def testFromSpec(
       spec: AbtestSpec,
-      basedOn: Option[Entity[Abtest]],
-      newRange: Boolean
+      basedOn: Option[Entity[Abtest]]
     ): Abtest = {
     val groupsWithLegacyMeta: List[model.Group] =
       spec.groups.map { group =>
@@ -712,15 +755,12 @@ final class DefaultAbtestAlg[F[_]](
         start = spec.startI,
         end = spec.endI,
         groups = groupsWithLegacyMeta,
-        ranges =
-          if (newRange || basedOn.isEmpty)
-            Bucketing.newRanges(
-              spec.groups,
-              basedOn
-                .map(_.data.ranges)
-                .getOrElse(Map.empty)
-            )
-          else basedOn.get.data.ranges,
+        ranges = Bucketing.newRanges(
+          spec.groups,
+          basedOn
+            .map(_.data.ranges)
+            .getOrElse(Map.empty)
+        ),
         salt =
           (if (spec.reshuffle) Option(newSalt)
            else basedOn.flatMap(_.data.salt)),
@@ -735,30 +775,45 @@ final class DefaultAbtestAlg[F[_]](
     ): F[Entity[Abtest]] = {
     for {
       newTest <- abTestDao.insert(
-        testFromSpec(spec, inheritFrom, true)
+        testFromSpec(spec, inheritFrom)
       )
       _ <- ensureFeature(spec.feature)
     } yield newTest
   }
+
+  private def groupsEqualSizes(
+      ga: List[model.Group],
+      gb: List[model.Group]
+    ) =
+    ga.map(_.copy(meta = None)).toSet ==
+      gb.map(_.copy(meta = None)).toSet
 
   private def tryUpdate(
       toUpdate: Entity[Abtest],
       updateWith: AbtestSpec,
       now: Instant
     ): Option[F[Entity[Abtest]]] = {
-    val groupsSizesUnchanged = toUpdate.data.groups.map(_.copy(meta = None)).toSet ==
-      updateWith.groups.map(_.copy(meta = None)).toSet
 
-    if (toUpdate.data.canChange(now) && groupsSizesUnchanged)
+    if (toUpdate.data.isScheduled(now) && groupsEqualSizes(
+          toUpdate.data.groups,
+          updateWith.groups
+        ))
       Some(
         abTestDao.update(
           toUpdate.copy(
-            data = testFromSpec(updateWith, Some(toUpdate), false)
+            data = testFromSpec(updateWith, Some(toUpdate))
+              .copy(groups = updateWith.groups, ranges = toUpdate.data.ranges)
           )
         )
       )
     else None
   }
+
+  def ensure(
+      boolean: Boolean,
+      err: => Error
+    ): F[Unit] =
+    F.unit.ensure(err)(_ => boolean)
 
   private def validateForCreation(testSpec: AbtestSpec): F[Unit] =
     errorsOFFToF(

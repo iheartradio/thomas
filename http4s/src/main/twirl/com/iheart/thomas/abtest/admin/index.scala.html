@@ -149,6 +149,15 @@ $(document).ready(function() {
     $('#newFeature').val(null);
     $('#newFeature').removeAttr('value');
   });
+
+  $('form').submit(function () {
+    $(this)
+        .find('input[name]')
+        .filter(function () {
+            return !this.value;
+        })
+        .prop('name', '');
+  });
 });
 
 

@@ -10,8 +10,8 @@ readonly: Boolean = false)
 
 @group(group: Option[Group]) = {
 
-<div class="row">
-  <div class="col-md">
+<div class="row abtest-group">
+  <div class="col-3">
     <div class="form-group">
       <label for="testGroupName">Group Name</label>
       <input name="groups[].name" class="form-control"
@@ -20,7 +20,7 @@ readonly: Boolean = false)
     </div>
   </div>
 
-  <div class="col-md">
+  <div class="col-2">
     <div class="form-group">
       <label for="testGroupSize">Size</label>
       <input name="groups[].size" class="form-control"
@@ -30,13 +30,22 @@ readonly: Boolean = false)
     </div>
   </div>
 
-  <div class="col-md">
-    <div class="form-group">
+  <div class="col-7 d-flex flex-row">
+
+    <div class="form-group w-100">
       <label for="testGroupMeta">Meta</label>
       <textarea name="groups[].meta" class="form-control"
                 id="testGroupMeta">@group.flatMap(_.meta).map(formatJSON(_))</textarea>
     </div>
+    <div class="text-center">
+      <button class="btn btn-link delete-group mt-4 ml-3" title="Remove Group">
+        <i class="far fa-trash-alt"></i>
+      </button>
+    </div>
+
   </div>
+
+
 </div>
 }
 
@@ -67,6 +76,11 @@ readonly: Boolean = false)
        value="@feature"/>
 
 <div class="container" id="test-form">
+  @for(msg <- errorMsg) {
+  <div id="error-msg" class="alert alert-warning" role="alert">
+    @msg
+  </div>
+  }
   <div class="row">
     <div class="col-md">
 
@@ -75,13 +89,6 @@ readonly: Boolean = false)
           <span class="h5">Basics</span>
         </div>
         <div class="card-body">
-
-          @for(msg <- errorMsg) {
-          <div id="error-msg" class="alert alert-warning" role="alert">
-            @msg
-          </div>
-          }
-
           <div class="form-group">
             <label for="testName">Name</label>
             <input name="name" class="form-control" id="testName" type="text"
@@ -230,10 +237,24 @@ $(document).ready(function() {
     $(newDiv).clone().show().appendTo(appendToDiv);
   };
 
+  $('.delete-group').on('click', function(){
+     $(this).parents(".abtest-group").remove();
+  });
+
+  $('form').submit(function () {
+    $(this)
+        .find('input[name]')
+        .filter(function () {
+            return !this.value;
+        })
+        .prop('name', '');
+  });
+
   @if(readonly) {
-    $('#test-form input').attr('readonly', 'readonly');
-    $('#test-form textarea').attr('readonly', 'readonly');
+    $('#test-form input').attr('readonly', 'readonly').attr('disabled', 'disabled');
+    $('#test-form textarea').attr('readonly', 'readonly').attr('disabled', 'disabled');
     $('#test-form button').hide();
+    $('#test-form .delete-group').hide();
   } else {
     $('#testStart').datetimepicker(pickerSettings);
     $('#testEnd').datetimepicker(pickerSettings);

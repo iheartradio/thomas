@@ -20,7 +20,7 @@ import cats.effect.{Concurrent, Timer}
 import scala.concurrent.ExecutionContext
 import _root_.play.api.libs.json.Json.toJson
 import cats.implicits._
-import Error.{NotFound => APINotFound, _}
+import Error.{FeatureCannotBeChanged, NotFound => APINotFound, _}
 import com.iheart.thomas.http4s.AbtestService.validationErrorMsg
 import lihua.EntityId
 import org.http4s.dsl.impl.{
@@ -73,6 +73,18 @@ class AbtestService[F[_]: Async](
         case DBLastError(t) => serverError("DB Operation Rejected" + t)
         case e @ CannotChangePastTest(_) =>
           BadRequest(errorJson(e.getMessage))
+        case CannotChangeGroupSizeWithFollowUpTest(t) =>
+          BadRequest(
+            errorJson(
+              s"Cannot change group sizes for test having follow test ${t._id}"
+            )
+          )
+        case FeatureCannotBeChanged =>
+          BadRequest(
+            errorJson(
+              s"Cannot change the feature when updating test."
+            )
+          )
         case e @ CannotUpdateExpiredTest(_) =>
           BadRequest(errorJson(e.getMessage))
         case FailedToReleaseLock(cause) =>

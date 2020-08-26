@@ -75,8 +75,14 @@ package model {
     def getGroup(groupName: GroupName): Option[Group] =
       groups.find(_.name == groupName)
 
-    private[thomas] def canChange(now: Instant): Boolean =
-      statusAsOf(now) === Abtest.Status.Scheduled
+    private[thomas] def isScheduled(at: Instant): Boolean =
+      is(Abtest.Status.Scheduled, at)
+
+    private[thomas] def is(
+        status: Abtest.Status,
+        at: Instant
+      ): Boolean =
+      statusAsOf(at) === status
 
     def endsAfter(time: OffsetDateTime) =
       end.fold(true)(_.isAfter(time.toInstant))

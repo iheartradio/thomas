@@ -5,19 +5,147 @@ import java.util.concurrent.atomic.AtomicLong
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import com.iheart.thomas.abtest.{AssignGroups, TestsData}
+import com.iheart.thomas.abtest.{AssignGroups, TestsData, model}
 import com.iheart.thomas.abtest.AssignGroups.MissingEligibilityInfo
-import com.iheart.thomas.abtest.Error.CannotUpdateExpiredTest
+import com.iheart.thomas.abtest.Error.{
+  CannotChangeGroupSizeWithFollowUpTest,
+  CannotScheduleOverlapsOtherTest,
+  CannotUpdateExpiredTest,
+  ConflictTest
+}
 import com.iheart.thomas.abtest.model.UserMetaCriterion.{ExactMatch, VersionRange}
 import com.iheart.thomas.abtest.model.{UserGroupQuery, UserMetaCriterion}
 import com.iheart.thomas.testkit.Factory.{now, _}
 import org.scalatest.matchers.should.Matchers
 import cats.implicits._
+import TimeUtil._
+import cats.MonadError
 
 import concurrent.duration._
 class AbtestAlgSuite extends AsyncIOSpec with Matchers {
 
+  val F = MonadError[IO, Throwable]
+
   "AbtestAlg" - {
+    val algR = testkit.Resources.apis.map(_._3)
+    val now = OffsetDateTime.now
+
+    "update test flow" - {
+      "does not allow changing group sizes when there is a follow test" in {
+        algR
+          .use { alg =>
+            for {
+              init <- alg.create(fakeAb(1, 2), false)
+              followUp <- alg.create(
+                fakeAb().copy(
+                  feature = init.data.feature,
+                  start = init.data.end.get.plusSeconds(10).toOffsetDateTimeUTC
+                ),
+                false
+              )
+              tryUpdate <- alg
+                .updateTest(
+                  init._id,
+                  init.data.toSpec.copy(
+                    groups = init.data.groups.map(g => g.copy(size = g.size * 0.5))
+                  )
+                )
+                .attempt
+
+            } yield tryUpdate
+          }
+          .asserting {
+            case Left(CannotChangeGroupSizeWithFollowUpTest(_)) => succeed
+            case Left(e)                                        => fail(s"incorrect error $e")
+            case Right(_)                                       => fail("Failed to prevent size change")
+          }
+
+      }
+
+      "does not allow changing the end of a test that creates an overlap with the next test" in {
+        algR
+          .use { alg =>
+            for {
+              init <- alg.create(fakeAb(1, 2), false)
+              _ <- alg.create(
+                fakeAb().copy(
+                  feature = init.data.feature,
+                  start = init.data.end.get.plusSeconds(10).toOffsetDateTimeUTC
+                ),
+                false
+              )
+              tryUpdate <- alg
+                .updateTest(
+                  init._id,
+                  init.data.toSpec.copy(
+                    end = Some(init.data.end.get.plusSeconds(12).toOffsetDateTimeUTC)
+                  )
+                )
+                .attempt
+
+            } yield tryUpdate
+          }
+          .asserting {
+            case Left(ConflictTest(_)) => succeed
+            case Left(e)               => fail(s"incorrect error $e")
+            case Right(_)              => fail("Failed to prevent overlap")
+          }
+      }
+
+      "does not allow changing the end of a test that creates an overlap with the previous test" in {
+        algR
+          .use { alg =>
+            for {
+              init <- alg.create(fakeAb(1, 2), false)
+              second <- alg.create(
+                fakeAb(3, 4).copy(feature = init.data.feature),
+                false
+              )
+              tryUpdate <- alg
+                .updateTest(
+                  second._id,
+                  second.data.toSpec.copy(
+                    start = init.data.end.get.minusSeconds(12).toOffsetDateTimeUTC
+                  )
+                )
+                .attempt
+
+            } yield tryUpdate
+          }
+          .asserting {
+            case Left(ConflictTest(_)) => succeed
+            case Left(e)               => fail(s"incorrect error $e")
+            case Right(_)              => fail("Failed to prevent overlap")
+          }
+      }
+
+      "allows changing a test's trivial with follow up test" in {
+        algR
+          .use { alg =>
+            for {
+              init <- alg.create(fakeAb(1, 2), false)
+              _ <- alg.create(
+                fakeAb().copy(
+                  feature = init.data.feature,
+                  start = init.data.end.get.plusSeconds(10).toOffsetDateTimeUTC
+                ),
+                false
+              )
+
+              updated <- alg.updateTest(
+                init._id,
+                init.data.toSpec.copy(
+                  author = "new author"
+                )
+              )
+
+            } yield updated
+          }
+          .asserting(_.data.author shouldBe "new author")
+
+      }
+
+    }
 
     "eligibility control" - {
 
