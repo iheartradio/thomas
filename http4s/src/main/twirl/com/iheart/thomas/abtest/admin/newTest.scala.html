@@ -6,9 +6,16 @@
 
 @main("Create New Test") {
 <form action="/admin/tests" method="post">
-
+  <div class="mt-4 mb-4">
+    <span class="h5">Creating a new A/B Test for </span>
+    <span class="h4 text-primary" title="This is feature name for the test.">@feature</span>
+  </div>
   @abtestForm(feature, draft, errorMsg)
-
-  <button type="submit" class="btn btn-primary mt-5">Submit</button>
+  <div class="row d-flex flex-row-reverse mt-5">
+    <div class="mr-4">
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <button type="button" class="btn btn-warning ml-2" onclick="history.back()">Cancel</button>
+    </div>
+  </div>
 </form>
 }
