@@ -216,7 +216,7 @@ lazy val docs = project
       "gray-lighter" -> "#F4F3F4",
       "white-color" -> "#FFFFFF"
     )
-  )
+)
 
 lazy val mongo = project
   .dependsOn(core, bandit)
