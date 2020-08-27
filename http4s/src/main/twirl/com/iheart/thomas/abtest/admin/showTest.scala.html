@@ -14,7 +14,9 @@
 
 <form action="#" method="post">
   <span class="h5">A/B Test <span class="text-success">@test.data.name</span> for </span>
-  <span class="h4 text-primary" title="This is feature name for the test.">@test.data.feature</span>
+  <span class="h4 text-primary" title="This is feature name for the test.">
+    @featureTestsLink(test.data.feature)
+  </span>
 <span class="badge ml-3 mb-3 badge-@formatStatus(test)._2">
               @formatStatus(test)._1
             </span>

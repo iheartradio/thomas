@@ -1,0 +1,112 @@
+@import com.iheart.thomas.abtest.model._
+
+@(feature: Feature,
+errorMsg: Option[String] = None)
+
+@overrideItem(oo: Option[(String, String)]) = {
+
+
+  <div class="col-md">
+    <div class="form-group">
+      <input name="overrides[]._1" class="form-control"
+             type="text"
+             @oo.map(o => s"value='${o._1}'") />
+    </div>
+  </div>
+
+  <div class="col-md">
+    <div class="form-group">
+      <input name="overrides[]._2" class="form-control"
+             type="text"
+             @oo.map(o => s"value='${o._2}'") />
+    </div>
+  </div>
+
+}
+
+@adminPage("Feature" + feature.name){
+<form action="/admin/features/@feature.name" method="post">
+
+
+  <input name="name" type="text" hidden
+         value="@feature.name"/>
+
+
+
+<div class="container" id="test-form">
+  @for(msg <- errorMsg) {
+  <div id="error-msg" class="alert alert-warning" role="alert">
+    @msg
+  </div>
+  }
+  <div class="row">
+    <div class="col-md">
+
+      <div class="card">
+        <div class="card-header">
+          <span class="h5">Basics</span>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="descriptionInput">Description</label>
+            <textarea name="description" class="form-control" id="descriptionInput" type="text"
+                   value="@feature.description"/>
+          </div>
+
+        </div>
+      </div>
+
+
+    </div>
+    <div class="col-md">
+      <div class="card">
+        <div class="card-header">
+          <span class="h5">Overrides</span>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <input name="overrideEligibility" class="form-check-input" id="overrideEligibilityCB" type="checkbox"
+                   value="@feature.overrideEligibility"/>
+            <label for="overrideEligibilityCB">ALLOW OVERRIDES TO TAKE PRECEDENCE OVER ELIGIBILITY CONTROL</label>
+          </div>
+          <div id="overrides">
+            <div class="row overrides-header">
+              <div class="col-md">
+                <div class="form-group">
+                  <lable>User Id</label>
+                </div>
+              </div>
+
+              <div class="col-md">
+                <div class="form-group">
+                  <label>Group Name</label>
+                </div>
+              </div>
+            </div>
+            @for(o <- feature.overrides) {
+              <div class="row override-item">
+                @overrideItem(Some(o))
+              </div>
+            }
+          </div>
+          <div class="d-none" id="new-override">
+            @overrideItem(None)
+          </div>
+          <div class="row float-right">
+            <button type="button" id="btn-new-override"
+                    onclick="newButtonAppend('#new-override','#overrides')"
+                    class="btn btn-secondary">New Override
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+</form>
+
+}

@@ -13,7 +13,6 @@ readonly: Boolean = false)
 <div class="row abtest-group">
   <div class="col-3">
     <div class="form-group">
-      <label for="testGroupName">Group Name</label>
       <input name="groups[].name" class="form-control"
              id="testGroupName" type="text"
              value="@group.map(_.name)"/>
@@ -22,7 +21,6 @@ readonly: Boolean = false)
 
   <div class="col-2">
     <div class="form-group">
-      <label for="testGroupSize">Size</label>
       <input name="groups[].size" class="form-control"
              id="testGroupSize" type="number"
              value="@group.map(_.size)"
@@ -33,12 +31,12 @@ readonly: Boolean = false)
   <div class="col-7 d-flex flex-row">
 
     <div class="form-group w-100">
-      <label for="testGroupMeta">Meta</label>
       <textarea name="groups[].meta" class="form-control"
                 id="testGroupMeta">@group.flatMap(_.meta).map(formatJSON(_))</textarea>
     </div>
     <div class="text-center">
-      <button class="btn btn-link delete-group mt-4 ml-3" title="Remove Group">
+      <button class="btn btn-link delete-group remove-item mt-4 ml-3"
+              type="button" onclick="thomas.removeParentItem(this, '.abtest-group')" title="Remove Group">
         <i class="far fa-trash-alt"></i>
       </button>
     </div>
@@ -50,24 +48,32 @@ readonly: Boolean = false)
 }
 
 @range(rg: Option[GroupRange]) = {
-<div class="row">
-  <div class="col-md">
-    <div class="form-group">
-      <label for="testGroupRangeStart">Start</label>
-      <input name="segmentRanges[].start" class="form-control"
-             id="testGroupRangeStart" type="number"
-             value="@rg.map(_.start)"
-             min="0" step="0.001" max="1"/>
+<div class="d-flex flex-row range-item">
+  <div class="row w-100">
+    <div class="col-md">
+      <div class="form-group">
+        <label for="testGroupRangeStart">Start</label>
+        <input name="segmentRanges[].start" class="form-control"
+               id="testGroupRangeStart" type="number"
+               value="@rg.map(_.start)"
+               min="0" step="0.001" max="1"/>
+      </div>
+    </div>
+    <div class="col-md">
+      <div class="form-group">
+        <label for="testGroupRangeEnd">End</label>
+        <input name="segmentRanges[].end" class="form-control"
+               id="testGroupRangeEnd" type="number"
+               value="@rg.map(_.end)"
+               min="0" step="0.001" max="1"/>
+      </div>
     </div>
   </div>
-  <div class="col-md">
-    <div class="form-group">
-      <label for="testGroupRangeEnd">End</label>
-      <input name="segmentRanges[].end" class="form-control"
-             id="testGroupRangeEnd" type="number"
-             value="@rg.map(_.end)"
-             min="0" step="0.001" max="1"/>
-    </div>
+  <div class="text-center">
+    <button class="btn btn-link remove-item mt-4 ml-3"
+            type="button" onclick="thomas.removeParentItem(this, '.range-item')" title="Remove Range">
+      <i class="far fa-trash-alt"></i>
+    </button>
   </div>
 </div>
 }
@@ -180,7 +186,7 @@ readonly: Boolean = false)
           }
           <div class="float-right">
             <button type="button" id="btn-new-test-segment-range"
-                    onclick="newButtonAppend('#newTestSegmentRange','#testSegmentRanges')"
+                    onclick="thomas.appendItem('#newTestSegmentRange','#testSegmentRanges')"
                     class="btn btn-secondary">New Segment Range
             </button>
           </div>
@@ -200,13 +206,35 @@ readonly: Boolean = false)
         </div>
         <div class="card-body">
           <div id="testGroups">
+            <div class="row abtest-group-header">
+              <div class="col-3">
+                <div class="form-group">
+                  <label for="testGroupName">Group Name</label>
+
+                </div>
+              </div>
+
+              <div class="col-2">
+                <div class="form-group">
+                  <label for="testGroupSize">Size</label>
+                </div>
+              </div>
+
+              <div class="col-7">
+
+                <div class="form-group w-100">
+                  <label for="testGroupMeta">Meta</label>
+                </div>
+              </div>
+            </div>
+
             @for( g <- draft.map(_.groups.map(Some(_))).getOrElse(List(None, None))) {
             @group(g)
             }
           </div>
           <div class="float-right">
             <button type="button" id="btn-new-test-group"
-                    onclick="newButtonAppend('#newTestGroup','#testGroups')"
+                    onclick="thomas.appendItem('#newTestGroup','#testGroups')"
                     class="btn btn-secondary">New Group
             </button>
           </div>
@@ -222,39 +250,25 @@ readonly: Boolean = false)
 </div>
 
 <script>
+
+
 $(document).ready(function() {
   var pickerSettings =  {
     'format': 'Y-m-d H:i:s T'
   };
 
-  function newButtonAppend(newDiv, appendToDiv) {
-    $(newDiv).clone().show().appendTo(appendToDiv);
-  };
-
-  $('.delete-group').on('click', function(){
-     $(this).parents(".abtest-group").remove();
-  });
-
-  $('form').submit(function () {
-    $(this)
-        .find('input[name]')
-        .filter(function () {
-            return !this.value;
-        })
-        .prop('name', '');
-  });
-
   @if(readonly) {
     $('#test-form input').attr('readonly', 'readonly').attr('disabled', 'disabled');
     $('#test-form textarea').attr('readonly', 'readonly').attr('disabled', 'disabled');
     $('#test-form button').hide();
-    $('#test-form .delete-group').hide();
+    $('#test-form .remove-item').hide();
   } else {
     $('#testStart').datetimepicker(pickerSettings);
     $('#testEnd').datetimepicker(pickerSettings);
   }
 
 });
+
 
 
 

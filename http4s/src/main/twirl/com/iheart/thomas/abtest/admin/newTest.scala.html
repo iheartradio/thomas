@@ -8,7 +8,8 @@
 <form action="/admin/tests" method="post">
   <div class="mt-4 mb-4">
     <span class="h5">Creating a new A/B Test for </span>
-    <span class="h4 text-primary" title="This is feature name for the test.">@feature</span>
+    <span class="h4 text-primary" title="This is feature name for the test.">
+      @featureTestsLink(feature)</span>
   </div>
   @abtestForm(feature, draft, errorMsg)
   <div class="row d-flex flex-row-reverse mt-5">

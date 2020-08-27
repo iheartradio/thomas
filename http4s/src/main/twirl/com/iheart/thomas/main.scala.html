@@ -35,4 +35,28 @@
 <div class="container">
   @content
 </div>
+<script>
+var thomas = {
+  appendItem: function(newItemContainer, appendToDiv) {
+    $(newItemContainer).children().clone().appendTo(appendToDiv);
+  },
+  removeParentItem: function(item, parentId) {
+    $(item).parents(parentId).remove();
+  }
+};
+
+$(document).ready(function() {
+
+  $('form').submit(function () {
+    $(this)
+        .find('input[name]')
+        .filter(function () {
+            return !this.value;
+        })
+        .prop('name', '');
+  });
+
+});
+</script>
+
 </body>
