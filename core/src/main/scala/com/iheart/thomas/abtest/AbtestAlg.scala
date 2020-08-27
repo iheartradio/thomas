@@ -111,7 +111,12 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
       overrides: Overrides
     ): F[Feature]
 
-  def getOverrides(featureName: FeatureName): F[Feature]
+  def getOverrides(featureName: FeatureName): F[Feature] =
+    getFeature(featureName)
+
+  def getFeature(featureName: FeatureName): F[Feature]
+
+  def updateFeature(feature: Feature): F[Feature]
 
   def removeOverrides(
       featureName: FeatureName,
@@ -369,6 +374,14 @@ final class DefaultAbtestAlg[F[_]](
       )
     } yield updated.data
 
+  def updateFeature(feature: Feature): F[Feature] =
+    for {
+      fe <- featureDao.byName(feature.name)
+      updated <- featureDao.update(
+        fe.copy(data = feature.copy(lockedAt = fe.data.lockedAt))
+      )
+    } yield updated.data
+
   def setOverrideEligibilityIn(
       featureName: FeatureName,
       overrideEligibility: Boolean
@@ -414,7 +427,7 @@ final class DefaultAbtestAlg[F[_]](
       )
     } yield updated.data
 
-  def getOverrides(featureName: FeatureName): F[Feature] =
+  def getFeature(featureName: FeatureName): F[Feature] =
     featureDao.byName(featureName).map(_.data)
 
   def getGroups(

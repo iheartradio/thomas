@@ -9,7 +9,7 @@ import abtest.admin.html._
 import html._
 import com.iheart.thomas
 import com.iheart.thomas.abtest.AbtestAlg
-import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec}
+import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Feature}
 import com.iheart.thomas.http4s.AbtestService.{
   abtestAlgFromMongo,
   validationErrorMsg
@@ -75,6 +75,21 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
         Ok(index(toShow, features, filters))
       }.flatten
 
+    def showFeature(
+        feature: Feature,
+        msg: Option[Either[String, String]] = None
+      ) =
+      alg.getTestsByFeature(feature.name).flatMap { tests =>
+        Ok(
+          featureForm(
+            feature,
+            tests.size,
+            msg.flatMap(_.left.toOption),
+            msg.flatMap(_.right.toOption)
+          )
+        )
+      }
+
     val adminRoutes =
       HttpRoutes
         .of[F] {
@@ -85,6 +100,25 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
                 fn.filter(_ != "_ALL_FEATURES_")
               )
             )
+          case GET -> Root / "features" / feature =>
+            alg.getFeature(feature).flatMap(showFeature(_))
+
+          case req @ POST -> Root / "features" / feature =>
+            req
+              .as[Feature]
+              .redeemWith(
+                e => BadRequest(errorMsg(e.getMessage)),
+                f =>
+                  alg
+                    .updateFeature(f)
+                    .flatMap(
+                      u =>
+                        showFeature(u, Some(Right("Feature successfully update.")))
+                    )
+                    .handleErrorWith(
+                      e => showFeature(f, Some(Left(displayError(e))))
+                    )
+              )
 
           case GET -> Root / "tests" / "new" :? featureReq(fn) =>
             Ok(newTest(fn, None))
@@ -108,12 +142,14 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
             for {
               test <- get(testId)
               otherFeatureTests <- alg.getTestsByFeature(test.data.feature)
+              feature <- alg.getFeature(test.data.feature)
               r <- Ok(
                 showTest(
                   test,
                   otherFeatureTests
                     .filter(_.data.start.isAfter(test.data.start))
-                    .headOption
+                    .headOption,
+                  feature.overrides
                 )
               )
             } yield r

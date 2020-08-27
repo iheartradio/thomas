@@ -3,7 +3,10 @@
 @import java.time.Instant
 @import com.iheart.thomas.html._
 
-@(test: Entity[Abtest], followUpO: Option[Entity[Abtest]])
+@(test: Entity[Abtest],
+  followUpO: Option[Entity[Abtest]],
+  overrides: Overrides
+)
 @import com.iheart.thomas.http4s.Formatters._
 
 @main("A/B Test for feature " + test.data.feature) {
@@ -60,8 +63,42 @@
   }
 </div>
 
+@if(overrides.nonEmpty){
+<div class="row mt-6">
+  <div class="col-6">
+    <div class="card">
+      <div class="card-header">
+        <span class="h6">Overridden assignment for
+          <a class="text-primary" href="/admin/features/@test.data.feature">@test.data.feature</a> </span>
+      </div>
+      <div class="card-body">
+          <table class="w-100 mb-5">
+            <thead>
+            <tr>
+              <th>User Id</th>
+              <th>Group Name</th>
+            </tr>
+            </thead>
+            <tbody>
+            @for(o <- overrides) {
+              <tr>
+                <td>@o._1</td>
+                <td>@o._2</td>
+              </tr>
+            }
+            </tbody>
+
+          </table>
 
 
+
+
+        Go to <a class="text-primary" href="/admin/features/@test.data.feature">@test.data.feature</a> to edit overrides.</span>
+        </div>
+    </div>
+  </div>
+</div>
+}
 
 
 }
