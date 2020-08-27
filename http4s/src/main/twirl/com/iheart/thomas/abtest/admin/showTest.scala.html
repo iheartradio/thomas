@@ -20,16 +20,13 @@
             </span>
 
 <span class="text-muted h6 ml-3 small">@test._id</span>
-@for(followUp <- followUpO) {
-  <div class="small mb-3">
-    Followed by <a class="text-success lnk" title="@followUp._id" href="./@followUp._id">@followUp.data.name</a>
-  </div>
-}
+
 @abtestForm(test.data.feature, Some(test.data.toSpec), None, true)
 
 </form>
 
 <div class="row d-flex flex-row-reverse mt-5">
+
   <div class="mr-4">
     @if(test.data.isScheduled(Instant.now)) {
     <a href="@test._id/edit" class="btn btn-primary" role="button" >
@@ -54,6 +51,11 @@
 
     }
   </div>
+  @for(followUp <- followUpO) {
+  <div class="mr-3">
+    Note: this test is followed by <a class="text-success lnk" title="@followUp._id" href="./@followUp._id">@followUp.data.name</a>
+  </div>
+  }
 </div>
 
 

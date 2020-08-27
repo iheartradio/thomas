@@ -127,25 +127,19 @@ readonly: Boolean = false)
           <span class="h5">Advanced</span>
         </div>
         <div class="card-body">
-
-
           <div class="row">
             <div class="col-md">
+              <div class="form-group form-check">
+                <input name="reshuffle" class="form-check-input" id="testReshuffle" type="checkbox"
+                       value="@draft.map(_.reshuffle).getOrElse(false)"/>
+                <label for="testReshuffle">Reshuffle users from previous test</label>
+              </div>
               <div class="form-group">
-                <label for="testAlternativeIdName">Alternative Id Name</label>
+                <label for="testAlternativeIdName">Alternative Id meta field name</label>
                 <input name="alternativeIdName" class="form-control" id="testAlternativeIdName" type="text"
                        value="@draft.map(_.alternativeIdName)"/>
               </div>
             </div>
-            <div class="col-md">
-
-              <div class="form-group form-check">
-                <input name="reshuffle" class="form-check-input" id="testReshuffle" type="checkbox"
-                       value="@draft.map(_.reshuffle).getOrElse(false)"/>
-                <label for="testReshuffle">Reshuffle</label>
-              </div>
-            </div>
-
           </div>
         </div>
       </div>
@@ -173,7 +167,7 @@ readonly: Boolean = false)
 
       <div class="card mt-5">
         <div class="card-header">
-          <span class="h5">Settings For Mutual Exclusive Test</span>
+          <span class="h5">Mutual Exclusivity</span>
         </div>
         <div class="card-body">
           <div id="testSegmentRanges">
@@ -182,7 +176,7 @@ readonly: Boolean = false)
             }
           </div>
           @if(readonly && draft.fold(false)(_.segmentRanges.isEmpty)) {
-          <span class="h6 small text-muted">This Test is not mutually exclusive with other tests.</span>
+          <span class="h6 small text-muted">This test is not mutually exclusive with other tests.</span>
           }
           <div class="float-right">
             <button type="button" id="btn-new-test-segment-range"
