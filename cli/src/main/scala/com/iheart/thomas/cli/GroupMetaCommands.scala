@@ -7,7 +7,7 @@ import com.iheart.thomas.cli.OptsSyntax._
 import com.monovore.decline._
 import _root_.play.api.libs.json.Json.{prettyPrint, toJson}
 import SharedOpts._
-import play.api.libs.json.JsObject
+import _root_.play.api.libs.json.JsObject
 
 class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
 

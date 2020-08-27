@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter
 import com.iheart.thomas.abtest.model.Abtest
 import com.iheart.thomas.abtest.model.Abtest.Status
 import lihua.Entity
-import play.api.libs.json.{Json, Writes}
+import _root_.play.api.libs.json.{Json, Writes}
 
 object Formatters {
   val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z")

@@ -1,5 +1,4 @@
 @import com.iheart.thomas.abtest.model._
-@import com.iheart.thomas.html._
 @import lihua.Entity
 @import com.iheart.thomas.http4s.Formatters._
 @import com.iheart.thomas.FeatureName
@@ -51,8 +50,8 @@
 }
 
 
-@main("tests") {
-<h4>A/B tests</h4>
+@adminPage("tests") {
+<h5 class="mt-3 mb-3">A/B tests</h5>
 
 <form id="tests-filters" action="tests" method="get">
   <div class="form-row"  style="width: 40rem;">

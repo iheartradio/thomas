@@ -23,7 +23,7 @@ import monocle.macros.syntax.lens._
 import mouse.all._
 import henkan.convert.Syntax._
 import mau.RefreshRef
-import play.api.libs.json.Json.JsValueWrapper
+import _root_.play.api.libs.json.Json.JsValueWrapper
 
 import scala.concurrent.duration._
 import scala.util.Random

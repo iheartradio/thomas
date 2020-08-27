@@ -16,7 +16,7 @@ import org.http4s.{
   QueryParamDecoder,
   QueryParameterValue
 }
-import play.api.libs.json.{JsObject, Json, Reads}
+import _root_.play.api.libs.json.{JsObject, Json, Reads}
 
 import scala.util.Try
 

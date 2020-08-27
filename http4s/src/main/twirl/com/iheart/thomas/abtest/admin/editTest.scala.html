@@ -1,10 +1,9 @@
 @import com.iheart.thomas.abtest.model._
 @import lihua._
-@import com.iheart.thomas.html._
 
 @(test: Entity[Abtest], errMessage: Option[String] = None, spec: Option[AbtestSpec] = None)
 
-@main("A/B Test for feature " + test.data.feature) {
+@adminPage("A/B Test for feature " + test.data.feature) {
 
 <form action="/admin/tests/@test._id" method="post">
 

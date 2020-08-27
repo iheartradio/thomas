@@ -1,7 +1,6 @@
 @import com.iheart.thomas.abtest.model._
 @import lihua._
 @import java.time.Instant
-@import com.iheart.thomas.html._
 
 @(test: Entity[Abtest],
   followUpO: Option[Entity[Abtest]],
@@ -9,13 +8,11 @@
 )
 @import com.iheart.thomas.http4s.Formatters._
 
-@main("A/B Test for feature " + test.data.feature) {
+@adminPage("A/B Test for feature " + test.data.feature) {
 
-<a href="../tests">
-  <h6 class="mb-4 mt-4 text-secondary"><< Back to tests</h6>
-</a>
 
 <form action="#" method="post">
+  <div class="m-3">
   <span class="h5">A/B Test <span class="text-success">@test.data.name</span> for </span>
   <span class="h4 text-primary" title="This is feature name for the test.">
     @featureTestsLink(test.data.feature)
@@ -24,7 +21,9 @@
               @formatStatus(test)._1
             </span>
 
-<span class="text-muted h6 ml-3 small">@test._id</span>
+    <span class="text-muted h6 ml-3 small">@test._id</span>
+  </div>
+
 
 @abtestForm(test.data.feature, Some(test.data.toSpec), None, true)
 
