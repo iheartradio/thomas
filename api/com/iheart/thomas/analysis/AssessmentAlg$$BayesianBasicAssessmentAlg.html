@@ -244,9 +244,9 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg#&lt;init&gt;" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;()(implicitsamplerSettings:com.iheart.thomas.analysis.SampleSettings,implicitrng:com.stripe.rainier.sampler.RNG,implicitF:cats.effect.Sync[F]):com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg[F,K,M]"></a><a id="&lt;init&gt;:BayesianBasicAssessmentAlg[F,K,M]"></a>
+      <a id="&lt;init&gt;()(implicitsampler:com.stripe.rainier.sampler.Sampler,implicitrng:com.stripe.rainier.sampler.RNG,implicitF:cats.Applicative[F]):com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg[F,K,M]"></a><a id="&lt;init&gt;:BayesianBasicAssessmentAlg[F,K,M]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/analysis/AssessmentAlg$$BayesianBasicAssessmentAlg.html#&lt;init&gt;()(implicitsamplerSettings:com.iheart.thomas.analysis.SampleSettings,implicitrng:com.stripe.rainier.sampler.RNG,implicitF:cats.effect.Sync[F]):com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg[F,K,M]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/analysis/AssessmentAlg$$BayesianBasicAssessmentAlg.html#&lt;init&gt;()(implicitsampler:com.stripe.rainier.sampler.Sampler,implicitrng:com.stripe.rainier.sampler.RNG,implicitF:cats.Applicative[F]):com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg[F,K,M]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -255,7 +255,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">BayesianBasicAssessmentAlg</span><span class="params">()</span><span class="params">(<span class="implicit">implicit </span><span name="samplerSettings">samplerSettings: <a href="SampleSettings.html" class="extype" name="com.iheart.thomas.analysis.SampleSettings">SampleSettings</a></span>, <span name="rng">rng: <a href="https://stripe.github.io/rainier/api/com/stripe/rainier/sampler/RNG.html#com.stripe.rainier.sampler.RNG" class="extype" name="com.stripe.rainier.sampler.RNG">RNG</a></span>, <span name="F">F: <span class="extype" name="cats.effect.Sync">Sync</span>[<span class="extype" name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg.F">F</span>]</span>)</span>
+        <span class="name">BayesianBasicAssessmentAlg</span><span class="params">()</span><span class="params">(<span class="implicit">implicit </span><span name="sampler">sampler: <a href="https://stripe.github.io/rainier/api/com/stripe/rainier/sampler/Sampler.html#com.stripe.rainier.sampler.Sampler" class="extype" name="com.stripe.rainier.sampler.Sampler">Sampler</a></span>, <span name="rng">rng: <a href="https://stripe.github.io/rainier/api/com/stripe/rainier/sampler/RNG.html#com.stripe.rainier.sampler.RNG" class="extype" name="com.stripe.rainier.sampler.RNG">RNG</a></span>, <span name="F">F: <a href="http://typelevel.org/cats/api/cats/Applicative.html#cats.Applicative" class="extype" name="cats.Applicative">Applicative</a>[<span class="extype" name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg.F">F</span>]</span>)</span>
       </span>
       
       
@@ -278,7 +278,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">sampleIndicator</span><span class="params">(<span name="k">k: <span class="extype" name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg.K">K</span></span>, <span name="data">data: <span class="extype" name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg.M">M</span></span>)</span><span class="result">: <a href="index.html#Indicator=com.stripe.rainier.core.RandomVariable[com.stripe.rainier.compute.Real]" class="extmbr" name="com.iheart.thomas.analysis.Indicator">Indicator</a></span>
+        <span class="name">sampleIndicator</span><span class="params">(<span name="k">k: <span class="extype" name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg.K">K</span></span>, <span name="data">data: <span class="extype" name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg.M">M</span></span>)</span><span class="result">: <a href="index.html#Indicator=com.iheart.thomas.analysis.Variable[com.stripe.rainier.compute.Real]" class="extmbr" name="com.iheart.thomas.analysis.Indicator">Indicator</a></span>
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
@@ -353,9 +353,9 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg#assessOptimumGroup" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="assessOptimumGroup(k:K,allMeasurement:Map[com.iheart.thomas.GroupName,M]):F[Map[com.iheart.thomas.GroupName,com.iheart.thomas.analysis.Probability]]"></a><a id="assessOptimumGroup(K,Map[GroupName,M]):F[Map[GroupName,Probability]]"></a>
+      <a id="assessOptimumGroup(allMeasurement:Map[com.iheart.thomas.GroupName,(M,K)]):F[Map[com.iheart.thomas.GroupName,com.iheart.thomas.analysis.Probability]]"></a><a id="assessOptimumGroup(Map[GroupName,(M,K)]):F[Map[GroupName,Probability]]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/analysis/AssessmentAlg$$BayesianBasicAssessmentAlg.html#assessOptimumGroup(k:K,allMeasurement:Map[com.iheart.thomas.GroupName,M]):F[Map[com.iheart.thomas.GroupName,com.iheart.thomas.analysis.Probability]]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/analysis/AssessmentAlg$$BayesianBasicAssessmentAlg.html#assessOptimumGroup(allMeasurement:Map[com.iheart.thomas.GroupName,(M,K)]):F[Map[com.iheart.thomas.GroupName,com.iheart.thomas.analysis.Probability]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -364,10 +364,26 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">assessOptimumGroup</span><span class="params">(<span name="k">k: <span class="extype" name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg.K">K</span></span>, <span name="allMeasurement">allMeasurement: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>, <span class="extype" name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg.M">M</span>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg.F">F</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<a href="../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>, <a href="index.html#Probability=com.iheart.thomas.analysis.package.Probability.Type" class="extmbr" name="com.iheart.thomas.analysis.Probability">Probability</a>]]</span>
+        <span class="name">assessOptimumGroup</span><span class="params">(<span name="allMeasurement">allMeasurement: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>, (<span class="extype" name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg.M">M</span>, <span class="extype" name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg.K">K</span>)]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg.F">F</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<a href="../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>, <a href="index.html#Probability=com.iheart.thomas.analysis.package.Probability.Type" class="extmbr" name="com.iheart.thomas.analysis.Probability">Probability</a>]]</span>
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg">BayesianBasicAssessmentAlg</a> → <a href="BasicAssessmentAlg.html" class="extype" name="com.iheart.thomas.analysis.BasicAssessmentAlg">BasicAssessmentAlg</a></dd></dl></div>
+    </li><li name="com.iheart.thomas.analysis.BasicAssessmentAlg#assessOptimumGroup" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="assessOptimumGroup(k:K,measurements:Map[com.iheart.thomas.GroupName,M]):F[Map[com.iheart.thomas.GroupName,com.iheart.thomas.analysis.Probability]]"></a><a id="assessOptimumGroup(K,Map[GroupName,M]):F[Map[GroupName,Probability]]"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/analysis/AssessmentAlg$$BayesianBasicAssessmentAlg.html#assessOptimumGroup(k:K,measurements:Map[com.iheart.thomas.GroupName,M]):F[Map[com.iheart.thomas.GroupName,com.iheart.thomas.analysis.Probability]]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">assessOptimumGroup</span><span class="params">(<span name="k">k: <span class="extype" name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg.K">K</span></span>, <span name="measurements">measurements: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>, <span class="extype" name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg.M">M</span>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.analysis.AssessmentAlg.BayesianBasicAssessmentAlg.F">F</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<a href="../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>, <a href="index.html#Probability=com.iheart.thomas.analysis.package.Probability.Type" class="extmbr" name="com.iheart.thomas.analysis.Probability">Probability</a>]]</span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="BasicAssessmentAlg.html" class="extype" name="com.iheart.thomas.analysis.BasicAssessmentAlg">BasicAssessmentAlg</a></dd></dl></div>
     </li><li name="scala.AnyRef#clone" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a><a id="clone():AnyRef"></a>
       <span class="permalink">
@@ -390,6 +406,8 @@
     </span>)</span>
               
                 <span class="name">@native</span><span class="args">()</span>
+              
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#eq" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -424,28 +442,6 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="finalize():Unit"></a>
-      <span class="permalink">
-      <a href="../../../../com/iheart/thomas/analysis/AssessmentAlg$$BayesianBasicAssessmentAlg.html#finalize():Unit" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">finalize</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">(<span>
-      
-      <span class="symbol">classOf[java.lang.Throwable]</span>
-    </span>)</span>
-              
-        </dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <span class="permalink">
@@ -463,6 +459,8 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
+              
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -482,6 +480,8 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
+              
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -534,6 +534,8 @@
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
               
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
+              
         </dd></dl></div>
     </li><li name="scala.AnyRef#notifyAll" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notifyAll():Unit"></a>
@@ -552,6 +554,8 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
+              
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -586,28 +590,6 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="wait():Unit"></a>
-      <span class="permalink">
-      <a href="../../../../com/iheart/thomas/analysis/AssessmentAlg$$BayesianBasicAssessmentAlg.html#wait():Unit" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">wait</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">(<span>
-      
-      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
-    </span>)</span>
-              
-        </dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait(x$1:Long,x$2:Int):Unit"></a><a id="wait(Long,Int):Unit"></a>
       <span class="permalink">
@@ -654,13 +636,64 @@
                 <span class="name">@native</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/analysis/AssessmentAlg$$BayesianBasicAssessmentAlg.html#wait():Unit" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
     </li>
               </ol>
             </div>
 
         
 
-        
+        <div class="values members">
+              <h3>Deprecated Value Members</h3>
+              <ol><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/analysis/AssessmentAlg$$BayesianBasicAssessmentAlg.html#finalize():Unit" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name deprecated" title="Deprecated: (Since version ) see corresponding Javadoc for more information.">finalize</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+                <span class="name">@Deprecated</span>
+              
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version )</i> see corresponding Javadoc for more information.</p></dd></dl></div>
+    </li></ol>
+            </div>
         </div>
 
         <div id="inheritedMembers">

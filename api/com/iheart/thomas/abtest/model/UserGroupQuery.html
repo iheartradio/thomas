@@ -185,6 +185,10 @@
                         <span class="separator"></span>
                         <a class="class" href="UserInfo.html" title=""></a>
                         <a href="UserInfo.html" title="">UserInfo</a>
+                      </li><li class="current-entities indented5">
+                        <a class="object" href="UserMetaCriterion$.html" title=""></a>
+                        <a class="trait" href="UserMetaCriterion.html" title=""></a>
+                        <a href="UserMetaCriterion.html" title="">UserMetaCriterion</a>
                       </li>
               </ul>
             </div>
@@ -208,12 +212,12 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">UserGroupQuery</span><span class="params">(<span name="userId">userId: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="../../index.html#UserId=String" class="extmbr" name="com.iheart.thomas.UserId">UserId</a>]</span>, <span name="at">at: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">None</a></span></span></span>, <span name="tags">tags: <a href="../../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="index.html#Tag=String" class="extmbr" name="com.iheart.thomas.abtest.model.Tag">Tag</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Nil</a></span></span></span>, <span name="meta">meta: <a href="index.html#UserMeta=Map[com.iheart.thomas.abtest.model.package.MetaFieldName,String]" class="extmbr" name="com.iheart.thomas.abtest.model.UserMeta">UserMeta</a> = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Map()</a></span></span></span>, <span name="features">features: <a href="../../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Nil</a></span></span></span>)</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
+        <span class="name">UserGroupQuery</span><span class="params">(<span name="userId">userId: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="../../index.html#UserId=String" class="extmbr" name="com.iheart.thomas.UserId">UserId</a>]</span>, <span name="at">at: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">None</a></span></span></span>, <span name="tags">tags: <a href="../../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="index.html#Tag=String" class="extmbr" name="com.iheart.thomas.abtest.model.Tag">Tag</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Nil</a></span></span></span>, <span name="meta">meta: <a href="index.html#UserMeta=Map[com.iheart.thomas.abtest.model.package.MetaFieldName,String]" class="extmbr" name="com.iheart.thomas.abtest.model.UserMeta">UserMeta</a> = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Map()</a></span></span></span>, <span name="features">features: <a href="../../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Nil</a></span></span></span>, <span name="eligibilityInfoIncluded">eligibilityInfoIncluded: <a href="https://www.scala-lang.org/api/2.12.10/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a> = <span class="symbol">true</span></span>)</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
       </span>
       </h4>
 
       
-          <div id="comment" class="fullcommenttop"><dl class="attributes block"> <dt>Source</dt><dd><a href="https://github.com/iheartradio/thomas/tree/master/core/src/main/scala/com/iheart/thomas/abtest/model/package.scala" target="_blank">package.scala</a></dd></dl><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">eligibilityInfoIncluded</dt><dd class="cmt"><p>indicate whether eligibility information is included.</p></dd></dl><dl class="attributes block"> <dt>Source</dt><dd><a href="https://github.com/iheartradio/thomas/tree/master/core/src/main/scala/com/iheart/thomas/abtest/model/package.scala" target="_blank">package.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">
             Linear Supertypes
           </span>
@@ -263,10 +267,10 @@
         <div id="allMembers">
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
-              <ol><li name="com.iheart.thomas.abtest.model.UserGroupQuery#&lt;init&gt;" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(userId:Option[com.iheart.thomas.UserId],at:Option[java.time.OffsetDateTime],tags:List[com.iheart.thomas.abtest.model.Tag],meta:com.iheart.thomas.abtest.model.UserMeta,features:List[com.iheart.thomas.FeatureName]):com.iheart.thomas.abtest.model.UserGroupQuery"></a><a id="&lt;init&gt;:UserGroupQuery"></a>
+              <ol><li name="com.iheart.thomas.abtest.model.UserGroupQuery#&lt;init&gt;" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="&lt;init&gt;(userId:Option[com.iheart.thomas.UserId],at:Option[java.time.OffsetDateTime],tags:List[com.iheart.thomas.abtest.model.Tag],meta:com.iheart.thomas.abtest.model.UserMeta,features:List[com.iheart.thomas.FeatureName],eligibilityInfoIncluded:Boolean):com.iheart.thomas.abtest.model.UserGroupQuery"></a><a id="&lt;init&gt;:UserGroupQuery"></a>
       <span class="permalink">
-      <a href="../../../../../com/iheart/thomas/abtest/model/UserGroupQuery.html#&lt;init&gt;(userId:Option[com.iheart.thomas.UserId],at:Option[java.time.OffsetDateTime],tags:List[com.iheart.thomas.abtest.model.Tag],meta:com.iheart.thomas.abtest.model.UserMeta,features:List[com.iheart.thomas.FeatureName]):com.iheart.thomas.abtest.model.UserGroupQuery" title="Permalink">
+      <a href="../../../../../com/iheart/thomas/abtest/model/UserGroupQuery.html#&lt;init&gt;(userId:Option[com.iheart.thomas.UserId],at:Option[java.time.OffsetDateTime],tags:List[com.iheart.thomas.abtest.model.Tag],meta:com.iheart.thomas.abtest.model.UserMeta,features:List[com.iheart.thomas.FeatureName],eligibilityInfoIncluded:Boolean):com.iheart.thomas.abtest.model.UserGroupQuery" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -275,10 +279,10 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">UserGroupQuery</span><span class="params">(<span name="userId">userId: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="../../index.html#UserId=String" class="extmbr" name="com.iheart.thomas.UserId">UserId</a>]</span>, <span name="at">at: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">None</a></span></span></span>, <span name="tags">tags: <a href="../../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="index.html#Tag=String" class="extmbr" name="com.iheart.thomas.abtest.model.Tag">Tag</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Nil</a></span></span></span>, <span name="meta">meta: <a href="index.html#UserMeta=Map[com.iheart.thomas.abtest.model.package.MetaFieldName,String]" class="extmbr" name="com.iheart.thomas.abtest.model.UserMeta">UserMeta</a> = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Map()</a></span></span></span>, <span name="features">features: <a href="../../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Nil</a></span></span></span>)</span>
+        <span class="name">UserGroupQuery</span><span class="params">(<span name="userId">userId: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="../../index.html#UserId=String" class="extmbr" name="com.iheart.thomas.UserId">UserId</a>]</span>, <span name="at">at: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">None</a></span></span></span>, <span name="tags">tags: <a href="../../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="index.html#Tag=String" class="extmbr" name="com.iheart.thomas.abtest.model.Tag">Tag</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Nil</a></span></span></span>, <span name="meta">meta: <a href="index.html#UserMeta=Map[com.iheart.thomas.abtest.model.package.MetaFieldName,String]" class="extmbr" name="com.iheart.thomas.abtest.model.UserMeta">UserMeta</a> = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Map()</a></span></span></span>, <span name="features">features: <a href="../../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>] = <span class="symbol"><span class="name"><a href="../../../../../scala/index.html">Nil</a></span></span></span>, <span name="eligibilityInfoIncluded">eligibilityInfoIncluded: <a href="https://www.scala-lang.org/api/2.12.10/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a> = <span class="symbol">true</span></span>)</span>
       </span>
       
-      
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">eligibilityInfoIncluded</dt><dd class="cmt"><p>indicate whether eligibility information is included.</p></dd></dl></div>
     </li></ol>
             </div>
 
@@ -392,7 +396,25 @@
               
                 <span class="name">@native</span><span class="args">()</span>
               
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
+              
         </dd></dl></div>
+    </li><li name="com.iheart.thomas.abtest.model.UserGroupQuery#eligibilityInfoIncluded" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="eligibilityInfoIncluded:Boolean"></a>
+      <span class="permalink">
+      <a href="../../../../../com/iheart/thomas/abtest/model/UserGroupQuery.html#eligibilityInfoIncluded:Boolean" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">eligibilityInfoIncluded</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a></span>
+      </span>
+      
+      
     </li><li name="scala.AnyRef#eq" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a><a id="eq(AnyRef):Boolean"></a>
       <span class="permalink">
@@ -425,28 +447,6 @@
       </span>
       
       
-    </li><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="finalize():Unit"></a>
-      <span class="permalink">
-      <a href="../../../../../com/iheart/thomas/abtest/model/UserGroupQuery.html#finalize():Unit" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">finalize</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">(<span>
-      
-      <span class="symbol">classOf[java.lang.Throwable]</span>
-    </span>)</span>
-              
-        </dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <span class="permalink">
@@ -464,6 +464,8 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
+              
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -532,6 +534,8 @@
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
               
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
+              
         </dd></dl></div>
     </li><li name="scala.AnyRef#notifyAll" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notifyAll():Unit"></a>
@@ -550,6 +554,8 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
+              
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -601,28 +607,6 @@
       
       
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="wait():Unit"></a>
-      <span class="permalink">
-      <a href="../../../../../com/iheart/thomas/abtest/model/UserGroupQuery.html#wait():Unit" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">wait</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">(<span>
-      
-      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
-    </span>)</span>
-              
-        </dd></dl></div>
-    </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait(x$1:Long,x$2:Int):Unit"></a><a id="wait(Long,Int):Unit"></a>
       <span class="permalink">
       <a href="../../../../../com/iheart/thomas/abtest/model/UserGroupQuery.html#wait(x$1:Long,x$2:Int):Unit" title="Permalink">
@@ -668,13 +652,64 @@
                 <span class="name">@native</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <span class="permalink">
+      <a href="../../../../../com/iheart/thomas/abtest/model/UserGroupQuery.html#wait():Unit" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
     </li>
               </ol>
             </div>
 
         
 
-        
+        <div class="values members">
+              <h3>Deprecated Value Members</h3>
+              <ol><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <span class="permalink">
+      <a href="../../../../../com/iheart/thomas/abtest/model/UserGroupQuery.html#finalize():Unit" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name deprecated" title="Deprecated: (Since version ) see corresponding Javadoc for more information.">finalize</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+                <span class="name">@Deprecated</span>
+              
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version )</i> see corresponding Javadoc for more information.</p></dd></dl></div>
+    </li></ol>
+            </div>
         </div>
 
         <div id="inheritedMembers">

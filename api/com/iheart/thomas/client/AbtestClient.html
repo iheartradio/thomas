@@ -142,10 +142,6 @@
                         <a class="trait" href="AnalysisAPI.html" title=""></a>
                         <a href="AnalysisAPI.html" title="">AnalysisAPI</a>
                       </li><li class="current-entities indented4">
-                        <span class="separator"></span>
-                        <a class="class" href="AssignmentWithMeta.html" title=""></a>
-                        <a href="AssignmentWithMeta.html" title="">AssignmentWithMeta</a>
-                      </li><li class="current-entities indented4">
                         <a class="object" href="AutoRefreshAssignGroups$.html" title=""></a>
                         <a class="class" href="AutoRefreshAssignGroups.html" title=""></a>
                         <a href="AutoRefreshAssignGroups.html" title="">AutoRefreshAssignGroups</a>
@@ -161,6 +157,10 @@
                         <a class="object" href="JavaAbtestAssignments$.html" title=""></a>
                         <a class="class" href="JavaAbtestAssignments.html" title=""></a>
                         <a href="JavaAbtestAssignments.html" title="">JavaAbtestAssignments</a>
+                      </li><li class="current-entities indented4">
+                        <span class="separator"></span>
+                        <a class="class" href="PlayJsonHttp4sClient.html" title="Utility class for writing http4 based client using play json"></a>
+                        <a href="PlayJsonHttp4sClient.html" title="Utility class for writing http4 based client using play json">PlayJsonHttp4sClient</a>
                       </li>
               </ul>
             </div>
@@ -186,7 +186,7 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <span class="name">AbtestClient</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="result"> extends <a href="../../../../scala/index.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+        <span class="name">AbtestClient</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="result"> extends <a href="../abtest/DataProvider.html" class="extype" name="com.iheart.thomas.abtest.DataProvider">DataProvider</a>[<span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>]</span>
       </span>
       </h4>
 
@@ -195,7 +195,7 @@
           <span class="toggle">
             Linear Supertypes
           </span>
-          <div class="superTypes hiddenContent"><a href="../../../../scala/index.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <a href="https://www.scala-lang.org/api/2.12.10/scala/Any.html#scala.Any" class="extype" name="scala.Any">Any</a></div>
+          <div class="superTypes hiddenContent"><a href="../abtest/DataProvider.html" class="extype" name="com.iheart.thomas.abtest.DataProvider">DataProvider</a>[<span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>], <a href="../../../../scala/index.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a>, <a href="https://www.scala-lang.org/api/2.12.10/scala/Any.html#scala.Any" class="extype" name="scala.Any">Any</a></div>
         </div><div class="toggleContainer block">
             <span class="toggle">
               Known Subclasses
@@ -226,7 +226,7 @@
                   <span class="filtertype">Inherited<br />
                   </span>
                   <ol id="linearization">
-                    <li class="in" name="com.iheart.thomas.client.AbtestClient"><span>AbtestClient</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                    <li class="in" name="com.iheart.thomas.client.AbtestClient"><span>AbtestClient</span></li><li class="in" name="com.iheart.thomas.abtest.DataProvider"><span>DataProvider</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                   </ol>
                 </div><div class="ancestors">
               <span class="filtertype"></span>
@@ -251,9 +251,9 @@
         <div class="values members">
               <h3>Abstract Value Members</h3>
               <ol><li name="com.iheart.thomas.client.AbtestClient#addGroupMeta" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="addGroupMeta(tid:com.iheart.thomas.abtest.model.TestId,gm:play.api.libs.json.JsObject,auto:Boolean):F[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]"></a><a id="addGroupMeta(TestId,JsObject,Boolean):F[Entity[Abtest]]"></a>
+      <a id="addGroupMeta(tidOrFeature:Either[com.iheart.thomas.abtest.model.TestId,com.iheart.thomas.FeatureName],gm:play.api.libs.json.JsObject,auto:Boolean):F[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]"></a><a id="addGroupMeta(Either[TestId,FeatureName],JsObject,Boolean):F[Entity[Abtest]]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#addGroupMeta(tid:com.iheart.thomas.abtest.model.TestId,gm:play.api.libs.json.JsObject,auto:Boolean):F[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#addGroupMeta(tidOrFeature:Either[com.iheart.thomas.abtest.model.TestId,com.iheart.thomas.FeatureName],gm:play.api.libs.json.JsObject,auto:Boolean):F[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -262,7 +262,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">addGroupMeta</span><span class="params">(<span name="tid">tid: <a href="../abtest/model/index.html#TestId=lihua.EntityId" class="extmbr" name="com.iheart.thomas.abtest.model.TestId">TestId</a></span>, <span name="gm">gm: <span class="extype" name="play.api.libs.json.JsObject">JsObject</span></span>, <span name="auto">auto: <a href="https://www.scala-lang.org/api/2.12.10/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="../abtest/model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>]]</span>
+        <span class="name">addGroupMeta</span><span class="params">(<span name="tidOrFeature">tidOrFeature: <a href="../../../../scala/index.html#Either[+A,+B]=scala.util.Either[A,B]" class="extmbr" name="scala.Either">Either</a>[<a href="../abtest/model/index.html#TestId=lihua.EntityId" class="extmbr" name="com.iheart.thomas.abtest.model.TestId">TestId</a>, <a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>]</span>, <span name="gm">gm: <span class="extype" name="play.api.libs.json.JsObject">JsObject</span></span>, <span name="auto">auto: <a href="https://www.scala-lang.org/api/2.12.10/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="../abtest/model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>]]</span>
       </span>
       
       
@@ -282,26 +282,10 @@
       </span>
       
       
-    </li><li name="com.iheart.thomas.client.AbtestClient#getGroupMeta" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="getGroupMeta(tid:com.iheart.thomas.abtest.model.TestId):F[Map[com.iheart.thomas.GroupName,com.iheart.thomas.abtest.model.GroupMeta]]"></a><a id="getGroupMeta(TestId):F[Map[GroupName,GroupMeta]]"></a>
-      <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#getGroupMeta(tid:com.iheart.thomas.abtest.model.TestId):F[Map[com.iheart.thomas.GroupName,com.iheart.thomas.abtest.model.GroupMeta]]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier">abstract </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getGroupMeta</span><span class="params">(<span name="tid">tid: <a href="../abtest/model/index.html#TestId=lihua.EntityId" class="extmbr" name="com.iheart.thomas.abtest.model.TestId">TestId</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<a href="../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>, <a href="../abtest/model/index.html#GroupMeta=play.api.libs.json.JsObject" class="extmbr" name="com.iheart.thomas.abtest.model.GroupMeta">GroupMeta</a>]]</span>
-      </span>
-      
-      
     </li><li name="com.iheart.thomas.client.AbtestClient#getKPI" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="getKPI(name:String):F[com.iheart.thomas.analysis.KPIDistribution]"></a><a id="getKPI(String):F[KPIDistribution]"></a>
+      <a id="getKPI(name:String):F[com.iheart.thomas.analysis.KPIModel]"></a><a id="getKPI(String):F[KPIModel]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#getKPI(name:String):F[com.iheart.thomas.analysis.KPIDistribution]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#getKPI(name:String):F[com.iheart.thomas.analysis.KPIModel]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -310,14 +294,46 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getKPI</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="../analysis/KPIDistribution.html" class="extype" name="com.iheart.thomas.analysis.KPIDistribution">KPIDistribution</a>]</span>
+        <span class="name">getKPI</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="../analysis/KPIModel.html" class="extype" name="com.iheart.thomas.analysis.KPIModel">KPIModel</a>]</span>
       </span>
       
       
+    </li><li name="com.iheart.thomas.client.AbtestClient#getTest" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="getTest(tid:com.iheart.thomas.abtest.model.TestId):F[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]"></a><a id="getTest(TestId):F[Entity[Abtest]]"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#getTest(tid:com.iheart.thomas.abtest.model.TestId):F[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getTest</span><span class="params">(<span name="tid">tid: <a href="../abtest/model/index.html#TestId=lihua.EntityId" class="extmbr" name="com.iheart.thomas.abtest.model.TestId">TestId</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="../abtest/model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>]]</span>
+      </span>
+      
+      
+    </li><li name="com.iheart.thomas.abtest.DataProvider#getTestsData" visbl="pub" class="indented0 " data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="getTestsData(at:java.time.Instant,duration:Option[scala.concurrent.duration.FiniteDuration]):F[com.iheart.thomas.abtest.TestsData]"></a><a id="getTestsData(Instant,Option[FiniteDuration]):F[TestsData]"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#getTestsData(at:java.time.Instant,duration:Option[scala.concurrent.duration.FiniteDuration]):F[com.iheart.thomas.abtest.TestsData]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getTestsData</span><span class="params">(<span name="at">at: <span class="extype" name="java.time.Instant">Instant</span></span>, <span name="duration">duration: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="../abtest/TestsData.html" class="extype" name="com.iheart.thomas.abtest.TestsData">TestsData</a>]</span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../abtest/DataProvider.html" class="extype" name="com.iheart.thomas.abtest.DataProvider">DataProvider</a></dd></dl></div>
     </li><li name="com.iheart.thomas.client.AbtestClient#removeGroupMetas" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="removeGroupMetas(tid:com.iheart.thomas.abtest.model.TestId,auto:Boolean):F[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]"></a><a id="removeGroupMetas(TestId,Boolean):F[Entity[Abtest]]"></a>
+      <a id="removeGroupMetas(tidOrFeature:Either[com.iheart.thomas.abtest.model.TestId,com.iheart.thomas.FeatureName],auto:Boolean):F[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]"></a><a id="removeGroupMetas(Either[TestId,FeatureName],Boolean):F[Entity[Abtest]]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#removeGroupMetas(tid:com.iheart.thomas.abtest.model.TestId,auto:Boolean):F[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#removeGroupMetas(tidOrFeature:Either[com.iheart.thomas.abtest.model.TestId,com.iheart.thomas.FeatureName],auto:Boolean):F[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -326,14 +342,14 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">removeGroupMetas</span><span class="params">(<span name="tid">tid: <a href="../abtest/model/index.html#TestId=lihua.EntityId" class="extmbr" name="com.iheart.thomas.abtest.model.TestId">TestId</a></span>, <span name="auto">auto: <a href="https://www.scala-lang.org/api/2.12.10/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="../abtest/model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>]]</span>
+        <span class="name">removeGroupMetas</span><span class="params">(<span name="tidOrFeature">tidOrFeature: <a href="../../../../scala/index.html#Either[+A,+B]=scala.util.Either[A,B]" class="extmbr" name="scala.Either">Either</a>[<a href="../abtest/model/index.html#TestId=lihua.EntityId" class="extmbr" name="com.iheart.thomas.abtest.model.TestId">TestId</a>, <a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>]</span>, <span name="auto">auto: <a href="https://www.scala-lang.org/api/2.12.10/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="../abtest/model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>]]</span>
       </span>
       
       
     </li><li name="com.iheart.thomas.client.AbtestClient#saveKPI" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="saveKPI(KPIDistribution:com.iheart.thomas.analysis.KPIDistribution):F[com.iheart.thomas.analysis.KPIDistribution]"></a><a id="saveKPI(KPIDistribution):F[KPIDistribution]"></a>
+      <a id="saveKPI(model:com.iheart.thomas.analysis.KPIModel):F[com.iheart.thomas.analysis.KPIModel]"></a><a id="saveKPI(KPIModel):F[KPIModel]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#saveKPI(KPIDistribution:com.iheart.thomas.analysis.KPIDistribution):F[com.iheart.thomas.analysis.KPIDistribution]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#saveKPI(model:com.iheart.thomas.analysis.KPIModel):F[com.iheart.thomas.analysis.KPIModel]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -342,7 +358,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">saveKPI</span><span class="params">(<span name="KPIDistribution">KPIDistribution: <a href="../analysis/KPIDistribution.html" class="extype" name="com.iheart.thomas.analysis.KPIDistribution">KPIDistribution</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="../analysis/KPIDistribution.html" class="extype" name="com.iheart.thomas.analysis.KPIDistribution">KPIDistribution</a>]</span>
+        <span class="name">saveKPI</span><span class="params">(<span name="model">model: <a href="../analysis/KPIModel.html" class="extype" name="com.iheart.thomas.analysis.KPIModel">KPIModel</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="../analysis/KPIModel.html" class="extype" name="com.iheart.thomas.analysis.KPIModel">KPIModel</a>]</span>
       </span>
       
       
@@ -362,10 +378,10 @@
       </span>
       
       
-    </li><li name="com.iheart.thomas.client.AbtestClient#testsData" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="testsData(at:java.time.Instant,duration:Option[scala.concurrent.duration.FiniteDuration]):F[com.iheart.thomas.abtest.TestsData]"></a><a id="testsData(Instant,Option[FiniteDuration]):F[TestsData]"></a>
+    </li><li name="com.iheart.thomas.client.AbtestClient#updateUserMetaCriteria" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="updateUserMetaCriteria(tidOrFeature:Either[com.iheart.thomas.abtest.model.TestId,com.iheart.thomas.FeatureName],userMetaCriteria:com.iheart.thomas.abtest.model.UserMetaCriteria,auto:Boolean):F[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]"></a><a id="updateUserMetaCriteria(Either[TestId,FeatureName],UserMetaCriteria,Boolean):F[Entity[Abtest]]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#testsData(at:java.time.Instant,duration:Option[scala.concurrent.duration.FiniteDuration]):F[com.iheart.thomas.abtest.TestsData]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#updateUserMetaCriteria(tidOrFeature:Either[com.iheart.thomas.abtest.model.TestId,com.iheart.thomas.FeatureName],userMetaCriteria:com.iheart.thomas.abtest.model.UserMetaCriteria,auto:Boolean):F[lihua.Entity[com.iheart.thomas.abtest.model.Abtest]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -374,7 +390,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">testsData</span><span class="params">(<span name="at">at: <span class="extype" name="java.time.Instant">Instant</span></span>, <span name="duration">duration: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="../abtest/TestsData.html" class="extype" name="com.iheart.thomas.abtest.TestsData">TestsData</a>]</span>
+        <span class="name">updateUserMetaCriteria</span><span class="params">(<span name="tidOrFeature">tidOrFeature: <a href="../../../../scala/index.html#Either[+A,+B]=scala.util.Either[A,B]" class="extmbr" name="scala.Either">Either</a>[<a href="../abtest/model/index.html#TestId=lihua.EntityId" class="extmbr" name="com.iheart.thomas.abtest.model.TestId">TestId</a>, <a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>]</span>, <span name="userMetaCriteria">userMetaCriteria: <a href="../abtest/model/index.html#UserMetaCriteria=Option[com.iheart.thomas.abtest.model.UserMetaCriterion.And]" class="extmbr" name="com.iheart.thomas.abtest.model.UserMetaCriteria">UserMetaCriteria</a></span>, <span name="auto">auto: <a href="https://www.scala-lang.org/api/2.12.10/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="../abtest/model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>]]</span>
       </span>
       
       
@@ -471,6 +487,8 @@
               
                 <span class="name">@native</span><span class="args">()</span>
               
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
+              
         </dd></dl></div>
     </li><li name="scala.AnyRef#eq" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a><a id="eq(AnyRef):Boolean"></a>
@@ -520,28 +538,6 @@
       </span>
       
       
-    </li><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="finalize():Unit"></a>
-      <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#finalize():Unit" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">finalize</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">(<span>
-      
-      <span class="symbol">classOf[java.lang.Throwable]</span>
-    </span>)</span>
-              
-        </dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <span class="permalink">
@@ -560,7 +556,41 @@
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
               
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
+              
         </dd></dl></div>
+    </li><li name="com.iheart.thomas.client.AbtestClient#getGroupMeta" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getGroupMeta(tidOrFeature:Either[com.iheart.thomas.abtest.model.TestId,com.iheart.thomas.FeatureName])(implicitF:com.iheart.thomas.MonadThrowable[F]):F[Map[com.iheart.thomas.GroupName,com.iheart.thomas.abtest.model.GroupMeta]]"></a><a id="getGroupMeta(Either[TestId,FeatureName])(MonadThrowable[F]):F[Map[GroupName,GroupMeta]]"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#getGroupMeta(tidOrFeature:Either[com.iheart.thomas.abtest.model.TestId,com.iheart.thomas.FeatureName])(implicitF:com.iheart.thomas.MonadThrowable[F]):F[Map[com.iheart.thomas.GroupName,com.iheart.thomas.abtest.model.GroupMeta]]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getGroupMeta</span><span class="params">(<span name="tidOrFeature">tidOrFeature: <a href="../../../../scala/index.html#Either[+A,+B]=scala.util.Either[A,B]" class="extmbr" name="scala.Either">Either</a>[<a href="../abtest/model/index.html#TestId=lihua.EntityId" class="extmbr" name="com.iheart.thomas.abtest.model.TestId">TestId</a>, <a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="F">F: <a href="../index.html#MonadThrowable[F[_]]=cats.MonadError[F,Throwable]" class="extmbr" name="com.iheart.thomas.MonadThrowable">MonadThrowable</a>[<span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<a href="../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>, <a href="../abtest/model/index.html#GroupMeta=play.api.libs.json.JsObject" class="extmbr" name="com.iheart.thomas.abtest.model.GroupMeta">GroupMeta</a>]]</span>
+      </span>
+      
+      
+    </li><li name="com.iheart.thomas.client.AbtestClient#getUserMetaCriteria" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getUserMetaCriteria(tidOrFeature:Either[com.iheart.thomas.abtest.model.TestId,com.iheart.thomas.FeatureName])(implicitF:com.iheart.thomas.MonadThrowable[F]):F[com.iheart.thomas.abtest.model.UserMetaCriteria]"></a><a id="getUserMetaCriteria(Either[TestId,FeatureName])(MonadThrowable[F]):F[UserMetaCriteria]"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#getUserMetaCriteria(tidOrFeature:Either[com.iheart.thomas.abtest.model.TestId,com.iheart.thomas.FeatureName])(implicitF:com.iheart.thomas.MonadThrowable[F]):F[com.iheart.thomas.abtest.model.UserMetaCriteria]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getUserMetaCriteria</span><span class="params">(<span name="tidOrFeature">tidOrFeature: <a href="../../../../scala/index.html#Either[+A,+B]=scala.util.Either[A,B]" class="extmbr" name="scala.Either">Either</a>[<a href="../abtest/model/index.html#TestId=lihua.EntityId" class="extmbr" name="com.iheart.thomas.abtest.model.TestId">TestId</a>, <a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="F">F: <a href="../index.html#MonadThrowable[F[_]]=cats.MonadError[F,Throwable]" class="extmbr" name="com.iheart.thomas.MonadThrowable">MonadThrowable</a>[<span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<a href="../abtest/model/index.html#UserMetaCriteria=Option[com.iheart.thomas.abtest.model.UserMetaCriterion.And]" class="extmbr" name="com.iheart.thomas.abtest.model.UserMetaCriteria">UserMetaCriteria</a>]</span>
+      </span>
+      
+      
     </li><li name="scala.AnyRef#hashCode" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
       <span class="permalink">
@@ -578,6 +608,8 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
+              
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -630,6 +662,8 @@
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
               
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
+              
         </dd></dl></div>
     </li><li name="scala.AnyRef#notifyAll" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notifyAll():Unit"></a>
@@ -648,6 +682,8 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
+              
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -682,6 +718,22 @@
       </span>
       
       
+    </li><li name="com.iheart.thomas.client.AbtestClient#tidOrFeatureOp" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="tidOrFeatureOp[A](tidOrFeature:Either[com.iheart.thomas.abtest.model.TestId,com.iheart.thomas.FeatureName])(f:com.iheart.thomas.abtest.model.TestId=&gt;F[A])(implicitF:com.iheart.thomas.MonadThrowable[F]):F[A]"></a><a id="tidOrFeatureOp[A](Either[TestId,FeatureName])((TestId)⇒F[A])(MonadThrowable[F]):F[A]"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#tidOrFeatureOp[A](tidOrFeature:Either[com.iheart.thomas.abtest.model.TestId,com.iheart.thomas.FeatureName])(f:com.iheart.thomas.abtest.model.TestId=&gt;F[A])(implicitF:com.iheart.thomas.MonadThrowable[F]):F[A]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">tidOrFeatureOp</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="tidOrFeature">tidOrFeature: <a href="../../../../scala/index.html#Either[+A,+B]=scala.util.Either[A,B]" class="extmbr" name="scala.Either">Either</a>[<a href="../abtest/model/index.html#TestId=lihua.EntityId" class="extmbr" name="com.iheart.thomas.abtest.model.TestId">TestId</a>, <a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>]</span>)</span><span class="params">(<span name="f">f: (<a href="../abtest/model/index.html#TestId=lihua.EntityId" class="extmbr" name="com.iheart.thomas.abtest.model.TestId">TestId</a>) ⇒ <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<span class="extype" name="com.iheart.thomas.client.AbtestClient.tidOrFeatureOp.A">A</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="F">F: <a href="../index.html#MonadThrowable[F[_]]=cats.MonadError[F,Throwable]" class="extmbr" name="com.iheart.thomas.MonadThrowable">MonadThrowable</a>[<span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>[<span class="extype" name="com.iheart.thomas.client.AbtestClient.tidOrFeatureOp.A">A</span>]</span>
+      </span>
+      
+      
     </li><li name="scala.AnyRef#toString" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
       <span class="permalink">
@@ -698,28 +750,6 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="wait():Unit"></a>
-      <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#wait():Unit" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">wait</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">(<span>
-      
-      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
-    </span>)</span>
-              
-        </dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait(x$1:Long,x$2:Int):Unit"></a><a id="wait(Long,Int):Unit"></a>
       <span class="permalink">
@@ -766,17 +796,70 @@
                 <span class="name">@native</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#wait():Unit" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
     </li>
               </ol>
             </div>
 
         
 
-        
+        <div class="values members">
+              <h3>Deprecated Value Members</h3>
+              <ol><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/client/AbtestClient.html#finalize():Unit" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name deprecated" title="Deprecated: (Since version ) see corresponding Javadoc for more information.">finalize</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+                <span class="name">@Deprecated</span>
+              
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version )</i> see corresponding Javadoc for more information.</p></dd></dl></div>
+    </li></ol>
+            </div>
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="scala.AnyRef">
+        <div class="parent" name="com.iheart.thomas.abtest.DataProvider">
+              <h3>Inherited from <a href="../abtest/DataProvider.html" class="extype" name="com.iheart.thomas.abtest.DataProvider">DataProvider</a>[<span class="extype" name="com.iheart.thomas.client.AbtestClient.F">F</span>]</h3>
+            </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <a href="../../../../scala/index.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <a href="https://www.scala-lang.org/api/2.12.10/scala/Any.html#scala.Any" class="extype" name="scala.Any">Any</a></h3>

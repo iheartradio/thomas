@@ -142,10 +142,6 @@
                         <a class="trait" href="AnalysisAPI.html" title=""></a>
                         <a href="AnalysisAPI.html" title="">AnalysisAPI</a>
                       </li><li class="current-entities indented4">
-                        <span class="separator"></span>
-                        <a class="class" href="AssignmentWithMeta.html" title=""></a>
-                        <a href="AssignmentWithMeta.html" title="">AssignmentWithMeta</a>
-                      </li><li class="current-entities indented4">
                         <a class="object" href="AutoRefreshAssignGroups$.html" title=""></a>
                         <a class="class" href="AutoRefreshAssignGroups.html" title=""></a>
                         <a href="AutoRefreshAssignGroups.html" title="">AutoRefreshAssignGroups</a>
@@ -161,6 +157,10 @@
                         <a class="object" href="JavaAbtestAssignments$.html" title=""></a>
                         <a class="class" href="JavaAbtestAssignments.html" title=""></a>
                         <a href="JavaAbtestAssignments.html" title="">JavaAbtestAssignments</a>
+                      </li><li class="current-entities indented4">
+                        <span class="separator"></span>
+                        <a class="class" href="PlayJsonHttp4sClient.html" title="Utility class for writing http4 based client using play json"></a>
+                        <a href="PlayJsonHttp4sClient.html" title="Utility class for writing http4 based client using play json">PlayJsonHttp4sClient</a>
                       </li>
               </ul>
             </div>
@@ -333,11 +333,13 @@
               
                 <span class="name">@native</span><span class="args">()</span>
               
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
+              
         </dd></dl></div>
     </li><li name="com.iheart.thomas.client.BayesianBanditClient#defaultConversion" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="defaultConversion[F[_]](c:org.http4s.client.Client[F],rootUrl:String)(implicitevidence$1:cats.effect.Sync[F]):com.iheart.thomas.bandit.bayesian.BayesianMABAlg[F,com.iheart.thomas.analysis.Conversions]"></a><a id="defaultConversion[F[_]](Client[F],String)(Sync[F]):BayesianMABAlg[F,Conversions]"></a>
+      <a id="defaultConversion[F[_]](c:org.http4s.client.Client[F],rootUrl:String)(implicitevidence$1:cats.effect.Sync[F]):com.iheart.thomas.bandit.bayesian.ConversionBMABAlg[F]"></a><a id="defaultConversion[F[_]](Client[F],String)(Sync[F]):ConversionBMABAlg[F]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/BayesianBanditClient$.html#defaultConversion[F[_]](c:org.http4s.client.Client[F],rootUrl:String)(implicitevidence$1:cats.effect.Sync[F]):com.iheart.thomas.bandit.bayesian.BayesianMABAlg[F,com.iheart.thomas.analysis.Conversions]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/client/BayesianBanditClient$.html#defaultConversion[F[_]](c:org.http4s.client.Client[F],rootUrl:String)(implicitevidence$1:cats.effect.Sync[F]):com.iheart.thomas.bandit.bayesian.ConversionBMABAlg[F]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -346,14 +348,14 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">defaultConversion</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="c">c: <span class="extype" name="org.http4s.client.Client">Client</span>[<span class="extype" name="com.iheart.thomas.client.BayesianBanditClient.defaultConversion.F">F</span>]</span>, <span name="rootUrl">rootUrl: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.effect.Sync">Sync</span>[<span class="extype" name="com.iheart.thomas.client.BayesianBanditClient.defaultConversion.F">F</span>]</span>)</span><span class="result">: <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/bandit/bayesian/BayesianMABAlg.html#com.iheart.thomas.bandit.bayesian.BayesianMABAlg" class="extype" name="com.iheart.thomas.bandit.bayesian.BayesianMABAlg">BayesianMABAlg</a>[<span class="extype" name="com.iheart.thomas.client.BayesianBanditClient.defaultConversion.F">F</span>, <a href="../analysis/Conversions.html" class="extype" name="com.iheart.thomas.analysis.Conversions">Conversions</a>]</span>
+        <span class="name">defaultConversion</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="c">c: <span class="extype" name="org.http4s.client.Client">Client</span>[<span class="extype" name="com.iheart.thomas.client.BayesianBanditClient.defaultConversion.F">F</span>]</span>, <span name="rootUrl">rootUrl: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.effect.Sync">Sync</span>[<span class="extype" name="com.iheart.thomas.client.BayesianBanditClient.defaultConversion.F">F</span>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.bandit.bayesian.ConversionBMABAlg">ConversionBMABAlg</span>[<span class="extype" name="com.iheart.thomas.client.BayesianBanditClient.defaultConversion.F">F</span>]</span>
       </span>
       
       
     </li><li name="com.iheart.thomas.client.BayesianBanditClient#defaultConversionResource" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="defaultConversionResource[F[_]](rootUrl:String)(implicitevidence$2:cats.effect.ConcurrentEffect[F],implicitec:scala.concurrent.ExecutionContext):cats.effect.Resource[F,com.iheart.thomas.bandit.bayesian.BayesianMABAlg[F,com.iheart.thomas.analysis.Conversions]]"></a><a id="defaultConversionResource[F[_]](String)(ConcurrentEffect[F],ExecutionContext):Resource[F,BayesianMABAlg[F,Conversions]]"></a>
+      <a id="defaultConversionResource[F[_]](rootUrl:String)(implicitevidence$2:cats.effect.ConcurrentEffect[F],implicitec:scala.concurrent.ExecutionContext):cats.effect.Resource[F,com.iheart.thomas.bandit.bayesian.ConversionBMABAlg[F]]"></a><a id="defaultConversionResource[F[_]](String)(ConcurrentEffect[F],ExecutionContext):Resource[F,ConversionBMABAlg[F]]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/BayesianBanditClient$.html#defaultConversionResource[F[_]](rootUrl:String)(implicitevidence$2:cats.effect.ConcurrentEffect[F],implicitec:scala.concurrent.ExecutionContext):cats.effect.Resource[F,com.iheart.thomas.bandit.bayesian.BayesianMABAlg[F,com.iheart.thomas.analysis.Conversions]]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/client/BayesianBanditClient$.html#defaultConversionResource[F[_]](rootUrl:String)(implicitevidence$2:cats.effect.ConcurrentEffect[F],implicitec:scala.concurrent.ExecutionContext):cats.effect.Resource[F,com.iheart.thomas.bandit.bayesian.ConversionBMABAlg[F]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -362,7 +364,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">defaultConversionResource</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="rootUrl">rootUrl: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.effect.ConcurrentEffect">ConcurrentEffect</span>[<span class="extype" name="com.iheart.thomas.client.BayesianBanditClient.defaultConversionResource.F">F</span>]</span>, <span name="ec">ec: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/ExecutionContext.html#scala.concurrent.ExecutionContext" class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</a></span>)</span><span class="result">: <span class="extype" name="cats.effect.Resource">Resource</span>[<span class="extype" name="com.iheart.thomas.client.BayesianBanditClient.defaultConversionResource.F">F</span>, <a href="https://iheartradio.github.io/thomas/api/com/iheart/thomas/bandit/bayesian/BayesianMABAlg.html#com.iheart.thomas.bandit.bayesian.BayesianMABAlg" class="extype" name="com.iheart.thomas.bandit.bayesian.BayesianMABAlg">BayesianMABAlg</a>[<span class="extype" name="com.iheart.thomas.client.BayesianBanditClient.defaultConversionResource.F">F</span>, <a href="../analysis/Conversions.html" class="extype" name="com.iheart.thomas.analysis.Conversions">Conversions</a>]]</span>
+        <span class="name">defaultConversionResource</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="rootUrl">rootUrl: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.effect.ConcurrentEffect">ConcurrentEffect</span>[<span class="extype" name="com.iheart.thomas.client.BayesianBanditClient.defaultConversionResource.F">F</span>]</span>, <span name="ec">ec: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/ExecutionContext.html#scala.concurrent.ExecutionContext" class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</a></span>)</span><span class="result">: <span class="extype" name="cats.effect.Resource">Resource</span>[<span class="extype" name="com.iheart.thomas.client.BayesianBanditClient.defaultConversionResource.F">F</span>, <span class="extype" name="com.iheart.thomas.bandit.bayesian.ConversionBMABAlg">ConversionBMABAlg</span>[<span class="extype" name="com.iheart.thomas.client.BayesianBanditClient.defaultConversionResource.F">F</span>]]</span>
       </span>
       
       
@@ -398,28 +400,6 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="finalize():Unit"></a>
-      <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/BayesianBanditClient$.html#finalize():Unit" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">finalize</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">(<span>
-      
-      <span class="symbol">classOf[java.lang.Throwable]</span>
-    </span>)</span>
-              
-        </dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <span class="permalink">
@@ -437,6 +417,8 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
+              
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -456,6 +438,8 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
+              
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -508,6 +492,8 @@
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
               
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
+              
         </dd></dl></div>
     </li><li name="scala.AnyRef#notifyAll" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notifyAll():Unit"></a>
@@ -526,6 +512,8 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
+              
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -577,28 +565,6 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="wait():Unit"></a>
-      <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/BayesianBanditClient$.html#wait():Unit" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">wait</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">(<span>
-      
-      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
-    </span>)</span>
-              
-        </dd></dl></div>
-    </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait(x$1:Long,x$2:Int):Unit"></a><a id="wait(Long,Int):Unit"></a>
       <span class="permalink">
       <a href="../../../../com/iheart/thomas/client/BayesianBanditClient$.html#wait(x$1:Long,x$2:Int):Unit" title="Permalink">
@@ -644,13 +610,80 @@
                 <span class="name">@native</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/client/BayesianBanditClient$.html#wait():Unit" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="com.iheart.thomas.client.BayesianBanditClient.UnexpectedResult" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="UnexpectedResult"></a><a id="UnexpectedResult:UnexpectedResult"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/client/BayesianBanditClient$$UnexpectedResult$.html" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="BayesianBanditClient$$UnexpectedResult$.html"><span class="name">UnexpectedResult</span></a><span class="result"> extends <a href="../../../../scala/index.html#RuntimeException=RuntimeException" class="extmbr" name="scala.RuntimeException">RuntimeException</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/util/control/NoStackTrace.html#scala.util.control.NoStackTrace" class="extype" name="scala.util.control.NoStackTrace">NoStackTrace</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.10/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
+      </span>
+      
+      
     </li>
               </ol>
             </div>
 
         
 
-        
+        <div class="values members">
+              <h3>Deprecated Value Members</h3>
+              <ol><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/client/BayesianBanditClient$.html#finalize():Unit" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name deprecated" title="Deprecated: (Since version ) see corresponding Javadoc for more information.">finalize</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+                <span class="name">@Deprecated</span>
+              
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version )</i> see corresponding Javadoc for more information.</p></dd></dl></div>
+    </li></ol>
+            </div>
         </div>
 
         <div id="inheritedMembers">

@@ -117,7 +117,11 @@
       </span>
       
       
-    </li>
+    </li><li class="current-entities indented2">
+                        <a class="object" href="FormDataDecoder$.html" title=""></a>
+                        <a class="trait" href="FormDataDecoder.html" title=""></a>
+                        <a href="FormDataDecoder.html" title="">FormDataDecoder</a>
+                      </li>
               </ul>
             </div>
           </div>
@@ -213,10 +217,10 @@
       </span>
       
       
-    </li><li name="org.http4s.AuthedRoutes" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="AuthedRoutes[T,F[_]]=cats.data.Kleisli[[β$1$]cats.data.OptionT[F,β$1$],org.http4s.AuthedRequest[F,T],org.http4s.Response[F]]"></a><a id="AuthedRoutes[T,F[_]]:AuthedRoutes[T,F]"></a>
+    </li><li name="org.http4s.AuthedRequest" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AuthedRequest[F[_],T]=org.http4s.ContextRequest[F,T]"></a><a id="AuthedRequest[F[_],T]:AuthedRequest[F,T]"></a>
       <span class="permalink">
-      <a href="../../org/http4s/index.html#AuthedRoutes[T,F[_]]=cats.data.Kleisli[[β$1$]cats.data.OptionT[F,β$1$],org.http4s.AuthedRequest[F,T],org.http4s.Response[F]]" title="Permalink">
+      <a href="../../org/http4s/index.html#AuthedRequest[F[_],T]=org.http4s.ContextRequest[F,T]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -225,7 +229,23 @@
         <span class="kind">type</span>
       </span>
       <span class="symbol">
-        <span class="name">AuthedRoutes</span><span class="tparams">[<span name="T">T</span>, <span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="result alias"> = <a href="http://typelevel.org/cats/api/cats/data/Kleisli.html#cats.data.Kleisli" class="extype" name="cats.data.Kleisli">Kleisli</a>[[β$1$]<span class="extype" name="cats.data.OptionT">OptionT</span>[<span class="extype" name="org.http4s.AuthedRoutes.F">F</span>, <span class="extype" name="org.http4s.&lt;refinement&gt;.Λ$.β$1$">β$1$</span>], <span class="extype" name="org.http4s.AuthedRequest">AuthedRequest</span>[<span class="extype" name="org.http4s.AuthedRoutes.F">F</span>, <span class="extype" name="org.http4s.AuthedRoutes.T">T</span>], <span class="extype" name="org.http4s.Response">Response</span>[<span class="extype" name="org.http4s.AuthedRoutes.F">F</span>]]</span>
+        <span class="name">AuthedRequest</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>, <span name="T">T</span>]</span><span class="result alias"> = <span class="extype" name="org.http4s.ContextRequest">ContextRequest</span>[<span class="extype" name="org.http4s.AuthedRequest.F">F</span>, <span class="extype" name="org.http4s.AuthedRequest.T">T</span>]</span>
+      </span>
+      
+      
+    </li><li name="org.http4s.AuthedRoutes" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="AuthedRoutes[T,F[_]]=cats.data.Kleisli[[β$1$]cats.data.OptionT[F,β$1$],org.http4s.package.AuthedRequest[F,T],org.http4s.Response[F]]"></a><a id="AuthedRoutes[T,F[_]]:AuthedRoutes[T,F]"></a>
+      <span class="permalink">
+      <a href="../../org/http4s/index.html#AuthedRoutes[T,F[_]]=cats.data.Kleisli[[β$1$]cats.data.OptionT[F,β$1$],org.http4s.package.AuthedRequest[F,T],org.http4s.Response[F]]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">type</span>
+      </span>
+      <span class="symbol">
+        <span class="name">AuthedRoutes</span><span class="tparams">[<span name="T">T</span>, <span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="result alias"> = <a href="http://typelevel.org/cats/api/cats/data/Kleisli.html#cats.data.Kleisli" class="extype" name="cats.data.Kleisli">Kleisli</a>[[β$1$]<a href="http://typelevel.org/cats/api/cats/data/OptionT.html#cats.data.OptionT" class="extype" name="cats.data.OptionT">OptionT</a>[<span class="extype" name="org.http4s.AuthedRoutes.F">F</span>, <span class="extype" name="org.http4s.&lt;refinement&gt;.Λ$.β$1$">β$1$</span>], <a href="#AuthedRequest[F[_],T]=org.http4s.ContextRequest[F,T]" class="extmbr" name="org.http4s.AuthedRequest">AuthedRequest</a>[<span class="extype" name="org.http4s.AuthedRoutes.F">F</span>, <span class="extype" name="org.http4s.AuthedRoutes.T">T</span>], <span class="extype" name="org.http4s.Response">Response</span>[<span class="extype" name="org.http4s.AuthedRoutes.F">F</span>]]</span>
       </span>
       
       
@@ -242,6 +262,22 @@
       </span>
       <span class="symbol">
         <span class="name">Callback</span><span class="tparams">[<span name="A">A</span>]</span><span class="result alias"> = (<a href="../../scala/index.html#Either[+A,+B]=scala.util.Either[A,B]" class="extmbr" name="scala.Either">Either</a>[<a href="../../scala/index.html#Throwable=Throwable" class="extmbr" name="scala.Throwable">Throwable</a>, <span class="extype" name="org.http4s.Callback.A">A</span>]) ⇒ <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
+      </span>
+      
+      
+    </li><li name="org.http4s.ContextRoutes" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ContextRoutes[T,F[_]]=cats.data.Kleisli[[β$2$]cats.data.OptionT[F,β$2$],org.http4s.ContextRequest[F,T],org.http4s.Response[F]]"></a><a id="ContextRoutes[T,F[_]]:ContextRoutes[T,F]"></a>
+      <span class="permalink">
+      <a href="../../org/http4s/index.html#ContextRoutes[T,F[_]]=cats.data.Kleisli[[β$2$]cats.data.OptionT[F,β$2$],org.http4s.ContextRequest[F,T],org.http4s.Response[F]]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">type</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ContextRoutes</span><span class="tparams">[<span name="T">T</span>, <span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="result alias"> = <a href="http://typelevel.org/cats/api/cats/data/Kleisli.html#cats.data.Kleisli" class="extype" name="cats.data.Kleisli">Kleisli</a>[[β$2$]<a href="http://typelevel.org/cats/api/cats/data/OptionT.html#cats.data.OptionT" class="extype" name="cats.data.OptionT">OptionT</a>[<span class="extype" name="org.http4s.ContextRoutes.F">F</span>, <span class="extype" name="org.http4s.&lt;refinement&gt;.Λ$.β$2$">β$2$</span>], <span class="extype" name="org.http4s.ContextRequest">ContextRequest</span>[<span class="extype" name="org.http4s.ContextRoutes.F">F</span>, <span class="extype" name="org.http4s.ContextRoutes.T">T</span>], <span class="extype" name="org.http4s.Response">Response</span>[<span class="extype" name="org.http4s.ContextRoutes.F">F</span>]]</span>
       </span>
       
       
@@ -293,6 +329,22 @@
       </span>
       
       
+    </li><li name="org.http4s.FormDataDecoder" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="FormDataDecoder[A]extendsAnyRef"></a><a id="FormDataDecoder[A]:FormDataDecoder[A]"></a>
+      <span class="permalink">
+      <a href="../../org/http4s/FormDataDecoder.html" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="FormDataDecoder.html"><span class="name">FormDataDecoder</span></a><span class="tparams">[<span name="A">A</span>]</span><span class="result"> extends <a href="../../scala/index.html#AnyRef=Object" class="extmbr" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      
+      
     </li><li name="org.http4s.Http" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Http[F[_],G[_]]=cats.data.Kleisli[F,org.http4s.Request[G],org.http4s.Response[G]]"></a><a id="Http[F[_],G[_]]:Http[F,G]"></a>
       <span class="permalink">
@@ -337,7 +389,7 @@
         <span class="kind">type</span>
       </span>
       <span class="symbol">
-        <span class="name">HttpRoutes</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="result alias"> = <a href="http://typelevel.org/cats/api/cats/data/Kleisli.html#cats.data.Kleisli" class="extype" name="cats.data.Kleisli">Kleisli</a>[[β$0$]<span class="extype" name="cats.data.OptionT">OptionT</span>[<span class="extype" name="org.http4s.HttpRoutes.F">F</span>, <span class="extype" name="org.http4s.&lt;refinement&gt;.Λ$.β$0$">β$0$</span>], <span class="extype" name="org.http4s.Request">Request</span>[<span class="extype" name="org.http4s.HttpRoutes.F">F</span>], <span class="extype" name="org.http4s.Response">Response</span>[<span class="extype" name="org.http4s.HttpRoutes.F">F</span>]]</span>
+        <span class="name">HttpRoutes</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="result alias"> = <a href="http://typelevel.org/cats/api/cats/data/Kleisli.html#cats.data.Kleisli" class="extype" name="cats.data.Kleisli">Kleisli</a>[[β$0$]<a href="http://typelevel.org/cats/api/cats/data/OptionT.html#cats.data.OptionT" class="extype" name="cats.data.OptionT">OptionT</a>[<span class="extype" name="org.http4s.HttpRoutes.F">F</span>, <span class="extype" name="org.http4s.&lt;refinement&gt;.Λ$.β$0$">β$0$</span>], <span class="extype" name="org.http4s.Request">Request</span>[<span class="extype" name="org.http4s.HttpRoutes.F">F</span>], <span class="extype" name="org.http4s.Response">Response</span>[<span class="extype" name="org.http4s.HttpRoutes.F">F</span>]]</span>
       </span>
       
       
@@ -369,7 +421,7 @@
         <span class="kind">type</span>
       </span>
       <span class="symbol">
-        <span class="name deprecated" title="Deprecated: (Since version 0.20.1) Deprecated in favor of AuthedRoutes">AuthedService</span><span class="tparams">[<span name="T">T</span>, <span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="result alias"> = <a href="http://typelevel.org/cats/api/cats/data/Kleisli.html#cats.data.Kleisli" class="extype" name="cats.data.Kleisli">Kleisli</a>[[β$1$]<span class="extype" name="cats.data.OptionT">OptionT</span>[<span class="extype" name="org.http4s.AuthedService.F">F</span>, <span class="extype" name="org.http4s.&lt;refinement&gt;.Λ$.β$1$">β$1$</span>], <span class="extype" name="org.http4s.AuthedRequest">AuthedRequest</span>[<span class="extype" name="org.http4s.AuthedService.F">F</span>, <span class="extype" name="org.http4s.AuthedService.T">T</span>], <span class="extype" name="org.http4s.Response">Response</span>[<span class="extype" name="org.http4s.AuthedService.F">F</span>]]</span>
+        <span class="name deprecated" title="Deprecated: (Since version 0.20.1) Deprecated in favor of AuthedRoutes">AuthedService</span><span class="tparams">[<span name="T">T</span>, <span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="result alias"> = <a href="http://typelevel.org/cats/api/cats/data/Kleisli.html#cats.data.Kleisli" class="extype" name="cats.data.Kleisli">Kleisli</a>[[β$1$]<a href="http://typelevel.org/cats/api/cats/data/OptionT.html#cats.data.OptionT" class="extype" name="cats.data.OptionT">OptionT</a>[<span class="extype" name="org.http4s.AuthedService.F">F</span>, <span class="extype" name="org.http4s.&lt;refinement&gt;.Λ$.β$1$">β$1$</span>], <a href="#AuthedRequest[F[_],T]=org.http4s.ContextRequest[F,T]" class="extmbr" name="org.http4s.AuthedRequest">AuthedRequest</a>[<span class="extype" name="org.http4s.AuthedService.F">F</span>, <span class="extype" name="org.http4s.AuthedService.T">T</span>], <span class="extype" name="org.http4s.Response">Response</span>[<span class="extype" name="org.http4s.AuthedService.F">F</span>]]</span>
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Annotations</dt><dd>
@@ -407,7 +459,7 @@
         <span class="kind">type</span>
       </span>
       <span class="symbol">
-        <span class="name deprecated" title="Deprecated: (Since version 0.19) Deprecated in favor of HttpRoutes">HttpService</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="result alias"> = <a href="http://typelevel.org/cats/api/cats/data/Kleisli.html#cats.data.Kleisli" class="extype" name="cats.data.Kleisli">Kleisli</a>[[β$0$]<span class="extype" name="cats.data.OptionT">OptionT</span>[<span class="extype" name="org.http4s.HttpService.F">F</span>, <span class="extype" name="org.http4s.&lt;refinement&gt;.Λ$.β$0$">β$0$</span>], <span class="extype" name="org.http4s.Request">Request</span>[<span class="extype" name="org.http4s.HttpService.F">F</span>], <span class="extype" name="org.http4s.Response">Response</span>[<span class="extype" name="org.http4s.HttpService.F">F</span>]]</span>
+        <span class="name deprecated" title="Deprecated: (Since version 0.19) Deprecated in favor of HttpRoutes">HttpService</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="result alias"> = <a href="http://typelevel.org/cats/api/cats/data/Kleisli.html#cats.data.Kleisli" class="extype" name="cats.data.Kleisli">Kleisli</a>[[β$0$]<a href="http://typelevel.org/cats/api/cats/data/OptionT.html#cats.data.OptionT" class="extype" name="cats.data.OptionT">OptionT</a>[<span class="extype" name="org.http4s.HttpService.F">F</span>, <span class="extype" name="org.http4s.&lt;refinement&gt;.Λ$.β$0$">β$0$</span>], <span class="extype" name="org.http4s.Request">Request</span>[<span class="extype" name="org.http4s.HttpService.F">F</span>], <span class="extype" name="org.http4s.Response">Response</span>[<span class="extype" name="org.http4s.HttpService.F">F</span>]]</span>
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Annotations</dt><dd>
@@ -486,6 +538,22 @@
       </span>
       <span class="symbol">
         <span class="name">EmptyBody</span><span class="result">: <a href="#EntityBody[+F[_]]=fs2.Stream[F,Byte]" class="extmbr" name="org.http4s.EntityBody">EntityBody</a>[<a href="https://www.scala-lang.org/api/2.12.10/scala/Nothing.html#scala.Nothing" class="extype" name="scala.Nothing">Nothing</a>]</span>
+      </span>
+      
+      
+    </li><li name="org.http4s.FormDataDecoder" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="FormDataDecoder"></a><a id="FormDataDecoder:FormDataDecoder"></a>
+      <span class="permalink">
+      <a href="../../org/http4s/FormDataDecoder$.html" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="FormDataDecoder$.html"><span class="name">FormDataDecoder</span></a>
       </span>
       
       

@@ -142,10 +142,6 @@
                         <a class="trait" href="AnalysisAPI.html" title=""></a>
                         <a href="AnalysisAPI.html" title="">AnalysisAPI</a>
                       </li><li class="current-entities indented4">
-                        <span class="separator"></span>
-                        <a class="class" href="AssignmentWithMeta.html" title=""></a>
-                        <a href="AssignmentWithMeta.html" title="">AssignmentWithMeta</a>
-                      </li><li class="current-entities indented4">
                         <a class="object" href="" title=""></a>
                         <a class="class" href="AutoRefreshAssignGroups.html" title=""></a>
                         <a href="AutoRefreshAssignGroups.html" title="">AutoRefreshAssignGroups</a>
@@ -161,6 +157,10 @@
                         <a class="object" href="JavaAbtestAssignments$.html" title=""></a>
                         <a class="class" href="JavaAbtestAssignments.html" title=""></a>
                         <a href="JavaAbtestAssignments.html" title="">JavaAbtestAssignments</a>
+                      </li><li class="current-entities indented4">
+                        <span class="separator"></span>
+                        <a class="class" href="PlayJsonHttp4sClient.html" title="Utility class for writing http4 based client using play json"></a>
+                        <a href="PlayJsonHttp4sClient.html" title="Utility class for writing http4 based client using play json">PlayJsonHttp4sClient</a>
                       </li>
               </ul>
             </div>
@@ -354,6 +354,8 @@
               
                 <span class="name">@native</span><span class="args">()</span>
               
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
+              
         </dd></dl></div>
     </li><li name="scala.AnyRef#eq" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a><a id="eq(AnyRef):Boolean"></a>
@@ -387,28 +389,6 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="finalize():Unit"></a>
-      <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/AutoRefreshAssignGroups$.html#finalize():Unit" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">finalize</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">(<span>
-      
-      <span class="symbol">classOf[java.lang.Throwable]</span>
-    </span>)</span>
-              
-        </dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <span class="permalink">
@@ -426,6 +406,8 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
+              
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -445,6 +427,8 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
+              
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -497,6 +481,8 @@
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
               
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
+              
         </dd></dl></div>
     </li><li name="scala.AnyRef#notifyAll" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notifyAll():Unit"></a>
@@ -516,11 +502,13 @@
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
               
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
+              
         </dd></dl></div>
     </li><li name="com.iheart.thomas.client.AutoRefreshAssignGroups#resource" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="resource[F[_]](abtestClient:com.iheart.thomas.client.AbtestClient[F],refreshPeriod:scala.concurrent.duration.FiniteDuration,staleTimeout:scala.concurrent.duration.FiniteDuration,testsRange:Option[scala.concurrent.duration.FiniteDuration])(implicitevidence$2:cats.effect.Timer[F],implicitF:cats.effect.ConcurrentEffect[F],implicitnowF:F[java.time.Instant]):cats.effect.Resource[F,com.iheart.thomas.client.AutoRefreshAssignGroups[F]]"></a><a id="resource[F[_]](AbtestClient[F],FiniteDuration,FiniteDuration,Option[FiniteDuration])(Timer[F],ConcurrentEffect[F],F[Instant]):Resource[F,AutoRefreshAssignGroups[F]]"></a>
+      <a id="resource[F[_]](dataProvider:com.iheart.thomas.abtest.DataProvider[F],refreshPeriod:scala.concurrent.duration.FiniteDuration,staleTimeout:scala.concurrent.duration.FiniteDuration,testsRange:Option[scala.concurrent.duration.FiniteDuration])(implicitevidence$2:cats.effect.Timer[F],implicitF:cats.effect.ConcurrentEffect[F],implicitnowF:F[java.time.Instant]):cats.effect.Resource[F,com.iheart.thomas.client.AutoRefreshAssignGroups[F]]"></a><a id="resource[F[_]](DataProvider[F],FiniteDuration,FiniteDuration,Option[FiniteDuration])(Timer[F],ConcurrentEffect[F],F[Instant]):Resource[F,AutoRefreshAssignGroups[F]]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/AutoRefreshAssignGroups$.html#resource[F[_]](abtestClient:com.iheart.thomas.client.AbtestClient[F],refreshPeriod:scala.concurrent.duration.FiniteDuration,staleTimeout:scala.concurrent.duration.FiniteDuration,testsRange:Option[scala.concurrent.duration.FiniteDuration])(implicitevidence$2:cats.effect.Timer[F],implicitF:cats.effect.ConcurrentEffect[F],implicitnowF:F[java.time.Instant]):cats.effect.Resource[F,com.iheart.thomas.client.AutoRefreshAssignGroups[F]]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/client/AutoRefreshAssignGroups$.html#resource[F[_]](dataProvider:com.iheart.thomas.abtest.DataProvider[F],refreshPeriod:scala.concurrent.duration.FiniteDuration,staleTimeout:scala.concurrent.duration.FiniteDuration,testsRange:Option[scala.concurrent.duration.FiniteDuration])(implicitevidence$2:cats.effect.Timer[F],implicitF:cats.effect.ConcurrentEffect[F],implicitnowF:F[java.time.Instant]):cats.effect.Resource[F,com.iheart.thomas.client.AutoRefreshAssignGroups[F]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -529,16 +517,16 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">resource</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="abtestClient">abtestClient: <a href="AbtestClient.html" class="extype" name="com.iheart.thomas.client.AbtestClient">AbtestClient</a>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>]</span>, <span name="refreshPeriod">refreshPeriod: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a></span>, <span name="staleTimeout">staleTimeout: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a></span>, <span name="testsRange">testsRange: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.effect.Timer">Timer</span>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>]</span>, <span name="F">F: <span class="extype" name="cats.effect.ConcurrentEffect">ConcurrentEffect</span>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>]</span>, <span name="nowF">nowF: <span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>[<span class="extype" name="java.time.Instant">Instant</span>]</span>)</span><span class="result">: <span class="extype" name="cats.effect.Resource">Resource</span>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>, <a href="AutoRefreshAssignGroups.html" class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups">AutoRefreshAssignGroups</a>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>]]</span>
+        <span class="name">resource</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="dataProvider">dataProvider: <a href="../abtest/DataProvider.html" class="extype" name="com.iheart.thomas.abtest.DataProvider">DataProvider</a>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>]</span>, <span name="refreshPeriod">refreshPeriod: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a></span>, <span name="staleTimeout">staleTimeout: <a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a></span>, <span name="testsRange">testsRange: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="https://www.scala-lang.org/api/2.12.10/scala/concurrent/duration/FiniteDuration.html#scala.concurrent.duration.FiniteDuration" class="extype" name="scala.concurrent.duration.FiniteDuration">FiniteDuration</a>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.effect.Timer">Timer</span>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>]</span>, <span name="F">F: <span class="extype" name="cats.effect.ConcurrentEffect">ConcurrentEffect</span>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>]</span>, <span name="nowF">nowF: <span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>[<span class="extype" name="java.time.Instant">Instant</span>]</span>)</span><span class="result">: <span class="extype" name="cats.effect.Resource">Resource</span>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>, <a href="AutoRefreshAssignGroups.html" class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups">AutoRefreshAssignGroups</a>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>]]</span>
       </span>
       
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">abtestClient</dt><dd class="cmt"><p>client to get A/B tests data</p></dd><dt class="param">refreshPeriod</dt><dd class="cmt"><p>how ofter the data is refreshed</p></dd><dt class="param">staleTimeout</dt><dd class="cmt"><p>how stale is the data allowed to be (in cases when refresh fails)</p></dd><dt class="param">testsRange</dt><dd class="cmt"><p>time range during which valid tests are used to for getting assignment.
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">dataProvider</dt><dd class="cmt"><p>client to get A/B tests data</p></dd><dt class="param">refreshPeriod</dt><dd class="cmt"><p>how ofter the data is refreshed</p></dd><dt class="param">staleTimeout</dt><dd class="cmt"><p>how stale is the data allowed to be (in cases when refresh fails)</p></dd><dt class="param">testsRange</dt><dd class="cmt"><p>time range during which valid tests are used to for getting assignment.
                   if the <code>at</code> field in the UserGroupQuery is outside this range, the assignment
                   will fail</p></dd><dt>returns</dt><dd class="cmt"><p>A Resource of An <a href="AutoRefreshAssignGroups.html" class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups">AutoRefreshAssignGroups</a></p></dd></dl></div>
     </li><li name="com.iheart.thomas.client.AutoRefreshAssignGroups#resource" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="resource[F[_]](abtestClient:com.iheart.thomas.client.AbtestClient[F],config:com.iheart.thomas.client.AutoRefreshAssignGroups.Config)(implicitevidence$1:cats.effect.Timer[F],implicitF:cats.effect.ConcurrentEffect[F],implicitnowF:F[java.time.Instant]):cats.effect.Resource[F,com.iheart.thomas.client.AutoRefreshAssignGroups[F]]"></a><a id="resource[F[_]](AbtestClient[F],Config)(Timer[F],ConcurrentEffect[F],F[Instant]):Resource[F,AutoRefreshAssignGroups[F]]"></a>
+      <a id="resource[F[_]](dataProvider:com.iheart.thomas.abtest.DataProvider[F],config:com.iheart.thomas.client.AutoRefreshAssignGroups.Config)(implicitevidence$1:cats.effect.Timer[F],implicitF:cats.effect.ConcurrentEffect[F],implicitnowF:F[java.time.Instant]):cats.effect.Resource[F,com.iheart.thomas.client.AutoRefreshAssignGroups[F]]"></a><a id="resource[F[_]](DataProvider[F],Config)(Timer[F],ConcurrentEffect[F],F[Instant]):Resource[F,AutoRefreshAssignGroups[F]]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/AutoRefreshAssignGroups$.html#resource[F[_]](abtestClient:com.iheart.thomas.client.AbtestClient[F],config:com.iheart.thomas.client.AutoRefreshAssignGroups.Config)(implicitevidence$1:cats.effect.Timer[F],implicitF:cats.effect.ConcurrentEffect[F],implicitnowF:F[java.time.Instant]):cats.effect.Resource[F,com.iheart.thomas.client.AutoRefreshAssignGroups[F]]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/client/AutoRefreshAssignGroups$.html#resource[F[_]](dataProvider:com.iheart.thomas.abtest.DataProvider[F],config:com.iheart.thomas.client.AutoRefreshAssignGroups.Config)(implicitevidence$1:cats.effect.Timer[F],implicitF:cats.effect.ConcurrentEffect[F],implicitnowF:F[java.time.Instant]):cats.effect.Resource[F,com.iheart.thomas.client.AutoRefreshAssignGroups[F]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -547,7 +535,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">resource</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="abtestClient">abtestClient: <a href="AbtestClient.html" class="extype" name="com.iheart.thomas.client.AbtestClient">AbtestClient</a>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>]</span>, <span name="config">config: <a href="AutoRefreshAssignGroups$$Config.html" class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.Config">Config</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.effect.Timer">Timer</span>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>]</span>, <span name="F">F: <span class="extype" name="cats.effect.ConcurrentEffect">ConcurrentEffect</span>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>]</span>, <span name="nowF">nowF: <span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>[<span class="extype" name="java.time.Instant">Instant</span>]</span>)</span><span class="result">: <span class="extype" name="cats.effect.Resource">Resource</span>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>, <a href="AutoRefreshAssignGroups.html" class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups">AutoRefreshAssignGroups</a>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>]]</span>
+        <span class="name">resource</span><span class="tparams">[<span name="F">F<span class="tparams">[<span name="_">_</span>]</span></span>]</span><span class="params">(<span name="dataProvider">dataProvider: <a href="../abtest/DataProvider.html" class="extype" name="com.iheart.thomas.abtest.DataProvider">DataProvider</a>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>]</span>, <span name="config">config: <a href="AutoRefreshAssignGroups$$Config.html" class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.Config">Config</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span class="extype" name="cats.effect.Timer">Timer</span>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>]</span>, <span name="F">F: <span class="extype" name="cats.effect.ConcurrentEffect">ConcurrentEffect</span>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>]</span>, <span name="nowF">nowF: <span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>[<span class="extype" name="java.time.Instant">Instant</span>]</span>)</span><span class="result">: <span class="extype" name="cats.effect.Resource">Resource</span>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>, <a href="AutoRefreshAssignGroups.html" class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups">AutoRefreshAssignGroups</a>[<span class="extype" name="com.iheart.thomas.client.AutoRefreshAssignGroups.resource.F">F</span>]]</span>
       </span>
       
       
@@ -583,28 +571,6 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="wait():Unit"></a>
-      <span class="permalink">
-      <a href="../../../../com/iheart/thomas/client/AutoRefreshAssignGroups$.html#wait():Unit" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">wait</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">(<span>
-      
-      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
-    </span>)</span>
-              
-        </dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait(x$1:Long,x$2:Int):Unit"></a><a id="wait(Long,Int):Unit"></a>
       <span class="permalink">
@@ -651,13 +617,64 @@
                 <span class="name">@native</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/client/AutoRefreshAssignGroups$.html#wait():Unit" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
     </li>
               </ol>
             </div>
 
         
 
-        
+        <div class="values members">
+              <h3>Deprecated Value Members</h3>
+              <ol><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/client/AutoRefreshAssignGroups$.html#finalize():Unit" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name deprecated" title="Deprecated: (Since version ) see corresponding Javadoc for more information.">finalize</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a></span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+                <span class="name">@Deprecated</span>
+              
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version )</i> see corresponding Javadoc for more information.</p></dd></dl></div>
+    </li></ol>
+            </div>
         </div>
 
         <div id="inheritedMembers">
