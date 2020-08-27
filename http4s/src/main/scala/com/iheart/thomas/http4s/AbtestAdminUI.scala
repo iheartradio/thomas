@@ -105,9 +105,19 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
             }
 
           case GET -> Root / "tests" / testId =>
-            get(testId).flatMap { t =>
-              Ok(showTest(t))
-            }
+            for {
+              test <- get(testId)
+              otherFeatureTests <- alg.getTestsByFeature(test.data.feature)
+              r <- Ok(
+                showTest(
+                  test,
+                  otherFeatureTests
+                    .filter(_.data.start.isAfter(test.data.start))
+                    .headOption
+                )
+              )
+            } yield r
+
           case GET -> Root / "tests" / testId / "edit" =>
             get(testId).flatMap { t =>
               Ok(editTest(t))
