@@ -7,7 +7,6 @@ import model._
 import com.iheart.thomas.abtest.json.play.Formats._
 import cats.effect.{Async, Resource}
 import analysis.{KPIModel, KPIModelApi}
-import com.typesafe.config.{Config, ConfigFactory}
 import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes, Response}
 import org.http4s.dsl.Http4sDsl
 import _root_.play.api.libs.json._
@@ -27,8 +26,6 @@ import org.http4s.dsl.impl.{
   OptionalQueryParamDecoderMatcher,
   QueryParamDecoderMatcher
 }
-
-import scala.compat.java8.DurationConverters._
 
 class AbtestService[F[_]: Async](
     api: AbtestAlg[F],
@@ -237,30 +234,13 @@ object AbtestService {
     ): Resource[F, AbtestService[F]] = {
 
     for {
-      cfg <- Resource.liftF(F.delay(ConfigFactory.load))
-      daos <- thomas.mongo.daosResource[F](cfg)
-      alg <- {
-        implicit val (c, d) = (cfg, daos)
-        abtestAlgFromMongo[F]
-      }
-
+      cfg <- MongoResources.cfg[F]
+      daos <- MongoResources.dAOs(cfg)
+      alg <- MongoResources.abtestAlg[F](cfg, daos)
     } yield {
       implicit val (_, _, kpiDAO) = daos
       new AbtestService(alg, KPIModelApi.default[F])
     }
-  }
-
-  def abtestAlgFromMongo[F[_]: Timer: Concurrent](
-      implicit
-      daos: mongo.DAOs[F],
-      cfg: Config
-    ): Resource[F, AbtestAlg[F]] = {
-
-    import thomas.mongo.idSelector
-    implicit val (abtestDAO, featureDAO, _) = daos
-    val refreshPeriod =
-      cfg.getDuration("iheart.abtest.get-groups.ttl").toScala
-    AbtestAlg.defaultResource[F](refreshPeriod)
   }
 
   object QueryParamDecoderMatchers {

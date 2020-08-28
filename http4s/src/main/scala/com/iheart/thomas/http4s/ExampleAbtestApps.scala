@@ -3,8 +3,10 @@ package thomas
 package http4s
 
 import cats.effect._
-
+import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
+import org.http4s.server.Router
 import org.http4s.server.blaze._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object ExampleAbtestServerApp extends IOApp {
@@ -25,7 +27,9 @@ object ExampleAbtestAdminUIApp extends IOApp {
     AbtestAdminUI.fromMongo[IO].use { s =>
       BlazeServerBuilder[IO](global)
         .bindHttp(8080, "localhost")
-        .withHttpApp(s.routes)
+        .withHttpApp(
+          Router("/admin/" -> s.routes).orNotFound
+        )
         .serve
         .compile
         .drain
