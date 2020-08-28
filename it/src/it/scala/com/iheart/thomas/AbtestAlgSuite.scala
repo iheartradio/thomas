@@ -9,7 +9,6 @@ import com.iheart.thomas.abtest.{AssignGroups, TestsData, model}
 import com.iheart.thomas.abtest.AssignGroups.MissingEligibilityInfo
 import com.iheart.thomas.abtest.Error.{
   CannotChangeGroupSizeWithFollowUpTest,
-  CannotScheduleOverlapsOtherTest,
   CannotUpdateExpiredTest,
   ConflictTest
 }
