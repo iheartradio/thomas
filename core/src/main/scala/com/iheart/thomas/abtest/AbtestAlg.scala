@@ -23,6 +23,7 @@ import monocle.macros.syntax.lens._
 import mouse.all._
 import henkan.convert.Syntax._
 import mau.RefreshRef
+import _root_.play.api.libs.json.Json.JsValueWrapper
 
 import scala.concurrent.duration._
 import scala.util.Random
@@ -47,6 +48,11 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
   def terminate(test: TestId): F[Option[Entity[Abtest]]]
 
   def getTest(test: TestId): F[Entity[Abtest]]
+
+  def updateTest(
+      testId: TestId,
+      spec: AbtestSpec
+    ): F[Entity[Abtest]]
 
   /**
     *
@@ -105,7 +111,12 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
       overrides: Overrides
     ): F[Feature]
 
-  def getOverrides(featureName: FeatureName): F[Feature]
+  def getOverrides(featureName: FeatureName): F[Feature] =
+    getFeature(featureName)
+
+  def getFeature(featureName: FeatureName): F[Feature]
+
+  def updateFeature(feature: Feature): F[Feature]
 
   def removeOverrides(
       featureName: FeatureName,
@@ -208,6 +219,45 @@ final class DefaultAbtestAlg[F[_]](
     addTestWithLock(testSpec.feature)(
       createWithoutLock(testSpec, auto)
     )
+
+  def updateTest(
+      testId: TestId,
+      spec: AbtestSpec
+    ): F[Entity[Abtest]] =
+    for {
+      _ <- validateForCreation(spec)
+      test <- getTest(testId)
+      _ <- ensure(test.data.feature == spec.feature, FeatureCannotBeChanged)
+      now <- nowF
+      _ <- ensure(test.data.isScheduled(now), CannotChangePastTest(now))
+      tests <- getTestsByFeature(spec.feature)
+      (beforeO, afterO) = {
+        val index = tests.indexWhere(_._id == test._id)
+        (tests.get(index.toLong + 1L), tests.get(index.toLong - 1L))
+      }
+      _ <- beforeO.fold(F.unit)(
+        before =>
+          ensure(
+            before.data.end.fold(false)(_.isBefore(spec.startI)),
+            ConflictTest(before)
+          )
+      )
+      _ <- afterO.fold(F.unit)(
+        after =>
+          ensure(
+            spec.endI.fold(false)(_.isBefore(after.data.start)),
+            ConflictTest(after)
+          ) *>
+            ensure(
+              groupsEqualSizes(spec.groups, test.data.groups),
+              CannotChangeGroupSizeWithFollowUpTest(after)
+            )
+      )
+      r <- addTestWithLock(spec.feature)(
+        abTestDao.update(test.copy(data = testFromSpec(spec, Some(test))))
+      )
+
+    } yield r
 
   def continue(testSpec: AbtestSpec): F[Entity[Abtest]] =
     addTestWithLock(testSpec.feature) {
@@ -324,6 +374,14 @@ final class DefaultAbtestAlg[F[_]](
       )
     } yield updated.data
 
+  def updateFeature(feature: Feature): F[Feature] =
+    for {
+      fe <- featureDao.byName(feature.name)
+      updated <- featureDao.update(
+        fe.copy(data = feature.copy(lockedAt = fe.data.lockedAt))
+      )
+    } yield updated.data
+
   def setOverrideEligibilityIn(
       featureName: FeatureName,
       overrideEligibility: Boolean
@@ -369,7 +427,7 @@ final class DefaultAbtestAlg[F[_]](
       )
     } yield updated.data
 
-  def getOverrides(featureName: FeatureName): F[Feature] =
+  def getFeature(featureName: FeatureName): F[Feature] =
     featureDao.byName(featureName).map(_.data)
 
   def getGroups(
@@ -415,7 +473,7 @@ final class DefaultAbtestAlg[F[_]](
     * @param f
     * @return
     */
-  def updateAbtest(
+  private def updateAbtestTrivial(
       testId: TestId,
       auto: Boolean
     )(f: Abtest => F[Abtest]
@@ -424,7 +482,7 @@ final class DefaultAbtestAlg[F[_]](
       now <- nowF
       candidate <- abTestDao.get(testId)
       test <- candidate.data
-        .canChange(now)
+        .isScheduled(now)
         .fold(
           F.pure(candidate),
           if (auto) {
@@ -433,9 +491,8 @@ final class DefaultAbtestAlg[F[_]](
                 .raiseError[F, Entity[Abtest]]
             else
               create(
-                candidate.data
-                  .to[AbtestSpec]
-                  .set(
+                candidate.data.toSpec
+                  .copy(
                     start = now.atOffset(ZoneOffset.UTC),
                     end = candidate.data.end.map(_.atOffset(ZoneOffset.UTC))
                   ),
@@ -455,7 +512,7 @@ final class DefaultAbtestAlg[F[_]](
       userMetaCriteria: UserMetaCriteria,
       auto: Boolean
     ): F[Entity[Abtest]] =
-    updateAbtest(testId, auto)(
+    updateAbtestTrivial(testId, auto)(
       _.copy(userMetaCriteria = userMetaCriteria).pure[F]
     )
 
@@ -465,34 +522,42 @@ final class DefaultAbtestAlg[F[_]](
       auto: Boolean
     ): F[Entity[Abtest]] =
     errorToF(metas.isEmpty.option(EmptyGroupMeta)) *>
-      updateGroupMetas(testId, metas, auto)
-
-  private def updateGroupMetas(
-      testId: TestId,
-      metas: Map[GroupName, GroupMeta],
-      auto: Boolean
-    ): F[Entity[Abtest]] =
-    updateAbtest(testId, auto) { test =>
-      errorsOToF(
-        metas.keys.toList.map(
-          gn =>
-            (!test.groups.exists(_.name === gn))
-              .option(Error.GroupNameDoesNotExist(gn))
+      updateAbtestTrivial(testId, auto) { test =>
+        errorsOToF(
+          metas.keys.toList.map(
+            gn =>
+              (!test.groups.exists(_.name === gn))
+                .option(Error.GroupNameDoesNotExist(gn))
+          )
+        ).as(
+          test.copy(
+            groups = test.groups.map { group =>
+              group.copy(
+                meta =
+                  if (metas.nonEmpty)
+                    metas.get(group.name) orElse group.meta orElse test.groupMetas
+                      .get(group.name)
+                  else
+                    None
+              )
+            },
+            groupMetas = Map()
+          )
         )
-      ).as(
-        test
-          .lens(_.groupMetas)
-          .modify { existing =>
-            if (metas.nonEmpty) existing ++ metas else metas
-          }
-      )
-    }
+      }
 
   def removeGroupMetas(
       testId: TestId,
       auto: Boolean
     ): F[Entity[Abtest]] =
-    updateGroupMetas(testId, Map.empty, auto)
+    updateAbtestTrivial(testId, auto) { test =>
+      test
+        .copy(
+          groups = test.groups.map(_.copy(meta = None)),
+          groupMetas = Map()
+        )
+        .pure[F]
+    }
 
   def getGroupsWithMeta(query: UserGroupQuery): F[UserGroupQueryResult] =
     validate(query) >> {
@@ -534,29 +599,41 @@ final class DefaultAbtestAlg[F[_]](
       Bucketing.getGroup(uid, test.data).map((uid, _))
     }.toMap ++ feature.data.overrides).toList
 
-  private def updateLock(
-      fn: FeatureName,
-      obtain: Boolean
-    ): F[Unit] = {
-    def error(cause: String): Error =
-      if (obtain) ConflictCreation(fn, cause) else FailedToReleaseLock(cause)
+  private def obtainLock(
+      feature: Entity[Feature],
+      gracePeriod: Option[FiniteDuration]
+    ): F[Boolean] = {
+    import TimeUtil.InstantOps
+    val noLock: (String, JsValueWrapper) = "lockedAt" -> Json.obj("$exists" -> false)
+    nowF.flatMap { now =>
+      val lockCheck: (String, JsValueWrapper) =
+        gracePeriod.fold(
+          noLock
+        ) { gp =>
+          "$or" -> Json.arr(
+            Json.obj(noLock),
+            Json.obj(
+              "lockedAt" ->
+                Json.obj("$lt" -> now.plusDuration(gp.inverse))
+            )
+          )
+        }
 
-    ensureFeature(fn).flatMap { feature =>
       featureDao
         .update(
           Json.obj(
-            "name" -> fn,
-            "locked" -> Json.obj("$ne" -> obtain)
+            "name" -> feature.data.name,
+            lockCheck
           ),
-          feature.lens(_.data.locked).set(obtain),
+          feature.lens(_.data.lockedAt).set(Some(now)),
           upsert = false
         )
-        .ensure(error("unexpected current lock status"))(identity)
-        .adaptError {
-          case e: Throwable => error(e.toString)
-        }
-    }.void
+    }
+
   }
+  private def releaseLock(feature: Entity[Feature]): F[Entity[Feature]] =
+    featureDao
+      .update(feature.lens(_.data.lockedAt).set(None))
 
   private def createWithoutLock(
       testSpec: AbtestSpec,
@@ -579,13 +656,21 @@ final class DefaultAbtestAlg[F[_]](
     } yield created
 
   private def addTestWithLock(
-      fn: FeatureName
+      fn: FeatureName,
+      gracePeriod: Option[FiniteDuration] = Some(30.seconds)
     )(add: F[Entity[Abtest]]
     ): F[Entity[Abtest]] =
     for {
-      _ <- updateLock(fn, true)
+      f <- ensureFeature(fn)
+      _ <- obtainLock(f, gracePeriod)
+        .adaptErr {
+          case e => ConflictCreation(fn, e.getMessage)
+        }
+        .ensure(
+          ConflictCreation(fn, "Another process is adding a test to this feature")
+        )(identity)
       attempt <- F.attempt(add)
-      _ <- updateLock(fn, false)
+      _ <- releaseLock(f)
       t <- F.fromEither(attempt)
     } yield t
 
@@ -610,32 +695,6 @@ final class DefaultAbtestAlg[F[_]](
         }
       }
     } yield r
-
-  private def tryUpdate(
-      toUpdate: Entity[Abtest],
-      updateWith: AbtestSpec,
-      now: Instant
-    ): Option[F[Entity[Abtest]]] =
-    if (toUpdate.data.canChange(now) && toUpdate.data.groups
-          .sortBy(_.name) == updateWith.groups
-          .sortBy(_.name))
-      Some(
-        abTestDao.update(
-          toUpdate.copy(
-            data = updateWith
-              .to[Abtest]
-              .set(
-                start = updateWith.startI,
-                end = updateWith.endI,
-                ranges = toUpdate.data.ranges,
-                salt =
-                  (if (updateWith.reshuffle) Option(newSalt)
-                   else toUpdate.data.salt)
-              )
-          )
-        )
-      )
-    else None
 
   private def newSalt =
     Random.alphanumeric.take(10).mkString
@@ -691,37 +750,83 @@ final class DefaultAbtestAlg[F[_]](
       assignment <- AssignGroups.assign[F](td, query, staleTimeout)
     } yield (assignment, td.at)
 
+  private def testFromSpec(
+      spec: AbtestSpec,
+      basedOn: Option[Entity[Abtest]]
+    ): Abtest = {
+    val groupsWithLegacyMeta: List[model.Group] =
+      spec.groups.map { group =>
+        group.copy(
+          meta = group.meta orElse
+            spec.groupMetas.get(group.name) orElse
+            basedOn.flatMap(_.data.getGroupMetas.get(group.name)) //ensures that by default spec doesn't remove group Meta
+        )
+      }
+    spec
+      .to[Abtest]
+      .set(
+        start = spec.startI,
+        end = spec.endI,
+        groups = groupsWithLegacyMeta,
+        ranges = Bucketing.newRanges(
+          spec.groups,
+          basedOn
+            .map(_.data.ranges)
+            .getOrElse(Map.empty)
+        ),
+        salt =
+          (if (spec.reshuffle) Option(newSalt)
+           else basedOn.flatMap(_.data.salt)),
+        groupMetas = Map.empty[String, GroupMeta]
+      )
+
+  }
+
   private def doCreate(
-      newSpec: AbtestSpec,
+      spec: AbtestSpec,
       inheritFrom: Option[Entity[Abtest]]
     ): F[Entity[Abtest]] = {
     for {
       newTest <- abTestDao.insert(
-        newSpec
-          .to[Abtest]
-          .set(
-            start = newSpec.start.toInstant,
-            end = newSpec.end.map(_.toInstant),
-            ranges = Bucketing.newRanges(
-              newSpec.groups,
-              inheritFrom
-                .map(_.data.ranges)
-                .getOrElse(Map.empty)
-            ),
-            salt =
-              (if (newSpec.reshuffle) Option(newSalt)
-               else inheritFrom.flatMap(_.data.salt)),
-            groupMetas =
-              (if (newSpec.groupMetas.isEmpty)
-                 inheritFrom
-                   .map(_.data.groupMetas)
-                   .getOrElse(Map.empty)
-               else newSpec.groupMetas)
-          )
+        testFromSpec(spec, inheritFrom)
       )
-      _ <- ensureFeature(newSpec.feature)
+      _ <- ensureFeature(spec.feature)
     } yield newTest
   }
+
+  private def groupsEqualSizes(
+      ga: List[model.Group],
+      gb: List[model.Group]
+    ) =
+    ga.map(_.copy(meta = None)).toSet ==
+      gb.map(_.copy(meta = None)).toSet
+
+  private def tryUpdate(
+      toUpdate: Entity[Abtest],
+      updateWith: AbtestSpec,
+      now: Instant
+    ): Option[F[Entity[Abtest]]] = {
+
+    if (toUpdate.data.isScheduled(now) && groupsEqualSizes(
+          toUpdate.data.groups,
+          updateWith.groups
+        ))
+      Some(
+        abTestDao.update(
+          toUpdate.copy(
+            data = testFromSpec(updateWith, Some(toUpdate))
+              .copy(groups = updateWith.groups, ranges = toUpdate.data.ranges)
+          )
+        )
+      )
+    else None
+  }
+
+  def ensure(
+      boolean: Boolean,
+      err: => Error
+    ): F[Unit] =
+    F.unit.ensure(err)(_ => boolean)
 
   private def validateForCreation(testSpec: AbtestSpec): F[Unit] =
     errorsOFFToF(

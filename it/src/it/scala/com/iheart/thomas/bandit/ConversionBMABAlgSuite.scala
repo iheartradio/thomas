@@ -54,6 +54,7 @@ class ConversionBMABAlgSuite extends ConversionBMABAlgSuiteBase {
     init.abtest.data.specialization shouldBe Some(
       MultiArmBandit
     )
+
     currentState.state shouldBe init.state
     currentState.abtest.data.groups
       .map(_.size) shouldBe List(0.5d, 0.5d)
@@ -85,7 +86,7 @@ class ConversionBMABAlgSuite extends ConversionBMABAlgSuiteBase {
       feature = "regular_abtest",
       start = OffsetDateTime.now,
       end = None,
-      groups = List(Group("A", 0.5), Group("B", 0.5))
+      groups = List(Group("A", 0.5, None), Group("B", 0.5, None))
     )
 
     val running = withAPI { (api, _, abtestAlg) =>
@@ -496,7 +497,7 @@ class ConversionBMABAlgSuite extends ConversionBMABAlgSuiteBase {
       .find(_.name == "C")
       .get
       .likelihoodOptimum shouldBe None
-    println(current.abtest.data.groups)
+
     current.abtest.data.groups.find(_.name == "C").get.size shouldBe BigDecimal(0.3)
     current.abtest.data.groups.find(_.name == "B").get.size.toDouble should be(
       0.35d +- 0.02d

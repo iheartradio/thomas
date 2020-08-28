@@ -13,16 +13,16 @@ val gh = GitHubSettings(
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 
 // format: off
-lazy val libs =
+lazy val libs = {
   org.typelevel.libraries
   .addJVM(name = "lihua",                 version = "0.35",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-dynamo-testkit", "lihua-play-json")
   .addJVM(name = "scanamo",               version = "1.0.0-M12-1", org ="org.scanamo", "scanamo-testkit")
   .addJVM(name = "rainier",               version = "0.3.0",  org ="com.stripe", "rainier-core", "rainier-cats")
-  .addJVM(name = "breeze",                version = "1.0",    org ="org.scalanlp", "breeze", "breeze-viz")
+  .addJVM(name = "breeze",                version = "1.1",    org ="org.scalanlp", "breeze", "breeze-viz")
   .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
   .add(   name = "play-json",             version = "2.8.1",  org = "com.typesafe.play")
   .add(   name = "play",                  version = "2.8.1",  org = "com.typesafe.play")
-  .add(   name = "cats-testkit-scalatest",version = "1.0.1", org = org.typelevel.typeLevelOrg)
+  .add(   name = "cats-testkit-scalatest",version = "2.0.0", org = org.typelevel.typeLevelOrg)
   .add(   name = "spark",                  version = "2.4.5", org = "org.apache.spark", "spark-sql", "spark-core")
   .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
   .addJVM(name = "play-json-derived-codecs", version = "7.0.0", org = "org.julienrf")
@@ -44,7 +44,9 @@ lazy val libs =
   .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
   .addJVM(   name = "evilplot",           version = "0.6.3", org = "com.cibo")
   .addJVM(   name = "scala-view",         version = "0.5", org = "com.github.darrenjw")
-  .add(   name = "cats-retry",            version = "1.1.1", org = "com.github.cb372")
+  .add(   name = "cats-retry",            version = "1.1.0", org = "com.github.cb372")
+  .addModule("http4s", "http4s-twirl")
+}
 // format: on
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
@@ -214,7 +216,7 @@ lazy val docs = project
       "gray-lighter" -> "#F4F3F4",
       "white-color" -> "#FFFFFF"
     )
-  )
+)
 
 lazy val mongo = project
   .dependsOn(core, bandit)
@@ -273,17 +275,20 @@ lazy val spark = project
 
 lazy val http4s = project
   .dependsOn(kafka)
-  .aggregate(kafka)
+  .enablePlugins(SbtTwirl)
   .dependsOn(testkit % Test)
   .settings(name := "thomas-http4s")
   .settings(rootSettings)
   .settings(taglessSettings)
   .settings(
     libs.testDependencies("scalacheck", "scalatest"),
+    TwirlKeys.templateImports := Seq(),
+    mainClass in reStart := Some("com.iheart.thomas.http4s.ExampleAbtestAdminUIApp"),
     libs.dependencies(
       "logback-classic",
       "http4s-blaze-server",
       "http4s-dsl",
+      "http4s-twirl",
       "http4s-play-json",
       "scala-java8-compat",
       "log4cats-slf4j",
@@ -374,7 +379,7 @@ lazy val playExample = project
   )
 
 lazy val noPublishing = Seq(skip in publish := true)
-lazy val defaultScalaVer = libs.vers("scalac_2.12")
+lazy val defaultScalaVer = "2.12.10"
 
 lazy val developerKai = Developer(
   "Kailuo Wang",

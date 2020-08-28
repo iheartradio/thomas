@@ -71,8 +71,8 @@ class ConversionBMABAlgSuite
       .allocateGroupSize(distribution, precision, Some(0.1d), 1)
 
     groups.toSet shouldBe Set(
-      Group("A", BigDecimal(0.1)),
-      Group("B", BigDecimal(0.9))
+      Group("A", BigDecimal(0.1), None),
+      Group("B", BigDecimal(0.9), None)
     )
 
   }

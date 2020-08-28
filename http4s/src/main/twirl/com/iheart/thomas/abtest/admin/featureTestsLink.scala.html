@@ -1,0 +1,5 @@
+@import com.iheart.thomas.FeatureName
+
+@(feature: FeatureName, text: Option[String] = None)
+
+<a href="/admin/tests?feature=@feature">@text.getOrElse(feature)</a>
