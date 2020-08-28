@@ -1,0 +1,29 @@
+@import com.iheart.thomas.abtest.model._
+@import lihua._
+
+@(test: Entity[Abtest], errMessage: Option[String] = None, spec: Option[AbtestSpec] = None)
+
+@adminPage("A/B Test for feature " + test.data.feature) {
+
+<form action="/admin/tests/@test._id" method="post">
+
+  <div class="mt-4 mb-4">
+    <span class="h5">
+      Editing A/B Test <span class="text-info">@test.data.name</span>
+            for </span>
+    <span class="h4 text-success" title="This is feature name for the test.">
+      @featureTestsLink(test.data.feature)</span>
+  </div>
+  @abtestForm(test.data.feature, spec.orElse(Some(test.data.toSpec)), errMessage, false)
+
+  <div class="row d-flex flex-row-reverse mt-5">
+    <div class="mr-4">
+      <button type="submit" class="btn btn-primary">
+        Submit Change
+      </button>
+      <button type="button" class="btn btn-warning ml-2" onclick="history.back()">Cancel</button>
+    </div>
+  </div>
+
+</form>
+}

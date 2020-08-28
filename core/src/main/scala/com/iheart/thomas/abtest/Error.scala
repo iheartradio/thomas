@@ -44,6 +44,12 @@ object Error {
     override def getMessage = s"Cannot change tests that are already started $start"
   }
 
+  case class CannotChangeGroupSizeWithFollowUpTest(test: Entity[Abtest])
+      extends Error {
+    override def getMessage =
+      s"Cannot change group sizes due to a follow up test (${test._id})"
+  }
+
   case class CannotUpdateExpiredTest(expired: Instant) extends Error {
     override def getMessage =
       s"Cannot auto create new test from expired test (expired $expired)"
@@ -54,7 +60,11 @@ object Error {
   case class InconsistentGroupSizes(sizes: List[GroupSize]) extends ValidationError
 
   case object InconsistentTimeRange extends ValidationError
-  case class ConflictTest(existing: Entity[Abtest]) extends Error
+  case object FeatureCannotBeChanged extends Error
+  case class ConflictTest(existing: Entity[Abtest]) extends Error {
+    override def getMessage =
+      s"Cannot schedule to overlap with an existing test (${existing._id})"
+  }
   case class ConflictCreation(
       feature: FeatureName,
       cause: String)

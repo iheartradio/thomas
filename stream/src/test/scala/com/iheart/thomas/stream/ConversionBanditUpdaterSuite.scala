@@ -71,7 +71,7 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
             author = "a",
             start = null,
             end = null,
-            groups = groups.map(Group(_, 0.1d)),
+            groups = groups.map(Group(_, 0.1d, None)),
             ranges = null
           )
         ),

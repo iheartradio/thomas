@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import Formats._
 import com.iheart.thomas.bandit.bayesian.{BanditSettings, ConversionBanditSpec}
-import play.api.libs.json.{Format, JsSuccess, Json}
+import _root_.play.api.libs.json.{Format, JsSuccess, Json}
 
 import concurrent.duration._
 class FormatSuite extends AnyFunSuiteLike with Matchers {

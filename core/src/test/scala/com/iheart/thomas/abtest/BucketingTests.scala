@@ -182,7 +182,7 @@ class BucketingTests extends BucketingTestsBase {
       )
     )
 
-    val newGroups = List(Group("A", 0.3), Group("B", 0.7))
+    val newGroups = List(Group("A", 0.3, None), Group("B", 0.7, None))
 
     Bucketing.newRanges(newGroups, oldRanges) shouldBe Map(
       "A" -> List(GroupRange(0.21, 0.51)),
@@ -273,7 +273,7 @@ class BucketingRegression extends BucketingTestsBase {
   test("regression evolve from zero") {
 
     val newRanges = Bucketing.newRanges(
-      List(Group("A", 0.1), Group("B", 0.1)),
+      List(Group("A", 0.1, None), Group("B", 0.1, None)),
       Map("A" -> List(GroupRange(0d, 0d)), "B" -> List(GroupRange(0d, 0d)))
     )
 
@@ -288,7 +288,7 @@ object BucketingTests {
   def createGroup(
       size: GroupSize,
       idx: Int
-    ) = Group(s"group$idx", size)
+    ) = Group(s"group$idx", size, None)
   lazy val userIdGen = choose(10000, 400000).map(_.toString)
 
   def rangesToGroups(ranges: List[GroupRange]): (GroupRanges, List[Group]) = {
