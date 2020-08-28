@@ -156,7 +156,7 @@ class AbtestController[F[_]](
 
   //for legacy support
   def getGroupMetas(testId: String) = action {
-    api.getTest(EntityId(testId)).map(_.data.groupMetas)
+    api.getTest(EntityId(testId)).map(_.data.getGroupMetas)
   }
 
   val getGroupsWithMeta = jsonAction(

@@ -14,4 +14,8 @@ addSbtPlugin(
   "org.typelevel" %% "sbt-catalysts" % "0.40"
 )
 
-addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.10.0")
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.9.0")
+
+addSbtPlugin("com.typesafe.sbt" % "sbt-twirl" % "1.5.0")
+
+addSbtPlugin("io.spray" % "sbt-revolver" % "0.9.1")

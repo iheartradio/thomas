@@ -1,7 +1,7 @@
 package com.iheart.thomas.abtest.json.play
 
 import cats.Applicative
-import play.api.libs.json.JsResult
+import _root_.play.api.libs.json.JsResult
 
 trait Instances {
   implicit val instancesJSResult: Applicative[JsResult] = new Applicative[JsResult] {
