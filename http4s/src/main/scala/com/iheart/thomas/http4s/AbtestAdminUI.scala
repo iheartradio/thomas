@@ -84,6 +84,19 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
         )
       }
 
+    def getTestAndFollowUp(
+        testId: String
+      ): F[(Entity[Abtest], Option[Entity[Abtest]])] =
+      for {
+        test <- get(testId)
+        otherFeatureTests <- alg.getTestsByFeature(test.data.feature)
+      } yield (
+        test,
+        otherFeatureTests
+          .filter(_.data.start.isAfter(test.data.start))
+          .headOption
+      )
+
     HttpRoutes
       .of[F] {
         case GET -> Root / "tests" :? endsAfter(ea) +& feature(fn) =>
@@ -116,8 +129,8 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
         case GET -> Root / "tests" / testId / "new_revision" =>
           get(testId).flatMap { test =>
             Ok(
-              newTest(
-                test.data.feature,
+              newRevision(
+                test,
                 Some(
                   test.data.toSpec.copy(
                     start = OffsetDateTime.now,
@@ -128,25 +141,50 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
             )
           }
 
+        case req @ POST -> Root / "tests" / testId / "new_revision" =>
+          get(testId).flatMap { fromTest =>
+            req
+              .as[AbtestSpec]
+              .redeemWith(
+                e => BadRequest(editTest(fromTest, Some(displayError(e)))),
+                spec =>
+                  (if (fromTest.data.end.fold(true)(_.isBefore(spec.startI)))
+                     alg.continue(spec)
+                   else alg.create(spec, false))
+                    .flatMap(
+                      redirectToTest(
+                        _,
+                        s"Successfully created test for ${spec.feature}"
+                      )
+                    )
+                    .handleErrorWith(
+                      e =>
+                        get(testId).flatMap { t =>
+                          BadRequest(
+                            newRevision(fromTest, Some(spec), Some(displayError(e)))
+                          )
+                        }
+                    )
+              )
+          }
         case GET -> Root / "tests" / testId =>
           for {
-            test <- get(testId)
-            otherFeatureTests <- alg.getTestsByFeature(test.data.feature)
+            p <- getTestAndFollowUp(testId)
+            (test, followUpO) = p
             feature <- alg.getFeature(test.data.feature)
             r <- Ok(
               showTest(
                 test,
-                otherFeatureTests
-                  .filter(_.data.start.isAfter(test.data.start))
-                  .headOption,
+                followUpO,
                 feature.overrides
               )
             )
           } yield r
 
         case GET -> Root / "tests" / testId / "edit" =>
-          get(testId).flatMap { t =>
-            Ok(editTest(t))
+          getTestAndFollowUp(testId).flatMap {
+            case (test, followUpO) =>
+              Ok(editTest(test = test, followUpO = followUpO))
           }
 
         case GET -> Root / "tests" / testId / "delete" =>
@@ -205,7 +243,6 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
             )
 
       }
-
   }
 
 }

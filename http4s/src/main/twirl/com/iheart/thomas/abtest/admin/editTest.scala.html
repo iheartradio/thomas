@@ -1,7 +1,10 @@
 @import com.iheart.thomas.abtest.model._
 @import lihua._
 
-@(test: Entity[Abtest], errMessage: Option[String] = None, spec: Option[AbtestSpec] = None)
+@(test: Entity[Abtest],
+errMessage: Option[String] = None,
+spec: Option[AbtestSpec] = None,
+followUpO: Option[Entity[Abtest]] = None)
 
 @adminPage("A/B Test for feature " + test.data.feature) {
 
@@ -14,7 +17,7 @@
     <span class="h4 text-success" title="This is feature name for the test.">
       @featureTestsLink(test.data.feature)</span>
   </div>
-  @abtestForm(test.data.feature, spec.orElse(Some(test.data.toSpec)), errMessage, false)
+  @testForm(test.data.feature, spec.orElse(Some(test.data.toSpec)), errMessage, false, followUpO.isEmpty)
 
   <div class="row d-flex flex-row-reverse mt-5">
     <div class="mr-4">
@@ -23,6 +26,11 @@
       </button>
       <button type="button" class="btn btn-warning ml-2" onclick="history.back()">Cancel</button>
     </div>
+    @for(followUp <- followUpO) {
+      <div class="mr-3">
+        Note: this test is followed by <a class="text-success lnk" title="@followUp._id" href="./@followUp._id">@followUp.data.name</a>
+      </div>
+    }
   </div>
 
 </form>

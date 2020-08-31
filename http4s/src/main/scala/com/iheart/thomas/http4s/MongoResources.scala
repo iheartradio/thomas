@@ -4,6 +4,7 @@ package http4s
 import cats.effect.{Async, Concurrent, Resource, Sync, Timer}
 import com.iheart.thomas
 import com.iheart.thomas.abtest.AbtestAlg
+import com.iheart.thomas.mongo.DAOs
 import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.compat.java8.DurationConverters._
@@ -31,16 +32,21 @@ object MongoResources extends Resources {
     AbtestAlg.defaultResource[F](refreshPeriod)
   }
 
-  def abtestAlg[F[_]: Timer: Concurrent](implicit ex: ExecutionContext) =
+  def abtestAlg[F[_]: Timer: Concurrent](
+      implicit ex: ExecutionContext
+    ): Resource[F, AbtestAlg[F]] =
     cfg[F].flatMap(abtestAlg(_))
 
   def abtestAlg[F[_]: Timer: Concurrent](
       cfg: Config
     )(implicit ex: ExecutionContext
-    ) =
+    ): Resource[F, AbtestAlg[F]] =
     dAOs[F](cfg).flatMap(abtestAlg(cfg, _))
 
-  def dAOs[F[_]: Async](config: Config)(implicit ex: ExecutionContext) =
+  def dAOs[F[_]: Async](
+      config: Config
+    )(implicit ex: ExecutionContext
+    ): Resource[F, DAOs[F]] =
     mongo.daosResource[F](config)
 
 }
