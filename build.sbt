@@ -43,7 +43,7 @@ lazy val libs = {
   .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
   .addJVM(   name = "evilplot",           version = "0.6.3", org = "com.cibo")
   .addJVM(   name = "scala-view",         version = "0.5", org = "com.github.darrenjw")
-  .add(   name = "cats-retry",            version = "1.1.0", org = "com.github.cb372")
+  .add(   name = "cats-retry",            version = "1.1.1", org = "com.github.cb372")
   .addJVM(name = "lihua",                 version = "0.35",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-dynamo-testkit", "lihua-play-json")
   .addModule("http4s", "http4s-twirl")
 }
