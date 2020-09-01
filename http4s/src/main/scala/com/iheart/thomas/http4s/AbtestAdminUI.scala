@@ -34,7 +34,16 @@ import org.http4s.dsl.impl.{
 import io.estatico.newtype.ops._
 import lihua.{Entity, EntityId}
 
-class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
+class ReverseRoutes(rootPath: String) {
+  val tests = s"$rootPath/tests"
+  val features = s"$rootPath/features"
+}
+
+class AbtestAdminUI[F[_]: Async](
+    alg: AbtestAlg[F],
+    rootPath: String)
+    extends Http4sDsl[F] {
+  private implicit val reverseRoutes = new ReverseRoutes(rootPath)
 
   private def get(testId: String) =
     alg.getTest(testId.coerce[EntityId])
@@ -50,7 +59,7 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
       test: Entity[Abtest],
       msg: String
     ) =
-    Ok(redirect(s"/admin/tests/${test._id}", msg))
+    Ok(redirect(s"${reverseRoutes.tests}/${test._id}", msg))
 
   val routes = {
     def testsList(filters: Filters = Filters(defaultEndsAfter)) =
@@ -193,7 +202,7 @@ class AbtestAdminUI[F[_]: Async](alg: AbtestAlg[F]) extends Http4sDsl[F] {
               t => s"terminated running test for feature ${t.data.feature}"
             )
 
-            Ok(redirect("/admin/tests", s"Successfully $message."))
+            Ok(redirect(reverseRoutes.tests, s"Successfully $message."))
           }
 
         case req @ POST -> Root / "tests" / testId =>
@@ -254,10 +263,12 @@ object AbtestAdminUI {
       feature: Option[FeatureName] = None)
 
   def fromMongo[F[_]: Timer](
-      implicit F: Concurrent[F],
+      rootPath: String,
+      cfgResourceName: Option[String] = None
+    )(implicit F: Concurrent[F],
       ex: ExecutionContext
     ): Resource[F, AbtestAdminUI[F]] = {
-    MongoResources.abtestAlg[F].map(new AbtestAdminUI(_))
+    MongoResources.abtestAlg[F](cfgResourceName).map(new AbtestAdminUI(_, rootPath))
   }
 
   object endsAfter

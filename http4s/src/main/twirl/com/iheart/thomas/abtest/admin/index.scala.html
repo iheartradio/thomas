@@ -3,8 +3,10 @@
 @import com.iheart.thomas.http4s.Formatters._
 @import com.iheart.thomas.FeatureName
 @import com.iheart.thomas.http4s.AbtestAdminUI.Filters
+@import com.iheart.thomas.http4s.ReverseRoutes
 
-@(tests: List[(FeatureName, List[Entity[Abtest]])], features: List[FeatureName], filters: Filters)
+
+@(tests: List[(FeatureName, List[Entity[Abtest]])], features: List[FeatureName], filters: Filters)(implicit routes: ReverseRoutes)
 
 
 @featureCard(feature: FeatureName, tests: List[Entity[Abtest]]) = {
@@ -93,7 +95,7 @@
   <div class="col-sm"></div>
   <div class="col-sm d-flex flex-row-reverse">
     <div class="card"  style="width: 22rem;">
-      <form action="/admin/tests/new" method="get">
+      <form action="@routes.tests/new" method="get">
         <div class="card-body">
           <h5 class="card-title">Create Test</h5>
           <div class="form-row">

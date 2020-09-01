@@ -5,14 +5,28 @@ import cats.effect.{Async, Concurrent, Resource, Sync, Timer}
 import com.iheart.thomas
 import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.mongo.DAOs
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
+import pureconfig.ConfigSource
+import pureconfig.module.catseffect.CatsEffectConfigSource
 
 import scala.compat.java8.DurationConverters._
 import scala.concurrent.ExecutionContext
 
 trait Resources {
-  def cfg[F[_]](implicit F: Sync[F]): Resource[F, Config] =
-    Resource.liftF(F.delay(ConfigFactory.load))
+  def cfg[F[_]](
+      cfgResourceName: Option[String] = None
+    )(implicit F: Sync[F]
+    ): Resource[F, Config] =
+    Resource.liftF(
+      cfgResourceName
+        .fold(ConfigSource.default)(
+          name =>
+            ConfigSource
+              .resources(name)
+              .withFallback(ConfigSource.default)
+        )
+        .loadF[F, Config]
+    )
 
 }
 
@@ -28,14 +42,15 @@ object MongoResources extends Resources {
     import thomas.mongo.idSelector
     implicit val (abtestDAO, featureDAO, _) = daos
     val refreshPeriod =
-      cfg.getDuration("iheart.abtest.get-groups.ttl").toScala
+      cfg.getDuration("thomas.abtest.get-groups.ttl").toScala
     AbtestAlg.defaultResource[F](refreshPeriod)
   }
 
   def abtestAlg[F[_]: Timer: Concurrent](
-      implicit ex: ExecutionContext
+      cfgResourceName: Option[String] = None
+    )(implicit ex: ExecutionContext
     ): Resource[F, AbtestAlg[F]] =
-    cfg[F].flatMap(abtestAlg(_))
+    cfg[F](cfgResourceName).flatMap(abtestAlg(_))
 
   def abtestAlg[F[_]: Timer: Concurrent](
       cfg: Config

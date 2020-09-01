@@ -2,12 +2,13 @@
 @import com.iheart.thomas.abtest.model._
 @import com.iheart.thomas.abtest.json.play.Formats._
 @import com.iheart.thomas.http4s.Formatters.{formatDate, formatJSON}
+@import com.iheart.thomas.http4s.ReverseRoutes
 
 @(feature: FeatureName,
 draft: Option[AbtestSpec],
 errorMsg: Option[String] = None,
 readonly: Boolean = false,
-groupSizeChangeAllowed: Boolean = true)
+groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
 
 @group(group: Option[Group]) = {
 
@@ -82,7 +83,7 @@ groupSizeChangeAllowed: Boolean = true)
 <input name="feature" type="text" hidden
        value="@feature"/>
 
-<div class="container" id="test-form">
+<div id="test-form">
   @for(msg <- errorMsg) {
   <div id="error-msg" class="alert alert-warning" role="alert">
     @msg

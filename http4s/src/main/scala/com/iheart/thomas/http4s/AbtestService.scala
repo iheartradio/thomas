@@ -229,12 +229,13 @@ object AbtestService {
   }
 
   def fromMongo[F[_]: Timer](
-      implicit F: Concurrent[F],
+      configResourceName: Option[String] = None
+    )(implicit F: Concurrent[F],
       ex: ExecutionContext
     ): Resource[F, AbtestService[F]] = {
 
     for {
-      cfg <- MongoResources.cfg[F]
+      cfg <- MongoResources.cfg[F](configResourceName)
       daos <- MongoResources.dAOs(cfg)
       alg <- MongoResources.abtestAlg[F](cfg, daos)
     } yield {

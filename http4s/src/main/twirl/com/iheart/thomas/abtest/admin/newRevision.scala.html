@@ -1,9 +1,11 @@
 @import com.iheart.thomas.abtest.model._
 @import lihua.Entity
+@import com.iheart.thomas.http4s.ReverseRoutes
+
 
 @(fromTest: Entity[Abtest],
 draft: Option[AbtestSpec],
-errorMsg: Option[String] = None)
+errorMsg: Option[String] = None)(implicit routes: ReverseRoutes)
 
 @adminPage("Create A New Test") {
 <form action="./new_revision" method="post">
