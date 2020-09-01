@@ -1,5 +1,6 @@
 @import com.iheart.thomas.FeatureName
+@import com.iheart.thomas.http4s.ReverseRoutes
 
-@(feature: FeatureName, text: Option[String] = None)
+@(feature: FeatureName, text: Option[String] = None)(implicit routes: ReverseRoutes)
 
-<a href="/admin/tests?feature=@feature">@text.getOrElse(feature)</a>
+<a href="@routes.tests?feature=@feature">@text.getOrElse(feature)</a>

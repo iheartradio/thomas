@@ -238,14 +238,14 @@ final class DefaultAbtestAlg[F[_]](
       _ <- beforeO.fold(F.unit)(
         before =>
           ensure(
-            before.data.end.fold(false)(_.isBefore(spec.startI)),
+            before.data.end.fold(false)(!_.isAfter(spec.startI)),
             ConflictTest(before)
           )
       )
       _ <- afterO.fold(F.unit)(
         after =>
           ensure(
-            spec.endI.fold(false)(_.isBefore(after.data.start)),
+            spec.endI.fold(false)(!_.isAfter(after.data.start)),
             ConflictTest(after)
           ) *>
             ensure(
