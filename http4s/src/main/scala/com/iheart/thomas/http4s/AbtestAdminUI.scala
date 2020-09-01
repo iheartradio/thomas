@@ -257,7 +257,7 @@ class AbtestAdminUI[F[_]: Async](
 }
 
 object AbtestAdminUI {
-  val defaultEndsAfter = OffsetDateTime.now.minusDays(10)
+  val defaultEndsAfter = OffsetDateTime.now.minusDays(30)
   case class Filters(
       endsAfter: OffsetDateTime,
       feature: Option[FeatureName] = None)

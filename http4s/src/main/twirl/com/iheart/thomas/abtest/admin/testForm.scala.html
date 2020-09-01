@@ -167,8 +167,13 @@ groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
 
           <div class="form-group">
             <label for="testUserMetaCriteria">User Meta Criteria</label>
-            <textarea name="userMetaCriteria" class="form-control" id="testUserMetaCriteria"
-                      value="@draft.map(_.userMetaCriteria).map(formatJSON(_))"></textarea>
+            <a target="_blank"
+                title="Criteria for filtering user by user meta. Click to see more documentation."
+                href="https://iheartradio.github.io/thomas/FAQ.html#how-to-manage-user-eligibility">
+              <i class="far fa-question-circle"></i>
+            </a>
+            <textarea name="userMetaCriteria" class="form-control" id="testUserMetaCriteria">@draft.map(_.userMetaCriteria).map(formatJSON(_))
+            </textarea>
           </div>
         </div>
       </div>
