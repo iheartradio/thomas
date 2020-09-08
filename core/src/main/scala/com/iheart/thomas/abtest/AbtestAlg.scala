@@ -37,7 +37,7 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
 
   def create(
       testSpec: AbtestSpec,
-      auto: Boolean
+      auto: Boolean = false
     ): F[Entity[Abtest]]
 
   /**
@@ -125,16 +125,6 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
 
   def removeAllOverrides(featureName: FeatureName): F[Feature]
 
-  /**
-    * get all groups of a user by features
-    * @param time
-    */
-  def getGroups(
-      userId: UserId,
-      time: Option[OffsetDateTime],
-      tags: List[Tag]
-    ): F[Map[FeatureName, GroupName]]
-
   def cleanUp(
       featureName: FeatureName,
       historyBefore: OffsetDateTime
@@ -214,7 +204,7 @@ final class DefaultAbtestAlg[F[_]](
 
   def create(
       testSpec: AbtestSpec,
-      auto: Boolean
+      auto: Boolean = false
     ): F[Entity[Abtest]] =
     addTestWithLock(testSpec.feature)(
       createWithoutLock(testSpec, auto)
@@ -429,16 +419,6 @@ final class DefaultAbtestAlg[F[_]](
 
   def getFeature(featureName: FeatureName): F[Feature] =
     featureDao.byName(featureName).map(_.data)
-
-  def getGroups(
-      userId: UserId,
-      time: Option[OffsetDateTime],
-      userTags: List[Tag]
-    ): F[Map[FeatureName, GroupName]] =
-    validateUserId(userId) >>
-      getGroupAssignmentsOf(
-        UserGroupQuery(Some(userId), time, userTags)
-      ).map(toGroups)
 
   def terminate(testId: TestId): F[Option[Entity[Abtest]]] =
     for {

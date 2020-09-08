@@ -108,21 +108,6 @@ GET      /features/:feature/tests                                              c
 GET      /features                                              controllers.MyAbtestController.getAllFeatures
 
 ###
-#  summary: Get a user's tests and the groups he/she is in
-#  parameters:
-#    - name: at
-#      description: Optional. epoch seconds for the time as of which the user's a/b test groups be returned, if not given the results will be of the current moment.
-#  responses:
-#    200:
-#      description: A map with feature names as keys and group names as values
-#
-###
-GET       /users/:userId/tests/groups            controllers.MyAbtestController.getGroups(userId: String, at: Option[Long], tags: Option[List[String]])
-
-
-
-
-###
 #  summary: get a abtest
 #  responses:
 #    200:
