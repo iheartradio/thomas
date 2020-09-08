@@ -58,7 +58,7 @@ PUT      /tests                                                controllers.MyAbt
 #      description: A list of all running tests as of the `at`
 #
 ###
-GET      /tests                                                controllers.MyAbtestController.getAllTests(at: Option[Long], endAfter: Option[Long])
+GET      /tests            controllers.MyAbtestController.getAllTests(at: Option[Long], endAfter: Option[Long])
 
 
 ###
