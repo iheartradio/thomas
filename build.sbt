@@ -322,8 +322,6 @@ lazy val it = project
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
     libs.dependency("akka-slf4j", Some(IntegrationTest.name)),
     libs.dependency("embedded-kafka", Some(IntegrationTest.name)),
-    testOptions in IntegrationTest += Tests
-      .Argument(TestFrameworks.ScalaTest, "-oFDU"),
     dynamoTestSettings
   )
 

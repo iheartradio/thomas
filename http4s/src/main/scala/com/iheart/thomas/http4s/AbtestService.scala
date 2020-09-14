@@ -2,6 +2,8 @@ package com.iheart
 package thomas
 package http4s
 
+import java.time.Instant
+
 import abtest._
 import model._
 import com.iheart.thomas.abtest.json.play.Formats._
@@ -20,6 +22,7 @@ import scala.concurrent.ExecutionContext
 import _root_.play.api.libs.json.Json.toJson
 import cats.implicits._
 import Error.{FeatureCannotBeChanged, NotFound => APINotFound, _}
+import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 import com.iheart.thomas.http4s.AbtestService.validationErrorMsg
 import lihua.EntityId
 import org.http4s.dsl.impl.{
@@ -132,6 +135,11 @@ class AbtestService[F[_]: Async](
           t => respond(api.create(t, a.getOrElse(false)))
       )
 
+    case req @ POST -> Root / "tests" / "auto" =>
+      req.as[AbtestSpec] >>= (
+          t => respond(api.create(t, true))
+      )
+
     case req @ PUT -> Root / "tests" =>
       req.as[AbtestSpec] >>= (t => respond(api.continue(t)))
 
@@ -141,8 +149,24 @@ class AbtestService[F[_]: Async](
     case GET -> Root / "tests" / LongVar(endAfter) =>
       respond(api.getAllTestsEndAfter(endAfter))
 
-    case GET -> Root / "tests" =>
-      respond(api.getAllTests(None))
+    case GET -> Root / "tests" :? at(atL) +& endAfter(eAL) =>
+      respond(
+        eAL.fold(api.getAllTests(atL.map(TimeUtil.toDateTime))) { ea =>
+          api.getAllTestsEndAfter(ea)
+        }
+      )
+
+    case GET -> Root / "testsWithFeatures" :? at(atL) =>
+      respond(api.getAllTestsCachedEpoch(atL))
+
+    case GET -> Root / "testsData" :? atEpochMilli(aem) +& durationMillisecond(d) =>
+      import scala.concurrent.duration._
+      respond(
+        api.getTestsData(
+          Instant.ofEpochMilli(aem),
+          d.map(_.millis)
+        )
+      )
 
     case GET -> Root / "tests" / testId =>
       respond(api.getTest(EntityId(testId)))
@@ -153,15 +177,18 @@ class AbtestService[F[_]: Async](
         s"No test with id $testId"
       )
 
-    case req @ PUT -> Root / "tests" / testId / "groups" / "metas" :? auto(
-          a
-        ) =>
+    case req @ PUT -> Root / "tests" / testId / "groups" / "metas" :? auto(a) =>
       req.as[Map[GroupName, GroupMeta]] >>= (
           m =>
             respond(
               api.addGroupMetas(EntityId(testId), m, a.getOrElse(false))
             )
         )
+
+    case DELETE -> Root / "tests" / testId / "groups" / "metas" :? auto(a) =>
+      respond(
+        api.removeGroupMetas(EntityId(testId), a.getOrElse(false))
+      )
 
     case GET -> Root / "tests" / "cache" :? at(a) =>
       respond(api.getAllTestsCachedEpoch(a))
@@ -199,6 +226,13 @@ class AbtestService[F[_]: Async](
 
     case req @ POST -> Root / "KPIs" =>
       req.as[KPIModel] >>= (k => respond(kpiAPI.upsert(k)))
+
+    case req @ PUT -> Root / "tests" / testId / "userMetaCriteria" =>
+      req.as[UpdateUserMetaCriteriaRequest] >>= { r =>
+        respond(
+          api.updateUserMetaCriteria(EntityId(testId), r.criteria, r.auto)
+        )
+      }
   }
 
 }
@@ -248,5 +282,9 @@ object AbtestService {
     object auto extends OptionalQueryParamDecoderMatcher[Boolean]("auto")
     object ovrrd extends QueryParamDecoderMatcher[Boolean]("override")
     object at extends OptionalQueryParamDecoderMatcher[Long]("at")
+    object endAfter extends OptionalQueryParamDecoderMatcher[Long]("endAfter")
+    object atEpochMilli extends QueryParamDecoderMatcher[Long]("atEpochMilli")
+    object durationMillisecond
+        extends OptionalQueryParamDecoderMatcher[Long]("durationMillisecond")
   }
 }
