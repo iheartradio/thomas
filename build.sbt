@@ -73,6 +73,7 @@ lazy val thomas = project
     stress,
     dynamo,
     spark,
+    monitor,
     stream,
     testkit,
     kafka
@@ -294,6 +295,22 @@ lazy val http4s = project
       "log4cats-slf4j",
       "pureconfig-cats-effect",
       "pureconfig-generic"
+    )
+  )
+
+lazy val monitor = project
+  .settings(name := "thomas-monitor")
+  .settings(rootSettings)
+  .settings(taglessSettings)
+  .settings(
+    libs.dependencies(
+      "http4s-blaze-server",
+      "http4s-blaze-client",
+      "http4s-dsl",
+      "http4s-play-json",
+      "pureconfig-cats-effect",
+      "pureconfig-generic",
+      "log4cats-core"
     )
   )
 
