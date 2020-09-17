@@ -24,6 +24,7 @@ import cats.implicits._
 import Error.{FeatureCannotBeChanged, NotFound => APINotFound, _}
 import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 import com.iheart.thomas.http4s.AbtestService.validationErrorMsg
+import com.typesafe.config.Config
 import lihua.EntityId
 import org.http4s.dsl.impl.{
   OptionalQueryParamDecoderMatcher,
@@ -267,9 +268,16 @@ object AbtestService {
     )(implicit F: Concurrent[F],
       ex: ExecutionContext
     ): Resource[F, AbtestService[F]] = {
+    MongoResources.cfg[F](configResourceName).flatMap(fromMongo[F](_))
+  }
+
+  def fromMongo[F[_]: Timer](
+      cfg: Config
+    )(implicit F: Concurrent[F],
+      ex: ExecutionContext
+    ): Resource[F, AbtestService[F]] = {
 
     for {
-      cfg <- MongoResources.cfg[F](configResourceName)
       daos <- MongoResources.dAOs(cfg)
       alg <- MongoResources.abtestAlg[F](cfg, daos)
     } yield {
