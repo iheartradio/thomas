@@ -27,7 +27,6 @@ trait Resources {
         )
         .loadF[F, Config]
     )
-
 }
 
 object Resources extends Resources

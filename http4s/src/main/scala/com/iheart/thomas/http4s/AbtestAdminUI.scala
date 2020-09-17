@@ -10,7 +10,6 @@ import html._
 import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Feature}
 import com.iheart.thomas.http4s.AbtestService.validationErrorMsg
-
 import org.http4s.dsl.Http4sDsl
 import org.http4s.twirl._
 import org.http4s.HttpRoutes
@@ -26,6 +25,7 @@ import com.iheart.thomas.http4s.AbtestAdminUI.{
   feature,
   featureReq
 }
+import com.typesafe.config.Config
 import org.http4s.FormDataDecoder.formEntityDecoder
 import org.http4s.dsl.impl.{
   OptionalQueryParamDecoderMatcher,
@@ -269,6 +269,15 @@ object AbtestAdminUI {
       ex: ExecutionContext
     ): Resource[F, AbtestAdminUI[F]] = {
     MongoResources.abtestAlg[F](cfgResourceName).map(new AbtestAdminUI(_, rootPath))
+  }
+
+  def fromMongo[F[_]: Timer](
+      rootPath: String,
+      cfg: Config
+    )(implicit F: Concurrent[F],
+      ex: ExecutionContext
+    ): Resource[F, AbtestAdminUI[F]] = {
+    MongoResources.abtestAlg[F](cfg).map(new AbtestAdminUI(_, rootPath))
   }
 
   object endsAfter
