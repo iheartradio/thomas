@@ -157,7 +157,7 @@ class AbtestAdminUI[F[_]: Async](
               .redeemWith(
                 e => BadRequest(editTest(fromTest, Some(displayError(e)))),
                 spec =>
-                  (if (fromTest.data.end.fold(true)(_.isBefore(spec.startI)))
+                  (if (fromTest.data.end.fold(true)(_.isAfter(spec.startI)))
                      alg.continue(spec)
                    else alg.create(spec, false))
                     .flatMap(
