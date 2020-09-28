@@ -83,7 +83,20 @@ successMsg: Option[String] = None)(implicit routes: ReverseRoutes)
           </div>
         </div>
 
-
+        <div class="card mt-4">
+          <div class="card-header"><span class="h5">Batch Overrides</span></div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md">
+                <div class="form-group">
+                  <label for="batchOverrides">Json to batch add overrides. Format {"user_id" : "group_name"} </label>
+                  <textarea name="batchOverrides" class="form-control" id="batchOverrides" type="text"
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="col-md">
         <div class="card">
@@ -128,27 +141,29 @@ successMsg: Option[String] = None)(implicit routes: ReverseRoutes)
             <div class="d-none" id="new-override">
               @overrideItem(None)
             </div>
+
             <div class="row float-right">
               <button type="button" id="btn-new-override"
                       onclick="thomas.appendItem('#new-override','#overrides')"
                       class="btn btn-secondary">New Override
               </button>
             </div>
-
           </div>
         </div>
 
       </div>
 
     </div>
-    <div class="row d-flex flex-row-reverse mt-5">
-      <div class="mr-4">
-        <button type="submit" class="btn btn-primary">
-          Update
-        </button>
-        <button type="reset" class="btn btn-warning ml-2">Reset</button>
-      </div>
+
+  </div>
+  <div class="row d-flex flex-row-reverse mt-5">
+    <div class="mr-4">
+      <button type="submit" class="btn btn-primary">
+        Update
+      </button>
+      <button type="reset" class="btn btn-warning ml-2">Reset</button>
     </div>
+  </div>
 
   </div>
 
