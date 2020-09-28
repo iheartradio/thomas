@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package http4s
 
-import java.time.{Instant, OffsetDateTime, ZonedDateTime}
+import java.time.{OffsetDateTime, ZonedDateTime}
 
 import cats.data.NonEmptyList
 import cats.data.Validated.Valid
@@ -114,12 +114,22 @@ object FormDecoders {
       Map.empty[GroupName, GroupMeta].pure[FormDataDecoder]
     ).mapN(AbtestSpec.apply).sanitized
 
-  implicit val FeatureFormDecoder: FormDataDecoder[Feature] =
+  implicit val FeatureFormDecoder: FormDataDecoder[Feature] = {
+    implicit val mapQPD = jsonEntityQueryParamDecoder[Map[String, String]]
+
     (
       field[FeatureName]("name"),
       fieldOptional[String]("description"),
       list[(String, String)]("overrides").map(_.toMap),
       fieldEither[Boolean]("overrideEligibility").default(false),
-      none[Instant].pure[FormDataDecoder]
-    ).mapN(Feature.apply)
+      fieldEither[Map[String, String]]("batchOverrides").default(Map.empty)
+    ).mapN { (name, desc, overrides, oEFlag, batchOverrides) =>
+      Feature(
+        name = name,
+        description = desc,
+        overrides = overrides ++ batchOverrides,
+        overrideEligibility = oEFlag
+      )
+    }.sanitized
+  }
 }
