@@ -37,7 +37,7 @@ lazy val libs = {
   .add(   name = "scalacheck-1-14",       version = "3.1.2.0",org = "org.scalatestplus")
   .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
   .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
-  .addJVM(name = "fs2-kafka",             version = "1.0.0", org = "com.github.fd4s")
+  .addJVM(name = "fs2-kafka",             version = "1.1.0", org = "com.github.fd4s")
   .add(   name = "jawn",                  version = "1.0.0", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
   .addJVM( name = "embedded-kafka",       version = "2.5.0",  org = "io.github.embeddedkafka")
   .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
