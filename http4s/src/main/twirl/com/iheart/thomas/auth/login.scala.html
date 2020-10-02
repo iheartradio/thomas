@@ -1,0 +1,45 @@
+@import com.iheart.thomas.html._
+
+@(errorMsg: Option[String] = None)
+
+
+@main("Login"){
+
+<div class="row">
+  <div class="col-sm">
+  </div>
+  <div class="col-sm pt-5">
+    <div class="card mt-5">
+      <div class="card-header">
+        <span class="h5">Login</span>
+      </div>
+      <div class="card-body">
+        @for(msg <- errorMsg) {
+        <div id="error-msg" class="alert alert-warning" role="alert">
+          @msg
+        </div>
+        }
+        <form action="" method="post">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input name="username" class="form-control" required id="username" type="text"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input name="password" class="form-control"  required id="password" type="password"
+            />
+          </div>
+          <div class="row float-right">
+            <button type="submit" class="btn btn-primary" >Login</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm">
+
+  </div>
+</div>
+}

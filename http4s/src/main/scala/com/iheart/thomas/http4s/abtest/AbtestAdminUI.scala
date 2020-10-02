@@ -1,52 +1,42 @@
 package com.iheart.thomas
 package http4s
+package abtest
 
 import java.time.OffsetDateTime
 
+import cats.data.Validated.Valid
 import cats.effect.{Async, Concurrent, Resource, Timer}
 import cats.implicits._
-import abtest.admin.html._
-import html._
+import com.iheart.thomas.{FeatureName, GroupName}
 import com.iheart.thomas.abtest.AbtestAlg
-import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Feature}
-import com.iheart.thomas.http4s.AbtestService.validationErrorMsg
-import org.http4s.dsl.Http4sDsl
-import org.http4s.twirl._
-import org.http4s.HttpRoutes
-
-import scala.concurrent.ExecutionContext
-import FormDecoders._
-import com.iheart.thomas.FeatureName
 import com.iheart.thomas.abtest.Error.ValidationErrors
-import com.iheart.thomas.http4s.AbtestAdminUI.{
-  Filters,
-  defaultEndsAfter,
-  endsAfter,
-  feature,
-  featureReq
-}
+import com.iheart.thomas.abtest.admin.html._
+import com.iheart.thomas.abtest.model.Abtest.Specialization
+import com.iheart.thomas.abtest.model._
+import com.iheart.thomas.html.{redirect, errorMsg}
+import com.iheart.thomas.http4s.abtest.AbtestAdminUI._
+import com.iheart.thomas.http4s.abtest.AbtestService.validationErrorMsg
 import com.typesafe.config.Config
-import org.http4s.FormDataDecoder.formEntityDecoder
+import io.estatico.newtype.ops._
+import lihua.{Entity, EntityId}
+import org.http4s.{FormDataDecoder, HttpRoutes, QueryParamDecoder}
+import org.http4s.FormDataDecoder._
+import org.http4s.dsl.Http4sDsl
 import org.http4s.dsl.impl.{
   OptionalQueryParamDecoderMatcher,
   QueryParamDecoderMatcher
 }
-import io.estatico.newtype.ops._
-import lihua.{Entity, EntityId}
+import org.http4s.twirl._
+import play.api.libs.json.JsObject
 
-class ReverseRoutes(rootPath: String) {
-  val tests = s"$rootPath/tests"
-  val features = s"$rootPath/features"
-}
+import scala.concurrent.ExecutionContext
 
 class AbtestAdminUI[F[_]: Async](
     alg: AbtestAlg[F],
     rootPath: String)
     extends Http4sDsl[F] {
   private implicit val reverseRoutes = new ReverseRoutes(rootPath)
-
-  private def get(testId: String) =
-    alg.getTest(testId.coerce[EntityId])
+  import AbtestAdminUI.Decoders._
 
   private def displayError(e: Throwable): String =
     e match {
@@ -55,13 +45,17 @@ class AbtestAdminUI[F[_]: Async](
       case _ => e.getMessage
     }
 
-  def redirectToTest(
-      test: Entity[Abtest],
-      msg: String
-    ) =
-    Ok(redirect(s"${reverseRoutes.tests}/${test._id}", msg))
-
   val routes = {
+
+    def redirectToTest(
+        test: Entity[Abtest],
+        msg: String
+      ) =
+      Ok(redirect(s"${reverseRoutes.tests}/${test._id}", msg))
+
+    def get(testId: String) =
+      alg.getTest(testId.coerce[EntityId])
+
     def testsList(filters: Filters = Filters(defaultEndsAfter)) =
       (
         alg
@@ -280,9 +274,81 @@ object AbtestAdminUI {
     MongoResources.abtestAlg[F](cfg).map(new AbtestAdminUI(_, rootPath))
   }
 
-  object endsAfter
-      extends OptionalQueryParamDecoderMatcher[OffsetDateTime]("endsAfter")
+  object Decoders extends CommonFormDecoders {
+    import com.iheart.thomas.abtest.json.play.Formats._
 
-  object feature extends OptionalQueryParamDecoderMatcher[FeatureName]("feature")
-  object featureReq extends QueryParamDecoderMatcher[FeatureName]("feature")
+    object endsAfter
+        extends OptionalQueryParamDecoderMatcher[OffsetDateTime]("endsAfter")
+
+    object feature extends OptionalQueryParamDecoderMatcher[FeatureName]("feature")
+    object featureReq extends QueryParamDecoderMatcher[FeatureName]("feature")
+
+    implicit val userMetaCriteriaQueryParamDecoder
+        : QueryParamDecoder[UserMetaCriterion.And] =
+      jsonEntityQueryParamDecoder
+
+    implicit val specializationQueryParamDecoder: QueryParamDecoder[Specialization] =
+      jsonEntityQueryParamDecoder
+
+    implicit def tags(key: String): FormDataDecoder[List[Tag]] =
+      FormDataDecoder[List[Tag]] { map =>
+        Valid(
+          map
+            .get(key)
+            .flatMap(_.headOption)
+            .map(_.split(",").toList.map(_.trim))
+            .getOrElse(Nil)
+        )
+      }
+
+    implicit val groupFormDecoder: FormDataDecoder[Group] =
+      (
+        field[GroupName]("name"),
+        field[GroupSize]("size"),
+        fieldOptional[JsObject]("meta")
+      ).mapN(Group.apply)
+
+    implicit val groupRangeFormDecoder: FormDataDecoder[GroupRange] =
+      (
+        field[BigDecimal]("start"),
+        field[BigDecimal]("end")
+      ).mapN(GroupRange.apply)
+
+    implicit val AbtestSpecFormDecoder: FormDataDecoder[AbtestSpec] =
+      (
+        field[TestName]("name"),
+        field[FeatureName]("feature"),
+        field[String]("author"),
+        field[OffsetDateTime]("start"),
+        fieldOptional[OffsetDateTime]("end"),
+        list[Group]("groups"),
+        tags("requiredTags"),
+        fieldOptional[MetaFieldName]("alternativeIdName"),
+        fieldOptional[UserMetaCriterion.And]("userMetaCriteria"),
+        fieldEither[Boolean]("reshuffle").default(false),
+        list[GroupRange]("segmentRanges"),
+        none[Abtest.Specialization].pure[FormDataDecoder],
+        Map.empty[GroupName, GroupMeta].pure[FormDataDecoder]
+      ).mapN(AbtestSpec.apply).sanitized
+
+    implicit val FeatureFormDecoder: FormDataDecoder[Feature] = {
+      implicit val mapQPD = jsonEntityQueryParamDecoder[Map[String, String]]
+
+      (
+        field[FeatureName]("name"),
+        fieldOptional[String]("description"),
+        list[(String, String)]("overrides").map(_.toMap),
+        fieldEither[Boolean]("overrideEligibility").default(false),
+        fieldEither[Map[String, String]]("batchOverrides").default(Map.empty)
+      ).mapN { (name, desc, overrides, oEFlag, batchOverrides) =>
+        Feature(
+          name = name,
+          description = desc,
+          overrides = overrides ++ batchOverrides,
+          overrideEligibility = oEFlag
+        )
+      }.sanitized
+    }
+  }
+
 }

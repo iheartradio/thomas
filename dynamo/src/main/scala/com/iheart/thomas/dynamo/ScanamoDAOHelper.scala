@@ -44,6 +44,11 @@ abstract class ScanamoDAOHelper[F[_], A](
     ): F[T] =
     e.flatMap(_.liftTo[F](noneErr).flatMap(_.leftMap(ScanamoError(_)).liftTo[F]))
 
+  protected def toFOption[E <: org.scanamo.ScanamoError, T](
+      e: F[Option[Either[E, T]]]
+    ): F[Option[T]] =
+    e.flatMap(_.traverse(_.leftMap(ScanamoError(_)).liftTo[F]))
+
   def insert(a: A): F[A] =
     toF(
       sc.exec(
@@ -68,12 +73,17 @@ abstract class ScanamoDAOHelperStringKey[F[_], A: DynamoFormat](
     ) {
 
   def get(k: String): F[A] =
-    toF(
-      sc.exec(table.get(keyName -> k)),
-      NotFound(
-        s"Cannot find in the table a record whose ${keyName} is '$k'. "
+    find(k).flatMap(
+      _.liftTo[F](
+        NotFound(
+          s"Cannot find in the table a record whose ${keyName} is '$k'. "
+        )
       )
     )
+
+  def find(k: String): F[Option[A]] = toFOption(sc.exec(table.get(keyName -> k)))
+
+  def all: F[Vector[A]] = execTraversableOnce(table.scan())
 
   def remove(k: String): F[Unit] =
     sc.exec(table.delete(keyName -> k)).void

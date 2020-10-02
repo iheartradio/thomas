@@ -1,35 +1,34 @@
-package com.iheart
-package thomas
-package http4s
+package com.iheart.thomas.http4s.abtest
 
 import java.time.Instant
 
-import abtest._
-import model._
-import com.iheart.thomas.abtest.json.play.Formats._
-import cats.effect.{Async, Resource}
-import analysis.{KPIModel, KPIModelApi}
-import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes, Response}
-import org.http4s.dsl.Http4sDsl
-import _root_.play.api.libs.json._
-import org.http4s.implicits._
-import org.http4s.server.Router
-import org.http4s.play._
-import lihua.mongo.JsonFormats._
-import cats.effect.{Concurrent, Timer}
-
-import scala.concurrent.ExecutionContext
 import _root_.play.api.libs.json.Json.toJson
+import _root_.play.api.libs.json._
+import cats.effect.{Async, Concurrent, Resource, Timer}
 import cats.implicits._
-import Error.{FeatureCannotBeChanged, NotFound => APINotFound, _}
+import com.iheart.thomas.abtest.Error._
+import com.iheart.thomas.abtest.json.play.Formats._
+import com.iheart.thomas.abtest.model.{AbtestSpec, GroupMeta, UserGroupQuery}
 import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
-import com.iheart.thomas.http4s.AbtestService.validationErrorMsg
+import com.iheart.thomas.abtest.{AbtestAlg, Error}
+import Error.{NotFound => APINotFound}
+import com.iheart.thomas.analysis.{KPIModel, KPIModelApi}
+import com.iheart.thomas.http4s.MongoResources
+import com.iheart.thomas.{GroupName, TimeUtil, UserId, abtest}
 import com.typesafe.config.Config
 import lihua.EntityId
+import lihua.mongo.JsonFormats._
+import org.http4s.dsl.Http4sDsl
 import org.http4s.dsl.impl.{
   OptionalQueryParamDecoderMatcher,
   QueryParamDecoderMatcher
 }
+import org.http4s.implicits._
+import org.http4s.play._
+import org.http4s.server.Router
+import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes, Response}
+import AbtestService.validationErrorMsg
+import scala.concurrent.ExecutionContext
 
 class AbtestService[F[_]: Async](
     api: AbtestAlg[F],
