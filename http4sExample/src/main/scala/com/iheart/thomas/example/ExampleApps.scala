@@ -38,16 +38,16 @@ object ExampleAbtestAdminUIApp extends IOApp {
 
   def run(args: List[String]): IO[ExitCode] =
     (AbtestAdminUI.fromMongo[IO](rootPath), authUIResource).tupled
-      .use {
+      .flatMap {
         case (s, ui) =>
           BlazeServerBuilder[IO](global)
             .bindHttp(8080, "localhost")
             .withHttpApp(
               Router(rootPath -> (s.routes <+> ui.routes)).orNotFound
             )
-            .serve
-            .compile
-            .drain
-            .as(ExitCode.Success)
+            .resource
+
       }
+      .use(_ => IO.never)
+      .as(ExitCode.Success)
 }

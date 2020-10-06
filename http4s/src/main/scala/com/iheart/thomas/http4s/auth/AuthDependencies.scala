@@ -5,11 +5,15 @@ import cats.effect.Sync
 import cats.implicits._
 import com.iheart.thomas.MonadThrowable
 import com.iheart.thomas.admin.{AuthRecord, AuthRecordDAO, User, UserDAO}
+import com.iheart.thomas.http4s.auth.AuthDependencies.tokenCookieName
 import tsec.authentication.{
   AugmentedJWT,
+  Authenticator,
   BackingStore,
   IdentityStore,
-  JWTAuthenticator
+  JWTAuthenticator,
+  SecuredRequestHandler,
+  TSecCookieSettings
 }
 import tsec.common.SecureRandomId
 import tsec.jws.JWSSerializer
@@ -29,7 +33,7 @@ class AuthDependencies[A](key: MacSigningKey[A]) {
     ): BackingStore[F, SecureRandomId, Token] =
     new BackingStore[F, SecureRandomId, Token] {
 
-      implicit def toRecord(jwt: Token) =
+      implicit def toRecord(jwt: Token) = {
         AuthRecord(
           id = jwt.id,
           jwtEncoded = jwt.jwt.toEncodedString,
@@ -37,16 +41,20 @@ class AuthDependencies[A](key: MacSigningKey[A]) {
           expiry = jwt.expiry,
           lastTouched = jwt.lastTouched
         )
+      }
 
-      def put(elem: Token): F[Token] =
+      def put(elem: Token): F[Token] = {
         dao.insert(elem).as(elem)
+      }
 
-      def update(v: Token): F[Token] =
+      def update(v: Token): F[Token] = {
+
         dao.update(v).as(v)
+      }
 
       def delete(id: SecureRandomId): F[Unit] = dao.remove(id)
 
-      def get(id: SecureRandomId): OptionT[F, Token] =
+      def get(id: SecureRandomId): OptionT[F, Token] = {
         OptionT(dao.find(id)).semiflatMap {
           case AuthRecord(_, jwtStringify, identity, expiry, lastTouched) =>
             JWTMacImpure.verifyAndParse(jwtStringify, key) match {
@@ -55,6 +63,7 @@ class AuthDependencies[A](key: MacSigningKey[A]) {
                 AugmentedJWT(id, jwt, identity, expiry, lastTouched).pure[F]
             }
         }
+      }
     }
 
   implicit def identityStore[F[_]](
@@ -68,17 +77,26 @@ class AuthDependencies[A](key: MacSigningKey[A]) {
       cv: JWSMacCV[F, A],
       A: JWTMacAlgo[A]
     ): JWTAuthenticator[F, String, User, A] =
-    JWTAuthenticator.backed.inBearerToken(
-      expiryDuration = 1.hour,
-      maxIdle = None,
+    JWTAuthenticator.backed.inCookie(
+      TSecCookieSettings(
+        cookieName = tokenCookieName,
+        secure = false,
+        expiryDuration = 1.days,
+        maxIdle = None
+      ),
       tokenStore = authRepo,
       identityStore = userRepo,
       signingKey = key
     )
 
+  implicit def securedRequestHandler[F[_]: MonadThrowable](
+      implicit auth: Authenticator[F, String, User, Token]
+    ): SecuredRequestHandler[F, String, User, Token] =
+    SecuredRequestHandler(auth)
 }
 
 object AuthDependencies {
+  val tokenCookieName = "thomas-token"
   import tsec.common._
   def apply[F[_]: Sync](key: String): F[AuthDependencies[HMACSHA256]] =
     key.hexBytes.flatMap(HMACSHA256.buildKey[F]).map(new AuthDependencies(_))

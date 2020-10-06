@@ -1,30 +1,48 @@
 package com.iheart.thomas
-package http4s.auth
+package http4s
+package auth
 import cats.effect.{Async, Concurrent}
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
-import com.iheart.thomas.auth.html.{login, registration}
-import org.http4s.{HttpRoutes, Uri, UrlForm}
-import org.http4s.dsl.Http4sDsl
-import org.http4s.twirl._
-import tsec.mac.jca.HMACSHA256
 import cats.implicits._
-import tsec.common.SecureRandomIdGenerator
-import UI.ValidationErrors._
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
+import com.iheart.thomas.auth.html
+
 import com.iheart.thomas.html.redirect
-import UI.QueryParamMatchers._
-import com.iheart.thomas.http4s.ReverseRoutes
-import org.http4s.dsl.impl.{OptionalQueryParamDecoderMatcher}
+import com.iheart.thomas.http4s.auth.UI.QueryParamMatchers._
+import com.iheart.thomas.http4s.auth.UI.ValidationErrors._
+import org.http4s.dsl.Http4sDsl
+import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
+import org.http4s.twirl._
+import org.http4s.{HttpRoutes, Uri, UrlForm}
+import tsec.common.SecureRandomIdGenerator
+import tsec.mac.jca.HMACSHA256
+import tsec.passwordhashers.jca.BCrypt
 
 import scala.util.control.NoStackTrace
 
 class UI[F[_]: Async, Auth](
     implicit alg: AuthAlg[F, Auth],
+    requestHandler: AuthedRequestHandler[F, Auth],
     reverseRoutes: ReverseRoutes)
-    extends Http4sDsl[F] {
+    extends Http4sDsl[F]
+    with AuthedEndpointsUtils[F, Auth] {
+  import tsec.authentication._
 
-  val routes = HttpRoutes.of[F] {
+  val userManagementEndpoints = roleBasedService(Roles.Admin) {
+    case GET -> Root / "users" asAuthed user =>
+      alg.allUsers.flatMap { allUsers =>
+        Ok(html.users(allUsers, user))
+      }
+  }
+
+  val logout = roleBasedService(Roles.values) {
+    case req @ GET -> Root / "logout" asAuthed _ =>
+      alg.logout(req.authenticator) *>
+        Ok(html.login()).map(_.removeCookie(AuthDependencies.tokenCookieName))
+  }
+
+  val userPublic = HttpRoutes.of[F] {
     case GET -> Root / "login" =>
-      Ok(login())
+      Ok(html.login())
 
     case req @ POST -> Root / "login" :? redirectTo(to) =>
       for {
@@ -34,18 +52,19 @@ class UI[F[_]: Async, Auth](
         r <- alg.login(
           username,
           password,
-          _ =>
+          u =>
             Ok(
               redirect(
-                to.map(_.renderString).getOrElse(reverseRoutes.tests),
-                "Login successfully!"
+                to.map(_.renderString).getOrElse(reverseRoutes.users),
+                "Login successfully!",
+                100
               )
             )
         )
       } yield r
 
     case GET -> Root / "register" =>
-      Ok(registration())
+      Ok(html.registration())
 
     case req @ POST -> Root / "register" =>
       (for {
@@ -53,9 +72,10 @@ class UI[F[_]: Async, Auth](
         username <- form.getFirst("username").liftTo[F](MissingUsername)
         password <- form.getFirst("password").liftTo[F](MissingPassword)
         cfmPassword <- form.getFirst("cfmPassword").liftTo[F](MissingPassword)
-        _ <- (password == cfmPassword)
-          .guard[Option]
-          .liftTo[F](MismatchingPassword(username))
+        _ <-
+          (password == cfmPassword)
+            .guard[Option]
+            .liftTo[F](MismatchingPassword(username))
         _ <- alg.register(
           username,
           password
@@ -69,13 +89,18 @@ class UI[F[_]: Async, Auth](
       } yield r).recoverWith {
         case MismatchingPassword(username) =>
           BadRequest(
-            registration(Some("The passwords don't match!"), Some(username))
+            html.registration(Some("The passwords don't match!"), Some(username))
           )
         case AuthError.UserAlreadyExist(username) =>
-          BadRequest(registration(Some(s"The username $username is already taken.")))
+          BadRequest(
+            html.registration(Some(s"The username $username is already taken."))
+          )
       }
 
   }
+
+  val routes: HttpRoutes[F] =
+    userPublic <+> liftService(userManagementEndpoints <+> logout)
 }
 
 object UI extends {
@@ -107,12 +132,15 @@ object UI extends {
     ): F[UI[F, HMACSHA256]] = {
     import dynamo.AdminDAOs._
 
-    ensureAuthTables[F](readCapacity, writeCapacity) *> AuthAlg
-      .default[F](key)
-      .map { implicit alg =>
+    ensureAuthTables[F](readCapacity, writeCapacity) *> {
+      AuthDependencies[F](key).map { deps =>
+        import BCrypt._
+        import deps._
+        import dynamo.AdminDAOs._
         implicit val rv = new ReverseRoutes(rootPath)
         new UI
       }
+    }
 
   }
 

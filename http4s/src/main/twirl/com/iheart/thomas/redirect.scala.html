@@ -1,5 +1,5 @@
 
-@(directToUrl: String, message: String)
+@(directToUrl: String, message: String, seconds: Int = 5)
 
 @main("Redirecting...") {
 
@@ -17,7 +17,7 @@
  $(document).ready(function(){
     setTimeout(function() {
      window.location.href = "@directToUrl"
-    }, 5000);
+    }, @{seconds + "000"});
   });
 
 

@@ -31,9 +31,7 @@ abstract class ScanamoDAOHelper[F[_], A](
       ]
     ): F[Vector[T]] =
     sc.exec(ops)
-      .flatMap(
-        t => ev(t).toVector.traverse(_.leftMap(ScanamoError(_)).liftTo[F])
-      )
+      .flatMap(t => ev(t).toVector.traverse(_.leftMap(ScanamoError(_)).liftTo[F]))
 
   protected def toF[E <: org.scanamo.ScanamoError, T](e: F[Either[E, T]]): F[T] =
     e.flatMap(_.leftMap(ScanamoError(_)).liftTo[F])
@@ -49,7 +47,7 @@ abstract class ScanamoDAOHelper[F[_], A](
     ): F[Option[T]] =
     e.flatMap(_.traverse(_.leftMap(ScanamoError(_)).liftTo[F]))
 
-  def insert(a: A): F[A] =
+  def insert(a: A): F[A] = {
     toF(
       sc.exec(
           table
@@ -58,6 +56,7 @@ abstract class ScanamoDAOHelper[F[_], A](
         )
         .map(_.getOrElse(a.asRight))
     )
+  }
 
 }
 

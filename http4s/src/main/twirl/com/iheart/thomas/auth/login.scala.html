@@ -1,6 +1,6 @@
 @import com.iheart.thomas.html._
-
-@(errorMsg: Option[String] = None)
+@import com.iheart.thomas.http4s.ReverseRoutes
+@(errorMsg: Option[String] = None)(implicit reverseRoutes: ReverseRoutes)
 
 
 @main("Login"){
@@ -35,6 +35,9 @@
             <button type="submit" class="btn btn-primary" >Login</button>
           </div>
         </form>
+        <div>
+          <h6>New User? Register <a href="@reverseRoutes.register">here</a></h6>
+        </div>
       </div>
     </div>
   </div>
