@@ -88,7 +88,7 @@ trait AbtestClient[F[_]] extends DataProvider[F] {
       tidOrFeature: Either[TestId, FeatureName]
     )(implicit F: MonadThrowable[F]
     ): F[Map[GroupName, GroupMeta]] =
-    tidOrFeatureOp(tidOrFeature)(getTest(_)).map(_.data.groupMetas)
+    tidOrFeatureOp(tidOrFeature)(getTest(_)).map(_.data.getGroupMetas)
 
 }
 
@@ -175,7 +175,7 @@ class Http4SAbtestClient[F[_]: Sync](
     )(implicit F: Functor[F]
     ): F[Map[GroupName, GroupMeta]] =
     tidOrFeatureOp(tidOrFeature) { tid =>
-      getTest(tid).map(_.data.groupMetas)
+      getTest(tid).map(_.data.getGroupMetas)
     }
 }
 

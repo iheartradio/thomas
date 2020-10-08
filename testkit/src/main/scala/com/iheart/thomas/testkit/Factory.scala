@@ -14,11 +14,10 @@ object Factory {
       end: Int = 100,
       feature: String = "AMakeUpFeature" + Random.alphanumeric.take(5).mkString,
       alternativeIdName: Option[MetaFieldName] = None,
-      groups: List[Group] = List(Group("A", 0.5), Group("B", 0.5)),
+      groups: List[Group] = List(Group("A", 0.5, None), Group("B", 0.5, None)),
       userMetaCriteria: UserMetaCriteria = None,
       segRanges: List[GroupRange] = Nil,
-      requiredTags: List[Tag] = Nil,
-      groupMetas: GroupMetas = Map()
+      requiredTags: List[Tag] = Nil
     ): AbtestSpec = AbtestSpec(
     name = "test",
     author = "kai",
@@ -30,6 +29,6 @@ object Factory {
     userMetaCriteria = userMetaCriteria,
     segmentRanges = segRanges,
     requiredTags = requiredTags,
-    groupMetas = groupMetas
+    groupMetas = Map()
   )
 }

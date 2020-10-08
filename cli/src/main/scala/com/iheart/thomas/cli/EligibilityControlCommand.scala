@@ -8,7 +8,7 @@ import com.iheart.thomas.abtest.model.UserMetaCriterion
 import com.iheart.thomas.cli.OptsSyntax._
 import com.iheart.thomas.cli.SharedOpts._
 import com.monovore.decline._
-import play.api.libs.json.Json.{prettyPrint, toJson}
+import _root_.play.api.libs.json.Json.{prettyPrint, toJson}
 
 class EligibilityControlCommand[F[_]](implicit F: ConcurrentEffect[F]) {
 

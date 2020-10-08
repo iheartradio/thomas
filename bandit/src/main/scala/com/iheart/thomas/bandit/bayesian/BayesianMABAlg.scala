@@ -1,5 +1,6 @@
 package com.iheart.thomas.bandit.bayesian
 
+import java.time.temporal.ChronoUnit
 import java.time.{OffsetDateTime, ZoneOffset}
 
 import cats.NonEmptyParallel
@@ -14,7 +15,6 @@ import com.iheart.thomas.bandit.tracking.Event.BanditPolicyUpdate.Reallocated
 import com.iheart.thomas.bandit.tracking.{Event, EventLogger}
 import com.iheart.thomas.bandit.{AbtestNotFound, BanditSpec, RewardState}
 import com.iheart.thomas.{FeatureName, GroupName, MonadThrowable, abtest}
-import henkan.convert.Syntax._
 import lihua.Entity
 
 import scala.annotation.tailrec
@@ -62,10 +62,9 @@ object BayesianMABAlg {
       start = from.start,
       end = None,
       groups = from.arms.map(
-        as => Group(as.name, as.initialSize.getOrElse(defaultSize))
+        as => Group(as.name, as.initialSize.getOrElse(defaultSize), as.meta)
       ),
-      specialization = Some(Specialization.MultiArmBandit),
-      groupMetas = from.arms.mapFilter(as => as.meta.map((as.name, _))).toMap
+      specialization = Some(Specialization.MultiArmBandit)
     ).pure[F]
   }
 
@@ -161,7 +160,8 @@ object BayesianMABAlg {
               BanditState[R](
                 feature = banditSpec.feature,
                 arms = emptyArmState(banditSpec.arms.map(_.name)),
-                iterationStart = banditSpec.start.toInstant,
+                iterationStart =
+                  banditSpec.start.toInstant.truncatedTo(ChronoUnit.MILLIS),
                 version = 0L
               )
             ),
@@ -197,11 +197,11 @@ object BayesianMABAlg {
             nowT <- now[F].map(_.atOffset(ZoneOffset.UTC))
             abtest <- abtestAPI.continue(
               bandit.abtest.data
-                .to[AbtestSpec]
-                .set(
+                .copy(groups = newGroups)
+                .toSpec
+                .copy(
                   start = nowT,
-                  end = bandit.abtest.data.end.map(_.atOffset(ZoneOffset.UTC)),
-                  groups = newGroups
+                  end = bandit.abtest.data.end.map(_.atOffset(ZoneOffset.UTC))
                 )
             )
             _ <- bandit.settings.historyRetention.fold(F.unit)(
@@ -333,7 +333,7 @@ object BayesianMABAlg {
           s => Math.max(s.toDouble, sizeFromOptimalLikelyHood.toDouble)
         )
         val size = findClosest(targetSize, candidates)
-        val newGroups = groups :+ Group(groupName, size)
+        val newGroups = groups :+ Group(groupName, size, None)
         val remainder = availableSize - newGroups.foldMap(_.size)
         (
           candidates.filter(_ <= remainder),
