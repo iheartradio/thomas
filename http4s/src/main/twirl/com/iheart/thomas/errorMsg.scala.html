@@ -1,9 +1,11 @@
-@(msg: String)
+@import com.iheart.thomas.http4s.ReverseRoutes
+
+@(msg: String)(implicit routes: ReverseRoutes)
 
 
 
 
-@adminPage("Error!") {
+@main("Error!") {
 <div id="error-msg" class="alert alert-warning" role="alert">
   @msg
 </div>
