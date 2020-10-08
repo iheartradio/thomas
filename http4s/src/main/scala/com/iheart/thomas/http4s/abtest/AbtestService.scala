@@ -121,119 +121,118 @@ class AbtestService[F[_]: Async](
   def routes =
     Router("/internal/" -> internal).orElse(public).orNotFound
 
-  def public = HttpRoutes.of[F] {
-    case req @ POST -> Root / "users" / "groups" / "query" =>
-      req.as[UserGroupQuery] >>= (
-          ugq => respond(api.getGroupsWithMeta(ugq))
-      )
-  }
+  def public =
+    HttpRoutes.of[F] {
+      case req @ POST -> Root / "users" / "groups" / "query" =>
+        req.as[UserGroupQuery] >>= (ugq => respond(api.getGroupsWithMeta(ugq)))
+    }
 
-  def internal = HttpRoutes.of[F] {
+  def internal =
+    HttpRoutes.of[F] {
 
-    case req @ POST -> Root / "tests" :? auto(a) =>
-      req.as[AbtestSpec] >>= (
-          t => respond(api.create(t, a.getOrElse(false)))
-      )
+      case req @ POST -> Root / "tests" :? auto(a) =>
+        req.as[AbtestSpec] >>= (t => respond(api.create(t, a.getOrElse(false))))
 
-    case req @ POST -> Root / "tests" / "auto" =>
-      req.as[AbtestSpec] >>= (
-          t => respond(api.create(t, true))
-      )
+      case GET -> Root / "warmUp" => respond(api.warmUp.as("warmed up"))
 
-    case req @ PUT -> Root / "tests" =>
-      req.as[AbtestSpec] >>= (t => respond(api.continue(t)))
+      case req @ POST -> Root / "tests" / "auto" =>
+        req.as[AbtestSpec] >>= (t => respond(api.create(t, true)))
 
-    case GET -> Root / "tests" / "history" / LongVar(at) =>
-      respond(api.getAllTestsEpoch(Some(at)))
+      case req @ PUT -> Root / "tests" =>
+        req.as[AbtestSpec] >>= (t => respond(api.continue(t)))
 
-    case GET -> Root / "tests" / LongVar(endAfter) =>
-      respond(api.getAllTestsEndAfter(endAfter))
+      case GET -> Root / "tests" / "history" / LongVar(at) =>
+        respond(api.getAllTestsEpoch(Some(at)))
 
-    case GET -> Root / "tests" :? at(atL) +& endAfter(eAL) =>
-      respond(
-        eAL.fold(api.getAllTests(atL.map(TimeUtil.toDateTime))) { ea =>
-          api.getAllTestsEndAfter(ea)
-        }
-      )
+      case GET -> Root / "tests" / LongVar(endAfter) =>
+        respond(api.getAllTestsEndAfter(endAfter))
 
-    case GET -> Root / "testsWithFeatures" :? at(atL) =>
-      respond(api.getAllTestsCachedEpoch(atL))
-
-    case GET -> Root / "testsData" :? atEpochMilli(aem) +& durationMillisecond(d) =>
-      import scala.concurrent.duration._
-      respond(
-        api.getTestsData(
-          Instant.ofEpochMilli(aem),
-          d.map(_.millis)
-        )
-      )
-
-    case GET -> Root / "tests" / testId =>
-      respond(api.getTest(EntityId(testId)))
-
-    case DELETE -> Root / "tests" / testId =>
-      respondOption(
-        api.terminate(EntityId(testId)),
-        s"No test with id $testId"
-      )
-
-    case req @ PUT -> Root / "tests" / testId / "groups" / "metas" :? auto(a) =>
-      req.as[Map[GroupName, GroupMeta]] >>= (
-          m =>
-            respond(
-              api.addGroupMetas(EntityId(testId), m, a.getOrElse(false))
-            )
-        )
-
-    case DELETE -> Root / "tests" / testId / "groups" / "metas" :? auto(a) =>
-      respond(
-        api.removeGroupMetas(EntityId(testId), a.getOrElse(false))
-      )
-
-    case GET -> Root / "tests" / "cache" :? at(a) =>
-      respond(api.getAllTestsCachedEpoch(a))
-
-    case GET -> Root / "features" =>
-      respond(api.getAllFeatures)
-
-    case GET -> Root / "features" / feature / "tests" =>
-      respond(api.getTestsByFeature(feature))
-
-    case PUT -> Root / "features" / feature / "groups" / groupName / "overrides" / userId =>
-      respond(api.addOverrides(feature, Map(userId -> groupName)))
-
-    case PUT -> Root / "features" / feature / "overridesEligibility" :? ovrrd(
-          o
-        ) =>
-      respond(api.setOverrideEligibilityIn(feature, o))
-
-    case DELETE -> Root / "features" / feature / "overrides" / userId =>
-      respond(api.removeOverrides(feature, userId))
-
-    case DELETE -> Root / "features" / feature / "overrides" =>
-      respond(api.removeAllOverrides(feature))
-
-    case GET -> Root / "features" / feature / "overrides" =>
-      respond(api.getOverrides(feature))
-
-    case req @ POST -> Root / "features" / feature / "overrides" =>
-      req.as[Map[UserId, GroupName]] >>= (
-          m => respond(api.addOverrides(feature, m))
-      )
-
-    case GET -> Root / "KPIs" / name =>
-      respondOption(kpiAPI.get(name), s"No Kpi under name $name")
-
-    case req @ POST -> Root / "KPIs" =>
-      req.as[KPIModel] >>= (k => respond(kpiAPI.upsert(k)))
-
-    case req @ PUT -> Root / "tests" / testId / "userMetaCriteria" =>
-      req.as[UpdateUserMetaCriteriaRequest] >>= { r =>
+      case GET -> Root / "tests" :? at(atL) +& endAfter(eAL) =>
         respond(
-          api.updateUserMetaCriteria(EntityId(testId), r.criteria, r.auto)
+          eAL.fold(api.getAllTests(atL.map(TimeUtil.toDateTime))) { ea =>
+            api.getAllTestsEndAfter(ea)
+          }
         )
-      }
-  }
+
+      case GET -> Root / "testsWithFeatures" :? at(atL) =>
+        respond(api.getAllTestsCachedEpoch(atL))
+
+      case GET -> Root / "testsData" :? atEpochMilli(aem) +& durationMillisecond(
+            d
+          ) =>
+        import scala.concurrent.duration._
+        respond(
+          api.getTestsData(
+            Instant.ofEpochMilli(aem),
+            d.map(_.millis)
+          )
+        )
+
+      case GET -> Root / "tests" / testId =>
+        respond(api.getTest(EntityId(testId)))
+
+      case DELETE -> Root / "tests" / testId =>
+        respondOption(
+          api.terminate(EntityId(testId)),
+          s"No test with id $testId"
+        )
+
+      case req @ PUT -> Root / "tests" / testId / "groups" / "metas" :? auto(a) =>
+        req.as[Map[GroupName, GroupMeta]] >>= (m =>
+          respond(
+            api.addGroupMetas(EntityId(testId), m, a.getOrElse(false))
+          )
+        )
+
+      case DELETE -> Root / "tests" / testId / "groups" / "metas" :? auto(a) =>
+        respond(
+          api.removeGroupMetas(EntityId(testId), a.getOrElse(false))
+        )
+
+      case GET -> Root / "tests" / "cache" :? at(a) =>
+        respond(api.getAllTestsCachedEpoch(a))
+
+      case GET -> Root / "features" =>
+        respond(api.getAllFeatures)
+
+      case GET -> Root / "features" / feature / "tests" =>
+        respond(api.getTestsByFeature(feature))
+
+      case PUT -> Root / "features" / feature / "groups" / groupName / "overrides" / userId =>
+        respond(api.addOverrides(feature, Map(userId -> groupName)))
+
+      case PUT -> Root / "features" / feature / "overridesEligibility" :? ovrrd(
+            o
+          ) =>
+        respond(api.setOverrideEligibilityIn(feature, o))
+
+      case DELETE -> Root / "features" / feature / "overrides" / userId =>
+        respond(api.removeOverrides(feature, userId))
+
+      case DELETE -> Root / "features" / feature / "overrides" =>
+        respond(api.removeAllOverrides(feature))
+
+      case GET -> Root / "features" / feature / "overrides" =>
+        respond(api.getOverrides(feature))
+
+      case req @ POST -> Root / "features" / feature / "overrides" =>
+        req.as[Map[UserId, GroupName]] >>= (m =>
+          respond(api.addOverrides(feature, m))
+        )
+
+      case GET -> Root / "KPIs" / name =>
+        respondOption(kpiAPI.get(name), s"No Kpi under name $name")
+
+      case req @ POST -> Root / "KPIs" =>
+        req.as[KPIModel] >>= (k => respond(kpiAPI.upsert(k)))
+
+      case req @ PUT -> Root / "tests" / testId / "userMetaCriteria" =>
+        req.as[UpdateUserMetaCriteriaRequest] >>= { r =>
+          respond(
+            api.updateUserMetaCriteria(EntityId(testId), r.criteria, r.auto)
+          )
+        }
+    }
 
 }
 
