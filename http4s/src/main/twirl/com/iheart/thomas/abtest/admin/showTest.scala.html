@@ -1,0 +1,114 @@
+@import com.iheart.thomas.abtest.model._
+@import lihua._
+@import java.time.Instant
+@import com.iheart.thomas.http4s.Formatters._
+@import com.iheart.thomas.http4s.ReverseRoutes
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.admin.User
+
+
+@(u: User,
+  test: Entity[Abtest],
+  followUpO: Option[Entity[Abtest]],
+  overrides: Overrides
+)(implicit routes: ReverseRoutes)
+
+
+@topNav("A/B Test for feature " + test.data.feature, u) {
+
+
+<form action="#" method="post">
+  <div class="m-3">
+  <span class="h5">A/B Test <span class="text-success">@test.data.name</span> for </span>
+  <span class="h4 text-primary" title="This is feature name for the test.">
+    @featureTestsLink(test.data.feature)
+  </span>
+<span class="badge ml-3 mb-3 badge-@formatStatus(test)._2">
+              @formatStatus(test)._1
+            </span>
+
+    <span class="text-muted h6 ml-3 small">@test._id</span>
+  </div>
+
+
+@testForm(test.data.feature, Some(test.data.toSpec), None, true)
+
+</form>
+
+<div class="row d-flex flex-row-reverse mt-5">
+
+  <div class="mr-4">
+    @if(followUpO.isEmpty) {
+      <a href="@test._id/new_revision" class="btn btn-primary" role="button">
+        Create Follow Up
+      </a>
+    }
+    @if(test.data.isScheduled(Instant.now)) {
+    <a href="@test._id/edit" class="btn btn-primary" role="button" >
+      Edit
+    </a>
+    <a href="@test._id/delete"
+       onclick="return confirm('Are you sure you would like to delete this test?');"
+       class="btn btn-warning" role="button">
+      Delete
+    </a>
+    } else {
+
+    @if(test.data.statusAsOf(Instant.now) == Abtest.Status.InProgress) {
+    <a href="@test._id/delete"
+       onclick="return confirm('Are you sure you would like to terminate this test?');"
+       class="btn btn-warning" role="button">
+      Terminate
+    </a>
+    }
+
+    }
+  </div>
+  @for(followUp <- followUpO) {
+  <div class="mr-3">
+    Note: this test is followed by <a class="text-success lnk" title="@followUp._id" href="./@followUp._id">@followUp.data.name</a>
+  </div>
+  }
+</div>
+
+
+<div class="row mt-6">
+  <div class="col-6">
+    <div class="card">
+      <div class="card-header">
+        <span class="h6">Overridden assignment for
+          <a class="text-primary" href="@routes.features/@test.data.feature">@test.data.feature</a> </span>
+      </div>
+      <div class="card-body">
+        @if(overrides.nonEmpty){
+          <table class="w-100 mb-2">
+            <thead>
+            <tr>
+              <th>User Id</th>
+              <th>Group Name</th>
+            </tr>
+            </thead>
+            <tbody>
+            @for(o <- overrides) {
+              <tr>
+                <td>@o._1</td>
+                <td>@o._2</td>
+              </tr>
+            }
+            </tbody>
+
+          </table>
+        } else {
+        <span> <a class="text-primary" href="@routes.features/@test.data.feature">@test.data.feature</a> </span> has no overriding assignments.
+        }
+        Go to <a class="text-primary" href="@routes.features/@test.data.feature">@test.data.feature</a> to edit overrides.</span>
+        </div>
+    </div>
+  </div>
+</div>
+
+
+
+}
+
+

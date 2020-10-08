@@ -67,7 +67,7 @@ object AssignGroups {
                     gn =>
                       (
                         feature.name,
-                        AssignmentWithMeta(gn, test.data.groupMetas.get(gn)): AssignmentResult
+                        AssignmentWithMeta(gn, test.data.getGroupMetas.get(gn)): AssignmentResult
                       )
                   )
                 )

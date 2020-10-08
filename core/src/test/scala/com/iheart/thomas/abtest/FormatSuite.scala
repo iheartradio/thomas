@@ -8,7 +8,7 @@ import com.iheart.thomas.abtest.model.UserMetaCriterion._
 import com.iheart.thomas.abtest.model._
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
-import play.api.libs.json._
+import _root_.play.api.libs.json._
 
 import scala.util.matching.Regex
 

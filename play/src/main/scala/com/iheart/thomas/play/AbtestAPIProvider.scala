@@ -50,7 +50,7 @@ class APIProviderBase(
   lazy val refreshRate = {
     import scala.compat.java8.DurationConverters._
     //this is safe because it's in reference config
-    cfg.getDuration("iheart.thomas.abtests.refresh.rate").toScala
+    cfg.getDuration("thomas.abtest.get-groups.ttl").toScala
   }
   implicit val cs = IO.contextShift(ex)
   implicit val timer = IO.timer(ex)
