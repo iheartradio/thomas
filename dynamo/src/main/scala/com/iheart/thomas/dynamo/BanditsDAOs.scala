@@ -22,8 +22,8 @@ import org.scanamo.syntax._
 import org.scanamo.update.UpdateExpression
 
 import concurrent.duration._
-import scala.util.control.NoStackTrace
-object DAOs extends ScanamoManagement {
+
+object BanditsDAOs extends ScanamoManagement {
   val banditStateTableName = "ds-bandit-state"
   val banditSettingsTableName = "ds-bandit-setting"
   val banditKeyName = "feature"
@@ -144,5 +144,4 @@ object DAOs extends ScanamoManagement {
 
     }
 
-  case object UnexpectedNoneDynamoResult extends RuntimeException with NoStackTrace
 }
