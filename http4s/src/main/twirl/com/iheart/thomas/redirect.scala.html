@@ -1,0 +1,25 @@
+
+@(directToUrl: String, message: String, seconds: Int = 5)
+
+@main("Redirecting...") {
+
+<div class="alert alert-primary mt-10" role="alert">
+  @message
+</div>
+
+<div>
+  You will be redirected to <a href="@directToUrl" >@directToUrl</a>
+  in <span id="second">5</span> seconds.
+
+
+</div>
+<script>
+ $(document).ready(function(){
+    setTimeout(function() {
+     window.location.href = "@directToUrl"
+    }, @{seconds + "000"});
+  });
+
+
+</script>
+}

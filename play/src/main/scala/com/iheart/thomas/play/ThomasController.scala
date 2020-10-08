@@ -105,6 +105,10 @@ class HttpResults[F[_]](alerter: Option[Alerter[F]])(implicit F: Async[F]) {
     }
 
     error match {
+      case CannotChangeGroupSizeWithFollowUpTest(_) =>
+        F.pure(BadRequest(errorJson(error.getMessage)))
+      case FeatureCannotBeChanged =>
+        F.pure(BadRequest(errorJson(error.getMessage)))
       case ValidationErrors(detail) =>
         BadRequest(errorJson(detail.toList.map(validationErrorMsg)))
           .pure[F]

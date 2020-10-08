@@ -12,6 +12,8 @@ import cats.implicits._
 import _root_.play.api.libs.json.JsObject
 import lihua.EntityId
 import java.time.Instant
+import henkan.convert.Syntax._
+import TimeUtil._
 
 package object model {
   type TestId = EntityId
@@ -54,7 +56,7 @@ package model {
       userMetaCriteria: UserMetaCriteria = None,
       salt: Option[String] = None,
       segmentRanges: List[GroupRange] = Nil,
-      groupMetas: GroupMetas = Map(),
+      groupMetas: GroupMetas = Map(), //todo: legacy data, migrate data into Group
       specialization: Option[Abtest.Specialization] = None) {
 
     val hasEligibilityControl: Boolean =
@@ -73,14 +75,36 @@ package model {
     def getGroup(groupName: GroupName): Option[Group] =
       groups.find(_.name == groupName)
 
-    private[thomas] def canChange(now: Instant): Boolean =
-      statusAsOf(now) === Abtest.Status.Scheduled
+    private[thomas] def isScheduled(at: Instant): Boolean =
+      is(Abtest.Status.Scheduled, at)
+
+    private[thomas] def is(
+        status: Abtest.Status,
+        at: Instant
+      ): Boolean =
+      statusAsOf(at) === status
 
     def endsAfter(time: OffsetDateTime) =
       end.fold(true)(_.isAfter(time.toInstant))
 
     def idToUse(ui: UserInfo): Option[String] =
       alternativeIdName.fold(ui.userId)(ui.meta.get)
+
+    def getGroupMetas: GroupMetas =
+      groupMetas ++ groupMetaMap
+
+    def groupMetaMap = groups.mapFilter(g => g.meta.map((g.name, _))).toMap
+
+    def toSpec: AbtestSpec =
+      this
+        .to[AbtestSpec]
+        .set(
+          start = start.toOffsetDateTimeSystemDefault,
+          end = end.map(_.toOffsetDateTimeSystemDefault),
+          groups =
+            groups.map(g => g.copy(meta = g.meta orElse groupMetas.get(g.name))),
+          groupMetas = groupMetaMap
+        )
   }
 
   /**
@@ -110,26 +134,34 @@ package model {
       userMetaCriteria: UserMetaCriteria = None,
       reshuffle: Boolean = false,
       segmentRanges: List[GroupRange] = Nil,
-      groupMetas: GroupMetas = Map(),
-      specialization: Option[Abtest.Specialization] = None) {
+      specialization: Option[Abtest.Specialization] = None,
+      groupMetas: GroupMetas = Map()) { //todo: legacy data, migrate data into Group
 
     val startI = start.toInstant
     val endI = end.map(_.toInstant)
+
   }
 
   object Abtest {
+
     sealed trait Specialization extends Serializable with Product
 
     object Specialization {
+
       case object MultiArmBandit extends Specialization
+
     }
 
     sealed trait Status extends Serializable with Product
 
     object Status {
+
       case object Scheduled extends Status
+
       case object InProgress extends Status
+
       case object Expired extends Status
+
       implicit val eq: Eq[Status] = Eq.fromUniversalEquals
     }
 
@@ -137,7 +169,8 @@ package model {
 
   case class Group(
       name: GroupName,
-      size: GroupSize)
+      size: GroupSize,
+      meta: Option[GroupMeta])
 
   case class GroupRange(
       start: BigDecimal,
