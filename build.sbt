@@ -15,37 +15,38 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 // format: off
 lazy val libs = {
   org.typelevel.libraries
-  .addJVM(name = "lihua",                 version = "0.35",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-dynamo-testkit", "lihua-play-json")
-  .addJVM(name = "scanamo",               version = "1.0.0-M12-1", org ="org.scanamo", "scanamo-testkit")
-  .addJVM(name = "rainier",               version = "0.3.0",  org ="com.stripe", "rainier-core", "rainier-cats")
-  .addJVM(name = "breeze",                version = "1.1",    org ="org.scalanlp", "breeze", "breeze-viz")
-  .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
-  .add(   name = "play-json",             version = "2.8.1",  org = "com.typesafe.play")
-  .add(   name = "play",                  version = "2.8.1",  org = "com.typesafe.play")
-  .add(   name = "cats-testkit-scalatest",version = "2.0.0", org = org.typelevel.typeLevelOrg)
-  .add(   name = "spark",                  version = "2.4.5", org = "org.apache.spark", "spark-sql", "spark-core")
-  .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
-  .addJVM(name = "play-json-derived-codecs", version = "7.0.0", org = "org.julienrf")
-  .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
-  .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
-  .addJVM(name = "decline",               version = "1.3.0",  org = "com.monovore")
-  .addJVM(name = "mau",                   version = "0.2.2",  org = "com.kailuowang")
-  .addJVM(name = "scala-java8-compat",    version = "0.9.1",  org = "org.scala-lang.modules")
-  .addJVM(name = "log4cats",              version = "1.1.1",  org = "io.chrisdavenport", "log4cats-slf4j", "log4cats-core")
-  .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
-  .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
-  .addJVM(name = "akka-slf4j",            version = "2.6.3", org = "com.typesafe.akka")
-  .add(   name = "scalacheck-1-14",       version = "3.1.2.0",org = "org.scalatestplus")
-  .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
-  .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
-  .addJVM(name = "fs2-kafka",             version = "1.0.0", org = "com.github.fd4s")
-  .add(   name = "jawn",                  version = "1.0.0", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
-  .addJVM( name = "embedded-kafka",       version = "2.5.0",  org = "io.github.embeddedkafka")
-  .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
-  .addJVM(   name = "evilplot",           version = "0.6.3", org = "com.cibo")
-  .addJVM(   name = "scala-view",         version = "0.5", org = "com.github.darrenjw")
-  .add(   name = "cats-retry",            version = "1.1.0", org = "com.github.cb372")
-  .addModule("http4s", "http4s-twirl")
+    .addJVM(name = "akka-slf4j",            version = "2.6.3", org = "com.typesafe.akka")
+    .addJVM(name = "breeze",                version = "1.1",    org ="org.scalanlp", "breeze", "breeze-viz")
+    .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
+    .add(   name = "cats-testkit-scalatest",version = "2.0.0", org = org.typelevel.typeLevelOrg)
+    .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
+    .add(   name = "cats-retry",            version = "1.1.0", org = "com.github.cb372")
+    .addJVM(name = "decline",               version = "1.2.0",  org = "com.monovore")
+    .addJVM(name = "embedded-kafka",        version = "2.5.0",  org = "io.github.embeddedkafka")
+    .addJVM(name = "evilplot",              version = "0.6.3", org = "com.cibo")
+    .addJVM(name = "fs2-kafka",             version = "1.0.0", org = "com.github.fd4s")
+    .addModule("http4s", "http4s-twirl")
+    .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
+    .add(   name = "jawn",                  version = "1.0.0", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
+    .addJVM(name = "lihua",                 version = "0.36",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-dynamo-testkit", "lihua-play-json")
+    .addJVM(name = "log4cats",              version = "1.1.1",  org = "io.chrisdavenport", "log4cats-slf4j", "log4cats-core")
+    .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
+    .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
+    .addJVM(name = "mau",                   version = "0.2.2",  org = "com.kailuowang")
+    .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
+    .add(   name = "play",                  version = "2.8.1",  org = "com.typesafe.play")
+    .add(   name = "play-json",             version = "2.8.1",  org = "com.typesafe.play")
+    .addJVM(name = "play-json-derived-codecs", version = "7.0.0", org = "org.julienrf")
+    .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
+    .addJVM(name = "rainier",               version = "0.3.0",  org ="com.stripe", "rainier-core", "rainier-cats")
+    .addJVM(name = "scala-java8-compat",    version = "0.9.1",  org = "org.scala-lang.modules")
+    .addJVM(name = "scala-view",            version = "0.5", org = "com.github.darrenjw")
+    .add(   name = "scalacheck-1-14",       version = "3.1.2.0",org = "org.scalatestplus")
+    .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
+    .addJVM(name = "scanamo",               version = "1.0.0-M12-1", org ="org.scanamo", "scanamo-testkit")
+    .add(   name = "spark",                 version = "2.4.5", org = "org.apache.spark", "spark-sql", "spark-core")
+    .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
+    .addJVM(name = "tsec",                  version = "0.2.1",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s")
 }
 // format: on
 
@@ -66,6 +67,7 @@ lazy val thomas = project
     bandit,
     it,
     http4s,
+    http4sExample,
     cli,
     mongo,
     analysis,
@@ -73,6 +75,7 @@ lazy val thomas = project
     stress,
     dynamo,
     spark,
+    monitor,
     stream,
     testkit,
     kafka
@@ -283,7 +286,6 @@ lazy val http4s = project
   .settings(
     libs.testDependencies("scalacheck", "scalatest"),
     TwirlKeys.templateImports := Seq(),
-    mainClass in reStart := Some("com.iheart.thomas.http4s.ExampleAbtestAdminUIApp"),
     libs.dependencies(
       "logback-classic",
       "http4s-blaze-server",
@@ -293,7 +295,34 @@ lazy val http4s = project
       "scala-java8-compat",
       "log4cats-slf4j",
       "pureconfig-cats-effect",
-      "pureconfig-generic"
+      "pureconfig-generic",
+      "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s"
+    )
+  )
+
+lazy val http4sExample = project
+  .dependsOn(http4s, testkit)
+  .settings(
+    name := "thomas-http4s-example",
+    rootSettings,
+    noPublishSettings,
+    mainClass in reStart := Some("com.iheart.thomas.example.ExampleAbtestAdminUIApp"),
+    localDynamoSettings
+  )
+
+lazy val monitor = project
+  .settings(name := "thomas-monitor")
+  .settings(rootSettings)
+  .settings(taglessSettings)
+  .settings(
+    libs.dependencies(
+      "http4s-blaze-server",
+      "http4s-blaze-client",
+      "http4s-dsl",
+      "http4s-play-json",
+      "pureconfig-cats-effect",
+      "pureconfig-generic",
+      "log4cats-core"
     )
   )
 
@@ -311,7 +340,7 @@ lazy val stress = project
   )
 
 lazy val it = project
-  .dependsOn(testkit, kafka)
+  .dependsOn(testkit, http4s)
   .configs(IntegrationTest)
   .settings(rootSettings)
   .settings(
@@ -322,14 +351,11 @@ lazy val it = project
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
     libs.dependency("akka-slf4j", Some(IntegrationTest.name)),
     libs.dependency("embedded-kafka", Some(IntegrationTest.name)),
-    testOptions in IntegrationTest += Tests
-      .Argument(TestFrameworks.ScalaTest, "-oFDU"),
     dynamoTestSettings
   )
 
-lazy val dynamoTestSettings = Seq(
+lazy val dynamoTestSettings = localDynamoSettings ++ Seq(
   libs.dependency("lihua-dynamo-testkit", Some(IntegrationTest.name)),
-  dynamoDBLocalPort := 8042,
   dynamoDBLocalCleanAfterStop := true,
   startDynamoDBLocal := startDynamoDBLocal.dependsOn(compile in Test).value,
   test in IntegrationTest := (test in IntegrationTest)
@@ -339,6 +365,10 @@ lazy val dynamoTestSettings = Seq(
     .dependsOn(startDynamoDBLocal)
     .evaluated,
   testOptions in IntegrationTest += dynamoDBLocalTestCleanup.value
+)
+
+lazy val localDynamoSettings = Seq(
+  dynamoDBLocalPort := 8042
 )
 
 lazy val play = project

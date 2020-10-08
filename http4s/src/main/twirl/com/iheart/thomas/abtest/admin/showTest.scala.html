@@ -1,14 +1,20 @@
 @import com.iheart.thomas.abtest.model._
 @import lihua._
 @import java.time.Instant
+@import com.iheart.thomas.http4s.Formatters._
+@import com.iheart.thomas.http4s.ReverseRoutes
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.admin.User
 
-@(test: Entity[Abtest],
+
+@(u: User,
+  test: Entity[Abtest],
   followUpO: Option[Entity[Abtest]],
   overrides: Overrides
-)
-@import com.iheart.thomas.http4s.Formatters._
+)(implicit routes: ReverseRoutes)
 
-@adminPage("A/B Test for feature " + test.data.feature) {
+
+@topNav("A/B Test for feature " + test.data.feature, u) {
 
 
 <form action="#" method="post">
@@ -25,13 +31,18 @@
   </div>
 
 
-@abtestForm(test.data.feature, Some(test.data.toSpec), None, true)
+@testForm(test.data.feature, Some(test.data.toSpec), None, true)
 
 </form>
 
 <div class="row d-flex flex-row-reverse mt-5">
 
   <div class="mr-4">
+    @if(followUpO.isEmpty) {
+      <a href="@test._id/new_revision" class="btn btn-primary" role="button">
+        Create Follow Up
+      </a>
+    }
     @if(test.data.isScheduled(Instant.now)) {
     <a href="@test._id/edit" class="btn btn-primary" role="button" >
       Edit
@@ -42,9 +53,7 @@
       Delete
     </a>
     } else {
-    <a href="@test._id/new_revision" class="btn btn-primary" role="button">
-      New Revision
-    </a>
+
     @if(test.data.statusAsOf(Instant.now) == Abtest.Status.InProgress) {
     <a href="@test._id/delete"
        onclick="return confirm('Are you sure you would like to terminate this test?');"
@@ -62,16 +71,17 @@
   }
 </div>
 
-@if(overrides.nonEmpty){
+
 <div class="row mt-6">
   <div class="col-6">
     <div class="card">
       <div class="card-header">
         <span class="h6">Overridden assignment for
-          <a class="text-primary" href="/admin/features/@test.data.feature">@test.data.feature</a> </span>
+          <a class="text-primary" href="@routes.features/@test.data.feature">@test.data.feature</a> </span>
       </div>
       <div class="card-body">
-          <table class="w-100 mb-5">
+        @if(overrides.nonEmpty){
+          <table class="w-100 mb-2">
             <thead>
             <tr>
               <th>User Id</th>
@@ -88,16 +98,15 @@
             </tbody>
 
           </table>
-
-
-
-
-        Go to <a class="text-primary" href="/admin/features/@test.data.feature">@test.data.feature</a> to edit overrides.</span>
+        } else {
+        <span> <a class="text-primary" href="@routes.features/@test.data.feature">@test.data.feature</a> </span> has no overriding assignments.
+        }
+        Go to <a class="text-primary" href="@routes.features/@test.data.feature">@test.data.feature</a> to edit overrides.</span>
         </div>
     </div>
   </div>
 </div>
-}
+
 
 
 }

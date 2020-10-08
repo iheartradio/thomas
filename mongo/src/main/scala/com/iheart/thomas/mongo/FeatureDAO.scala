@@ -12,14 +12,14 @@ import cats.implicits._
 import com.iheart.thomas.abtest.model._
 import com.iheart.thomas.abtest.json.play.Formats._
 import lihua.mongo.EitherTDAOFactory
+import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.indexes.IndexType
-import reactivemongo.play.json.collection.JSONCollection
 
 import scala.concurrent.ExecutionContext
 
 class FeatureDAOFactory[F[_]: Async](implicit ec: ExecutionContext)
     extends EitherTDAOFactory[Feature, F]("abtest", "feature") {
-  def ensure(collection: JSONCollection): F[Unit] = {
+  def ensure(collection: BSONCollection): F[Unit] = {
     implicit val contextShiftIO = IO.contextShift(ec)
 
     IO.fromFuture(
