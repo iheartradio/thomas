@@ -133,7 +133,8 @@ class AbtestService[F[_]: Async](
       case req @ POST -> Root / "tests" :? auto(a) =>
         req.as[AbtestSpec] >>= (t => respond(api.create(t, a.getOrElse(false))))
 
-      case GET -> Root / "warmUp" => respond(api.warmUp.as("warmed up"))
+      case GET -> Root / "health" =>
+        respond(api.warmUp.as(Map("status" -> "healthy")))
 
       case req @ POST -> Root / "tests" / "auto" =>
         req.as[AbtestSpec] >>= (t => respond(api.create(t, true)))
