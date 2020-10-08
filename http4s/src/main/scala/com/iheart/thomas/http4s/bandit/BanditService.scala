@@ -1,5 +1,6 @@
 package com.iheart.thomas
 package http4s
+package bandit
 
 import cats.effect.{Async, ConcurrentEffect, ContextShift, Resource, Sync, Timer}
 import cats.implicits._
@@ -17,7 +18,7 @@ import com.iheart.thomas.kafka.{
 import org.http4s.{EntityDecoder, HttpRoutes, Request, Response}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.play._
-import bandit.Formats._
+import com.iheart.thomas.bandit.Formats._
 import lihua.mongo.JsonFormats._
 import com.iheart.thomas.analysis.{KPIModel, KPIModelApi}
 import com.iheart.thomas.bandit.tracking.EventLogger

@@ -1,9 +1,8 @@
-@import com.iheart.thomas.html._
+@import com.iheart.thomas.admin.User
 @import com.iheart.thomas.http4s.ReverseRoutes
 @import _root_.play.twirl.api.Html
 
-
-@(title: String)(content: Html)(implicit routes: ReverseRoutes)
+@(title: String, currentUser: User)(content: Html)(implicit routes: ReverseRoutes)
 
 
 @main(title){
@@ -12,23 +11,34 @@
     <img src="https://iheartradio.github.io/thomas/img/thomas-the-tank-engine.png" width="30px">
   </a>
   <button class="navbar-toggler" type="button" data-toggle="collapse"
-          data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+          aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
 
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
     <ul class="navbar-nav mr-auto">
       <li class="nav-item active">
-        <a class="nav-link" href="@routes.tests">All Tests<span class="sr-only">(current)</span></a>
+
+      </li>
+      <li class="nav-item active">
+        <a class="nav-link" href="@routes.tests">A/b Tests<span class="sr-only">(current)</span></a>
+      </li>
+      <li class="nav-item active">
+        <a class="nav-link" href="@routes.users">Users<span class="sr-only">(current)</span></a>
       </li>
       <li class="nav-item">
         <a class="nav-link" target="_blank" href="https://iheartradio.github.io/thomas/">Docs</a>
       </li>
+
     </ul>
+    <div class="inline">
+      Welcome <b>@currentUser.username</b>. <a href="@routes.logout">Logout</a>
+    </div>
   </div>
 </nav>
 
-@content
 
+@content
 
 }
