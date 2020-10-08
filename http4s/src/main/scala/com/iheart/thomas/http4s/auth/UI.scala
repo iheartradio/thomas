@@ -101,6 +101,13 @@ class UI[F[_]: Async, Auth](
           BadRequest(
             html.registration(Some(s"The username $username is already taken."))
           )
+        case AuthError.PasswordTooWeak(username) =>
+          BadRequest(
+            html.registration(
+              Some(s"Please select a stronger password"),
+              Some(username)
+            )
+          )
       }
 
   }

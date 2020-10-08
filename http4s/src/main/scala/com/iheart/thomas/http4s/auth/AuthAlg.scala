@@ -74,6 +74,9 @@ object AuthAlg {
           role: Role = Roles.Reader
         ): F[User] = {
         userDAO.find(username).ensure(UserAlreadyExist(username))(_.isEmpty) *>
+          password
+            .pure[F]
+            .ensure(AuthError.PasswordTooWeak(username))(_.length > 5) *>
           cryptService
             .hashpw(password)
             .flatMap { h =>
@@ -123,5 +126,6 @@ sealed abstract class AuthError extends RuntimeException with NoStackTrace
 object AuthError {
   case class UserNotFound(username: String) extends AuthError
   case class UserAlreadyExist(username: String) extends AuthError
+  case class PasswordTooWeak(username: String) extends AuthError
   case object IncorrectPassword extends AuthError
 }
