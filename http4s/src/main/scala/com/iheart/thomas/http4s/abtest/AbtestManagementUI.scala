@@ -13,13 +13,15 @@ import com.iheart.thomas.abtest.Error.ValidationErrors
 import com.iheart.thomas.abtest.admin.html._
 import com.iheart.thomas.abtest.model.Abtest.Specialization
 import com.iheart.thomas.abtest.model._
-import com.iheart.thomas.html.{redirect, errorMsg}
-import com.iheart.thomas.http4s.abtest.AbtestAdminUI._
+import com.iheart.thomas.admin.User
+import com.iheart.thomas.html.{errorMsg, redirect}
+import com.iheart.thomas.http4s.abtest.AbtestManagementUI._
 import com.iheart.thomas.http4s.abtest.AbtestService.validationErrorMsg
+import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
 import com.typesafe.config.Config
 import io.estatico.newtype.ops._
 import lihua.{Entity, EntityId}
-import org.http4s.{FormDataDecoder, HttpRoutes, QueryParamDecoder}
+import org.http4s.{FormDataDecoder, QueryParamDecoder}
 import org.http4s.FormDataDecoder._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.dsl.impl.{
@@ -31,12 +33,14 @@ import play.api.libs.json.JsObject
 
 import scala.concurrent.ExecutionContext
 
-class AbtestAdminUI[F[_]: Async](
-    alg: AbtestAlg[F],
-    rootPath: String)
-    extends Http4sDsl[F] {
-  private implicit val reverseRoutes = new ReverseRoutes(rootPath)
-  import AbtestAdminUI.Decoders._
+class AbtestManagementUI[F[_]: Async](
+    alg: AbtestAlg[F]
+  )(implicit reverseRoutes: ReverseRoutes)
+    extends AuthedEndpointsUtils[F, AuthImp]
+    with Http4sDsl[F] {
+
+  import AbtestManagementUI.Decoders._
+  import tsec.authentication._
 
   private def displayError(e: Throwable): String =
     e match {
@@ -44,19 +48,29 @@ class AbtestAdminUI[F[_]: Async](
         detail.toList.map(validationErrorMsg).mkString("<br/>")
       case _ => e.getMessage
     }
+  def testUrl(test: Entity[Abtest]) =
+    s"${reverseRoutes.tests}/${test._id}"
+
+  def redirectToTest(
+      test: Entity[Abtest],
+      msg: String
+    ) =
+    Ok(redirect(testUrl(test), msg))
+
+  def redirectToTest(
+      test: Entity[Abtest]
+    ) =
+    redirectTo(testUrl(test))
 
   val routes = {
-
-    def redirectToTest(
-        test: Entity[Abtest],
-        msg: String
-      ) =
-      Ok(redirect(s"${reverseRoutes.tests}/${test._id}", msg))
 
     def get(testId: String) =
       alg.getTest(testId.coerce[EntityId])
 
-    def testsList(filters: Filters = Filters(defaultEndsAfter)) =
+    def testsList(
+        u: User,
+        filters: Filters = Filters(defaultEndsAfter)
+      ) =
       (
         alg
           .getAllTestsEndAfter(filters.endsAfter),
@@ -69,16 +83,18 @@ class AbtestAdminUI[F[_]: Async](
             .mapValues(_.sortBy(_.data.start).toList)
             .toList
             .sortBy(_._1)
-        Ok(index(toShow, features, filters))
+        Ok(index(u, toShow, features, filters))
       }.flatten
 
     def showFeature(
+        u: User,
         feature: Feature,
         msg: Option[Either[String, String]] = None
       ) =
       alg.getTestsByFeature(feature.name).flatMap { tests =>
         Ok(
           featureForm(
+            u,
             feature,
             tests.size,
             msg.flatMap(_.left.toOption),
@@ -100,178 +116,171 @@ class AbtestAdminUI[F[_]: Async](
           .headOption
       )
 
-    HttpRoutes
-      .of[F] {
-        case GET -> Root / "tests" :? endsAfter(ea) +& feature(fn) =>
-          testsList(
-            Filters(
-              ea.getOrElse(defaultEndsAfter),
-              fn.filter(_ != "_ALL_FEATURES_")
+    roleBasedService(Roles.values) {
+      case GET -> Root / "tests" :? endsAfter(ea) +& feature(fn) asAuthed u =>
+        testsList(
+          u,
+          Filters(
+            ea.getOrElse(defaultEndsAfter),
+            fn.filter(_ != "_ALL_FEATURES_")
+          )
+        )
+      case GET -> Root / "features" / feature asAuthed u =>
+        alg.getFeature(feature).flatMap(showFeature(u, _))
+
+      case GET -> Root / "tests" / testId asAuthed u =>
+        for {
+          p <- getTestAndFollowUp(testId)
+          (test, followUpO) = p
+          feature <- alg.getFeature(test.data.feature)
+          r <- Ok(
+            showTest(
+              u,
+              test,
+              followUpO,
+              feature.overrides
             )
           )
-        case GET -> Root / "features" / feature =>
-          alg.getFeature(feature).flatMap(showFeature(_))
+        } yield r
+    } <+> roleBasedService(Roles.Admin, Roles.Developer) {
 
-        case req @ POST -> Root / "features" / feature =>
-          req
-            .as[Feature]
-            .redeemWith(
-              e => BadRequest(errorMsg(e.getMessage)),
-              f =>
-                alg
-                  .updateFeature(f)
-                  .flatMap(
-                    u => showFeature(u, Some(Right("Feature successfully update.")))
-                  )
-                  .handleErrorWith(e => showFeature(f, Some(Left(displayError(e)))))
-            )
+      case GET -> Root / "tests" / "new" :? featureReq(fn) asAuthed u =>
+        Ok(newTest(u, fn, None))
 
-        case GET -> Root / "tests" / "new" :? featureReq(fn) =>
-          Ok(newTest(fn, None))
-
-        case GET -> Root / "tests" / testId / "new_revision" =>
-          get(testId).flatMap { test =>
-            Ok(
-              newRevision(
-                test,
-                Some(
-                  test.data.toSpec.copy(
-                    start = OffsetDateTime.now,
-                    end = None
-                  )
+      case GET -> Root / "tests" / testId / "new_revision" asAuthed u =>
+        get(testId).flatMap { test =>
+          Ok(
+            newRevision(
+              u,
+              test,
+              Some(
+                test.data.toSpec.copy(
+                  start = OffsetDateTime.now,
+                  end = None
                 )
               )
             )
-          }
+          )
+        }
 
-        case req @ POST -> Root / "tests" / testId / "new_revision" =>
-          get(testId).flatMap { fromTest =>
-            req
-              .as[AbtestSpec]
-              .redeemWith(
-                e => BadRequest(editTest(fromTest, Some(displayError(e)))),
-                spec =>
-                  (if (fromTest.data.end.fold(true)(_.isAfter(spec.startI)))
-                     alg.continue(spec)
-                   else alg.create(spec, false))
-                    .flatMap(
-                      redirectToTest(
-                        _,
-                        s"Successfully created test for ${spec.feature}"
+      case se @ POST -> Root / "features" / feature asAuthed u =>
+        se.request
+          .as[Feature]
+          .redeemWith(
+            e => BadRequest(errorMsg(e.getMessage)),
+            f =>
+              alg
+                .updateFeature(f)
+                .flatMap(
+                  showFeature(u, _, Some(Right("Feature successfully update.")))
+                )
+                .handleErrorWith(e => showFeature(u, f, Some(Left(displayError(e)))))
+          )
+
+      case se @ POST -> Root / "tests" / testId / "new_revision" asAuthed u =>
+        get(testId).flatMap { fromTest =>
+          se.request
+            .as[AbtestSpec]
+            .redeemWith(
+              e => BadRequest(editTest(u, fromTest, Some(displayError(e)))),
+              spec =>
+                (if (fromTest.data.end.fold(true)(_.isAfter(spec.startI)))
+                   alg.continue(spec)
+                 else alg.create(spec, false))
+                  .flatMap(redirectToTest)
+                  .handleErrorWith(e =>
+                    get(testId).flatMap { t =>
+                      BadRequest(
+                        newRevision(u, fromTest, Some(spec), Some(displayError(e)))
                       )
-                    )
-                    .handleErrorWith(
-                      e =>
-                        get(testId).flatMap { t =>
-                          BadRequest(
-                            newRevision(fromTest, Some(spec), Some(displayError(e)))
-                          )
-                        }
-                    )
-              )
-          }
-        case GET -> Root / "tests" / testId =>
-          for {
-            p <- getTestAndFollowUp(testId)
-            (test, followUpO) = p
-            feature <- alg.getFeature(test.data.feature)
-            r <- Ok(
-              showTest(
-                test,
-                followUpO,
-                feature.overrides
-              )
-            )
-          } yield r
-
-        case GET -> Root / "tests" / testId / "edit" =>
-          getTestAndFollowUp(testId).flatMap {
-            case (test, followUpO) =>
-              Ok(editTest(test = test, followUpO = followUpO))
-          }
-
-        case GET -> Root / "tests" / testId / "delete" =>
-          alg.terminate(testId.coerce[EntityId]).flatMap { ot =>
-            val message = ot.fold(s"deleted test $testId")(
-              t => s"terminated running test for feature ${t.data.feature}"
-            )
-
-            Ok(redirect(reverseRoutes.tests, s"Successfully $message."))
-          }
-
-        case req @ POST -> Root / "tests" / testId =>
-          req
-            .as[AbtestSpec]
-            .redeemWith(
-              e =>
-                get(testId).flatMap { t =>
-                  BadRequest(editTest(t, Some(displayError(e))))
-                },
-              spec =>
-                alg
-                  .updateTest(testId.coerce[EntityId], spec)
-                  .flatMap(
-                    redirectToTest(
-                      _,
-                      s"Successfully updated test for ${spec.feature}"
-                    )
-                  )
-                  .handleErrorWith(
-                    e =>
-                      get(testId).flatMap { t =>
-                        BadRequest(editTest(t, Some(displayError(e)), Some(spec)))
-                      }
+                    }
                   )
             )
+        }
 
-        case req @ POST -> Root / "tests" =>
-          req
-            .as[AbtestSpec]
-            .redeemWith(
-              e => BadRequest(errorMsg(e.getMessage)),
-              spec =>
-                alg
-                  .create(spec, false)
-                  .flatMap(
-                    redirectToTest(
-                      _,
-                      s"Successfully created a new test for ${spec.feature}"
-                    )
-                  )
-                  .handleErrorWith { e =>
-                    BadRequest(
-                      newTest(spec.feature, Some(spec), Some(displayError(e)))
-                    )
+      case GET -> Root / "tests" / testId / "edit" asAuthed u =>
+        getTestAndFollowUp(testId).flatMap {
+          case (test, followUpO) =>
+            Ok(editTest(u, test = test, followUpO = followUpO))
+        }
+
+      case GET -> Root / "tests" / testId / "delete" asAuthed _ =>
+        alg.terminate(testId.coerce[EntityId]).flatMap { ot =>
+          val message = ot.fold(s"deleted test $testId")(t =>
+            s"terminated running test for feature ${t.data.feature}"
+          )
+
+          Ok(redirect(reverseRoutes.tests, s"Successfully $message."))
+        }
+
+      case se @ POST -> Root / "tests" / testId asAuthed u =>
+        se.request
+          .as[AbtestSpec]
+          .redeemWith(
+            e =>
+              get(testId).flatMap { t =>
+                BadRequest(editTest(u, t, Some(displayError(e))))
+              },
+            spec =>
+              alg
+                .updateTest(testId.coerce[EntityId], spec)
+                .flatMap(redirectToTest)
+                .handleErrorWith(e =>
+                  get(testId).flatMap { t =>
+                    BadRequest(editTest(u, t, Some(displayError(e)), Some(spec)))
                   }
-            )
+                )
+          )
 
-      }
+      case se @ POST -> Root / "tests" asAuthed u =>
+        se.request
+          .as[AbtestSpec]
+          .redeemWith(
+            e => BadRequest(errorMsg(e.getMessage)),
+            spec =>
+              alg
+                .create(spec, false)
+                .flatMap(test =>
+                  redirectTo(
+                    testUrl(test)
+                  )
+                )
+                .handleErrorWith { e =>
+                  BadRequest(
+                    newTest(u, spec.feature, Some(spec), Some(displayError(e)))
+                  )
+                }
+          )
+
+    }
   }
 
 }
 
-object AbtestAdminUI {
+object AbtestManagementUI {
   val defaultEndsAfter = OffsetDateTime.now.minusDays(30)
   case class Filters(
       endsAfter: OffsetDateTime,
       feature: Option[FeatureName] = None)
 
   def fromMongo[F[_]: Timer](
-      rootPath: String,
       cfgResourceName: Option[String] = None
     )(implicit F: Concurrent[F],
-      ex: ExecutionContext
-    ): Resource[F, AbtestAdminUI[F]] = {
-    MongoResources.abtestAlg[F](cfgResourceName).map(new AbtestAdminUI(_, rootPath))
+      ex: ExecutionContext,
+      rr: ReverseRoutes
+    ): Resource[F, AbtestManagementUI[F]] = {
+    MongoResources
+      .abtestAlg[F](cfgResourceName)
+      .map(new AbtestManagementUI(_))
   }
 
   def fromMongo[F[_]: Timer](
-      rootPath: String,
       cfg: Config
     )(implicit F: Concurrent[F],
-      ex: ExecutionContext
-    ): Resource[F, AbtestAdminUI[F]] = {
-    MongoResources.abtestAlg[F](cfg).map(new AbtestAdminUI(_, rootPath))
+      ex: ExecutionContext,
+      rr: ReverseRoutes
+    ): Resource[F, AbtestManagementUI[F]] = {
+    MongoResources.abtestAlg[F](cfg).map(new AbtestManagementUI(_))
   }
 
   object Decoders extends CommonFormDecoders {

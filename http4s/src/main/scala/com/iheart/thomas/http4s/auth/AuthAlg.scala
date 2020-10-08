@@ -25,7 +25,8 @@ trait AuthAlg[F[_], Auth] {
 
   def register(
       username: String,
-      password: String
+      password: String,
+      role: Role = Roles.Reader
     ): F[User]
 
   def update(
@@ -58,7 +59,7 @@ object AuthAlg {
         ): F[Response[F]] =
         for {
           userO <- userDAO.find(username)
-          user <- userO.liftTo[F](AuthError.UserNotFound)
+          user <- userO.liftTo[F](AuthError.UserNotFound(username))
           _ <-
             cryptService
               .checkpw(password, PasswordHash[C](user.hash))
@@ -69,13 +70,14 @@ object AuthAlg {
 
       def register(
           username: String,
-          password: String
+          password: String,
+          role: Role = Roles.Reader
         ): F[User] = {
         userDAO.find(username).ensure(UserAlreadyExist(username))(_.isEmpty) *>
           cryptService
             .hashpw(password)
             .flatMap { h =>
-              userDAO.insert(User(username, h, Roles.Reader))
+              userDAO.insert(User(username, h, role))
             }
       }
 
@@ -119,7 +121,7 @@ object AuthAlg {
 sealed abstract class AuthError extends RuntimeException with NoStackTrace
 
 object AuthError {
-  case object UserNotFound extends AuthError
+  case class UserNotFound(username: String) extends AuthError
   case class UserAlreadyExist(username: String) extends AuthError
   case object IncorrectPassword extends AuthError
 }

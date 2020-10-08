@@ -2,11 +2,13 @@
 @import lihua.Entity
 @import com.iheart.thomas.http4s.Formatters._
 @import com.iheart.thomas.FeatureName
-@import com.iheart.thomas.http4s.abtest.AbtestAdminUI.Filters
+@import com.iheart.thomas.http4s.abtest.AbtestManagementUI.Filters
 @import com.iheart.thomas.http4s.ReverseRoutes
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.admin.User
 
 
-@(tests: List[(FeatureName, List[Entity[Abtest]])], features: List[FeatureName], filters: Filters)(implicit routes: ReverseRoutes)
+@(u: User, tests: List[(FeatureName, List[Entity[Abtest]])], features: List[FeatureName], filters: Filters)(implicit routes: ReverseRoutes)
 
 
 @featureCard(feature: FeatureName, tests: List[Entity[Abtest]]) = {
@@ -54,7 +56,7 @@
 }
 
 
-@adminPage("tests") {
+@topNav("tests", u) {
 <h5 class="mt-3 mb-3">A/B tests</h5>
 <div class="row" id="top-panel">
   <div class="col-7">

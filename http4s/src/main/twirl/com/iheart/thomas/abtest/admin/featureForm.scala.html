@@ -1,7 +1,10 @@
 @import com.iheart.thomas.abtest.model._
 @import com.iheart.thomas.http4s.ReverseRoutes
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.admin.User
 
-@(feature: Feature,
+@(u: User,
+feature: Feature,
 testsCount: Int,
 errorMsg: Option[String] = None,
 successMsg: Option[String] = None)(implicit routes: ReverseRoutes)
@@ -37,7 +40,7 @@ successMsg: Option[String] = None)(implicit routes: ReverseRoutes)
 
 }
 
-@adminPage("Feature " + feature.name){
+@topNav("Feature " + feature.name, u){
 
 <div class="mb-3 mt-3">
   <span class="h4">Feature <span class="text-success">@feature.name</span></span>

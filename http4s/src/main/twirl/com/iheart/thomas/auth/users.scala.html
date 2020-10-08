@@ -4,7 +4,7 @@
 
 @(allUsers: Vector[User], currentUser: User)(implicit reverseRoutes: ReverseRoutes)
 
-@topNav(currentUser) {
+@topNav("All Users", currentUser) {
 <div class="users list-group">
   @for(user <- allUsers) {
   <div class="list-group-item list-group-item-secondary mt-2">

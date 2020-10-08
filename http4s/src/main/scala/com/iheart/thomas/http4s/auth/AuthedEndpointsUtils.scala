@@ -7,12 +7,13 @@ import cats.data.{Kleisli, OptionT}
 import com.iheart.thomas.MonadThrowable
 import com.iheart.thomas.admin.{Role, User}
 import com.iheart.thomas.http4s.{ReverseRoutes, Roles}
-import org.http4s.{HttpRoutes, Response}
+import org.http4s.{HttpRoutes, Response, Uri}
 import org.http4s.dsl.Http4sDsl
 import tsec.authentication.{SecuredRequest, SecuredRequestHandler, TSecAuthService}
 import tsec.authorization.{AuthGroup, AuthorizationInfo, BasicRBAC}
 import org.http4s.twirl._
 import cats.implicits._
+import org.http4s.headers.Location
 trait AuthedEndpointsUtils[F[_], Auth] {
   self: Http4sDsl[F] =>
 
@@ -35,6 +36,16 @@ trait AuthedEndpointsUtils[F[_], Auth] {
     ): AuthorizationInfo[F, Role, User] =
     (u: User) => F.pure(u.role)
 
+  def redirectTo(uri: Uri)(implicit F: Applicative[F]) =
+    TemporaryRedirect(
+      Location(uri)
+    )
+
+  def redirectTo(location: String)(implicit F: Applicative[F]) =
+    TemporaryRedirect(
+      Location(Uri.unsafeFromString(location))
+    )
+
   def liftService(
       service: AuthService
     )(implicit arh: AuthReqHandler,
@@ -43,13 +54,7 @@ trait AuthedEndpointsUtils[F[_], Auth] {
     ): HttpRoutes[F] =
     arh.liftService(
       service,
-      req =>
-        Ok(
-          html.redirect(
-            reverseRoutes.login + "?redirectTo=" + req.uri.renderString,
-            s"Please login first. " + req.headers.toString
-          )
-        )
+      req => redirectTo(reverseRoutes.login + "?redirectTo=" + req.uri.renderString)
     )
 
   def roleBasedService(
@@ -60,9 +65,8 @@ trait AuthedEndpointsUtils[F[_], Auth] {
       reverseRoutes: ReverseRoutes
     ): AuthService = {
     val auth = BasicRBAC.fromGroup[F, Role, User, Token[Auth]](authGroup)
-    val onUnauthorized = Ok(
-      html.redirect(
-        reverseRoutes.login,
+    val onUnauthorized = BadRequest(
+      html.errorMsg(
         s"Sorry, you do not have sufficient access."
       )
     )
