@@ -51,8 +51,12 @@ object Resources {
   lazy val localDynamoR =
     LocalDynamo
       .clientWithTables[IO](
-        dynamo.DAOs.banditStateTableName -> Seq(dynamo.DAOs.banditKey),
-        dynamo.DAOs.banditSettingsTableName -> Seq(dynamo.DAOs.banditKey)
+        dynamo.BanditsDAOs.banditStateTableName -> Seq(dynamo.BanditsDAOs.banditKey),
+        dynamo.BanditsDAOs.banditSettingsTableName -> Seq(
+          dynamo.BanditsDAOs.banditKey
+        ),
+        dynamo.AdminDAOs.authTableName -> Seq(dynamo.AdminDAOs.authKey),
+        dynamo.AdminDAOs.userTableName -> Seq(dynamo.AdminDAOs.userKey)
       )
 
   lazy val dynamoDAOS: Resource[
@@ -62,8 +66,8 @@ object Resources {
     localDynamoR
       .map { implicit client =>
         (
-          dynamo.DAOs.banditState[IO, Conversions],
-          dynamo.DAOs.banditSettings[IO, BanditSettings.Conversion]
+          dynamo.BanditsDAOs.banditState[IO, Conversions],
+          dynamo.BanditsDAOs.banditSettings[IO, BanditSettings.Conversion]
         )
       }
 

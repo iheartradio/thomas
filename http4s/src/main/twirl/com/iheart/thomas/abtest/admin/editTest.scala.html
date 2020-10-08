@@ -1,14 +1,17 @@
 @import com.iheart.thomas.abtest.model._
 @import lihua._
 @import com.iheart.thomas.http4s.ReverseRoutes
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.admin.User
 
-
-@(test: Entity[Abtest],
+@(
+user: User,
+test: Entity[Abtest],
 errMessage: Option[String] = None,
 spec: Option[AbtestSpec] = None,
 followUpO: Option[Entity[Abtest]] = None)(implicit routes: ReverseRoutes)
 
-@adminPage("A/B Test for feature " + test.data.feature) {
+@topNav("A/B Test for feature " + test.data.feature, user) {
 
 <form action="@routes.tests/@test._id" method="post">
 

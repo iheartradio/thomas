@@ -1,13 +1,16 @@
 @import com.iheart.thomas.abtest.model._
 @import lihua.Entity
 @import com.iheart.thomas.http4s.ReverseRoutes
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.admin.User
 
 
-@(fromTest: Entity[Abtest],
+@(u: User,
+fromTest: Entity[Abtest],
 draft: Option[AbtestSpec],
 errorMsg: Option[String] = None)(implicit routes: ReverseRoutes)
 
-@adminPage("Create A New Test") {
+@topNav("Create A New Test", u) {
 <form action="./new_revision" method="post">
   <div class="mt-4 mb-4">
     <span class="h5">Creating an A/B Test to follow
