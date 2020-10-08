@@ -1,0 +1,19 @@
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.admin.User
+@import com.iheart.thomas.http4s.ReverseRoutes
+
+@(allUsers: Vector[User], currentUser: User)(implicit reverseRoutes: ReverseRoutes)
+
+@topNav("All Users", currentUser) {
+<div class="users list-group">
+  @for(user <- allUsers) {
+  <div class="list-group-item list-group-item-secondary mt-2">
+    <a href="@reverseRoutes.users/user.username" >
+      <span class="font-weight-heavy h4 text-primary">@user.username</span>
+    </a>
+    <span>@user.role.name</span>
+  </div>
+  }
+</div>
+
+}

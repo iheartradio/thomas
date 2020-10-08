@@ -26,7 +26,7 @@ abstract class PlayJsonHttp4sClient[F[_]: Sync](c: org.http4s.client.Client[F])
 
   def expect[A](req: F[Request[F]])(implicit d: EntityDecoder[F, A]): F[A] =
     c.expectOr(req) { err =>
-      err.bodyAsText.compile.toList
+      err.bodyText.compile.toList
         .map(
           body =>
             InvalidResponseException(

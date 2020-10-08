@@ -1,0 +1,42 @@
+@import com.iheart.thomas.abtest.model._
+@import lihua._
+@import com.iheart.thomas.http4s.ReverseRoutes
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.admin.User
+
+@(
+user: User,
+test: Entity[Abtest],
+errMessage: Option[String] = None,
+spec: Option[AbtestSpec] = None,
+followUpO: Option[Entity[Abtest]] = None)(implicit routes: ReverseRoutes)
+
+@topNav("A/B Test for feature " + test.data.feature, user) {
+
+<form action="@routes.tests/@test._id" method="post">
+
+  <div class="mt-4 mb-4">
+    <span class="h5">
+      Editing A/B Test <span class="text-info">@test.data.name</span>
+            for </span>
+    <span class="h4 text-success" title="This is feature name for the test.">
+      @featureTestsLink(test.data.feature)</span>
+  </div>
+  @testForm(test.data.feature, spec.orElse(Some(test.data.toSpec)), errMessage, false, followUpO.isEmpty)
+
+  <div class="row d-flex flex-row-reverse mt-5">
+    <div class="mr-4">
+      <button type="submit" class="btn btn-primary">
+        Submit Change
+      </button>
+      <button type="button" class="btn btn-warning ml-2" onclick="history.back()">Cancel</button>
+    </div>
+    @for(followUp <- followUpO) {
+      <div class="mr-3">
+        Note: this test is followed by <a class="text-success lnk" title="@followUp._id" href="./@followUp._id">@followUp.data.name</a>
+      </div>
+    }
+  </div>
+
+</form>
+}

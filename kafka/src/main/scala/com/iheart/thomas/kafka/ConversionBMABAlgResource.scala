@@ -27,9 +27,9 @@ object ConversionBMABAlgResource {
     ): Resource[F, ConversionBMABAlg[F]] = {
     import mongo.idSelector
     implicit val stateDAO =
-      dynamo.DAOs.banditState[F, Conversions]
+      dynamo.BanditsDAOs.banditState[F, Conversions]
     implicit val settingDAO =
-      dynamo.DAOs.banditSettings[F, BanditSettings.Conversion]
+      dynamo.BanditsDAOs.banditSettings[F, BanditSettings.Conversion]
     implicit val (abtestDAO, featureDAO, kpiDAO) = mongoDAOs
     lazy val refreshPeriod = 0.seconds //No cache is needed for abtests in Conversion API
 

@@ -87,20 +87,6 @@ class AbtestController[F[_]](
     (t: AbtestSpec) => api.continue(t)
   )
 
-  def getGroups(
-      userId: UserId,
-      at: Option[Long],
-      userTags: Option[List[Tag]] = None
-    ) =
-    action {
-      val time = at.map(TimeUtil.toDateTime)
-      api.getGroups(
-        userId,
-        time,
-        userTags.map(_.flatMap(_.split(",").map(_.trim))).getOrElse(Nil)
-      )
-    }
-
   def parseEpoch(dateTime: String) = Action {
     val sysOffset: ZoneOffset =
       ZoneId.systemDefault().getRules.getOffset(Instant.now())
@@ -156,7 +142,7 @@ class AbtestController[F[_]](
 
   //for legacy support
   def getGroupMetas(testId: String) = action {
-    api.getTest(EntityId(testId)).map(_.data.groupMetas)
+    api.getTest(EntityId(testId)).map(_.data.getGroupMetas)
   }
 
   val getGroupsWithMeta = jsonAction(
