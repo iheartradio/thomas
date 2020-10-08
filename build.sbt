@@ -37,7 +37,7 @@ lazy val libs = {
     .add(   name = "play",                  version = "2.8.1",  org = "com.typesafe.play")
     .add(   name = "play-json",             version = "2.8.1",  org = "com.typesafe.play")
     .addJVM(name = "play-json-derived-codecs", version = "7.0.0", org = "org.julienrf")
-    .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
+    .add(   name = "pureconfig",            version = "0.12.3", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
     .addJVM(name = "rainier",               version = "0.3.0",  org ="com.stripe", "rainier-core", "rainier-cats")
     .addJVM(name = "scala-java8-compat",    version = "0.9.1",  org = "org.scala-lang.modules")
     .addJVM(name = "scala-view",            version = "0.5", org = "com.github.darrenjw")
