@@ -3,15 +3,18 @@
 @import java.time.Instant
 @import com.iheart.thomas.http4s.Formatters._
 @import com.iheart.thomas.http4s.ReverseRoutes
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.admin.User
 
 
-@(test: Entity[Abtest],
+@(u: User,
+  test: Entity[Abtest],
   followUpO: Option[Entity[Abtest]],
   overrides: Overrides
 )(implicit routes: ReverseRoutes)
 
 
-@adminPage("A/B Test for feature " + test.data.feature) {
+@topNav("A/B Test for feature " + test.data.feature, u) {
 
 
 <form action="#" method="post">

@@ -35,6 +35,8 @@ import scala.util.Random
   */
 trait AbtestAlg[F[_]] extends DataProvider[F] {
 
+  def warmUp: F[Unit]
+
   def create(
       testSpec: AbtestSpec,
       auto: Boolean = false
@@ -178,6 +180,7 @@ object AbtestAlg {
         implicit val nowF = F.delay(Instant.now)
         new DefaultAbtestAlg[F](refreshPeriod)
       }
+      .evalTap(_.warmUp)
 }
 
 final class DefaultAbtestAlg[F[_]](
@@ -202,6 +205,8 @@ final class DefaultAbtestAlg[F[_]](
     extends AbtestAlg[F] {
   import QueryDSL._
 
+  def warmUp: F[Unit] = getGroupsWithMeta(UserGroupQuery(Some("123456"))).void
+
   def create(
       testSpec: AbtestSpec,
       auto: Boolean = false
@@ -225,23 +230,21 @@ final class DefaultAbtestAlg[F[_]](
         val index = tests.indexWhere(_._id == test._id)
         (tests.get(index.toLong + 1L), tests.get(index.toLong - 1L))
       }
-      _ <- beforeO.fold(F.unit)(
-        before =>
-          ensure(
-            before.data.end.fold(false)(!_.isAfter(spec.startI)),
-            ConflictTest(before)
-          )
+      _ <- beforeO.fold(F.unit)(before =>
+        ensure(
+          before.data.end.fold(false)(!_.isAfter(spec.startI)),
+          ConflictTest(before)
+        )
       )
-      _ <- afterO.fold(F.unit)(
-        after =>
+      _ <- afterO.fold(F.unit)(after =>
+        ensure(
+          spec.endI.fold(false)(!_.isAfter(after.data.start)),
+          ConflictTest(after)
+        ) *>
           ensure(
-            spec.endI.fold(false)(!_.isAfter(after.data.start)),
-            ConflictTest(after)
-          ) *>
-            ensure(
-              groupsEqualSizes(spec.groups, test.data.groups),
-              CannotChangeGroupSizeWithFollowUpTest(after)
-            )
+            groupsEqualSizes(spec.groups, test.data.groups),
+            CannotChangeGroupSizeWithFollowUpTest(after)
+          )
       )
       r <- addTestWithLock(spec.feature)(
         abTestDao.update(test.copy(data = testFromSpec(spec, Some(test))))
@@ -291,17 +294,16 @@ final class DefaultAbtestAlg[F[_]](
       )
     } yield TestsData(
       at,
-      tests.map(
-        t =>
-          (
-            t,
-            features
-              .find(_.data.name == t.data.feature)
-              .map(_.data)
-              .getOrElse(
-                Feature(t.data.feature, None, Map())
-              )
-          )
+      tests.map(t =>
+        (
+          t,
+          features
+            .find(_.data.name == t.data.feature)
+            .map(_.data)
+            .getOrElse(
+              Feature(t.data.feature, None, Map())
+            )
+        )
       ),
       duration
     )
@@ -326,12 +328,11 @@ final class DefaultAbtestAlg[F[_]](
     abTestDao
       .find(Json.obj("feature" -> JsString(feature)))
       .map(
-        _.sortBy(
-          t =>
-            (
-              t.data.start,
-              t.data.end.getOrElse(Instant.MAX)
-            )
+        _.sortBy(t =>
+          (
+            t.data.start,
+            t.data.end.getOrElse(Instant.MAX)
+          )
         ).reverse
       )
 
@@ -461,27 +462,30 @@ final class DefaultAbtestAlg[F[_]](
     for {
       now <- nowF
       candidate <- abTestDao.get(testId)
-      test <- candidate.data
-        .isScheduled(now)
-        .fold(
-          F.pure(candidate),
-          if (auto) {
-            if (candidate.data.statusAsOf(now) == Status.Expired)
-              CannotUpdateExpiredTest(candidate.data.end.get) //this should be safe since it's already expired and thus must have an end date
+      test <-
+        candidate.data
+          .isScheduled(now)
+          .fold(
+            F.pure(candidate),
+            if (auto) {
+              if (candidate.data.statusAsOf(now) == Status.Expired)
+                CannotUpdateExpiredTest(
+                  candidate.data.end.get
+                ) //this should be safe since it's already expired and thus must have an end date
+                  .raiseError[F, Entity[Abtest]]
+              else
+                create(
+                  candidate.data.toSpec
+                    .copy(
+                      start = now.atOffset(ZoneOffset.UTC),
+                      end = candidate.data.end.map(_.atOffset(ZoneOffset.UTC))
+                    ),
+                  auto = true
+                )
+            } else
+              CannotChangePastTest(candidate.data.start)
                 .raiseError[F, Entity[Abtest]]
-            else
-              create(
-                candidate.data.toSpec
-                  .copy(
-                    start = now.atOffset(ZoneOffset.UTC),
-                    end = candidate.data.end.map(_.atOffset(ZoneOffset.UTC))
-                  ),
-                auto = true
-              )
-          } else
-            CannotChangePastTest(candidate.data.start)
-              .raiseError[F, Entity[Abtest]]
-        )
+          )
       toUpdate <- f(test.data).map(t => test.copy(data = t))
       updated <- abTestDao.update(toUpdate)
     } yield updated
@@ -504,10 +508,9 @@ final class DefaultAbtestAlg[F[_]](
     errorToF(metas.isEmpty.option(EmptyGroupMeta)) *>
       updateAbtestTrivial(testId, auto) { test =>
         errorsOToF(
-          metas.keys.toList.map(
-            gn =>
-              (!test.groups.exists(_.name === gn))
-                .option(Error.GroupNameDoesNotExist(gn))
+          metas.keys.toList.map(gn =>
+            (!test.groups.exists(_.name === gn))
+              .option(Error.GroupNameDoesNotExist(gn))
           )
         ).as(
           test.copy(
@@ -621,17 +624,19 @@ final class DefaultAbtestAlg[F[_]](
     ): F[Entity[Abtest]] =
     for {
       _ <- validateForCreation(testSpec)
-      created <- if (auto)
-        createAuto(testSpec)
-      else
-        for {
-          lastOne <- lastTest(testSpec)
-          r <- lastOne
-            .filter(_.data.endsAfter(testSpec.start))
-            .fold(
-              doCreate(testSpec, lastOne)
-            )(le => F.raiseError(ConflictTest(le)))
-        } yield r
+      created <-
+        if (auto)
+          createAuto(testSpec)
+        else
+          for {
+            lastOne <- lastTest(testSpec)
+            r <-
+              lastOne
+                .filter(_.data.endsAfter(testSpec.start))
+                .fold(
+                  doCreate(testSpec, lastOne)
+                )(le => F.raiseError(ConflictTest(le)))
+          } yield r
 
     } yield created
 
@@ -739,7 +744,9 @@ final class DefaultAbtestAlg[F[_]](
         group.copy(
           meta = group.meta orElse
             spec.groupMetas.get(group.name) orElse
-            basedOn.flatMap(_.data.getGroupMetas.get(group.name)) //ensures that by default spec doesn't remove group Meta
+            basedOn.flatMap(
+              _.data.getGroupMetas.get(group.name)
+            ) //ensures that by default spec doesn't remove group Meta
         )
       }
     spec
@@ -787,10 +794,12 @@ final class DefaultAbtestAlg[F[_]](
       now: Instant
     ): Option[F[Entity[Abtest]]] = {
 
-    if (toUpdate.data.isScheduled(now) && groupsEqualSizes(
-          toUpdate.data.groups,
-          updateWith.groups
-        ))
+    if (
+      toUpdate.data.isScheduled(now) && groupsEqualSizes(
+        toUpdate.data.groups,
+        updateWith.groups
+      )
+    )
       Some(
         abTestDao.update(
           toUpdate.copy(
@@ -810,37 +819,36 @@ final class DefaultAbtestAlg[F[_]](
 
   private def validateForCreation(testSpec: AbtestSpec): F[Unit] =
     errorsOFFToF(
-      nowF.map(
-        now =>
-          List(
-            testSpec.groups.isEmpty
-              .option(Error.EmptyGroups),
-            (testSpec.groups.map(_.size).sum > 1.000000001)
-              .option(
-                Error.InconsistentGroupSizes(
-                  testSpec.groups.map(_.size)
-                )
-              ),
-            testSpec.end
-              .filter(_.isBefore(testSpec.start))
-              .as(Error.InconsistentTimeRange),
-            testSpec.start.toInstant
-              .isBefore(now.minusSeconds(60))
-              .option(Error.CannotScheduleTestBeforeNow),
-            (testSpec.groups
-              .map(_.name)
-              .distinct
-              .length != testSpec.groups.length)
-              .option(Error.DuplicatedGroupName),
-            testSpec.groups
-              .exists(_.name.length >= 256)
-              .option(Error.GroupNameTooLong),
-            (!testSpec.feature.matches("[-_.A-Za-z0-9]+"))
-              .option(Error.InvalidFeatureName),
-            (!testSpec.alternativeIdName
-              .fold(true)(_.matches("[-_.A-Za-z0-9]+")))
-              .option(Error.InvalidAlternativeIdName)
-          )
+      nowF.map(now =>
+        List(
+          testSpec.groups.isEmpty
+            .option(Error.EmptyGroups),
+          (testSpec.groups.map(_.size).sum > 1.000000001)
+            .option(
+              Error.InconsistentGroupSizes(
+                testSpec.groups.map(_.size)
+              )
+            ),
+          testSpec.end
+            .filter(_.isBefore(testSpec.start))
+            .as(Error.InconsistentTimeRange),
+          testSpec.start.toInstant
+            .isBefore(now.minusSeconds(60))
+            .option(Error.CannotScheduleTestBeforeNow),
+          (testSpec.groups
+            .map(_.name)
+            .distinct
+            .length != testSpec.groups.length)
+            .option(Error.DuplicatedGroupName),
+          testSpec.groups
+            .exists(_.name.length >= 256)
+            .option(Error.GroupNameTooLong),
+          (!testSpec.feature.matches("[-_.A-Za-z0-9]+"))
+            .option(Error.InvalidFeatureName),
+          (!testSpec.alternativeIdName
+            .fold(true)(_.matches("[-_.A-Za-z0-9]+")))
+            .option(Error.InvalidAlternativeIdName)
+        )
       )
     )
   private def validate(userGroupQuery: UserGroupQuery): F[Unit] =

@@ -5,6 +5,7 @@ import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import java.time.OffsetDateTime
 import java.util.concurrent.TimeUnit
 
+import com.iheart.thomas.admin.{AuthRecord, Role, User}
 import com.iheart.thomas.analysis.{Conversions, KPIName, Probability}
 import org.scanamo.DynamoFormat
 import io.estatico.newtype.ops._
@@ -47,4 +48,13 @@ object DynamoFormats {
 
   implicit val bss: DynamoFormat[BanditSettings[BanditSettings.Conversion]] =
     deriveDynamoFormat[BanditSettings[BanditSettings.Conversion]]
+
+  implicit val authRecordFormat: DynamoFormat[AuthRecord] =
+    deriveDynamoFormat[AuthRecord]
+
+  implicit val roleFormat: DynamoFormat[Role] =
+    deriveDynamoFormat[Role]
+
+  implicit val userFormat: DynamoFormat[User] =
+    deriveDynamoFormat[User]
 }

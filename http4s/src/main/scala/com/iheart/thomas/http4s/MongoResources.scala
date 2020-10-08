@@ -1,37 +1,16 @@
 package com.iheart.thomas
 package http4s
 
-import cats.effect.{Async, Concurrent, Resource, Sync, Timer}
+import cats.effect.{Async, Concurrent, Resource, Timer}
 import com.iheart.thomas
 import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.mongo.DAOs
 import com.typesafe.config.Config
-import pureconfig.ConfigSource
-import pureconfig.module.catseffect.CatsEffectConfigSource
 
 import scala.compat.java8.DurationConverters._
 import scala.concurrent.ExecutionContext
 
-trait Resources {
-  def cfg[F[_]](
-      cfgResourceName: Option[String] = None
-    )(implicit F: Sync[F]
-    ): Resource[F, Config] =
-    Resource.liftF(
-      cfgResourceName
-        .fold(ConfigSource.default)(
-          name =>
-            ConfigSource
-              .resources(name)
-              .withFallback(ConfigSource.default)
-        )
-        .loadF[F, Config]
-    )
-}
-
-object Resources extends Resources
-
-object MongoResources extends Resources {
+object MongoResources extends ConfigResource {
 
   def abtestAlg[F[_]: Timer: Concurrent](
       cfg: Config,
