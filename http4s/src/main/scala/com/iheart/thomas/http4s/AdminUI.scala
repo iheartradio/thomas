@@ -11,6 +11,7 @@ import cats.implicits._
 import com.iheart.thomas.{MonadThrowable, dynamo}
 import cats.effect._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
+import com.iheart.thomas.admin.Role
 import com.typesafe.config.Config
 import org.http4s.server.{Router, Server}
 import org.http4s.server.blaze.BlazeServerBuilder
@@ -42,7 +43,8 @@ object AdminUI {
       rootPath: String,
       authTableReadCapacity: Long,
       authTableWriteCapacity: Long,
-      initialAdminUsername: String)
+      initialAdminUsername: String,
+      initialRole: Role)
 
   def loadConfig[F[_]: Sync](cfg: Config): F[AdminUIConfig] = {
     import pureconfig.generic.auto._
@@ -66,7 +68,8 @@ object AdminUI {
       Resource.liftF(AuthDependencies[F](cfg.key)).flatMap { deps =>
         import deps._
         import dynamo.AdminDAOs._
-        val authUI = auth.UI.default[F](deps, Some(cfg.initialAdminUsername))
+        val authUI =
+          auth.UI.default[F](deps, Some(cfg.initialAdminUsername), cfg.initialRole)
 
         AbtestManagementUI.fromMongo[F](mongoAbtest).map { amUI =>
           new AdminUI(amUI, authUI)

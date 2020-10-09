@@ -26,7 +26,7 @@ trait AuthAlg[F[_], Auth] {
   def register(
       username: String,
       password: String,
-      role: Role = Roles.Reader
+      role: Role = Roles.User
     ): F[User]
 
   def update(
@@ -71,7 +71,7 @@ object AuthAlg {
       def register(
           username: String,
           password: String,
-          role: Role = Roles.Reader
+          role: Role = Roles.User
         ): F[User] = {
         userDAO.find(username).ensure(UserAlreadyExist(username))(_.isEmpty) *>
           password

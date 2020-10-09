@@ -1,9 +1,10 @@
 package com.iheart.thomas
 package http4s
 package auth
-import cats.effect.{Async}
+import cats.effect.Async
 import cats.implicits._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
+import com.iheart.thomas.admin.Role
 import com.iheart.thomas.auth.html
 import com.iheart.thomas.html.redirect
 import com.iheart.thomas.http4s.auth.UI.QueryParamMatchers._
@@ -17,7 +18,8 @@ import tsec.passwordhashers.jca.BCrypt
 import scala.util.control.NoStackTrace
 
 class UI[F[_]: Async, Auth](
-    initialAdminUsername: Option[String]
+    initialAdminUsername: Option[String],
+    initialRole: Role
   )(implicit alg: AuthAlg[F, Auth],
     reverseRoutes: ReverseRoutes)
     extends Http4sDsl[F]
@@ -84,7 +86,7 @@ class UI[F[_]: Async, Auth](
           username,
           password,
           if (initialAdminUsername.fold(false)(_ == username)) Roles.Admin
-          else Roles.Reader
+          else initialRole
         )
         r <- Ok(
           redirect(
@@ -132,7 +134,8 @@ object UI extends {
     */
   def default[F[_]: Async](
       authDeps: AuthDependencies[AuthImp],
-      initialAdminUsername: Option[String]
+      initialAdminUsername: Option[String],
+      initialRole: Role
     )(implicit dc: AmazonDynamoDBAsync,
       rv: ReverseRoutes
     ): UI[F, AuthImp] = {
@@ -141,7 +144,7 @@ object UI extends {
     import authDeps._
     import dynamo.AdminDAOs._
 
-    new UI(initialAdminUsername)
+    new UI(initialAdminUsername, initialRole)
   }
 
 }
