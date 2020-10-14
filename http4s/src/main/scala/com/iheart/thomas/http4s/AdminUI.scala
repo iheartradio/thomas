@@ -2,7 +2,13 @@ package com.iheart.thomas
 package http4s
 
 import com.iheart.thomas.http4s.abtest.AbtestManagementUI
-import com.iheart.thomas.http4s.auth.{AuthDependencies, AuthedEndpointsUtils, Token}
+import com.iheart.thomas.http4s.auth.{
+  AuthAlg,
+  AuthDependencies,
+  AuthedEndpointsUtils,
+  Token,
+  UI
+}
 import org.http4s.dsl.Http4sDsl
 import cats.implicits._
 import com.iheart.thomas.{MonadThrowable, dynamo}
@@ -20,6 +26,7 @@ import tsec.common.SecureRandomIdGenerator
 import scala.concurrent.ExecutionContext
 import org.http4s.twirl._
 import tsec.authentication.Authenticator
+import tsec.passwordhashers.jca.BCrypt
 
 class AdminUI[F[_]: MonadThrowable](
     abtestManagementUI: AbtestManagementUI[F],
@@ -37,7 +44,7 @@ class AdminUI[F[_]: MonadThrowable](
     {
       case e =>
         InternalServerError(
-          html.errorMsg("Ooops! something bad happened" + e.toString)
+          html.errorMsg("Ooops! something bad happened. " + e.toString)
         )
     }
   }
@@ -84,8 +91,9 @@ object AdminUI {
       Resource.liftF(AuthDependencies[F](cfg.key)).flatMap { deps =>
         import deps._
         import dynamo.AdminDAOs._
-        val authUI =
-          auth.UI.default[F](deps, Some(cfg.initialAdminUsername), cfg.initialRole)
+        implicit val authAlg = AuthAlg[F, BCrypt, AuthImp]
+
+        val authUI = new UI(Some(cfg.initialAdminUsername), cfg.initialRole)
 
         AbtestManagementUI.fromMongo[F](mongoAbtest).map { amUI =>
           new AdminUI(amUI, authUI)

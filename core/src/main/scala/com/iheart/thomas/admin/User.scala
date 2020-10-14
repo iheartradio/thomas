@@ -1,10 +1,11 @@
 package com.iheart.thomas.admin
 
 import cats.Eq
+import com.iheart.thomas.Username
 import play.api.libs.json.{Format, Json}
 
 case class User(
-    username: String,
+    username: Username,
     hash: String,
     role: Role)
 

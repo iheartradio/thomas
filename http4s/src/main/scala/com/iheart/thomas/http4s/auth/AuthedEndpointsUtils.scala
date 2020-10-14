@@ -26,7 +26,7 @@ trait AuthedEndpointsUtils[F[_], Auth] {
 
   type Authenticator = tsec.authentication.Authenticator[
     F,
-    String,
+    Username,
     User,
     Token[Auth]
   ]

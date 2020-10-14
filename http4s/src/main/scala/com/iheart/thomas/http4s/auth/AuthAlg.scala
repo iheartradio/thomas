@@ -1,4 +1,5 @@
-package com.iheart.thomas.http4s
+package com.iheart.thomas
+package http4s
 package auth
 
 import cats.effect.Concurrent
@@ -18,19 +19,19 @@ import scala.util.control.NoStackTrace
 trait AuthAlg[F[_], Auth] {
 
   def login(
-      username: String,
+      username: Username,
       password: String,
       respond: User => F[Response[F]]
     ): F[Response[F]]
 
   def register(
-      username: String,
+      username: Username,
       password: String,
       role: Role = Roles.User
     ): F[User]
 
   def update(
-      username: String,
+      username: Username,
       passwordO: Option[String],
       roleO: Option[Role]
     ): F[User]
@@ -53,7 +54,7 @@ object AuthAlg {
         auth.discard(token).void
       }
       def login(
-          username: String,
+          username: Username,
           password: String,
           respond: User => F[Response[F]]
         ): F[Response[F]] =
@@ -69,7 +70,7 @@ object AuthAlg {
         } yield auth.embed(response, token)
 
       def register(
-          username: String,
+          username: Username,
           password: String,
           role: Role = Roles.User
         ): F[User] = {
@@ -85,7 +86,7 @@ object AuthAlg {
       }
 
       def update(
-          username: String,
+          username: Username,
           passwordO: Option[String],
           roleO: Option[Role]
         ): F[User] =
@@ -110,7 +111,7 @@ object AuthAlg {
           u <- userDAO.update(update)
         } yield u
 
-      def remove(username: String): F[Unit] = userDAO.remove(username)
+      def remove(username: Username): F[Unit] = userDAO.remove(username)
 
       def allUsers: F[Vector[User]] = userDAO.all
     }

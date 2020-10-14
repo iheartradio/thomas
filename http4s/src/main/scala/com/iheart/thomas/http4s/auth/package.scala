@@ -1,4 +1,5 @@
-package com.iheart.thomas.http4s
+package com.iheart.thomas
+package http4s
 
 import com.iheart.thomas.admin.{Role, User}
 import tsec.authentication.{AugmentedJWT, SecuredRequestHandler}
@@ -6,11 +7,11 @@ import tsec.authorization.AuthGroup
 
 package object auth {
 
-  type Token[A] = AugmentedJWT[A, String]
+  type Token[A] = AugmentedJWT[A, Username]
 
   type AuthedRequestHandler[F[_], Auth] = SecuredRequestHandler[
     F,
-    String,
+    Username,
     User,
     Token[Auth]
   ]

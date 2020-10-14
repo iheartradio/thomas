@@ -17,7 +17,7 @@ import com.iheart.thomas.admin.User
 import com.iheart.thomas.html.{errorMsg, redirect}
 import com.iheart.thomas.http4s.abtest.AbtestManagementUI._
 import com.iheart.thomas.http4s.abtest.AbtestService.validationErrorMsg
-import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
+import com.iheart.thomas.http4s.auth.{AuthAlg, AuthedEndpointsUtils}
 import com.typesafe.config.Config
 import io.estatico.newtype.ops._
 import lihua.{Entity, EntityId}
@@ -34,7 +34,8 @@ import play.api.libs.json.JsObject
 import scala.concurrent.ExecutionContext
 
 class AbtestManagementUI[F[_]: Async](
-    alg: AbtestAlg[F]
+    alg: AbtestAlg[F],
+    authAlg: AuthAlg[F, AuthImp]
   )(implicit reverseRoutes: ReverseRoutes)
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
@@ -90,18 +91,22 @@ class AbtestManagementUI[F[_]: Async](
         u: User,
         feature: Feature,
         msg: Option[Either[String, String]] = None
-      ) =
-      alg.getTestsByFeature(feature.name).flatMap { tests =>
-        Ok(
+      ) = {
+      for {
+        tests <- alg.getTestsByFeature(feature.name)
+        allUsers <- authAlg.allUsers
+        r <- Ok(
           featureForm(
             u,
             feature,
             tests.size,
             msg.flatMap(_.left.toOption),
-            msg.flatMap(_.right.toOption)
+            msg.flatMap(_.right.toOption),
+            (allUsers.map(_.username).toSet -- feature.developers.toSet).toList
           )
         )
-      }
+      } yield r
+    }
 
     def getTestAndFollowUp(
         testId: String
@@ -116,33 +121,7 @@ class AbtestManagementUI[F[_]: Async](
           .headOption
       )
 
-    roleBasedService(auth.Permissions.readableRoles) {
-      case GET -> Root / "tests" :? endsAfter(ea) +& feature(fn) asAuthed u =>
-        testsList(
-          u,
-          Filters(
-            ea.getOrElse(defaultEndsAfter),
-            fn.filter(_ != "_ALL_FEATURES_")
-          )
-        )
-      case GET -> Root / "features" / feature asAuthed u =>
-        alg.getFeature(feature).flatMap(showFeature(u, _))
-
-      case GET -> Root / "tests" / testId asAuthed u =>
-        for {
-          p <- getTestAndFollowUp(testId)
-          (test, followUpO) = p
-          feature <- alg.getFeature(test.data.feature)
-          r <- Ok(
-            showTest(
-              u,
-              test,
-              followUpO,
-              feature.overrides
-            )
-          )
-        } yield r
-    } <+> roleBasedService(auth.Permissions.testManagerRoles) {
+    roleBasedService(auth.Permissions.testManagerRoles) {
 
       case GET -> Root / "tests" / "new" :? featureReq(fn) asAuthed u =>
         Ok(newTest(u, fn, None))
@@ -252,6 +231,33 @@ class AbtestManagementUI[F[_]: Async](
                 }
           )
 
+    } <+> roleBasedService(auth.Permissions.readableRoles) {
+      case GET -> Root / "tests" :? endsAfter(ea) +& feature(fn) asAuthed u =>
+        testsList(
+          u,
+          Filters(
+            ea.getOrElse(defaultEndsAfter),
+            fn.filter(_ != "_ALL_FEATURES_")
+          )
+        )
+
+      case GET -> Root / "features" / feature asAuthed u =>
+        alg.getFeature(feature).flatMap(showFeature(u, _))
+
+      case GET -> Root / "tests" / testId asAuthed u =>
+        for {
+          p <- getTestAndFollowUp(testId)
+          (test, followUpO) = p
+          feature <- alg.getFeature(test.data.feature)
+          r <- Ok(
+            showTest(
+              u,
+              test,
+              followUpO,
+              feature.overrides
+            )
+          )
+        } yield r
     }
   }
 
@@ -267,20 +273,22 @@ object AbtestManagementUI {
       cfgResourceName: Option[String] = None
     )(implicit F: Concurrent[F],
       ex: ExecutionContext,
-      rr: ReverseRoutes
+      rr: ReverseRoutes,
+      authAlg: AuthAlg[F, AuthImp]
     ): Resource[F, AbtestManagementUI[F]] = {
     MongoResources
       .abtestAlg[F](cfgResourceName)
-      .map(new AbtestManagementUI(_))
+      .map(new AbtestManagementUI(_, authAlg))
   }
 
   def fromMongo[F[_]: Timer](
       cfg: Config
     )(implicit F: Concurrent[F],
       ex: ExecutionContext,
-      rr: ReverseRoutes
+      rr: ReverseRoutes,
+      authAlg: AuthAlg[F, AuthImp]
     ): Resource[F, AbtestManagementUI[F]] = {
-    MongoResources.abtestAlg[F](cfg).map(new AbtestManagementUI(_))
+    MongoResources.abtestAlg[F](cfg).map(new AbtestManagementUI(_, authAlg))
   }
 
   object Decoders extends CommonFormDecoders {
@@ -348,13 +356,15 @@ object AbtestManagementUI {
         fieldOptional[String]("description"),
         list[(String, String)]("overrides").map(_.toMap),
         fieldEither[Boolean]("overrideEligibility").default(false),
-        fieldEither[Map[String, String]]("batchOverrides").default(Map.empty)
-      ).mapN { (name, desc, overrides, oEFlag, batchOverrides) =>
+        fieldEither[Map[String, String]]("batchOverrides").default(Map.empty),
+        listOf[String]("developers")
+      ).mapN { (name, desc, overrides, oEFlag, batchOverrides, developers) =>
         Feature(
           name = name,
           description = desc,
           overrides = overrides ++ batchOverrides,
-          overrideEligibility = oEFlag
+          overrideEligibility = oEFlag,
+          developers = developers
         )
       }.sanitized
     }

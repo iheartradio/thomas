@@ -1,9 +1,10 @@
-package com.iheart.thomas.http4s.auth
+package com.iheart.thomas
+package http4s.auth
 
 import cats.data.OptionT
 import cats.effect.Sync
 import cats.implicits._
-import com.iheart.thomas.MonadThrowable
+import com.iheart.thomas.{MonadThrowable, Username}
 import com.iheart.thomas.admin.{AuthRecord, AuthRecordDAO, User, UserDAO}
 import com.iheart.thomas.http4s.AuthImp
 import com.iheart.thomas.http4s.auth.AuthDependencies.tokenCookieName
@@ -24,7 +25,7 @@ import tsec.mac.jca.{HMACSHA256, MacErrorM, MacSigningKey}
 import concurrent.duration._
 
 class AuthDependencies[A](key: MacSigningKey[A]) {
-  type Token = AugmentedJWT[A, String]
+  type Token = AugmentedJWT[A, Username]
 
   implicit def backingStore[F[_]: MonadThrowable](
       implicit dao: AuthRecordDAO[F],
@@ -68,15 +69,15 @@ class AuthDependencies[A](key: MacSigningKey[A]) {
 
   implicit def identityStore[F[_]](
       implicit dao: UserDAO[F]
-    ): IdentityStore[F, String, User] =
+    ): IdentityStore[F, Username, User] =
     (id: String) => OptionT(dao.find(id))
 
   implicit def jwtAuthenticator[F[_]: Sync](
       implicit authRepo: BackingStore[F, SecureRandomId, Token],
-      userRepo: IdentityStore[F, String, User],
+      userRepo: IdentityStore[F, Username, User],
       cv: JWSMacCV[F, A],
       A: JWTMacAlgo[A]
-    ): Authenticator[F, String, User, Token] =
+    ): Authenticator[F, Username, User, Token] =
     JWTAuthenticator.backed.inCookie(
       TSecCookieSettings(
         cookieName = tokenCookieName,

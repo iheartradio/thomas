@@ -69,8 +69,8 @@ class AbtestService[F[_]: Async](
         case APINotFound(_) => NotFound()
         case FailedToPersist(msg) =>
           serverError("Failed to save to DB: " + msg)
-        case DBException(t) => serverError("DB Error" + t.getMessage)
-        case DBLastError(t) => serverError("DB Operation Rejected" + t)
+        case e @ DBException(_, _) => serverError("DB Error" + e.getMessage)
+        case DBLastError(t)        => serverError("DB Operation Rejected" + t)
         case e @ CannotChangePastTest(_) =>
           BadRequest(errorJson(e.getMessage))
         case CannotChangeGroupSizeWithFollowUpTest(t) =>

@@ -192,10 +192,10 @@ package model {
       description: Option[String],
       overrides: Overrides,
       overrideEligibility: Boolean = false,
-      lockedAt: Option[Instant] = None)
+      lockedAt: Option[Instant] = None,
+      developers: List[Username] = Nil)
 
   /**
-    *
     * @param userId
     * @param at
     * @param tags
