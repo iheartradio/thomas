@@ -5,6 +5,7 @@ import cats.effect.Sync
 import cats.implicits._
 import com.iheart.thomas.MonadThrowable
 import com.iheart.thomas.admin.{AuthRecord, AuthRecordDAO, User, UserDAO}
+import com.iheart.thomas.http4s.AuthImp
 import com.iheart.thomas.http4s.auth.AuthDependencies.tokenCookieName
 import tsec.authentication.{
   AugmentedJWT,
@@ -12,7 +13,6 @@ import tsec.authentication.{
   BackingStore,
   IdentityStore,
   JWTAuthenticator,
-  SecuredRequestHandler,
   TSecCookieSettings
 }
 import tsec.common.SecureRandomId
@@ -76,7 +76,7 @@ class AuthDependencies[A](key: MacSigningKey[A]) {
       userRepo: IdentityStore[F, String, User],
       cv: JWSMacCV[F, A],
       A: JWTMacAlgo[A]
-    ): JWTAuthenticator[F, String, User, A] =
+    ): Authenticator[F, String, User, Token] =
     JWTAuthenticator.backed.inCookie(
       TSecCookieSettings(
         cookieName = tokenCookieName,
@@ -89,16 +89,12 @@ class AuthDependencies[A](key: MacSigningKey[A]) {
       signingKey = key
     )
 
-  implicit def securedRequestHandler[F[_]: MonadThrowable](
-      implicit auth: Authenticator[F, String, User, Token]
-    ): SecuredRequestHandler[F, String, User, Token] =
-    SecuredRequestHandler(auth)
 }
 
 object AuthDependencies {
   val tokenCookieName = "thomas-token"
   import tsec.common._
-  def apply[F[_]: Sync](key: String): F[AuthDependencies[HMACSHA256]] =
+  def apply[F[_]: Sync](key: String): F[AuthDependencies[AuthImp]] =
     key.hexBytes.flatMap(HMACSHA256.buildKey[F]).map(new AuthDependencies(_))
 
 }

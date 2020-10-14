@@ -12,9 +12,10 @@ import com.iheart.thomas.http4s.auth.UI.ValidationErrors._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import org.http4s.twirl._
-import org.http4s.{HttpRoutes, Uri, UrlForm}
+import org.http4s.{FormDataDecoder, HttpRoutes, ParseFailure, Uri, UrlForm}
+import FormDataDecoder._
 import tsec.passwordhashers.jca.BCrypt
-
+import UI.roleFormatter
 import scala.util.control.NoStackTrace
 
 class UI[F[_]: Async, Auth](
@@ -31,6 +32,13 @@ class UI[F[_]: Async, Auth](
       alg.allUsers.flatMap { allUsers =>
         Ok(html.users(allUsers, user))
       }
+    case req @ POST -> Root / "users" / username / "role" asAuthed _ =>
+      for {
+        role <- req.request.as[Role]
+        _ <- alg.update(username, None, Some(role))
+        r <- redirectTo(reverseRoutes.users)
+      } yield r
+
   } <+> roleBasedService(Roles.values) {
     case req @ GET -> Root / "logout" asAuthed _ =>
       alg.logout(req.authenticator) *>
@@ -124,6 +132,14 @@ object UI extends {
         extends RuntimeException
         with NoStackTrace
   }
+
+  implicit val roleFormatter: FormDataDecoder[Role] =
+    field[String]("name").mapValidated(s =>
+      Roles
+        .fromRepr(s)
+        .leftMap(_ => ParseFailure(s"invalid role $s", ""))
+        .toValidatedNel
+    )
 
   object QueryParamMatchers {
     object redirectTo extends OptionalQueryParamDecoderMatcher[Uri]("redirectTo")

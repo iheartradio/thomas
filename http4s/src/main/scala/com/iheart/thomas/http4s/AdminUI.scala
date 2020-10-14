@@ -1,37 +1,46 @@
-package com.iheart.thomas.http4s
+package com.iheart.thomas
+package http4s
 
 import com.iheart.thomas.http4s.abtest.AbtestManagementUI
-import com.iheart.thomas.http4s.auth.{
-  AuthDependencies,
-  AuthedEndpointsUtils,
-  AuthedRequestHandler
-}
+import com.iheart.thomas.http4s.auth.{AuthDependencies, AuthedEndpointsUtils, Token}
 import org.http4s.dsl.Http4sDsl
 import cats.implicits._
 import com.iheart.thomas.{MonadThrowable, dynamo}
 import cats.effect._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
-import com.iheart.thomas.admin.Role
+import com.iheart.thomas.admin.{Role, User}
 import com.typesafe.config.Config
-import org.http4s.server.{Router, Server}
+import org.http4s.server.{Router, Server, ServiceErrorHandler}
 import org.http4s.server.blaze.BlazeServerBuilder
-import pureconfig.ConfigSource
+import pureconfig.error.{CannotConvert, FailureReason}
+import pureconfig.{ConfigReader, ConfigSource}
 import pureconfig.module.catseffect._
 import tsec.common.SecureRandomIdGenerator
 
 import scala.concurrent.ExecutionContext
+import org.http4s.twirl._
+import tsec.authentication.Authenticator
 
 class AdminUI[F[_]: MonadThrowable](
     abtestManagementUI: AbtestManagementUI[F],
     authUI: auth.UI[F, AuthImp]
   )(implicit reverseRoutes: ReverseRoutes,
-    requestHandler: AuthedRequestHandler[F, AuthImp])
+    authenticator: Authenticator[F, String, User, Token[AuthImp]])
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
 
   val routes = authUI.publicEndpoints <+> liftService(
     abtestManagementUI.routes <+> authUI.authedService
   )
+
+  val serverErrorHandler: ServiceErrorHandler[F] = { _ =>
+    {
+      case e =>
+        InternalServerError(
+          html.errorMsg("Ooops! something bad happened" + e.toString)
+        )
+    }
+  }
 }
 
 object AdminUI {
@@ -45,6 +54,13 @@ object AdminUI {
       authTableWriteCapacity: Long,
       initialAdminUsername: String,
       initialRole: Role)
+
+  implicit val roleCfgReader: ConfigReader[Role] =
+    ConfigReader.fromNonEmptyString(s =>
+      Roles
+        .fromRepr(s)
+        .leftMap(_ => CannotConvert(s, "Role", "Invalid value"): FailureReason)
+    )
 
   def loadConfig[F[_]: Sync](cfg: Config): F[AdminUIConfig] = {
     import pureconfig.generic.auto._
@@ -97,6 +113,7 @@ object AdminUI {
         .withHttpApp(
           Router(adminCfg.rootPath -> ui.routes).orNotFound
         )
+        .withServiceErrorHandler(ui.serverErrorHandler)
         .resource
 
     } yield server
