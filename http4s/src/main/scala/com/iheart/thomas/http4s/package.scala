@@ -12,11 +12,12 @@ package object http4s {
       Role("Developer") //can start their own test and become feature admin
     val Tester: Role = Role("Tester") //can change overrides
     val User: Role = Role("User") //readonly but can be feature admin
+    val Guest: Role = Role("Guest") //Cannot do anything
 
-    override val values: AuthGroup[Role] = AuthGroup(Admin, User, Developer)
+    override val values: AuthGroup[Role] =
+      AuthGroup(Admin, User, Developer, Tester, Guest)
 
     override def getRepr(t: Role): String = t.name
-
   }
 
   type AuthImp = HMACSHA256

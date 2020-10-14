@@ -1,19 +1,47 @@
 @import com.iheart.thomas.html._
 @import com.iheart.thomas.admin.User
+@import com.iheart.thomas.http4s.Roles
 @import com.iheart.thomas.http4s.ReverseRoutes
 
-@(allUsers: Vector[User], currentUser: User)(implicit reverseRoutes: ReverseRoutes)
+@(allUsers: Vector[User],
+currentUser: User
+)(implicit reverseRoutes: ReverseRoutes)
 
 @topNav("All Users", currentUser) {
-<div class="users list-group">
-  @for(user <- allUsers) {
-  <div class="list-group-item list-group-item-secondary mt-2">
-    <a href="@reverseRoutes.users/user.username" >
-      <span class="font-weight-heavy h4 text-primary">@user.username</span>
-    </a>
-    <span>@user.role.name</span>
-  </div>
-  }
-</div>
+<table class="table">
+    <thead>
+    <tr>
+        <th scope="col">Username</th>
+        <th scope="col">Role</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+
+    @for(user <- allUsers.sortBy(_.username)) {
+    <tr>
+        <td>@user.username</td>
+        <td>
+            <form action="@reverseRoutes.users/@user.username/role" method="post">
+
+                <select name="name" id="role-name" onchange="this.form.submit()">
+                    @for(r <- Roles.values) {
+                    <option
+                            @if(r.name== user.role.name){
+                            selected
+                            }
+                    >@r.name
+                    </option>
+                    }
+                </select>
+
+            </form>
+        </td>
+    </tr>
+
+    }
+    </tbody>
+</table>
 
 }
