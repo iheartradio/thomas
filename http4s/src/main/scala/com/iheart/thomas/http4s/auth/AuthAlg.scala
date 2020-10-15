@@ -4,11 +4,11 @@ package auth
 import cats.effect.Concurrent
 import com.iheart.thomas.{MonadThrowable, dynamo}
 import com.iheart.thomas.admin.{Role, User, UserDAO}
-import tsec.authentication.{Authenticator}
+import tsec.authentication.Authenticator
 import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 import cats.implicits._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
-import com.iheart.thomas.http4s.auth.AuthError.UserAlreadyExist
+import com.iheart.thomas.http4s.auth.AuthError._
 import org.http4s.Response
 import tsec.common.Verified
 import tsec.mac.jca.HMACSHA256
@@ -26,7 +26,7 @@ trait AuthAlg[F[_], Auth] {
   def register(
       username: String,
       password: String,
-      role: Role = Roles.Reader
+      role: Role = Roles.User
     ): F[User]
 
   def update(
@@ -71,7 +71,7 @@ object AuthAlg {
       def register(
           username: String,
           password: String,
-          role: Role = Roles.Reader
+          role: Role = Roles.User
         ): F[User] = {
         userDAO.find(username).ensure(UserAlreadyExist(username))(_.isEmpty) *>
           password
@@ -91,6 +91,15 @@ object AuthAlg {
         ): F[User] =
         for {
           user <- userDAO.get(username)
+          _ <- roleO.fold(().pure[F]) { newRole =>
+            val demoting =
+              user.role == Roles.Admin && newRole != Roles.Admin
+            if (demoting)
+              userDAO.all
+                .ensure(MustHaveAtLeastOneAdmin)(_.count(_.role == Roles.Admin) > 1)
+                .void
+            else ().pure[F]
+          }
           hO <- passwordO.traverse(cryptService.hashpw)
           update =
             user
@@ -128,4 +137,5 @@ object AuthError {
   case class UserAlreadyExist(username: String) extends AuthError
   case class PasswordTooWeak(username: String) extends AuthError
   case object IncorrectPassword extends AuthError
+  case object MustHaveAtLeastOneAdmin extends AuthError
 }

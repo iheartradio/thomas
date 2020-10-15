@@ -1,7 +1,8 @@
 package com.iheart.thomas.http4s
 
-import com.iheart.thomas.admin.User
+import com.iheart.thomas.admin.{Role, User}
 import tsec.authentication.{AugmentedJWT, SecuredRequestHandler}
+import tsec.authorization.AuthGroup
 
 package object auth {
 
@@ -13,4 +14,14 @@ package object auth {
     User,
     Token[Auth]
   ]
+
+  object Permissions {
+    import Roles._
+
+    val readableRoles: AuthGroup[Role] =
+      AuthGroup.fromSeq(values.filter(_ != Guest))
+
+    val testManagerRoles: AuthGroup[Role] =
+      AuthGroup(Admin, Tester, Developer)
+  }
 }

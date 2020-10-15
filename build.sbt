@@ -23,8 +23,8 @@ lazy val libs = {
     .add(   name = "cats-retry",            version = "1.1.0", org = "com.github.cb372")
     .addJVM(name = "decline",               version = "1.2.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.5.0",  org = "io.github.embeddedkafka")
-    .addJVM(name = "evilplot",              version = "0.8.0", org = "com.cibo")
-    .addJVM(name = "fs2-kafka",             version = "1.0.0", org = "com.github.fd4s")
+    .addJVM(name = "evilplot",              version = "0.6.3", org = "com.cibo")
+    .addJVM(name = "fs2-kafka",             version = "1.1.0", org = "com.github.fd4s")
     .addModule("http4s", "http4s-twirl")
     .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
     .add(   name = "jawn",                  version = "1.0.0", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
@@ -53,7 +53,7 @@ lazy val libs = {
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias(
   "validate",
-  s";clean;test;play/IntegrationTest/test;it/IntegrationTest/test;playExample/compile;docs/tut"
+  s";clean;test;it/IntegrationTest/test;docs/tut"
 )
 addCommandAlias("it", s"IntegrationTest/test")
 
@@ -140,7 +140,7 @@ lazy val core = project
   )
 
 lazy val bandit = project
-  .dependsOn(analysis, core  % "compile->compile;test->test")
+  .dependsOn(analysis, core % "compile->compile;test->test")
   .aggregate(analysis)
   .settings(
     name := "thomas-bandit",
@@ -219,7 +219,7 @@ lazy val docs = project
       "gray-lighter" -> "#F4F3F4",
       "white-color" -> "#FFFFFF"
     )
-)
+  )
 
 lazy val mongo = project
   .dependsOn(core, bandit)
@@ -236,7 +236,6 @@ lazy val dynamo = project
   .settings(
     libs.dependencies("lihua-dynamo", "cats-retry"),
     libs.testDependencies("cats-effect-testing-scalatest")
-
   )
 
 lazy val testkit = project
@@ -296,7 +295,13 @@ lazy val http4s = project
       "log4cats-slf4j",
       "pureconfig-cats-effect",
       "pureconfig-generic",
-      "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s"
+      "tsec-common",
+      "tsec-password",
+      "tsec-mac",
+      "tsec-signatures",
+      "tsec-jwt-mac",
+      "tsec-jwt-sig",
+      "tsec-http4s"
     )
   )
 
@@ -306,7 +311,9 @@ lazy val http4sExample = project
     name := "thomas-http4s-example",
     rootSettings,
     noPublishSettings,
-    mainClass in reStart := Some("com.iheart.thomas.example.ExampleAbtestAdminUIApp"),
+    mainClass in reStart := Some(
+      "com.iheart.thomas.example.ExampleAbtestAdminUIApp"
+    ),
     localDynamoSettings
   )
 
@@ -418,7 +425,10 @@ lazy val developerKai = Developer(
   new java.net.URL("http://kailuowang.com")
 )
 
-lazy val commonSettings = addCompilerPlugins(libs, "kind-projector") ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
+lazy val commonSettings = addCompilerPlugins(
+  libs,
+  "kind-projector"
+) ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := defaultScalaVer,
   parallelExecution in Test := false,
@@ -447,23 +457,24 @@ lazy val buildSettings = sharedBuildSettings(gh, libs)
 
 import ReleaseTransformations._
 
-lazy val publishSettings = sharedPublishSettings(gh) ++ credentialSettings ++ sharedReleaseProcess ++ Seq(
-  publishTo := sonatypePublishToBundle.value,
-  releaseProcess := Seq[ReleaseStep](
-    checkSnapshotDependencies,
-    inquireVersions,
-    releaseStepCommandAndRemaining("+clean"),
-    releaseStepCommandAndRemaining("+test"),
-    setReleaseVersion,
-    commitReleaseVersion,
-    tagRelease,
-    releaseStepCommandAndRemaining("+publishSigned"),
-    releaseStepCommandAndRemaining("cli/assembly"),
-    releaseStepCommand("sonatypeBundleRelease"),
-    setNextVersion,
-    commitNextVersion,
-    pushChanges
+lazy val publishSettings =
+  sharedPublishSettings(gh) ++ credentialSettings ++ sharedReleaseProcess ++ Seq(
+    publishTo := sonatypePublishToBundle.value,
+    releaseProcess := Seq[ReleaseStep](
+      checkSnapshotDependencies,
+      inquireVersions,
+      releaseStepCommandAndRemaining("+clean"),
+      releaseStepCommandAndRemaining("+test"),
+      setReleaseVersion,
+      commitReleaseVersion,
+      tagRelease,
+      releaseStepCommandAndRemaining("+publishSigned"),
+      releaseStepCommandAndRemaining("cli/assembly"),
+      releaseStepCommand("sonatypeBundleRelease"),
+      setNextVersion,
+      commitNextVersion,
+      pushChanges
+    )
   )
-)
 
 lazy val disciplineDependencies = libs.dependencies("discipline", "scalacheck")

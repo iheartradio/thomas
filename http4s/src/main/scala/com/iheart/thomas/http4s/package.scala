@@ -8,13 +8,16 @@ import tsec.mac.jca.HMACSHA256
 package object http4s {
   implicit object Roles extends SimpleAuthEnum[Role, String] {
     val Admin: Role = Role("Admin")
-    val Developer: Role = Role("Developer")
-    val Reader: Role = Role("Reader")
+    val Developer: Role =
+      Role("Developer") //can start their own test and become feature admin
+    val Tester: Role = Role("Tester") //can change overrides
+    val User: Role = Role("User") //readonly but can be feature admin
+    val Guest: Role = Role("Guest") //Cannot do anything
 
-    override val values: AuthGroup[Role] = AuthGroup(Admin, Reader, Developer)
+    override val values: AuthGroup[Role] =
+      AuthGroup(Admin, User, Developer, Tester, Guest)
 
     override def getRepr(t: Role): String = t.name
-
   }
 
   type AuthImp = HMACSHA256

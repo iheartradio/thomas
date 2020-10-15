@@ -116,7 +116,7 @@ class AbtestManagementUI[F[_]: Async](
           .headOption
       )
 
-    roleBasedService(Roles.values) {
+    roleBasedService(auth.Permissions.readableRoles) {
       case GET -> Root / "tests" :? endsAfter(ea) +& feature(fn) asAuthed u =>
         testsList(
           u,
@@ -142,7 +142,7 @@ class AbtestManagementUI[F[_]: Async](
             )
           )
         } yield r
-    } <+> roleBasedService(Roles.Admin, Roles.Developer) {
+    } <+> roleBasedService(auth.Permissions.testManagerRoles) {
 
       case GET -> Root / "tests" / "new" :? featureReq(fn) asAuthed u =>
         Ok(newTest(u, fn, None))
