@@ -194,7 +194,7 @@ class AbtestService[F[_]: Async](
         respond(api.getAllTestsCachedEpoch(a))
 
       case GET -> Root / "features" =>
-        respond(api.getAllFeatures)
+        respond(api.getAllFeatureNames)
 
       case GET -> Root / "features" / feature / "tests" =>
         respond(api.getTestsByFeature(feature))

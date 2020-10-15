@@ -80,9 +80,6 @@ groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
 </div>
 }
 
-<input name="feature" type="text" hidden
-       value="@feature"/>
-
 <div id="test-form">
   @for(msg <- errorMsg) {
   <div id="error-msg" class="alert alert-warning" role="alert">
@@ -100,11 +97,6 @@ groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
             <label for="testName">Name</label>
             <input name="name" class="form-control" id="testName" type="text"
                    value="@draft.map(_.name)"/>
-          </div>
-          <div class="form-group">
-            <label for="testAuthor">Author</label>
-            <input name="author" class="form-control" id="testAuthor" type="text"
-                   value="@draft.map(_.author)"/>
           </div>
           <div class="row">
             <div class="col-md">

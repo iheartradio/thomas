@@ -3,7 +3,8 @@ package http4s
 
 import com.iheart.thomas.admin.{Role, User}
 import tsec.authentication.{AugmentedJWT, SecuredRequestHandler}
-import tsec.authorization.AuthGroup
+import tsec.authorization.{AuthGroup, SimpleAuthEnum}
+import cats.implicits._
 
 package object auth {
 
@@ -16,13 +17,10 @@ package object auth {
     Token[Auth]
   ]
 
-  object Permissions {
-    import Roles._
+  implicit object Roles extends SimpleAuthEnum[Role, String] {
+    val values: AuthGroup[Role] =
+      AuthGroup.fromSeq(Role.values)
 
-    val readableRoles: AuthGroup[Role] =
-      AuthGroup.fromSeq(values.filter(_ != Guest))
-
-    val testManagerRoles: AuthGroup[Role] =
-      AuthGroup(Admin, Tester, Developer)
+    def getRepr(t: Role): String = t.name
   }
 }

@@ -10,7 +10,7 @@ draft: Option[AbtestSpec],
 errorMsg: Option[String] = None)(implicit routes: ReverseRoutes)
 
 @topNav("Create New Test", u) {
-<form action="@routes.tests" method="post">
+<form action="@routes.features/@feature/tests" method="post">
   <div class="mt-4 mb-4">
     <span class="h5">Creating a new A/B Test for </span>
     <span class="h4 text-primary" title="This is feature name for the test.">

@@ -3,9 +3,9 @@ package http4s
 
 import com.iheart.thomas.http4s.abtest.AbtestManagementUI
 import com.iheart.thomas.http4s.auth.{
-  AuthenticationAlg,
   AuthDependencies,
   AuthedEndpointsUtils,
+  AuthenticationAlg,
   Token,
   UI
 }
@@ -16,6 +16,7 @@ import cats.effect._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.admin.{Role, User}
 import com.typesafe.config.Config
+import org.http4s.Response
 import org.http4s.server.{Router, Server, ServiceErrorHandler}
 import org.http4s.server.blaze.BlazeServerBuilder
 import pureconfig.error.{CannotConvert, FailureReason}
@@ -42,6 +43,8 @@ class AdminUI[F[_]: MonadThrowable](
 
   val serverErrorHandler: ServiceErrorHandler[F] = { _ =>
     {
+      case admin.Authorization.LackPermission =>
+        Response[F](Unauthorized).pure[F]
       case e =>
         InternalServerError(
           html.errorMsg("Ooops! something bad happened. " + e.toString)
@@ -64,7 +67,7 @@ object AdminUI {
 
   implicit val roleCfgReader: ConfigReader[Role] =
     ConfigReader.fromNonEmptyString(s =>
-      Roles
+      auth.Roles
         .fromRepr(s)
         .leftMap(_ => CannotConvert(s, "Role", "Invalid value"): FailureReason)
     )

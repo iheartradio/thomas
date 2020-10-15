@@ -1,6 +1,6 @@
 @import com.iheart.thomas.html._
 @import com.iheart.thomas.admin.User
-@import com.iheart.thomas.http4s.Roles
+@import com.iheart.thomas.admin.Role
 @import com.iheart.thomas.http4s.ReverseRoutes
 
 @(allUsers: Vector[User],
@@ -26,7 +26,7 @@ currentUser: User
                     <form action="@reverseRoutes.users/@user.username/role" method="post">
 
                         <select name="name" id="role-name" onchange="this.form.submit()" class="form-control">
-                            @for(r <- Roles.values) {
+                            @for(r <- Role.values) {
                             <option
                                     @if(r.name== user.role.name){
                                     selected

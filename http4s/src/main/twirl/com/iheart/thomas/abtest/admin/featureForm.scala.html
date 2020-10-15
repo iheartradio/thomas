@@ -3,6 +3,7 @@
 @import com.iheart.thomas.html._
 @import com.iheart.thomas.admin.User
 @import com.iheart.thomas.Username
+@import com.iheart.thomas.admin.Authorization._
 
 @(u: User,
 feature: Feature,
@@ -19,6 +20,9 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
         <div class="form-group">
             <input name="overrides[]._1" class="form-control"
                    type="text"
+                   @if(!u.has(ManageTestSettings(feature))) {
+                   readonly disabled
+                   }
                    @oo.map(o=> s"value=${o._1}") />
         </div>
     </div>
@@ -27,14 +31,22 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
         <div class="form-group w-100">
             <input name="overrides[]._2" class="form-control"
                    type="text"
+                   @if(!u.has(ManageTestSettings(feature))) {
+                     readonly disabled
+                   }
+
                    @oo.map(o=> s"value=${o._2}") />
         </div>
         <div class="text-center">
+            @if(u.has(ManageTestSettings(feature))) {
+
+
             <button class="btn btn-link delete-override remove-item mt-1 ml-1"
                     type="button" onclick="thomas.removeParentItem(this, '.override-item')"
                     title="Remove Override">
                 <i class="far fa-trash-alt"></i>
             </button>
+            }
         </div>
 
     </div>
@@ -81,7 +93,13 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
                     <div class="card-body">
                         <div class="form-group">
                             <label for="descriptionInput">Description</label>
-                            <textarea name="description" class="form-control" id="descriptionInput" type="text"
+                            <textarea name="description"
+                                      class="form-control"
+                                      id="descriptionInput"
+                                      type="text"
+                                      @if(!u.has(ManageFeature(feature))) {
+                                        disabled readonly
+                                      }
                             >@feature.description</textarea>
                         </div>
 
@@ -93,22 +111,32 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
                         <span class="h5">Developers</span>
                     </div>
                     <div class="card-body">
-                        <div class="form-group">
+                        @if(!u.has(ManageFeature(feature))) {
+                            @feature.developers.mkString(", ")
+                        }
+                        <div class="form-group
+                             @if(!u.has(ManageFeature(feature))) {
+                                d-none
+                             }
+                             ">
                             <label>click a developer to remove</label>
-                            <select class="form-control" multiple name="developers" id="feature-developers">
+                            <select class="form-control" multiple
+
+                                    name="developers" id="feature-developers">
                                 @for(dev <- feature.developers) {
                                   <option selected="true">@dev</option>
                                 }
                             </select>
-
+                            @if(u.has(ManageFeature(feature))) {
                             <div class="form-group mt-3">
                                 <select class="form-control" onchange="addFeatureDeveloperItem()" name="username" id="add-developer">
                                     <option>Select a user to add as developer</option>
                                     @for(candidate <- devCandidates){
-                                      <option>@candidate</option>
+                                    <option>@candidate</option>
                                     }
                                 </select>
                             </div>
+                            }
                         </div>
 
                     </div>
@@ -128,6 +156,9 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
                                            class="form-check-input"
                                            id="overrideEligibilityCB"
                                            type="checkbox"
+                                           @if(!u.has(ManageTestSettings(feature))) {
+                                             disabled readonly
+                                           }
                                            value="@feature.overrideEligibility"/>
                                     <label for="overrideEligibilityCB" class="small">ALLOW OVERRIDES TO TAKE PRECEDENCE
                                         OVER ELIGIBILITY
@@ -152,9 +183,11 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
                             @for(o <- feature.overrides) {
                             @overrideItem(Some(o))
                             }
-                            @overrideItem(None)
+                            @if(u.has(ManageTestSettings(feature))) {
+                                @overrideItem(None)
+                            }
                         </div>
-
+                        @if(u.has(ManageTestSettings(feature))) {
                         <div class="d-none" id="new-override">
                             @overrideItem(None)
                         </div>
@@ -165,8 +198,10 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
                                     class="btn btn-secondary">New Override
                             </button>
                         </div>
+                        }
                     </div>
                 </div>
+                @if(u.has(ManageTestSettings(feature))) {
                 <div class="card mt-4" id="feature-batch-overrides">
                     <div class="card-header"><span class="h5">Batch Overrides</span></div>
                     <div class="card-body">
@@ -182,11 +217,14 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
                         </div>
                     </div>
                 </div>
+                }
             </div>
 
         </div>
 
     </div>
+
+    @if(u.has(ManageTestSettings(feature)) || u.has(ManageFeature(feature))){
     <div class="row d-flex flex-row-reverse mt-5">
         <div class="mr-4">
             <button type="submit" class="btn btn-primary">
@@ -196,11 +234,14 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
             </a>
         </div>
     </div>
+    }
 
     </div>
 
 </form>
 }
+@if(u.has(ManageFeature(feature))) {
+
 <script>
     function addFeatureDeveloperItem() {
        $("#feature-developers").append($("#add-developer option:selected").clone().prop("selected", true));
@@ -218,3 +259,4 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
     });
 
 </script>
+}

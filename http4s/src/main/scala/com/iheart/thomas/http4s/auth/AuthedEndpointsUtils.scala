@@ -6,7 +6,6 @@ import cats.{Applicative, Monad}
 import cats.data.{Kleisli, OptionT}
 import com.iheart.thomas.MonadThrowable
 import com.iheart.thomas.admin.{Role, User}
-import com.iheart.thomas.http4s.{ReverseRoutes, Roles}
 import org.http4s.{HttpRoutes, Request, Response, Status, Uri}
 import org.http4s.dsl.Http4sDsl
 import tsec.authentication.{SecuredRequest, TSecAuthService, TSecMiddleware}
@@ -57,7 +56,6 @@ trait AuthedEndpointsUtils[F[_], Auth] {
       (_: Request[F]) => F.pure(Response[F](Status.Unauthorized))
     )
     middleWare(service)
-
   }
 
   def roleBasedService(
@@ -90,11 +88,11 @@ trait AuthedEndpointsUtils[F[_], Auth] {
   }
 
   def roleBasedService(
-      role: Role*
+      roles: Seq[Role]
     )(pf: AuthEndpoint
     )(implicit
       F: MonadThrowable[F],
       reverseRoutes: ReverseRoutes
-    ): AuthService = roleBasedService(AuthGroup(role: _*))(pf)
+    ): AuthService = roleBasedService(AuthGroup.fromSeq(roles))(pf)
 
 }

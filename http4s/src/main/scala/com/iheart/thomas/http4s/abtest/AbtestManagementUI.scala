@@ -32,6 +32,7 @@ import org.http4s.twirl._
 import play.api.libs.json.JsObject
 
 import scala.concurrent.ExecutionContext
+import admin.Authorization._
 
 class AbtestManagementUI[F[_]: Async](
     alg: AbtestAlg[F],
@@ -81,9 +82,12 @@ class AbtestManagementUI[F[_]: Async](
           filters.feature
             .fold(tests)(f => tests.filter(_.data.feature == f))
             .groupBy(_.data.feature)
-            .mapValues(_.sortBy(_.data.start).toList)
+            .map {
+              case (fn, tests) =>
+                (features.find(_.name == fn).get, tests.sortBy(_.data.start).toList)
+            }
             .toList
-            .sortBy(_._1)
+            .sortBy(_._1.name)
         Ok(index(u, toShow, features, filters))
       }.flatten
 
@@ -121,14 +125,34 @@ class AbtestManagementUI[F[_]: Async](
           .headOption
       )
 
-    roleBasedService(auth.Permissions.testManagerRoles) {
+    implicit class UserAuthSyntax(user: User) {
+      def canEdit(testId: String): F[Unit] =
+        get(testId).flatMap(canEdit(_))
+
+      def canEdit(test: Entity[Abtest]): F[Unit] =
+        alg
+          .getFeature(test.data.feature)
+          .flatMap(feature => user.check[F](ManageFeature(feature)))
+
+      def canAddTest(fn: FeatureName): F[Unit] =
+        alg
+          .findFeature(fn)
+          .flatMap(
+            _.fold(user.check[F](CreateNewFeature))(f =>
+              user.check[F](ManageFeature(f))
+            )
+          )
+    }
+
+    roleBasedService(admin.Authorization.testManagerRoles) {
 
       case GET -> Root / "tests" / "new" :? featureReq(fn) asAuthed u =>
-        Ok(newTest(u, fn, None))
+        u.canAddTest(fn) *>
+          Ok(newTest(u, fn, None))
 
       case GET -> Root / "tests" / testId / "new_revision" asAuthed u =>
-        get(testId).flatMap { test =>
-          Ok(
+        get(testId).flatMap(test =>
+          u.canEdit(test) *> Ok(
             newRevision(
               u,
               test,
@@ -140,98 +164,124 @@ class AbtestManagementUI[F[_]: Async](
               )
             )
           )
-        }
+        )
 
       case se @ POST -> Root / "features" / feature asAuthed u =>
         se.request
           .as[Feature]
           .redeemWith(
             e => BadRequest(errorMsg(e.getMessage)),
-            f =>
+            f => {
               alg
-                .updateFeature(f)
-                .flatMap(
-                  showFeature(u, _, Some(Right("Feature successfully update.")))
-                )
-                .handleErrorWith(e => showFeature(u, f, Some(Left(displayError(e)))))
+                .getFeature(f.name)
+                .flatMap { existing =>
+                  if (existing.nonTestSettingsChangedFrom(f))
+                    u.check[F](ManageFeature(f))
+                  else u.check[F](ManageTestSettings(f))
+                } *>
+                alg
+                  .updateFeature(f)
+                  .flatMap(
+                    showFeature(u, _, Some(Right("Feature successfully update.")))
+                  )
+                  .handleErrorWith(e =>
+                    showFeature(u, f, Some(Left(displayError(e))))
+                  )
+
+            }
           )
 
       case se @ POST -> Root / "tests" / testId / "new_revision" asAuthed u =>
         get(testId).flatMap { fromTest =>
           se.request
-            .as[AbtestSpec]
+            .as[SpecForm]
             .redeemWith(
               e => BadRequest(editTest(u, fromTest, Some(displayError(e)))),
-              spec =>
-                (if (fromTest.data.end.fold(true)(_.isAfter(spec.startI)))
-                   alg.continue(spec)
-                 else alg.create(spec, false))
-                  .flatMap(redirectToTest)
-                  .handleErrorWith(e =>
-                    get(testId).flatMap { t =>
-                      BadRequest(
-                        newRevision(u, fromTest, Some(spec), Some(displayError(e)))
-                      )
-                    }
-                  )
+              sf => {
+                val spec = sf.toAbtestSpec(u, fromTest.data.feature)
+                u.canEdit(fromTest) *>
+                  (if (fromTest.data.end.fold(true)(_.isAfter(spec.startI)))
+                     alg.continue(spec)
+                   else alg.create(spec, false))
+                    .flatMap(redirectToTest)
+                    .handleErrorWith(e =>
+                      get(testId).flatMap { t =>
+                        BadRequest(
+                          newRevision(u, fromTest, Some(spec), Some(displayError(e)))
+                        )
+                      }
+                    )
+              }
             )
         }
 
       case GET -> Root / "tests" / testId / "edit" asAuthed u =>
         getTestAndFollowUp(testId).flatMap {
           case (test, followUpO) =>
-            Ok(editTest(u, test = test, followUpO = followUpO))
+            u.canEdit(test) *> Ok(editTest(u, test = test, followUpO = followUpO))
         }
 
-      case GET -> Root / "tests" / testId / "delete" asAuthed _ =>
-        alg.terminate(testId.coerce[EntityId]).flatMap { ot =>
-          val message = ot.fold(s"deleted test $testId")(t =>
-            s"terminated running test for feature ${t.data.feature}"
-          )
+      case GET -> Root / "tests" / testId / "delete" asAuthed u =>
+        u.canEdit(testId) *>
+          alg.terminate(testId.coerce[EntityId]).flatMap { ot =>
+            val message = ot.fold(s"deleted test $testId")(t =>
+              s"terminated running test for feature ${t.data.feature}"
+            )
 
-          Ok(redirect(reverseRoutes.tests, s"Successfully $message."))
-        }
+            Ok(redirect(reverseRoutes.tests, s"Successfully $message."))
+          }
 
       case se @ POST -> Root / "tests" / testId asAuthed u =>
-        se.request
-          .as[AbtestSpec]
-          .redeemWith(
-            e =>
-              get(testId).flatMap { t =>
-                BadRequest(editTest(u, t, Some(displayError(e))))
-              },
-            spec =>
-              alg
-                .updateTest(testId.coerce[EntityId], spec)
-                .flatMap(redirectToTest)
-                .handleErrorWith(e =>
+        get(testId).flatMap { test =>
+          u.canEdit(test) *>
+            se.request
+              .as[SpecForm]
+              .redeemWith(
+                e =>
                   get(testId).flatMap { t =>
-                    BadRequest(editTest(u, t, Some(displayError(e)), Some(spec)))
-                  }
-                )
-          )
+                    BadRequest(editTest(u, t, Some(displayError(e))))
+                  },
+                sf => {
+                  val spec = sf.toAbtestSpec(u, test.data.feature)
+                  alg
+                    .updateTest(
+                      testId.coerce[EntityId],
+                      spec
+                    )
+                    .flatMap(redirectToTest)
+                    .handleErrorWith(e =>
+                      BadRequest(
+                        editTest(u, test, Some(displayError(e)), Some(spec))
+                      )
+                    )
+                }
+              )
+        }
 
-      case se @ POST -> Root / "tests" asAuthed u =>
+      case se @ POST -> Root / "features" / feature / "tests" asAuthed u =>
         se.request
-          .as[AbtestSpec]
+          .as[SpecForm]
           .redeemWith(
             e => BadRequest(errorMsg(e.getMessage)),
-            spec =>
-              alg
-                .create(spec, false)
-                .flatMap(test =>
-                  redirectTo(
-                    testUrl(test)
+            sf => {
+              val spec = sf.toAbtestSpec(u, feature)
+              u.canAddTest(feature) *>
+                alg
+                  .create(spec, false)
+                  .flatMap(test =>
+                    redirectTo(
+                      testUrl(test)
+                    )
                   )
-                )
-                .handleErrorWith { e =>
-                  BadRequest(
-                    newTest(u, spec.feature, Some(spec), Some(displayError(e)))
-                  )
-                }
+                  .handleErrorWith { e =>
+                    BadRequest(
+                      newTest(u, feature, Some(spec), Some(displayError(e)))
+                    )
+                  }
+            }
           )
 
-    } <+> roleBasedService(auth.Permissions.readableRoles) {
+    } <+> roleBasedService(admin.Authorization.readableRoles) {
       case GET -> Root / "tests" :? endsAfter(ea) +& feature(fn) asAuthed u =>
         testsList(
           u,
@@ -254,7 +304,7 @@ class AbtestManagementUI[F[_]: Async](
               u,
               test,
               followUpO,
-              feature.overrides
+              feature
             )
           )
         } yield r
@@ -331,11 +381,38 @@ object AbtestManagementUI {
         field[BigDecimal]("end")
       ).mapN(GroupRange.apply)
 
-    implicit val AbtestSpecFormDecoder: FormDataDecoder[AbtestSpec] =
+    case class SpecForm(
+        name: TestName,
+        start: OffsetDateTime,
+        end: Option[OffsetDateTime],
+        groups: List[Group],
+        requiredTags: List[Tag] = Nil,
+        alternativeIdName: Option[MetaFieldName] = None,
+        userMetaCriteria: UserMetaCriteria = None,
+        reshuffle: Boolean = false,
+        segmentRanges: List[GroupRange] = Nil) {
+      def toAbtestSpec(
+          u: User,
+          feature: FeatureName
+        ) =
+        AbtestSpec(
+          name = name,
+          feature = feature,
+          author = u.username,
+          start = start,
+          end = end,
+          groups = groups,
+          requiredTags = requiredTags,
+          alternativeIdName = alternativeIdName,
+          userMetaCriteria = userMetaCriteria,
+          reshuffle = reshuffle,
+          segmentRanges = segmentRanges
+        )
+    }
+
+    implicit val abtestSpecFormDecoder: FormDataDecoder[SpecForm] =
       (
         field[TestName]("name"),
-        field[FeatureName]("feature"),
-        field[String]("author"),
         field[OffsetDateTime]("start"),
         fieldOptional[OffsetDateTime]("end"),
         list[Group]("groups"),
@@ -343,10 +420,8 @@ object AbtestManagementUI {
         fieldOptional[MetaFieldName]("alternativeIdName"),
         fieldOptional[UserMetaCriterion.And]("userMetaCriteria"),
         fieldEither[Boolean]("reshuffle").default(false),
-        list[GroupRange]("segmentRanges"),
-        none[Abtest.Specialization].pure[FormDataDecoder],
-        Map.empty[GroupName, GroupMeta].pure[FormDataDecoder]
-      ).mapN(AbtestSpec.apply).sanitized
+        list[GroupRange]("segmentRanges")
+      ).mapN(SpecForm.apply).sanitized
 
     implicit val FeatureFormDecoder: FormDataDecoder[Feature] = {
       implicit val mapQPD = jsonEntityQueryParamDecoder[Map[String, String]]

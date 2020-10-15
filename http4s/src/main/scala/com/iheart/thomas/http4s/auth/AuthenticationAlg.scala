@@ -27,7 +27,7 @@ trait AuthenticationAlg[F[_], Auth] {
   def register(
       username: Username,
       password: String,
-      role: Role = Roles.User
+      role: Role
     ): F[User]
 
   def update(
@@ -72,7 +72,7 @@ object AuthenticationAlg {
       def register(
           username: Username,
           password: String,
-          role: Role = Roles.User
+          role: Role
         ): F[User] = {
         userDAO.find(username).ensure(UserAlreadyExist(username))(_.isEmpty) *>
           password
@@ -94,10 +94,10 @@ object AuthenticationAlg {
           user <- userDAO.get(username)
           _ <- roleO.fold(().pure[F]) { newRole =>
             val demoting =
-              user.role == Roles.Admin && newRole != Roles.Admin
+              user.role == Role.Admin && newRole != Role.Admin
             if (demoting)
               userDAO.all
-                .ensure(MustHaveAtLeastOneAdmin)(_.count(_.role == Roles.Admin) > 1)
+                .ensure(MustHaveAtLeastOneAdmin)(_.count(_.role == Role.Admin) > 1)
                 .void
             else ().pure[F]
           }

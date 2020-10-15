@@ -1,24 +1,32 @@
 @import com.iheart.thomas.abtest.model._
 @import lihua.Entity
 @import com.iheart.thomas.http4s.Formatters._
-@import com.iheart.thomas.FeatureName
 @import com.iheart.thomas.http4s.abtest.AbtestManagementUI.Filters
 @import com.iheart.thomas.http4s.ReverseRoutes
 @import com.iheart.thomas.html._
 @import com.iheart.thomas.admin.User
+@import com.iheart.thomas.admin.Authorization._
 
 
-@(u: User, tests: List[(FeatureName, List[Entity[Abtest]])], features: List[FeatureName], filters: Filters)(implicit routes: ReverseRoutes)
+
+@(u: User,
+tests: List[(Feature, List[Entity[Abtest]])],
+features: Vector[Feature],
+filters: Filters)(implicit routes: ReverseRoutes)
 
 
-@featureCard(feature: FeatureName, tests: List[Entity[Abtest]]) = {
+@featureCard(feature: Feature, tests: List[Entity[Abtest]]) = {
 
 <div class="list-group-item list-group-item-secondary mt-2">
   <span class="font-weight-light h6">Feature</span>
 
-  <a href="./features/@feature" >
-  <span class="font-weight-heavy h4 text-primary">@feature</span>
+  <a href="./features/@feature.name" >
+  <span class="font-weight-heavy h4 text-primary">@feature.name</span>
 </a>
+  <small><span class="font-weight-light ml-3">
+              Developers: </span>
+    <span class="font-weight-heavy"> @feature.developers.mkString(", ") </span>
+  </small>
 </div>
 @for(test <- tests) {
 
@@ -72,13 +80,13 @@
           <label for="testsFeature">Show Feature</label>
           <select id="testsFeature" name="feature" class="form-control form-filter">
             <option value="_ALL_FEATURES_">All</option>
-            @for(feature <- features) {
-            <option value="@feature"
-                    @if(filters.feature.fold(false)(_== feature)){
+            @for(fn <- features.map(_.name)) {
+            <option value="@fn"
+                    @if(filters.feature.fold(false)(_== fn)){
                     selected
                     }
 
-            >@feature
+            >@fn
             </option>
             }
           </select>
@@ -86,10 +94,10 @@
       </div>
     </form>
   </div>
-
+  @if(u.managing(features).nonEmpty || u.has(CreateNewFeature) ) {
   <div class="col-5 d-flex flex-row-reverse">
 
-    <div class="card" style="width: 22rem;">
+    <div class="card" id="create-test-window" style="width: 22rem;">
       <form action="@routes.tests/new" method="get">
 
         <div class="card-body">
@@ -98,7 +106,9 @@
             <h5 class="card-title">Create Test</h5>
           </a>
           <div class="collapse" id="collapseNewTest">
+            @if(u.has(CreateNewFeature)) {
             <div class="form-row">
+
               <div class="form-group col-sm">
                 <label for="newFeature">For a new feature</label>
 
@@ -106,17 +116,20 @@
 
               </div>
             </div>
+            }
 
+            @if(u.managing(features).nonEmpty) {
             <div class="form-row">
               <div class="form-group col-sm">
                 <label for="featuresSelect">Or for an existing feature</label>
                 <select id="featuresSelect" name="feature" class="form-control form-filter">
-                  @for(feature <- features) {
-                  <option value="@feature">@feature</option>
+                  @for(feature <- u.managing(features)) {
+                  <option value="@feature.name">@feature.name</option>
                   }
                 </select>
               </div>
             </div>
+            }
 
             <button type="submit" class="btn btn-primary">New Test</button>
           </div>
@@ -124,8 +137,9 @@
 
       </form>
     </div>
-  </div>
 
+  </div>
+  }
 </div>
 
 
