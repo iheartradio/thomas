@@ -3,7 +3,7 @@ package http4s
 
 import com.iheart.thomas.http4s.abtest.AbtestManagementUI
 import com.iheart.thomas.http4s.auth.{
-  AuthAlg,
+  AuthenticationAlg,
   AuthDependencies,
   AuthedEndpointsUtils,
   Token,
@@ -91,7 +91,7 @@ object AdminUI {
       Resource.liftF(AuthDependencies[F](cfg.key)).flatMap { deps =>
         import deps._
         import dynamo.AdminDAOs._
-        implicit val authAlg = AuthAlg[F, BCrypt, AuthImp]
+        implicit val authAlg = AuthenticationAlg[F, BCrypt, AuthImp]
 
         val authUI = new UI(Some(cfg.initialAdminUsername), cfg.initialRole)
 

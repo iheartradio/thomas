@@ -16,7 +16,7 @@ import tsec.mac.jca.HMACSHA256
 import tsec.passwordhashers.jca.BCrypt
 
 import scala.util.control.NoStackTrace
-trait AuthAlg[F[_], Auth] {
+trait AuthenticationAlg[F[_], Auth] {
 
   def login(
       username: Username,
@@ -42,14 +42,14 @@ trait AuthAlg[F[_], Auth] {
   def allUsers: F[Vector[User]]
 }
 
-object AuthAlg {
+object AuthenticationAlg {
 
   implicit def apply[F[_]: MonadThrowable, C, Auth](
       implicit userDAO: UserDAO[F],
       cryptService: PasswordHasher[F, C],
       auth: Authenticator[F, String, User, Token[Auth]]
-    ): AuthAlg[F, Auth] =
-    new AuthAlg[F, Auth] {
+    ): AuthenticationAlg[F, Auth] =
+    new AuthenticationAlg[F, Auth] {
       def logout(token: Token[Auth]): F[Unit] = {
         auth.discard(token).void
       }
@@ -122,12 +122,12 @@ object AuthAlg {
   def default[F[_]: Concurrent](
       key: String
     )(implicit dc: AmazonDynamoDBAsync
-    ): F[AuthAlg[F, HMACSHA256]] =
+    ): F[AuthenticationAlg[F, HMACSHA256]] =
     AuthDependencies[F](key).map { deps =>
       import dynamo.AdminDAOs._
       import BCrypt._
       import deps._
-      implicitly[AuthAlg[F, HMACSHA256]]
+      implicitly[AuthenticationAlg[F, HMACSHA256]]
     }
 }
 

@@ -17,7 +17,7 @@ import com.iheart.thomas.admin.User
 import com.iheart.thomas.html.{errorMsg, redirect}
 import com.iheart.thomas.http4s.abtest.AbtestManagementUI._
 import com.iheart.thomas.http4s.abtest.AbtestService.validationErrorMsg
-import com.iheart.thomas.http4s.auth.{AuthAlg, AuthedEndpointsUtils}
+import com.iheart.thomas.http4s.auth.{AuthenticationAlg, AuthedEndpointsUtils}
 import com.typesafe.config.Config
 import io.estatico.newtype.ops._
 import lihua.{Entity, EntityId}
@@ -35,7 +35,7 @@ import scala.concurrent.ExecutionContext
 
 class AbtestManagementUI[F[_]: Async](
     alg: AbtestAlg[F],
-    authAlg: AuthAlg[F, AuthImp]
+    authAlg: AuthenticationAlg[F, AuthImp]
   )(implicit reverseRoutes: ReverseRoutes)
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
@@ -274,7 +274,7 @@ object AbtestManagementUI {
     )(implicit F: Concurrent[F],
       ex: ExecutionContext,
       rr: ReverseRoutes,
-      authAlg: AuthAlg[F, AuthImp]
+      authAlg: AuthenticationAlg[F, AuthImp]
     ): Resource[F, AbtestManagementUI[F]] = {
     MongoResources
       .abtestAlg[F](cfgResourceName)
@@ -286,7 +286,7 @@ object AbtestManagementUI {
     )(implicit F: Concurrent[F],
       ex: ExecutionContext,
       rr: ReverseRoutes,
-      authAlg: AuthAlg[F, AuthImp]
+      authAlg: AuthenticationAlg[F, AuthImp]
     ): Resource[F, AbtestManagementUI[F]] = {
     MongoResources.abtestAlg[F](cfg).map(new AbtestManagementUI(_, authAlg))
   }

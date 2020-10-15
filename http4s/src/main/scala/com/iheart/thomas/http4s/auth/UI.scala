@@ -21,7 +21,7 @@ import scala.util.control.NoStackTrace
 class UI[F[_]: Async, Auth](
     initialAdminUsername: Option[String],
     initialRole: Role
-  )(implicit alg: AuthAlg[F, Auth],
+  )(implicit alg: AuthenticationAlg[F, Auth],
     reverseRoutes: ReverseRoutes)
     extends Http4sDsl[F]
     with AuthedEndpointsUtils[F, Auth] {
