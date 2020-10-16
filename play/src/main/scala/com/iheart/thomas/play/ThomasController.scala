@@ -115,8 +115,8 @@ class HttpResults[F[_]](alerter: Option[Alerter[F]])(implicit F: Async[F]) {
       case APINotFound(_) => F.pure(NotFound)
       case FailedToPersist(msg) =>
         serverError("Failed to save to DB: " + msg)
-      case DBException(t) => serverError("DB Error" + t.getMessage)
-      case DBLastError(t) => serverError("DB Operation Rejected" + t)
+      case DBException(t, _) => serverError("DB Error" + t.getMessage)
+      case DBLastError(t)    => serverError("DB Operation Rejected" + t)
       case e @ CannotChangePastTest(_) =>
         BadRequest(errorJson(e.getMessage)).pure[F]
       case e @ CannotUpdateExpiredTest(_) =>
