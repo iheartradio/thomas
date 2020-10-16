@@ -2,6 +2,7 @@ package com.iheart.thomas.http4s.auth
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
+import com.iheart.thomas.admin.Role
 import com.iheart.thomas.http4s.auth.AuthError.IncorrectPassword
 import com.iheart.thomas.testkit.Resources
 import org.http4s.Status
@@ -20,7 +21,7 @@ class AuthenticationAlgSuite extends AsyncIOSpec with Matchers with Http4sDsl[IO
     "register user and find him" in {
       algR
         .use { alg =>
-          alg.register("tom", "password1") *> alg.allUsers
+          alg.register("tom", "password1", Role.Admin) *> alg.allUsers
         }
         .asserting {
           _.exists(_.username == "tom") shouldBe true
@@ -31,7 +32,7 @@ class AuthenticationAlgSuite extends AsyncIOSpec with Matchers with Http4sDsl[IO
     "register user and login" in {
       algR
         .use { alg =>
-          alg.register("tom", "password1") *>
+          alg.register("tom", "password1", Role.Admin) *>
             alg.login("tom", "password1", _ => Ok("logged In"))
         }
         .asserting(_.status shouldBe Status.Ok)
@@ -40,7 +41,7 @@ class AuthenticationAlgSuite extends AsyncIOSpec with Matchers with Http4sDsl[IO
     "throw error when login incorrect password" in {
       algR
         .use { alg =>
-          alg.register("tom", "password1") *>
+          alg.register("tom", "password1", Role.Admin) *>
             alg.login("tom", "wrongpassword", _ => Ok("logged In"))
         }
         .assertThrows[IncorrectPassword.type]
