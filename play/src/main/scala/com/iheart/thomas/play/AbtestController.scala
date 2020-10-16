@@ -29,9 +29,10 @@ class AbtestController[F[_]](
     F: Effect[F])
     extends ThomasController(components, alerter) {
 
-  def getKPIModel(name: String) = action(
-    liftOption(kpiAPI.get(name), s"Cannot find KPI named $name")
-  )
+  def getKPIModel(name: String) =
+    action(
+      liftOption(kpiAPI.get(name), s"Cannot find KPI named $name")
+    )
 
   val updateKPIModel = jsonAction { (kpi: KPIModel) =>
     kpiAPI.upsert(kpi)
@@ -42,39 +43,42 @@ class AbtestController[F[_]](
   def getByFeature(feature: FeatureName) =
     action(api.getTestsByFeature(feature))
 
-  def getAllFeatures = action(api.getAllFeatures)
+  def getAllFeatures = action(api.getAllFeatureNames)
 
   def terminate(id: String) = action(api.terminate(EntityId(id)))
 
   def getAllTests(
       at: Option[Long],
       endAfter: Option[Long]
-    ) = action {
-    if (endAfter.isDefined && at.isDefined) {
-      F.raiseError[Vector[Entity[Abtest]]](
-        InvalidRequest("Cannot specify both at and endAfter")
-      )
-    } else
-      endAfter.fold(api.getAllTests(at.map(TimeUtil.toDateTime))) { ea =>
-        api.getAllTestsEndAfter(ea)
-      }
+    ) =
+    action {
+      if (endAfter.isDefined && at.isDefined) {
+        F.raiseError[Vector[Entity[Abtest]]](
+          InvalidRequest("Cannot specify both at and endAfter")
+        )
+      } else
+        endAfter.fold(api.getAllTests(at.map(TimeUtil.toDateTime))) { ea =>
+          api.getAllTestsEndAfter(ea)
+        }
 
-  }
+    }
 
-  def getAllTestsCached(at: Option[Long]) = action {
-    api.getAllTestsCachedEpoch(at)
-  }
+  def getAllTestsCached(at: Option[Long]) =
+    action {
+      api.getAllTestsCachedEpoch(at)
+    }
 
   def getTestsData(
       atEpochMilli: Long,
       durationMillisecond: Option[Long]
-    ) = action {
-    import scala.concurrent.duration._
-    api.getTestsData(
-      Instant.ofEpochMilli(atEpochMilli),
-      durationMillisecond.map(_.millis)
-    )
-  }
+    ) =
+    action {
+      import scala.concurrent.duration._
+      api.getTestsData(
+        Instant.ofEpochMilli(atEpochMilli),
+        durationMillisecond.map(_.millis)
+      )
+    }
 
   def create(autoResolveConflict: Boolean): Action[JsValue] =
     jsonAction((t: AbtestSpec) => api.create(t, autoResolveConflict))
@@ -83,19 +87,18 @@ class AbtestController[F[_]](
 
   val createAuto: Action[JsValue] = create(true)
 
-  val continue: Action[JsValue] = jsonAction(
-    (t: AbtestSpec) => api.continue(t)
-  )
+  val continue: Action[JsValue] = jsonAction((t: AbtestSpec) => api.continue(t))
 
-  def parseEpoch(dateTime: String) = Action {
-    val sysOffset: ZoneOffset =
-      ZoneId.systemDefault().getRules.getOffset(Instant.now())
+  def parseEpoch(dateTime: String) =
+    Action {
+      val sysOffset: ZoneOffset =
+        ZoneId.systemDefault().getRules.getOffset(Instant.now())
 
-    TimeUtil
-      .parse(dateTime, sysOffset)
-      .map(t => Ok(t.toEpochSecond.toString))
-      .getOrElse(BadRequest("Wrong Format"))
-  }
+      TimeUtil
+        .parse(dateTime, sysOffset)
+        .map(t => Ok(t.toEpochSecond.toString))
+        .getOrElse(BadRequest("Wrong Format"))
+    }
 
   def addOverride(
       feature: FeatureName,
@@ -114,18 +117,17 @@ class AbtestController[F[_]](
       api.setOverrideEligibilityIn(feature, overrideEligibility)
     }
 
-  def addOverrides(feature: FeatureName) = jsonAction {
-    (overrides: Map[UserId, GroupName]) =>
+  def addOverrides(feature: FeatureName) =
+    jsonAction { (overrides: Map[UserId, GroupName]) =>
       api.addOverrides(feature, overrides)
-  }
+    }
 
   def addGroupMetas(
       testId: String,
       auto: Boolean
     ) =
-    jsonAction(
-      (metas: Map[GroupName, GroupMeta]) =>
-        api.addGroupMetas(EntityId(testId), metas, auto)
+    jsonAction((metas: Map[GroupName, GroupMeta]) =>
+      api.addGroupMetas(EntityId(testId), metas, auto)
     )
 
   def updateUserMetaCriteria(testId: String) =
@@ -136,32 +138,36 @@ class AbtestController[F[_]](
   def removeGroupMetas(
       testId: String,
       auto: Boolean
-    ) = action {
-    api.removeGroupMetas(EntityId(testId), auto)
-  }
+    ) =
+    action {
+      api.removeGroupMetas(EntityId(testId), auto)
+    }
 
   //for legacy support
-  def getGroupMetas(testId: String) = action {
-    api.getTest(EntityId(testId)).map(_.data.getGroupMetas)
-  }
+  def getGroupMetas(testId: String) =
+    action {
+      api.getTest(EntityId(testId)).map(_.data.getGroupMetas)
+    }
 
-  val getGroupsWithMeta = jsonAction(
-    (query: UserGroupQuery) => api.getGroupsWithMeta(query)
-  )
+  val getGroupsWithMeta =
+    jsonAction((query: UserGroupQuery) => api.getGroupsWithMeta(query))
 
   def removeOverride(
       feature: FeatureName,
       userId: UserId
-    ) = action {
-    api.removeOverrides(feature, userId)
-  }
+    ) =
+    action {
+      api.removeOverrides(feature, userId)
+    }
 
-  def removeAllOverrides(feature: FeatureName) = action {
-    api.removeAllOverrides(feature)
-  }
+  def removeAllOverrides(feature: FeatureName) =
+    action {
+      api.removeAllOverrides(feature)
+    }
 
-  def getOverrides(feature: FeatureName) = action {
-    api.getOverrides(feature)
-  }
+  def getOverrides(feature: FeatureName) =
+    action {
+      api.getOverrides(feature)
+    }
 
 }

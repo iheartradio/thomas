@@ -1,6 +1,6 @@
 @import com.iheart.thomas.html._
 @import com.iheart.thomas.admin.User
-@import com.iheart.thomas.http4s.Roles
+@import com.iheart.thomas.admin.Role
 @import com.iheart.thomas.http4s.ReverseRoutes
 
 @(allUsers: Vector[User],
@@ -8,40 +8,41 @@ currentUser: User
 )(implicit reverseRoutes: ReverseRoutes)
 
 @topNav("All Users", currentUser) {
-<table class="table">
-    <thead>
-    <tr>
-        <th scope="col">Username</th>
-        <th scope="col">Role</th>
-    </tr>
-    </thead>
+<div class="row">
+    <div class="col-3"></div>
+    <div class="col-6">
+        <table class="table mt-5 table-striped table-hover">
+            <thead>
+            <tr>
+                <th scope="col">Username</th>
+                <th scope="col">Role</th>
+            </tr>
+            </thead>
+            <tbody>
+            @for(user <- allUsers.sortBy(_.username)) {
+            <tr>
+                <td>@user.username</td>
+                <td>
+                    <form action="@reverseRoutes.users/@user.username/role" method="post">
 
-    <tbody>
-
-
-    @for(user <- allUsers.sortBy(_.username)) {
-    <tr>
-        <td>@user.username</td>
-        <td>
-            <form action="@reverseRoutes.users/@user.username/role" method="post">
-
-                <select name="name" id="role-name" onchange="this.form.submit()">
-                    @for(r <- Roles.values) {
-                    <option
-                            @if(r.name== user.role.name){
-                            selected
+                        <select name="name" id="role-name" onchange="this.form.submit()" class="form-control">
+                            @for(r <- Role.values) {
+                            <option
+                                    @if(r.name== user.role.name){
+                                    selected
+                                    }
+                            >@r.name
+                            </option>
                             }
-                    >@r.name
-                    </option>
-                    }
-                </select>
+                        </select>
 
-            </form>
-        </td>
-    </tr>
-
-    }
-    </tbody>
-</table>
-
+                    </form>
+                </td>
+            </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    <div class="col-3"></div>
+</div>
 }

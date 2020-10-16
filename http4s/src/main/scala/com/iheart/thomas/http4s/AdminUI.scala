@@ -2,7 +2,13 @@ package com.iheart.thomas
 package http4s
 
 import com.iheart.thomas.http4s.abtest.AbtestManagementUI
-import com.iheart.thomas.http4s.auth.{AuthDependencies, AuthedEndpointsUtils, Token}
+import com.iheart.thomas.http4s.auth.{
+  AuthDependencies,
+  AuthedEndpointsUtils,
+  AuthenticationAlg,
+  Token,
+  UI
+}
 import org.http4s.dsl.Http4sDsl
 import cats.implicits._
 import com.iheart.thomas.{MonadThrowable, dynamo}
@@ -10,6 +16,7 @@ import cats.effect._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.admin.{Role, User}
 import com.typesafe.config.Config
+import org.http4s.Response
 import org.http4s.server.{Router, Server, ServiceErrorHandler}
 import org.http4s.server.blaze.BlazeServerBuilder
 import pureconfig.error.{CannotConvert, FailureReason}
@@ -20,6 +27,7 @@ import tsec.common.SecureRandomIdGenerator
 import scala.concurrent.ExecutionContext
 import org.http4s.twirl._
 import tsec.authentication.Authenticator
+import tsec.passwordhashers.jca.BCrypt
 
 class AdminUI[F[_]: MonadThrowable](
     abtestManagementUI: AbtestManagementUI[F],
@@ -35,9 +43,11 @@ class AdminUI[F[_]: MonadThrowable](
 
   val serverErrorHandler: ServiceErrorHandler[F] = { _ =>
     {
+      case admin.Authorization.LackPermission =>
+        Response[F](Unauthorized).pure[F]
       case e =>
         InternalServerError(
-          html.errorMsg("Ooops! something bad happened" + e.toString)
+          html.errorMsg("Ooops! something bad happened. " + e.toString)
         )
     }
   }
@@ -57,7 +67,7 @@ object AdminUI {
 
   implicit val roleCfgReader: ConfigReader[Role] =
     ConfigReader.fromNonEmptyString(s =>
-      Roles
+      auth.Roles
         .fromRepr(s)
         .leftMap(_ => CannotConvert(s, "Role", "Invalid value"): FailureReason)
     )
@@ -84,8 +94,9 @@ object AdminUI {
       Resource.liftF(AuthDependencies[F](cfg.key)).flatMap { deps =>
         import deps._
         import dynamo.AdminDAOs._
-        val authUI =
-          auth.UI.default[F](deps, Some(cfg.initialAdminUsername), cfg.initialRole)
+        implicit val authAlg = AuthenticationAlg[F, BCrypt, AuthImp]
+
+        val authUI = new UI(Some(cfg.initialAdminUsername), cfg.initialRole)
 
         AbtestManagementUI.fromMongo[F](mongoAbtest).map { amUI =>
           new AdminUI(amUI, authUI)
