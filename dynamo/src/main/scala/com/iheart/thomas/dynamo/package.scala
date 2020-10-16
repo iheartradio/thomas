@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.{
   AmazonDynamoDBAsync,
   AmazonDynamoDBAsyncClient
 }
+import pureconfig.ConfigSource
 
 object `package` {
 
@@ -24,13 +25,21 @@ object `package` {
             )
           )
           .withRegion(region)
-//          .withEndpointConfiguration(
-//            new EndpointConfiguration(serviceEndpoint, signingRegion)
-//          )
+          //          .withEndpointConfiguration(
+          //            new EndpointConfiguration(serviceEndpoint, signingRegion)
+          //          )
           .build()
       )
     )(c => F.delay(c.shutdown()))
 
+  }
+
+  def client[F[_]: Sync](cfg: ConfigSource): Resource[F, AmazonDynamoDBAsync] = {
+    import pureconfig.generic.auto._
+    import pureconfig.module.catseffect._
+    Resource
+      .liftF(cfg.loadF[F, ClientConfig])
+      .flatMap(client[F](_))
   }
 }
 

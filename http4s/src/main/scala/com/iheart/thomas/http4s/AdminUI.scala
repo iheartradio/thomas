@@ -105,6 +105,19 @@ object AdminUI {
     }
   }
 
+  def resource[F[_]: ConcurrentEffect: Timer](
+      cfg: Config
+    )(implicit
+      ec: ExecutionContext
+    ): Resource[F, AdminUI[F]] =
+    dynamo
+      .client(ConfigSource.fromConfig(cfg).at("thomas.admin-ui.dynamo"))
+      .flatMap { implicit dc =>
+        Resource.liftF(AdminUI.loadConfig[F](cfg)).flatMap { adminCfg =>
+          resource(adminCfg, cfg)
+        }
+      }
+
   /**
     * Provides a server that serves the Admin UI
     */
@@ -112,11 +125,22 @@ object AdminUI {
       implicit dc: AmazonDynamoDBAsync,
       executionContext: ExecutionContext
     ): Resource[F, Server[F]] = {
+    ConfigResource.cfg[F]().flatMap(c => serverResourceWithDynamoClient(c))
+  }
+
+  /**
+    * Provides a server that serves the Admin UI
+    */
+  def serverResourceWithDynamoClient[F[_]: ConcurrentEffect: Timer](
+      cfg: Config
+    )(implicit
+      dc: AmazonDynamoDBAsync,
+      executionContext: ExecutionContext
+    ): Resource[F, Server[F]] = {
     import org.http4s.server.blaze._
     import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
 
     for {
-      cfg <- ConfigResource.cfg[F]()
       adminCfg <- Resource.liftF(AdminUI.loadConfig[F](cfg))
       ui <- AdminUI.resource[F](adminCfg, cfg)
       server <- BlazeServerBuilder[F](executionContext)
