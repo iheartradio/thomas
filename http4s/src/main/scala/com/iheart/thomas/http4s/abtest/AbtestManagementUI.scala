@@ -78,7 +78,7 @@ class AbtestManagementUI[F[_]: Async](
           .getAllTestsEndAfter(filters.endsAfter),
         alg.getAllFeatures
       ).mapN { (tests, features) =>
-        val toShow =
+        val testData =
           filters.feature
             .fold(tests)(f => tests.filter(_.data.feature == f))
             .groupBy(_.data.feature)
@@ -87,8 +87,15 @@ class AbtestManagementUI[F[_]: Async](
                 (features.find(_.name == fn).get, tests.sortBy(_.data.start).toList)
             }
             .toList
-            .sortBy(_._1.name)
-        Ok(index(u, toShow, features, filters))
+
+        val sorted = filters.orderBy match {
+          case OrderBy.Alphabetical =>
+            testData.sortBy(_._1.name.toLowerCase)
+          case OrderBy.Recent =>
+            testData.sortBy(_._2.head.data.start).reverse
+        }
+
+        Ok(index(u, sorted, features, filters))
       }.flatten
 
     def showFeature(
@@ -282,12 +289,15 @@ class AbtestManagementUI[F[_]: Async](
           )
 
     } <+> roleBasedService(admin.Authorization.readableRoles) {
-      case GET -> Root / "tests" :? endsAfter(ea) +& feature(fn) asAuthed u =>
+      case GET -> Root / "tests" :? endsAfter(ea) +& feature(fn) +& orderBy(
+            ob
+          ) asAuthed u =>
         testsList(
           u,
           Filters(
             ea.getOrElse(defaultEndsAfter),
-            fn.filter(_ != "_ALL_FEATURES_")
+            fn.filter(_ != "_ALL_FEATURES_"),
+            ob.getOrElse(OrderBy.Recent)
           )
         )
 
@@ -315,9 +325,22 @@ class AbtestManagementUI[F[_]: Async](
 
 object AbtestManagementUI {
   val defaultEndsAfter = OffsetDateTime.now.minusDays(30)
+
+  import enumeratum._
+  sealed trait OrderBy extends EnumEntry
+
+  object OrderBy extends Enum[OrderBy] {
+    val values = findValues
+
+    case object Alphabetical extends OrderBy
+    case object Recent extends OrderBy
+
+  }
+
   case class Filters(
       endsAfter: OffsetDateTime,
-      feature: Option[FeatureName] = None)
+      feature: Option[FeatureName] = None,
+      orderBy: OrderBy = OrderBy.Recent)
 
   def fromMongo[F[_]: Timer](
       cfgResourceName: Option[String] = None
@@ -347,8 +370,12 @@ object AbtestManagementUI {
     object endsAfter
         extends OptionalQueryParamDecoderMatcher[OffsetDateTime]("endsAfter")
 
+    implicit val orderQP: QueryParamDecoder[OrderBy] =
+      QueryParamDecoder.fromUnsafeCast(c => OrderBy.withName(c.value))("OrderBy")
+
     object feature extends OptionalQueryParamDecoderMatcher[FeatureName]("feature")
     object featureReq extends QueryParamDecoderMatcher[FeatureName]("feature")
+    object orderBy extends OptionalQueryParamDecoderMatcher[OrderBy]("orderBy")
 
     implicit val userMetaCriteriaQueryParamDecoder
         : QueryParamDecoder[UserMetaCriterion.And] =
