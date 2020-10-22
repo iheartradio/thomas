@@ -2,7 +2,7 @@ language: scala
 sudo: false
 
 jdk:
-  - openjdk8
+  - openjdk11
 
 services:
   - mongodb
@@ -21,5 +21,5 @@ cache:
 jobs:
   include:
     # it can speed up the overall build to have the longer-running jobs at the top of this list.
-    - env: TEST="validate"
+    - env: TEST="validate" THOMAS_ADMIN_KEY="ecf9b0704e8bfc153a99d9e269c4fdfba54f9d9297881a99317d907a29c8cabccb9c23a4ab0f9dc70663cf74f11f257914e95e99e7b0e3a5f16f321269a239c5be7dd46c03e4f78f80f161e138723ceff4a00e893dc712f9b23881e3c7c00f7367a1d7b36fba5d92640979029bdf6fdbf48b740771613edaba9d73d42146b8ee2638e08fecb1c78ce3a216f4493024ff444a4f9fe8c2f5ca21edd5f4c775205fecacce1eaaaa0bdd84704944816b19d0d2061a4841e4e6939a7ab9b931ccf314332ac00d4bf249ccdbb12f4467aad01405d4b37e187507678334f596678f415e6395d8a4df9498c862b37342f03f52ff7d0425d6f40b649fa3f19fe13cb65183"
       script: sbt validate
