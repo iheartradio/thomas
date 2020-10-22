@@ -1,6 +1,7 @@
 @import com.iheart.thomas.admin.User
 @import com.iheart.thomas.http4s.ReverseRoutes
 @import _root_.play.twirl.api.Html
+@import com.iheart.thomas.admin.Authorization._
 
 @(title: String, currentUser: User)(content: Html)(implicit routes: ReverseRoutes)
 
@@ -22,11 +23,13 @@
 
       </li>
       <li class="nav-item active">
-        <a class="nav-link" href="@routes.tests">A/b Tests<span class="sr-only">(current)</span></a>
+        <a class="nav-link" href="@routes.tests">A/B Tests<span class="sr-only">(current)</span></a>
       </li>
+      @if(currentUser.has(ManageUsers)) {
       <li class="nav-item active">
         <a class="nav-link" href="@routes.users">Users<span class="sr-only">(current)</span></a>
       </li>
+      }
       <li class="nav-item">
         <a class="nav-link" target="_blank" href="https://iheartradio.github.io/thomas/">Docs</a>
       </li>

@@ -33,7 +33,10 @@ object QueryDSL {
   }
 
   implicit class ExtendedOps[F[_]](self: EntityDAO[F, Feature, JsObject]) {
+
     def byName(name: FeatureName): F[Entity[Feature]] = self.findOne('name -> name)
+    def byNameOption(name: FeatureName): F[Option[Entity[Feature]]] =
+      self.findOneOption('name -> name)
   }
 
   implicit def fromField1[A: Writes](tp: (Symbol, A)): JsObject =
@@ -41,7 +44,8 @@ object QueryDSL {
 
   implicit def fromFields2[A: Writes, B: Writes](
       p: ((Symbol, A), (Symbol, B))
-    ): JsObject = p match {
-    case ((s1, a), (s2, b)) => Json.obj(s1.name -> a, s2.name -> b)
-  }
+    ): JsObject =
+    p match {
+      case ((s1, a), (s2, b)) => Json.obj(s1.name -> a, s2.name -> b)
+    }
 }

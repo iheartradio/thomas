@@ -65,7 +65,8 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
 
   def continue(spec: AbtestSpec): F[Entity[Abtest]]
 
-  def getAllFeatures: F[List[FeatureName]]
+  def getAllFeatureNames: F[List[FeatureName]]
+  def getAllFeatures: F[Vector[Feature]]
 
   /**
     * Get all the tests
@@ -117,6 +118,8 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
     getFeature(featureName)
 
   def getFeature(featureName: FeatureName): F[Feature]
+
+  def findFeature(featureName: FeatureName): F[Option[Feature]]
 
   def updateFeature(feature: Feature): F[Feature]
 
@@ -211,7 +214,7 @@ final class DefaultAbtestAlg[F[_]](
       testSpec: AbtestSpec,
       auto: Boolean = false
     ): F[Entity[Abtest]] =
-    addTestWithLock(testSpec.feature)(
+    addTestWithLock(testSpec)(
       createWithoutLock(testSpec, auto)
     )
 
@@ -246,14 +249,14 @@ final class DefaultAbtestAlg[F[_]](
             CannotChangeGroupSizeWithFollowUpTest(after)
           )
       )
-      r <- addTestWithLock(spec.feature)(
+      r <- addTestWithLock(spec)(
         abTestDao.update(test.copy(data = testFromSpec(spec, Some(test))))
       )
 
     } yield r
 
   def continue(testSpec: AbtestSpec): F[Entity[Abtest]] =
-    addTestWithLock(testSpec.feature) {
+    addTestWithLock(testSpec) {
       for {
         _ <- validateForCreation(testSpec)
         continueFrom <- getTestByFeature(testSpec.feature)
@@ -308,10 +311,13 @@ final class DefaultAbtestAlg[F[_]](
       duration
     )
 
-  def getAllFeatures: F[List[FeatureName]] =
+  def getAllFeatureNames: F[List[FeatureName]] =
     abTestDao
       .find(Json.obj())
       .map(_.map(_.data.feature).distinct.toList.sorted)
+
+  def getAllFeatures: F[Vector[Feature]] =
+    featureDao.all.map(_.map(_.data))
 
   def getTest(id: TestId): F[Entity[Abtest]] =
     abTestDao.get(id)
@@ -420,6 +426,9 @@ final class DefaultAbtestAlg[F[_]](
 
   def getFeature(featureName: FeatureName): F[Feature] =
     featureDao.byName(featureName).map(_.data)
+
+  def findFeature(featureName: FeatureName): F[Option[Feature]] =
+    featureDao.byNameOption(featureName).map(_.map(_.data))
 
   def terminate(testId: TestId): F[Option[Entity[Abtest]]] =
     for {
@@ -641,23 +650,28 @@ final class DefaultAbtestAlg[F[_]](
     } yield created
 
   private def addTestWithLock(
-      fn: FeatureName,
+      spec: AbtestSpec,
       gracePeriod: Option[FiniteDuration] = Some(30.seconds)
     )(add: F[Entity[Abtest]]
-    ): F[Entity[Abtest]] =
+    ): F[Entity[Abtest]] = {
+
     for {
-      f <- ensureFeature(fn)
+      f <- ensureFeature(spec.feature, List(spec.author))
       _ <- obtainLock(f, gracePeriod)
         .adaptErr {
-          case e => ConflictCreation(fn, e.getMessage)
+          case e => ConflictCreation(spec.feature, e.getMessage)
         }
         .ensure(
-          ConflictCreation(fn, "Another process is adding a test to this feature")
+          ConflictCreation(
+            spec.feature,
+            "Another process is adding a test to this feature"
+          )
         )(identity)
       attempt <- F.attempt(add)
       _ <- releaseLock(f)
       t <- F.fromEither(attempt)
     } yield t
+  }
 
   private def createAuto(ts: AbtestSpec): F[Entity[Abtest]] =
     for {
@@ -777,7 +791,7 @@ final class DefaultAbtestAlg[F[_]](
       newTest <- abTestDao.insert(
         testFromSpec(spec, inheritFrom)
       )
-      _ <- ensureFeature(spec.feature)
+      _ <- ensureFeature(spec.feature, List(spec.author))
     } yield newTest
   }
 
@@ -857,10 +871,13 @@ final class DefaultAbtestAlg[F[_]](
   private def validateUserId(userId: UserId): F[Unit] =
     List(userId.isEmpty.option(Error.EmptyUserId))
 
-  private def ensureFeature(name: FeatureName): F[Entity[Feature]] =
+  private def ensureFeature(
+      name: FeatureName,
+      developers: List[Username] = Nil
+    ): F[Entity[Feature]] =
     featureDao.byName(name).recoverWith {
       case Error.NotFound(_) =>
-        featureDao.insert(Feature(name, None, Map()))
+        featureDao.insert(Feature(name, None, Map(), developers = developers))
     }
 
   private implicit def errorsToF(possibleErrors: List[ValidationError]): F[Unit] =
