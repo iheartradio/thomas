@@ -2,14 +2,13 @@ package com.iheart.thomas
 package http4s
 package auth
 
-import cats.Applicative
+import cats.{Applicative, Monad}
 import cats.data.{Kleisli, OptionT}
 import com.iheart.thomas.MonadThrowable
 import com.iheart.thomas.admin.{Role, User}
-import com.iheart.thomas.http4s.{ReverseRoutes, Roles}
-import org.http4s.{HttpRoutes, Response, Uri}
+import org.http4s.{HttpRoutes, Request, Response, Status, Uri}
 import org.http4s.dsl.Http4sDsl
-import tsec.authentication.{SecuredRequest, SecuredRequestHandler, TSecAuthService}
+import tsec.authentication.{SecuredRequest, TSecAuthService, TSecMiddleware}
 import tsec.authorization.{AuthGroup, AuthorizationInfo, BasicRBAC}
 import org.http4s.twirl._
 import cats.implicits._
@@ -24,9 +23,9 @@ trait AuthedEndpointsUtils[F[_], Auth] {
       Response[F]
     ]]
 
-  type AuthReqHandler = SecuredRequestHandler[
+  type Authenticator = tsec.authentication.Authenticator[
     F,
-    String,
+    Username,
     User,
     Token[Auth]
   ]
@@ -37,25 +36,27 @@ trait AuthedEndpointsUtils[F[_], Auth] {
     (u: User) => F.pure(u.role)
 
   def redirectTo(uri: Uri)(implicit F: Applicative[F]) =
-    TemporaryRedirect(
+    SeeOther(
       Location(uri)
     )
 
   def redirectTo(location: String)(implicit F: Applicative[F]) =
-    TemporaryRedirect(
+    SeeOther(
       Location(Uri.unsafeFromString(location))
     )
 
   def liftService(
       service: AuthService
-    )(implicit arh: AuthReqHandler,
+    )(implicit authenticator: Authenticator,
       reverseRoutes: ReverseRoutes,
-      F: Applicative[F]
-    ): HttpRoutes[F] =
-    arh.liftService(
-      service,
-      req => redirectTo(reverseRoutes.login + "?redirectTo=" + req.uri.renderString)
+      F: Monad[F]
+    ): HttpRoutes[F] = {
+    val middleWare = TSecMiddleware(
+      Kleisli(authenticator.extractAndValidate),
+      (_: Request[F]) => F.pure(Response[F](Status.Unauthorized))
     )
+    middleWare(service)
+  }
 
   def roleBasedService(
       authGroup: AuthGroup[Role]
@@ -87,11 +88,11 @@ trait AuthedEndpointsUtils[F[_], Auth] {
   }
 
   def roleBasedService(
-      role: Role*
+      roles: Seq[Role]
     )(pf: AuthEndpoint
     )(implicit
       F: MonadThrowable[F],
       reverseRoutes: ReverseRoutes
-    ): AuthService = roleBasedService(AuthGroup(role: _*))(pf)
+    ): AuthService = roleBasedService(AuthGroup.fromSeq(roles))(pf)
 
 }

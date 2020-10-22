@@ -1,36 +1,56 @@
-package com.iheart.thomas.http4s
+package com.iheart.thomas
+package http4s
 
 import com.iheart.thomas.http4s.abtest.AbtestManagementUI
 import com.iheart.thomas.http4s.auth.{
   AuthDependencies,
   AuthedEndpointsUtils,
-  AuthedRequestHandler
+  AuthenticationAlg,
+  Token,
+  UI
 }
 import org.http4s.dsl.Http4sDsl
 import cats.implicits._
 import com.iheart.thomas.{MonadThrowable, dynamo}
 import cats.effect._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
+import com.iheart.thomas.admin.{Role, User}
 import com.typesafe.config.Config
-import org.http4s.server.{Router, Server}
+import org.http4s.Response
+import org.http4s.server.{Router, Server, ServiceErrorHandler}
 import org.http4s.server.blaze.BlazeServerBuilder
-import pureconfig.ConfigSource
+import pureconfig.error.{CannotConvert, FailureReason}
+import pureconfig.{ConfigReader, ConfigSource}
 import pureconfig.module.catseffect._
 import tsec.common.SecureRandomIdGenerator
 
 import scala.concurrent.ExecutionContext
+import org.http4s.twirl._
+import tsec.authentication.Authenticator
+import tsec.passwordhashers.jca.BCrypt
 
 class AdminUI[F[_]: MonadThrowable](
     abtestManagementUI: AbtestManagementUI[F],
     authUI: auth.UI[F, AuthImp]
   )(implicit reverseRoutes: ReverseRoutes,
-    requestHandler: AuthedRequestHandler[F, AuthImp])
+    authenticator: Authenticator[F, String, User, Token[AuthImp]])
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
 
   val routes = authUI.publicEndpoints <+> liftService(
     abtestManagementUI.routes <+> authUI.authedService
   )
+
+  val serverErrorHandler: ServiceErrorHandler[F] = { _ =>
+    {
+      case admin.Authorization.LackPermission =>
+        Response[F](Unauthorized).pure[F]
+      case e =>
+        InternalServerError(
+          html.errorMsg("Ooops! something bad happened. " + e.toString)
+        )
+    }
+  }
 }
 
 object AdminUI {
@@ -42,7 +62,15 @@ object AdminUI {
       rootPath: String,
       authTableReadCapacity: Long,
       authTableWriteCapacity: Long,
-      initialAdminUsername: String)
+      initialAdminUsername: String,
+      initialRole: Role)
+
+  implicit val roleCfgReader: ConfigReader[Role] =
+    ConfigReader.fromNonEmptyString(s =>
+      auth.Roles
+        .fromRepr(s)
+        .leftMap(_ => CannotConvert(s, "Role", "Invalid value"): FailureReason)
+    )
 
   def loadConfig[F[_]: Sync](cfg: Config): F[AdminUIConfig] = {
     import pureconfig.generic.auto._
@@ -66,7 +94,9 @@ object AdminUI {
       Resource.liftF(AuthDependencies[F](cfg.key)).flatMap { deps =>
         import deps._
         import dynamo.AdminDAOs._
-        val authUI = auth.UI.default[F](deps, Some(cfg.initialAdminUsername))
+        implicit val authAlg = AuthenticationAlg[F, BCrypt, AuthImp]
+
+        val authUI = new UI(Some(cfg.initialAdminUsername), cfg.initialRole)
 
         AbtestManagementUI.fromMongo[F](mongoAbtest).map { amUI =>
           new AdminUI(amUI, authUI)
@@ -75,6 +105,19 @@ object AdminUI {
     }
   }
 
+  def resource[F[_]: ConcurrentEffect: Timer](
+      cfg: Config
+    )(implicit
+      ec: ExecutionContext
+    ): Resource[F, AdminUI[F]] =
+    dynamo
+      .client(ConfigSource.fromConfig(cfg).at("thomas.admin-ui.dynamo"))
+      .flatMap { implicit dc =>
+        Resource.liftF(AdminUI.loadConfig[F](cfg)).flatMap { adminCfg =>
+          resource(adminCfg, cfg)
+        }
+      }
+
   /**
     * Provides a server that serves the Admin UI
     */
@@ -82,11 +125,22 @@ object AdminUI {
       implicit dc: AmazonDynamoDBAsync,
       executionContext: ExecutionContext
     ): Resource[F, Server[F]] = {
+    ConfigResource.cfg[F]().flatMap(c => serverResourceWithDynamoClient(c))
+  }
+
+  /**
+    * Provides a server that serves the Admin UI
+    */
+  def serverResourceWithDynamoClient[F[_]: ConcurrentEffect: Timer](
+      cfg: Config
+    )(implicit
+      dc: AmazonDynamoDBAsync,
+      executionContext: ExecutionContext
+    ): Resource[F, Server[F]] = {
     import org.http4s.server.blaze._
     import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
 
     for {
-      cfg <- ConfigResource.cfg[F]()
       adminCfg <- Resource.liftF(AdminUI.loadConfig[F](cfg))
       ui <- AdminUI.resource[F](adminCfg, cfg)
       server <- BlazeServerBuilder[F](executionContext)
@@ -94,6 +148,7 @@ object AdminUI {
         .withHttpApp(
           Router(adminCfg.rootPath -> ui.routes).orNotFound
         )
+        .withServiceErrorHandler(ui.serverErrorHandler)
         .resource
 
     } yield server

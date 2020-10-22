@@ -2,40 +2,54 @@
 @import com.iheart.thomas.http4s.ReverseRoutes
 @import com.iheart.thomas.html._
 @import com.iheart.thomas.admin.User
+@import com.iheart.thomas.Username
+@import com.iheart.thomas.admin.Authorization._
 
 @(u: User,
 feature: Feature,
 testsCount: Int,
 errorMsg: Option[String] = None,
-successMsg: Option[String] = None)(implicit routes: ReverseRoutes)
+successMsg: Option[String] = None,
+devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
 
 @overrideItem(oo: Option[(String, String)]) = {
 
 <div class="row override-item">
 
-  <div class="col-md">
-    <div class="form-group">
-      <input name="overrides[]._1" class="form-control"
-             type="text"
-             @oo.map(o=> s"value=${o._1}") />
-    </div>
-  </div>
-
-  <div class="col-md d-flex flex-row">
-    <div class="form-group w-100">
-      <input name="overrides[]._2" class="form-control"
-             type="text"
-             @oo.map(o=> s"value=${o._2}") />
-    </div>
-    <div class="text-center">
-      <button class="btn btn-link delete-override remove-item mt-1 ml-1"
-              type="button" onclick="thomas.removeParentItem(this, '.override-item')"
-              title="Remove Override">
-        <i class="far fa-trash-alt"></i>
-      </button>
+    <div class="col-md">
+        <div class="form-group">
+            <input name="overrides[]._1" class="form-control"
+                   type="text"
+                   @if(!u.has(ManageTestSettings(feature))) {
+                   readonly disabled
+                   }
+                   @oo.map(o=> s"value=${o._1}") />
+        </div>
     </div>
 
-  </div>
+    <div class="col-md d-flex flex-row">
+        <div class="form-group w-100">
+            <input name="overrides[]._2" class="form-control"
+                   type="text"
+                   @if(!u.has(ManageTestSettings(feature))) {
+                     readonly disabled
+                   }
+
+                   @oo.map(o=> s"value=${o._2}") />
+        </div>
+        <div class="text-center">
+            @if(u.has(ManageTestSettings(feature))) {
+
+
+            <button class="btn btn-link delete-override remove-item mt-1 ml-1"
+                    type="button" onclick="thomas.removeParentItem(this, '.override-item')"
+                    title="Remove Override">
+                <i class="far fa-trash-alt"></i>
+            </button>
+            }
+        </div>
+
+    </div>
 </div>
 
 }
@@ -43,9 +57,9 @@ successMsg: Option[String] = None)(implicit routes: ReverseRoutes)
 @topNav("Feature " + feature.name, u){
 
 <div class="mb-3 mt-3">
-  <span class="h4">Feature <span class="text-success">@feature.name</span></span>
+    <span class="h4">Feature <span class="text-success">@feature.name</span></span>
 
-  <span class="h6 ml-3">
+    <span class="h6 ml-3">
 @if(testsCount > 0) {
   @featureTestsLink(feature.name, Some(s"$testsCount test" + (if(testsCount > 1) "s" else "")))
 } else {
@@ -54,122 +68,195 @@ successMsg: Option[String] = None)(implicit routes: ReverseRoutes)
 </span>
 </div>
 <form action="" method="post">
-  <input name="name" type="text" hidden
-         value="@feature.name"/>
+    <input name="name" type="text" hidden
+           value="@feature.name"/>
 
 
-  <div class="container" id="test-form">
-    @for(msg <- errorMsg) {
-    <div id="error-msg" class="alert alert-warning" role="alert">
-      @msg
+    <div class="container" id="test-form">
+        @for(msg <- errorMsg) {
+        <div id="error-msg" class="alert alert-warning" role="alert">
+            @msg
+        </div>
+        }
+        @for(msg <- successMsg) {
+        <div id="success-msg" class="alert alert-success" role="alert">
+            @msg
+        </div>
+        }
+        <div class="row">
+            <div class="col-md">
+
+                <div class="card" id="feature-basics">
+                    <div class="card-header">
+                        <span class="h5">Basics</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="descriptionInput">Description</label>
+                            <textarea name="description"
+                                      class="form-control"
+                                      id="descriptionInput"
+                                      type="text"
+                                      @if(!u.has(ManageFeature(feature))) {
+                                        disabled readonly
+                                      }
+                            >@feature.description</textarea>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="card mt-4" id="feature-devs">
+                    <div class="card-header">
+                        <span class="h5">Developers</span>
+                    </div>
+                    <div class="card-body">
+                        @if(!u.has(ManageFeature(feature))) {
+                            @feature.developers.mkString(", ")
+                        }
+                        <div class="form-group
+                             @if(!u.has(ManageFeature(feature))) {
+                                d-none
+                             }
+                             ">
+                            <label>click a developer to remove</label>
+                            <select class="form-control" multiple
+
+                                    name="developers" id="feature-developers">
+                                @for(dev <- feature.developers) {
+                                  <option selected="true">@dev</option>
+                                }
+                            </select>
+                            @if(u.has(ManageFeature(feature))) {
+                            <div class="form-group mt-3">
+                                <select class="form-control" onchange="addFeatureDeveloperItem()" name="username" id="add-developer">
+                                    <option>Select a user to add as developer</option>
+                                    @for(candidate <- devCandidates){
+                                    <option>@candidate</option>
+                                    }
+                                </select>
+                            </div>
+                            }
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <div class="col-md">
+                <div class="card" id="feature-overrides">
+                    <div class="card-header">
+                        <span class="h5">Overrides</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md">
+
+                                <div class="form-group form-check">
+                                    <input name="overrideEligibility"
+                                           class="form-check-input"
+                                           id="overrideEligibilityCB"
+                                           type="checkbox"
+                                           @if(!u.has(ManageTestSettings(feature))) {
+                                             disabled readonly
+                                           }
+                                           value="@feature.overrideEligibility"/>
+                                    <label for="overrideEligibilityCB" class="small">ALLOW OVERRIDES TO TAKE PRECEDENCE
+                                        OVER ELIGIBILITY
+                                        CONTROL</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="overrides">
+                            <div class="row overrides-header">
+                                <div class="col-md">
+                                    <div class="form-group">
+                                        <lable>User Id</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-md">
+                                    <div class="form-group">
+                                        <label>Group Name</label>
+                                    </div>
+                                </div>
+                            </div>
+                            @for(o <- feature.overrides) {
+                            @overrideItem(Some(o))
+                            }
+                            @if(u.has(ManageTestSettings(feature))) {
+                                @overrideItem(None)
+                            }
+                        </div>
+                        @if(u.has(ManageTestSettings(feature))) {
+                        <div class="d-none" id="new-override">
+                            @overrideItem(None)
+                        </div>
+
+                        <div class="row float-right">
+                            <button type="button" id="btn-new-override"
+                                    onclick="thomas.appendItem('#new-override','#overrides')"
+                                    class="btn btn-secondary">New Override
+                            </button>
+                        </div>
+                        }
+                    </div>
+                </div>
+                @if(u.has(ManageTestSettings(feature))) {
+                <div class="card mt-4" id="feature-batch-overrides">
+                    <div class="card-header"><span class="h5">Batch Overrides</span></div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md">
+                                <div class="form-group">
+                                    <label for="batchOverrides">Json to batch add overrides. Format {"user_id" :
+                                        "group_name"} </label>
+                                    <textarea name="batchOverrides" class="form-control" id="batchOverrides" type="text"
+                                    ></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                }
+            </div>
+
+        </div>
+
+    </div>
+
+    @if(u.has(ManageTestSettings(feature)) || u.has(ManageFeature(feature))){
+    <div class="row d-flex flex-row-reverse mt-5">
+        <div class="mr-4">
+            <button type="submit" class="btn btn-primary">
+                Update
+            </button>
+            <a href="@routes.tests" role="button" class="btn btn-warning ml-2">Cancel Change</a>
+            </a>
+        </div>
     </div>
     }
-    @for(msg <- successMsg) {
-    <div id="success-msg" class="alert alert-success" role="alert">
-      @msg
-    </div>
-    }
-    <div class="row">
-      <div class="col-md">
-
-        <div class="card">
-          <div class="card-header">
-            <span class="h5">Basics</span>
-          </div>
-          <div class="card-body">
-            <div class="form-group">
-              <label for="descriptionInput">Description</label>
-              <textarea name="description" class="form-control" id="descriptionInput" type="text"
-              >@feature.description</textarea>
-            </div>
-
-          </div>
-        </div>
-
-        <div class="card mt-4">
-          <div class="card-header"><span class="h5">Batch Overrides</span></div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md">
-                <div class="form-group">
-                  <label for="batchOverrides">Json to batch add overrides. Format {"user_id" : "group_name"} </label>
-                  <textarea name="batchOverrides" class="form-control" id="batchOverrides" type="text"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md">
-        <div class="card">
-          <div class="card-header">
-            <span class="h5">Overrides</span>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md">
-
-                <div class="form-group form-check">
-                  <input name="overrideEligibility"
-                         class="form-check-input"
-                         id="overrideEligibilityCB"
-                         type="checkbox"
-                         value="@feature.overrideEligibility"/>
-                  <label for="overrideEligibilityCB" class="small">ALLOW OVERRIDES TO TAKE PRECEDENCE OVER ELIGIBILITY
-                    CONTROL</label>
-                </div>
-              </div>
-            </div>
-            <div id="overrides">
-              <div class="row overrides-header">
-                <div class="col-md">
-                  <div class="form-group">
-                    <lable>User Id</label>
-                  </div>
-                </div>
-
-                <div class="col-md">
-                  <div class="form-group">
-                    <label>Group Name</label>
-                  </div>
-                </div>
-              </div>
-              @for(o <- feature.overrides) {
-              @overrideItem(Some(o))
-              }
-              @overrideItem(None)
-            </div>
-
-            <div class="d-none" id="new-override">
-              @overrideItem(None)
-            </div>
-
-            <div class="row float-right">
-              <button type="button" id="btn-new-override"
-                      onclick="thomas.appendItem('#new-override','#overrides')"
-                      class="btn btn-secondary">New Override
-              </button>
-            </div>
-          </div>
-        </div>
-
-      </div>
 
     </div>
-
-  </div>
-  <div class="row d-flex flex-row-reverse mt-5">
-    <div class="mr-4">
-      <button type="submit" class="btn btn-primary">
-        Update
-      </button>
-      <button type="reset" class="btn btn-warning ml-2">Reset</button>
-    </div>
-  </div>
-
-  </div>
 
 </form>
+}
+@if(u.has(ManageFeature(feature))) {
 
+<script>
+    function addFeatureDeveloperItem() {
+       $("#feature-developers").append($("#add-developer option:selected").clone().prop("selected", true));
+       $("#add-developer option:selected").remove();
+    };
+
+    $(document).ready(function(){
+        $("#feature-developers").change(function(ev) {
+            ev.preventDefault();
+            $("#add-developer").append($("#feature-developers option:selected").clone().prop("selected", false));
+            $("#feature-developers option:selected").remove()
+            $("#feature-developers option").prop("selected", true)
+            return false;
+        });
+    });
+
+</script>
 }

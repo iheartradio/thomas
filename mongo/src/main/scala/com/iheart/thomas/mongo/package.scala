@@ -38,9 +38,10 @@ package object mongo {
     new FunctionK[AsyncEntityDAO.Result[F, *], F] {
       override def apply[A](fa: AsyncEntityDAO.Result[F, A]): F[A] = {
         fa.leftMap {
-          case DBError.NotFound          => Error.NotFound("Cannot find in DB")
-          case DBError.DBLastError(msg)  => Error.DBLastError(msg)
-          case DBError.DBException(e, _) => Error.DBException(e)
+          case DBError.NotFound         => Error.NotFound("Cannot find in DB")
+          case DBError.DBLastError(msg) => Error.DBLastError(msg)
+          case DBError.DBException(e, c) =>
+            Error.DBException(e, "In collection: " + c)
           case e @ UpdatedCountErrorDetail(_, _) =>
             Error.FailedToPersist(e.getMessage())
           case DBError.WriteError(details) =>

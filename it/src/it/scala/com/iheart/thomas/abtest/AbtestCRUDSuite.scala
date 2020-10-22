@@ -32,7 +32,7 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
           for {
             _ <- alg.create(fakeAb(feature = "feature1"), false)
             _ <- alg.create(fakeAb(feature = "feature2"), false)
-            fs <- alg.getAllFeatures
+            fs <- alg.getAllFeatureNames
           } yield fs
 
         }.asserting(_ shouldBe List("feature1", "feature2"))
@@ -191,29 +191,27 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
       }
 
       "cannot schedule a test that starts before the last test ends" in {
-        withAlg(
-          alg =>
-            alg.create(
-              fakeAb(5, 10, feature = "feature1"),
-              false
-            ) >> alg.create(fakeAb(1, 2, feature = "feature1"))
+        withAlg(alg =>
+          alg.create(
+            fakeAb(5, 10, feature = "feature1"),
+            false
+          ) >> alg.create(fakeAb(1, 2, feature = "feature1"))
         ).assertThrows[Error.ConflictTest]
 
       }
 
       "succeeds when creating a test without time conflict with an existing test on the same feature" in {
         val first = fakeAb()
-        withAlg(
-          alg =>
-            alg.create(first) >>
-              alg.create(
-                fakeAb().copy(
-                  feature = first.feature,
-                  start = first.end.get.plusDays(1),
-                  end = first.end.map(_.plusDays(200))
-                ),
-                false
-              )
+        withAlg(alg =>
+          alg.create(first) >>
+            alg.create(
+              fakeAb().copy(
+                feature = first.feature,
+                start = first.end.get.plusDays(1),
+                end = first.end.map(_.plusDays(200))
+              ),
+              false
+            )
         ).assertNoException
       }
 
