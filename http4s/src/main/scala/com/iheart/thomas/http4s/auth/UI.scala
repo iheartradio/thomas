@@ -1,9 +1,10 @@
 package com.iheart.thomas
 package http4s
 package auth
-import cats.effect.{Async}
+import cats.effect.Async
 import cats.implicits._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
+import com.iheart.thomas.admin.Role
 import com.iheart.thomas.auth.html
 import com.iheart.thomas.html.redirect
 import com.iheart.thomas.http4s.auth.UI.QueryParamMatchers._
@@ -11,24 +12,33 @@ import com.iheart.thomas.http4s.auth.UI.ValidationErrors._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import org.http4s.twirl._
-import org.http4s.{HttpRoutes, Uri, UrlForm}
+import org.http4s.{FormDataDecoder, HttpRoutes, ParseFailure, Uri, UrlForm}
+import FormDataDecoder._
 import tsec.passwordhashers.jca.BCrypt
-
+import UI.roleFormatter
 import scala.util.control.NoStackTrace
 
 class UI[F[_]: Async, Auth](
-    initialAdminUsername: Option[String]
-  )(implicit alg: AuthAlg[F, Auth],
+    initialAdminUsername: Option[String],
+    initialRole: Role
+  )(implicit alg: AuthenticationAlg[F, Auth],
     reverseRoutes: ReverseRoutes)
     extends Http4sDsl[F]
     with AuthedEndpointsUtils[F, Auth] {
   import tsec.authentication._
 
-  val authedService = roleBasedService(Roles.Admin) {
+  val authedService = roleBasedService(Seq(Role.Admin)) {
     case GET -> Root / "users" asAuthed user =>
       alg.allUsers.flatMap { allUsers =>
         Ok(html.users(allUsers, user))
       }
+    case req @ POST -> Root / "users" / username / "role" asAuthed _ =>
+      for {
+        role <- req.request.as[Role]
+        _ <- alg.update(username, None, Some(role))
+        r <- redirectTo(reverseRoutes.users)
+      } yield r
+
   } <+> roleBasedService(Roles.values) {
     case req @ GET -> Root / "logout" asAuthed _ =>
       alg.logout(req.authenticator) *>
@@ -83,8 +93,8 @@ class UI[F[_]: Async, Auth](
         _ <- alg.register(
           username,
           password,
-          if (initialAdminUsername.fold(false)(_ == username)) Roles.Admin
-          else Roles.Reader
+          if (initialAdminUsername.fold(false)(_ == username)) Role.Admin
+          else initialRole
         )
         r <- Ok(
           redirect(
@@ -123,6 +133,14 @@ object UI extends {
         with NoStackTrace
   }
 
+  implicit val roleFormatter: FormDataDecoder[Role] =
+    field[String]("name").mapValidated(s =>
+      Roles
+        .fromRepr(s)
+        .leftMap(_ => ParseFailure(s"invalid role $s", ""))
+        .toValidatedNel
+    )
+
   object QueryParamMatchers {
     object redirectTo extends OptionalQueryParamDecoderMatcher[Uri]("redirectTo")
   }
@@ -132,7 +150,8 @@ object UI extends {
     */
   def default[F[_]: Async](
       authDeps: AuthDependencies[AuthImp],
-      initialAdminUsername: Option[String]
+      initialAdminUsername: Option[String],
+      initialRole: Role
     )(implicit dc: AmazonDynamoDBAsync,
       rv: ReverseRoutes
     ): UI[F, AuthImp] = {
@@ -141,7 +160,7 @@ object UI extends {
     import authDeps._
     import dynamo.AdminDAOs._
 
-    new UI(initialAdminUsername)
+    new UI(initialAdminUsername, initialRole)
   }
 
 }

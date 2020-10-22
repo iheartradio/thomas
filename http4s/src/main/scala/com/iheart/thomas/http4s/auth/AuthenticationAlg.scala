@@ -1,36 +1,37 @@
-package com.iheart.thomas.http4s
+package com.iheart.thomas
+package http4s
 package auth
 
 import cats.effect.Concurrent
 import com.iheart.thomas.{MonadThrowable, dynamo}
 import com.iheart.thomas.admin.{Role, User, UserDAO}
-import tsec.authentication.{Authenticator}
+import tsec.authentication.Authenticator
 import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 import cats.implicits._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
-import com.iheart.thomas.http4s.auth.AuthError.UserAlreadyExist
+import com.iheart.thomas.http4s.auth.AuthError._
 import org.http4s.Response
 import tsec.common.Verified
 import tsec.mac.jca.HMACSHA256
 import tsec.passwordhashers.jca.BCrypt
 
 import scala.util.control.NoStackTrace
-trait AuthAlg[F[_], Auth] {
+trait AuthenticationAlg[F[_], Auth] {
 
   def login(
-      username: String,
+      username: Username,
       password: String,
       respond: User => F[Response[F]]
     ): F[Response[F]]
 
   def register(
-      username: String,
+      username: Username,
       password: String,
-      role: Role = Roles.Reader
+      role: Role
     ): F[User]
 
   def update(
-      username: String,
+      username: Username,
       passwordO: Option[String],
       roleO: Option[Role]
     ): F[User]
@@ -41,19 +42,19 @@ trait AuthAlg[F[_], Auth] {
   def allUsers: F[Vector[User]]
 }
 
-object AuthAlg {
+object AuthenticationAlg {
 
   implicit def apply[F[_]: MonadThrowable, C, Auth](
       implicit userDAO: UserDAO[F],
       cryptService: PasswordHasher[F, C],
       auth: Authenticator[F, String, User, Token[Auth]]
-    ): AuthAlg[F, Auth] =
-    new AuthAlg[F, Auth] {
+    ): AuthenticationAlg[F, Auth] =
+    new AuthenticationAlg[F, Auth] {
       def logout(token: Token[Auth]): F[Unit] = {
         auth.discard(token).void
       }
       def login(
-          username: String,
+          username: Username,
           password: String,
           respond: User => F[Response[F]]
         ): F[Response[F]] =
@@ -69,9 +70,9 @@ object AuthAlg {
         } yield auth.embed(response, token)
 
       def register(
-          username: String,
+          username: Username,
           password: String,
-          role: Role = Roles.Reader
+          role: Role
         ): F[User] = {
         userDAO.find(username).ensure(UserAlreadyExist(username))(_.isEmpty) *>
           password
@@ -85,12 +86,21 @@ object AuthAlg {
       }
 
       def update(
-          username: String,
+          username: Username,
           passwordO: Option[String],
           roleO: Option[Role]
         ): F[User] =
         for {
           user <- userDAO.get(username)
+          _ <- roleO.fold(().pure[F]) { newRole =>
+            val demoting =
+              user.role == Role.Admin && newRole != Role.Admin
+            if (demoting)
+              userDAO.all
+                .ensure(MustHaveAtLeastOneAdmin)(_.count(_.role == Role.Admin) > 1)
+                .void
+            else ().pure[F]
+          }
           hO <- passwordO.traverse(cryptService.hashpw)
           update =
             user
@@ -101,7 +111,7 @@ object AuthAlg {
           u <- userDAO.update(update)
         } yield u
 
-      def remove(username: String): F[Unit] = userDAO.remove(username)
+      def remove(username: Username): F[Unit] = userDAO.remove(username)
 
       def allUsers: F[Vector[User]] = userDAO.all
     }
@@ -112,12 +122,12 @@ object AuthAlg {
   def default[F[_]: Concurrent](
       key: String
     )(implicit dc: AmazonDynamoDBAsync
-    ): F[AuthAlg[F, HMACSHA256]] =
+    ): F[AuthenticationAlg[F, HMACSHA256]] =
     AuthDependencies[F](key).map { deps =>
       import dynamo.AdminDAOs._
       import BCrypt._
       import deps._
-      implicitly[AuthAlg[F, HMACSHA256]]
+      implicitly[AuthenticationAlg[F, HMACSHA256]]
     }
 }
 
@@ -128,4 +138,5 @@ object AuthError {
   case class UserAlreadyExist(username: String) extends AuthError
   case class PasswordTooWeak(username: String) extends AuthError
   case object IncorrectPassword extends AuthError
+  case object MustHaveAtLeastOneAdmin extends AuthError
 }
