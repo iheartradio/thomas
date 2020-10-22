@@ -21,13 +21,13 @@ import scala.util.control.NoStackTrace
 class UI[F[_]: Async, Auth](
     initialAdminUsername: Option[String],
     initialRole: Role
-  )(implicit alg: AuthAlg[F, Auth],
+  )(implicit alg: AuthenticationAlg[F, Auth],
     reverseRoutes: ReverseRoutes)
     extends Http4sDsl[F]
     with AuthedEndpointsUtils[F, Auth] {
   import tsec.authentication._
 
-  val authedService = roleBasedService(Roles.Admin) {
+  val authedService = roleBasedService(Seq(Role.Admin)) {
     case GET -> Root / "users" asAuthed user =>
       alg.allUsers.flatMap { allUsers =>
         Ok(html.users(allUsers, user))
@@ -93,7 +93,7 @@ class UI[F[_]: Async, Auth](
         _ <- alg.register(
           username,
           password,
-          if (initialAdminUsername.fold(false)(_ == username)) Roles.Admin
+          if (initialAdminUsername.fold(false)(_ == username)) Role.Admin
           else initialRole
         )
         r <- Ok(
