@@ -15,19 +15,19 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 // format: off
 lazy val libs = {
   org.typelevel.libraries
-    .addJVM(name = "akka-slf4j",            version = "2.6.3", org = "com.typesafe.akka")
+    .addJVM(name = "akka-slf4j",            version = "2.6.3",  org = "com.typesafe.akka")
     .addJVM(name = "breeze",                version = "1.1",    org ="org.scalanlp", "breeze", "breeze-viz")
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
-    .add(   name = "cats-testkit-scalatest",version = "2.0.0", org = org.typelevel.typeLevelOrg)
+    .add(   name = "cats-testkit-scalatest",version = "2.0.0",  org = org.typelevel.typeLevelOrg)
     .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
-    .add(   name = "cats-retry",            version = "1.1.0", org = "com.github.cb372")
+    .add(   name = "cats-retry",            version = "1.1.0",  org = "com.github.cb372")
     .addJVM(name = "decline",               version = "1.2.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.5.0",  org = "io.github.embeddedkafka")
-    .addJVM(name = "evilplot",              version = "0.6.3", org = "com.cibo")
-    .addJVM(name = "fs2-kafka",             version = "1.0.0", org = "com.github.fd4s")
+    .addJVM(name = "evilplot",              version = "0.6.3",  org = "com.cibo")
+    .addJVM(name = "fs2-kafka",             version = "1.1.0",  org = "com.github.fd4s")
     .addModule("http4s", "http4s-twirl")
     .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
-    .add(   name = "jawn",                  version = "1.0.0", org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
+    .add(   name = "jawn",                  version = "1.0.0",  org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
     .addJVM(name = "lihua",                 version = "0.36",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-dynamo-testkit", "lihua-play-json")
     .addJVM(name = "log4cats",              version = "1.1.1",  org = "io.chrisdavenport", "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
@@ -40,20 +40,21 @@ lazy val libs = {
     .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
     .addJVM(name = "rainier",               version = "0.3.0",  org ="com.stripe", "rainier-core", "rainier-cats")
     .addJVM(name = "scala-java8-compat",    version = "0.9.1",  org = "org.scala-lang.modules")
-    .addJVM(name = "scala-view",            version = "0.5", org = "com.github.darrenjw")
-    .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
+    .addJVM(name = "scala-view",            version = "0.5",    org = "com.github.darrenjw")
+    .add(   name = "scalacheck-1-14",       version = "3.1.2.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
     .addJVM(name = "scanamo",               version = "1.0.0-M12-1", org ="org.scanamo", "scanamo-testkit")
-    .add(   name = "spark",                 version = "2.4.5", org = "org.apache.spark", "spark-sql", "spark-core")
+    .add(   name = "spark",                 version = "2.4.5",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
     .addJVM(name = "tsec",                  version = "0.2.1",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s")
+    .add   (name = "enumeratum",            version = "1.6.1",  org = "com.beachape" )
 }
 // format: on
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias(
   "validate",
-  s";clean;test;play/IntegrationTest/test;it/IntegrationTest/test;playExample/compile;docs/tut"
+  s";clean;test;it/IntegrationTest/test;docs/tut"
 )
 addCommandAlias("it", s"IntegrationTest/test")
 
@@ -140,7 +141,7 @@ lazy val core = project
   )
 
 lazy val bandit = project
-  .dependsOn(analysis, core  % "compile->compile;test->test")
+  .dependsOn(analysis, core % "compile->compile;test->test")
   .aggregate(analysis)
   .settings(
     name := "thomas-bandit",
@@ -219,7 +220,7 @@ lazy val docs = project
       "gray-lighter" -> "#F4F3F4",
       "white-color" -> "#FFFFFF"
     )
-)
+  )
 
 lazy val mongo = project
   .dependsOn(core, bandit)
@@ -234,9 +235,13 @@ lazy val dynamo = project
   .settings(name := "thomas-dynamo")
   .settings(rootSettings)
   .settings(
-    libs.dependencies("lihua-dynamo", "cats-retry"),
+    libs.dependencies(
+      "lihua-dynamo",
+      "cats-retry",
+      "pureconfig-cats-effect",
+      "pureconfig-generic"
+    ),
     libs.testDependencies("cats-effect-testing-scalatest")
-
   )
 
 lazy val testkit = project
@@ -296,7 +301,14 @@ lazy val http4s = project
       "log4cats-slf4j",
       "pureconfig-cats-effect",
       "pureconfig-generic",
-      "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s"
+      "tsec-common",
+      "tsec-password",
+      "tsec-mac",
+      "tsec-signatures",
+      "tsec-jwt-mac",
+      "tsec-jwt-sig",
+      "tsec-http4s",
+      "enumeratum"
     )
   )
 
@@ -306,7 +318,9 @@ lazy val http4sExample = project
     name := "thomas-http4s-example",
     rootSettings,
     noPublishSettings,
-    mainClass in reStart := Some("com.iheart.thomas.example.ExampleAbtestAdminUIApp"),
+    mainClass in reStart := Some(
+      "com.iheart.thomas.example.ExampleAbtestAdminUIApp"
+    ),
     localDynamoSettings
   )
 
@@ -418,7 +432,10 @@ lazy val developerKai = Developer(
   new java.net.URL("http://kailuowang.com")
 )
 
-lazy val commonSettings = addCompilerPlugins(libs, "kind-projector") ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
+lazy val commonSettings = addCompilerPlugins(
+  libs,
+  "kind-projector"
+) ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := defaultScalaVer,
   parallelExecution in Test := false,
@@ -447,23 +464,24 @@ lazy val buildSettings = sharedBuildSettings(gh, libs)
 
 import ReleaseTransformations._
 
-lazy val publishSettings = sharedPublishSettings(gh) ++ credentialSettings ++ sharedReleaseProcess ++ Seq(
-  publishTo := sonatypePublishToBundle.value,
-  releaseProcess := Seq[ReleaseStep](
-    checkSnapshotDependencies,
-    inquireVersions,
-    releaseStepCommandAndRemaining("+clean"),
-    releaseStepCommandAndRemaining("+test"),
-    setReleaseVersion,
-    commitReleaseVersion,
-    tagRelease,
-    releaseStepCommandAndRemaining("+publishSigned"),
-    releaseStepCommandAndRemaining("cli/assembly"),
-    releaseStepCommand("sonatypeBundleRelease"),
-    setNextVersion,
-    commitNextVersion,
-    pushChanges
+lazy val publishSettings =
+  sharedPublishSettings(gh) ++ credentialSettings ++ sharedReleaseProcess ++ Seq(
+    publishTo := sonatypePublishToBundle.value,
+    releaseProcess := Seq[ReleaseStep](
+      checkSnapshotDependencies,
+      inquireVersions,
+      releaseStepCommandAndRemaining("+clean"),
+      releaseStepCommandAndRemaining("+test"),
+      setReleaseVersion,
+      commitReleaseVersion,
+      tagRelease,
+      releaseStepCommandAndRemaining("+publishSigned"),
+      releaseStepCommandAndRemaining("cli/assembly"),
+      releaseStepCommand("sonatypeBundleRelease"),
+      setNextVersion,
+      commitNextVersion,
+      pushChanges
+    )
   )
-)
 
 lazy val disciplineDependencies = libs.dependencies("discipline", "scalacheck")
