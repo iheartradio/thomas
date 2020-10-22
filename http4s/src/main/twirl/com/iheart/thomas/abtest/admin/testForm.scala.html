@@ -80,9 +80,6 @@ groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
 </div>
 }
 
-<input name="feature" type="text" hidden
-       value="@feature"/>
-
 <div id="test-form">
   @for(msg <- errorMsg) {
   <div id="error-msg" class="alert alert-warning" role="alert">
@@ -91,7 +88,6 @@ groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
   }
   <div class="row">
     <div class="col-md">
-
       <div class="card">
         <div class="card-header">
           <span class="h5">Basics</span>
@@ -102,13 +98,6 @@ groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
             <input name="name" class="form-control" id="testName" type="text"
                    value="@draft.map(_.name)"/>
           </div>
-
-          <div class="form-group">
-            <label for="testAuthor">Author</label>
-            <input name="author" class="form-control" id="testAuthor" type="text"
-                   value="@draft.map(_.author)"/>
-          </div>
-
           <div class="row">
             <div class="col-md">
               <div class="form-group">
@@ -116,16 +105,13 @@ groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
                 <input name="start" class="form-control" id="testStart" type="text"
                        value="@draft.map(_.start).map(formatDate)"/>
               </div>
-
             </div>
             <div class="col-md">
-
               <div class="form-group">
                 <label for="testEnd">End</label>
                 <input name="end" class="form-control" id="testEnd" type="text"
                        value="@draft.flatMap(_.end).map(formatDate)"/>
               </div>
-
             </div>
           </div>
         </div>

@@ -36,7 +36,12 @@ object Error {
 
   case class NotFound(override val getMessage: String) extends Error
 
-  case class DBException(cause: Throwable) extends Error(cause)
+  case class DBException(
+      cause: Throwable,
+      extraMessage: String)
+      extends Error(cause) {
+    override def getMessage: MetaFieldName = cause.getMessage + " " + extraMessage
+  }
 
   case class DBLastError(override val getMessage: String) extends Error
 
