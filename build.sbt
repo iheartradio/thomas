@@ -23,7 +23,7 @@ lazy val libs = {
     .add(   name = "cats-retry",            version = "1.1.0",  org = "com.github.cb372")
     .addJVM(name = "decline",               version = "1.2.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.5.0",  org = "io.github.embeddedkafka")
-    .addJVM(name = "evilplot",              version = "0.6.3",  org = "com.cibo")
+    .addJVM(name = "evilplot",              version = "0.8.0",  org = "com.cibo")
     .addJVM(name = "fs2-kafka",             version = "1.1.0",  org = "com.github.fd4s")
     .addModule("http4s", "http4s-twirl")
     .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
