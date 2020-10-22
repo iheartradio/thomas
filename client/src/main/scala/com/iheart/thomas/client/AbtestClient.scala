@@ -61,7 +61,7 @@ trait AbtestClient[F[_]] extends DataProvider[F] {
     )(implicit F: Functor[F]
     ): F[Option[Entity[Abtest]]] =
     tests(asOf).map(_.collectFirst {
-      case (test, Feature(`feature`, _, _, _, _)) => test
+      case (test, Feature(`feature`, _, _, _, _, _)) => test
     })
 
   def featureLatestTest(
@@ -124,14 +124,15 @@ class Http4SAbtestClient[F[_]: Sync](
       tidOrFeature: Either[TestId, FeatureName],
       userMetaCriteria: UserMetaCriteria,
       auto: Boolean
-    ): F[Entity[Abtest]] = tidOrFeatureOp(tidOrFeature) { testId =>
-    expect(
-      PUT(
-        UpdateUserMetaCriteriaRequest(userMetaCriteria, auto),
-        stringToUri(urls.userMetaCriteria(testId))
+    ): F[Entity[Abtest]] =
+    tidOrFeatureOp(tidOrFeature) { testId =>
+      expect(
+        PUT(
+          UpdateUserMetaCriteriaRequest(userMetaCriteria, auto),
+          stringToUri(urls.userMetaCriteria(testId))
+        )
       )
-    )
-  }
+    }
 
   def getTestsData(
       at: Instant,
@@ -256,8 +257,11 @@ object AbtestClient {
     )(implicit ec: ExecutionContext
     ): F[TestsData] =
     Http4SAbtestClient
-      .resource[F](new HttpServiceUrlsPlay("mock") {
-        override val tests: String = serviceUrl
-      }, ec)
+      .resource[F](
+        new HttpServiceUrlsPlay("mock") {
+          override val tests: String = serviceUrl
+        },
+        ec
+      )
       .use(_.getTestsData(time, None))
 }
