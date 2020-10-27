@@ -61,7 +61,7 @@ class UI[F[_]: Async, Auth](
           _ =>
             Ok(
               redirect(
-                to.map(_.renderString).getOrElse(reverseRoutes.tests),
+                to.map(_.renderString).getOrElse(reverseRoutes.home),
                 "Login Successful"
               )
             )

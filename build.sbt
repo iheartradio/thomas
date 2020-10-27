@@ -20,8 +20,8 @@ lazy val libs = {
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
     .add(   name = "cats-testkit-scalatest",version = "2.0.0",  org = org.typelevel.typeLevelOrg)
     .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
-    .add(   name = "cats-retry",            version = "1.1.0",  org = "com.github.cb372")
-    .addJVM(name = "decline",               version = "1.3.0",  org = "com.monovore")
+    .add(   name = "cats-retry",            version = "1.1.1",  org = "com.github.cb372")
+    .addJVM(name = "decline",               version = "1.2.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.5.0",  org = "io.github.embeddedkafka")
     .addJVM(name = "evilplot",              version = "0.6.3",  org = "com.cibo")
     .addJVM(name = "fs2-kafka",             version = "1.1.0",  org = "com.github.fd4s")
@@ -456,7 +456,7 @@ lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =
 
 lazy val taglessSettings = paradiseSettings(libs) ++ Seq(
   libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-tagless-macros" % "0.11"
+    "org.typelevel" %% "cats-tagless-macros" % "0.12"
   )
 )
 
