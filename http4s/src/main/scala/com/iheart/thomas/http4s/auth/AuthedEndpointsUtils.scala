@@ -6,7 +6,7 @@ import cats.{Applicative, Monad}
 import cats.data.{Kleisli, OptionT}
 import com.iheart.thomas.MonadThrowable
 import com.iheart.thomas.admin.{Role, User}
-import org.http4s.{HttpRoutes, Request, Response, Status, Uri}
+import org.http4s.{HttpRoutes, Request, Response, Uri}
 import org.http4s.dsl.Http4sDsl
 import tsec.authentication.{SecuredRequest, TSecAuthService, TSecMiddleware}
 import tsec.authorization.{AuthGroup, AuthorizationInfo, BasicRBAC}
@@ -53,7 +53,7 @@ trait AuthedEndpointsUtils[F[_], Auth] {
     ): HttpRoutes[F] = {
     val middleWare = TSecMiddleware(
       Kleisli(authenticator.extractAndValidate),
-      (_: Request[F]) => F.pure(Response[F](Status.Unauthorized))
+      (req: Request[F]) => redirectTo(reverseRoutes.login(req.uri.renderString))
     )
     middleWare(service)
   }

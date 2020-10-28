@@ -95,13 +95,17 @@ groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
         <div class="card-body">
           <div class="form-group">
             <label for="testName">Name</label>
-            <input name="name" class="form-control" id="testName" type="text"
+            <input name="name" class="form-control" required id="testName" type="text"
                    value="@draft.map(_.name)"/>
           </div>
           <div class="row">
             <div class="col-md">
               <div class="form-group">
                 <label for="testStart">Start</label>
+                @if(!readonly) {
+                  <input class="ml-3" type="checkbox" id="immediateStart">
+                  <label for="immediateStart">Immediately</label>
+                }
                 <input name="start" class="form-control" id="testStart" type="text"
                        value="@draft.map(_.start).map(formatDate)"/>
               </div>
@@ -249,6 +253,16 @@ $(document).ready(function() {
   var pickerSettings =  {
     'format': 'Y-m-d H:i:s T'
   };
+
+  $('#immediateStart').change(function() {
+     if(this.checked) {
+       $('#testStart').val('');
+       $('#testStart').hide();
+     } else {
+       $('#testStart').show();
+     }
+
+  });
 
   @if(readonly) {
     $('#test-form input').attr('readonly', 'readonly').attr('disabled', 'disabled');

@@ -17,7 +17,7 @@ import com.iheart.thomas.admin.User
 import com.iheart.thomas.html.{errorMsg, redirect}
 import com.iheart.thomas.http4s.abtest.AbtestManagementUI._
 import com.iheart.thomas.http4s.abtest.AbtestService.validationErrorMsg
-import com.iheart.thomas.http4s.auth.{AuthenticationAlg, AuthedEndpointsUtils}
+import com.iheart.thomas.http4s.auth.{AuthedEndpointsUtils, AuthenticationAlg}
 import com.typesafe.config.Config
 import io.estatico.newtype.ops._
 import lihua.{Entity, EntityId}
@@ -33,8 +33,10 @@ import play.api.libs.json.JsObject
 
 import scala.concurrent.ExecutionContext
 import admin.Authorization._
+import cats.Functor
+import TimeUtil._
 
-class AbtestManagementUI[F[_]: Async](
+class AbtestManagementUI[F[_]: Async: Timer](
     alg: AbtestAlg[F],
     authAlg: AuthenticationAlg[F, AuthImp]
   )(implicit reverseRoutes: ReverseRoutes)
@@ -204,8 +206,7 @@ class AbtestManagementUI[F[_]: Async](
             .as[SpecForm]
             .redeemWith(
               e => BadRequest(editTest(u, fromTest, Some(displayError(e)))),
-              sf => {
-                val spec = sf.toAbtestSpec(u, fromTest.data.feature)
+              _.toAbtestSpec[F](u, fromTest.data.feature).flatMap { spec =>
                 u.canEdit(fromTest) *>
                   (if (fromTest.data.end.fold(true)(_.isAfter(spec.startI)))
                      alg.continue(spec)
@@ -248,8 +249,7 @@ class AbtestManagementUI[F[_]: Async](
                   get(testId).flatMap { t =>
                     BadRequest(editTest(u, t, Some(displayError(e))))
                   },
-                sf => {
-                  val spec = sf.toAbtestSpec(u, test.data.feature)
+                _.toAbtestSpec[F](u, test.data.feature).flatMap { spec =>
                   alg
                     .updateTest(
                       testId.coerce[EntityId],
@@ -270,8 +270,7 @@ class AbtestManagementUI[F[_]: Async](
           .as[SpecForm]
           .redeemWith(
             e => BadRequest(errorMsg(e.getMessage)),
-            sf => {
-              val spec = sf.toAbtestSpec(u, feature)
+            _.toAbtestSpec[F](u, feature).flatMap { spec =>
               u.canAddTest(feature) *>
                 alg
                   .create(spec, false)
@@ -410,7 +409,7 @@ object AbtestManagementUI {
 
     case class SpecForm(
         name: TestName,
-        start: OffsetDateTime,
+        start: Option[OffsetDateTime],
         end: Option[OffsetDateTime],
         groups: List[Group],
         requiredTags: List[Tag] = Nil,
@@ -418,29 +417,33 @@ object AbtestManagementUI {
         userMetaCriteria: UserMetaCriteria = None,
         reshuffle: Boolean = false,
         segmentRanges: List[GroupRange] = Nil) {
-      def toAbtestSpec(
+      def toAbtestSpec[F[_]: Functor: Timer](
           u: User,
           feature: FeatureName
-        ) =
-        AbtestSpec(
-          name = name,
-          feature = feature,
-          author = u.username,
-          start = start,
-          end = end,
-          groups = groups,
-          requiredTags = requiredTags,
-          alternativeIdName = alternativeIdName,
-          userMetaCriteria = userMetaCriteria,
-          reshuffle = reshuffle,
-          segmentRanges = segmentRanges
-        )
+        ) = {
+        now[F].map { now =>
+          AbtestSpec(
+            name = name,
+            feature = feature,
+            author = u.username,
+            start = start.getOrElse(now.toOffsetDateTimeSystemDefault),
+            end = end,
+            groups = groups,
+            requiredTags = requiredTags,
+            alternativeIdName = alternativeIdName,
+            userMetaCriteria = userMetaCriteria,
+            reshuffle = reshuffle,
+            segmentRanges = segmentRanges
+          )
+        }
+
+      }
     }
 
     implicit val abtestSpecFormDecoder: FormDataDecoder[SpecForm] =
       (
         field[TestName]("name"),
-        field[OffsetDateTime]("start"),
+        fieldOptional[OffsetDateTime]("start"),
         fieldOptional[OffsetDateTime]("end"),
         list[Group]("groups"),
         tags("requiredTags"),
