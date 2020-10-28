@@ -15,13 +15,13 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 // format: off
 lazy val libs = {
   org.typelevel.libraries
-    .addJVM(name = "akka-slf4j",            version = "2.6.3",  org = "com.typesafe.akka")
+    .addJVM(name = "akka-slf4j",            version = "2.6.10",  org = "com.typesafe.akka")
     .addJVM(name = "breeze",                version = "1.1",    org ="org.scalanlp", "breeze", "breeze-viz")
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
     .add(   name = "cats-testkit-scalatest",version = "2.0.0",  org = org.typelevel.typeLevelOrg)
     .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
-    .add(   name = "cats-retry",            version = "1.1.1",  org = "com.github.cb372")
-    .addJVM(name = "decline",               version = "1.3.0",  org = "com.monovore")
+    .add(   name = "cats-retry",            version = "2.0.0",  org = "com.github.cb372")
+    .addJVM(name = "decline",               version = "1.2.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.5.0",  org = "io.github.embeddedkafka")
     .addJVM(name = "evilplot",              version = "0.6.3",  org = "com.cibo")
     .addJVM(name = "fs2-kafka",             version = "1.1.0",  org = "com.github.fd4s")
@@ -41,7 +41,7 @@ lazy val libs = {
     .addJVM(name = "rainier",               version = "0.3.0",  org ="com.stripe", "rainier-core", "rainier-cats")
     .addJVM(name = "scala-java8-compat",    version = "0.9.1",  org = "org.scala-lang.modules")
     .addJVM(name = "scala-view",            version = "0.5",    org = "com.github.darrenjw")
-    .add(   name = "scalacheck-1-14",       version = "3.1.2.0",org = "org.scalatestplus")
+    .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
     .addJVM(name = "scanamo",               version = "1.0.0-M12-1", org ="org.scanamo", "scanamo-testkit")
     .add(   name = "spark",                 version = "2.4.5",  org = "org.apache.spark", "spark-sql", "spark-core")
@@ -415,7 +415,7 @@ lazy val playExample = project
       guice,
       ws,
       filters,
-      "org.webjars" % "swagger-ui" % "3.25.3"
+      "org.webjars" % "swagger-ui" % "3.25.4"
     ),
     dockerExposedPorts in Docker := Seq(9000),
     swaggerDomainNameSpaces := Seq("com.iheart.thomas"),
