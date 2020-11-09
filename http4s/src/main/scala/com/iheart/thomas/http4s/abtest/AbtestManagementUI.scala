@@ -94,7 +94,7 @@ class AbtestManagementUI[F[_]: Async: Timer](
           case OrderBy.Alphabetical =>
             testData.sortBy(_._1.name.toLowerCase)
           case OrderBy.Recent =>
-            testData.sortBy(_._2.head.data.start).reverse
+            testData.sortBy(_._2.last.data.start).reverse
         }
 
         Ok(index(u, sorted, features, filters))
