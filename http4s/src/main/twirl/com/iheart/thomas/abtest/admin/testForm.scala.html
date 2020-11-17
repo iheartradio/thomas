@@ -26,7 +26,7 @@ groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
       <input name="groups[].size" class="form-control size-change"
              id="testGroupSize" type="number"
              value="@group.map(_.size)"
-             min="0" step="0.01" max="1"/>
+             min="0" max="1" placeholder="Btw 0 & 1"/>
     </div>
   </div>
 
@@ -58,7 +58,7 @@ groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
         <input name="segmentRanges[].start" class="form-control"
                id="testGroupRangeStart" type="number"
                value="@rg.map(_.start)"
-               min="0" step="0.001" max="1"/>
+               min="0" max="1" placeholder="Btw 0 & 1" />
       </div>
     </div>
     <div class="col-md">
@@ -67,7 +67,7 @@ groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
         <input name="segmentRanges[].end" class="form-control"
                id="testGroupRangeEnd" type="number"
                value="@rg.map(_.end)"
-               min="0" step="0.001" max="1"/>
+               min="0" max="1" placeholder="Btw 0 & 1"/>
       </div>
     </div>
   </div>
