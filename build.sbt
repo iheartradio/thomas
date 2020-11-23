@@ -349,7 +349,7 @@ lazy val stress = project
     resolvers += Resolver.sonatypeRepo("snapshots"),
     libraryDependencies ++= Seq(
       "io.gatling.highcharts" % "gatling-charts-highcharts" % "2.3.1" % Test,
-      "io.gatling" % "gatling-test-framework" % "2.3.1" % Test
+      "io.gatling" % "gatling-test-framework" % "3.4.2" % Test
     )
   )
 
