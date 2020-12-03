@@ -159,7 +159,12 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
                                            @if(!u.has(ManageTestSettings(feature))) {
                                              disabled readonly
                                            }
-                                           value="@feature.overrideEligibility"/>
+                                           value="true"
+                                           @if(feature.overrideEligibility) {
+                                            checked
+                                           }
+
+                                    />
                                     <label for="overrideEligibilityCB" class="small">ALLOW OVERRIDES TO TAKE PRECEDENCE
                                         OVER ELIGIBILITY
                                         CONTROL</label>

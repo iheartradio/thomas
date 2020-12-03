@@ -121,18 +121,13 @@ class AbtestManagementUI[F[_]: Async: Timer](
       } yield r
     }
 
-    def getTestAndFollowUp(
+    def getTestInfo(
         testId: String
-      ): F[(Entity[Abtest], Option[Entity[Abtest]])] =
+      ): F[TestInfo] =
       for {
         test <- get(testId)
         otherFeatureTests <- alg.getTestsByFeature(test.data.feature)
-      } yield (
-        test,
-        otherFeatureTests
-          .filter(_.data.start.isAfter(test.data.start))
-          .headOption
-      )
+      } yield TestInfo(test, otherFeatureTests)
 
     implicit class UserAuthSyntax(user: User) {
       def canEdit(testId: String): F[Unit] =
@@ -224,9 +219,10 @@ class AbtestManagementUI[F[_]: Async: Timer](
         }
 
       case GET -> Root / "tests" / testId / "edit" asAuthed u =>
-        getTestAndFollowUp(testId).flatMap {
-          case (test, followUpO) =>
-            u.canEdit(test) *> Ok(editTest(u, test = test, followUpO = followUpO))
+        getTestInfo(testId).flatMap { ti =>
+          u.canEdit(ti.test) *> Ok(
+            editTest(u, test = ti.test, followUpO = ti.followUpO)
+          )
         }
 
       case GET -> Root / "tests" / testId / "delete" asAuthed u =>
@@ -305,15 +301,15 @@ class AbtestManagementUI[F[_]: Async: Timer](
 
       case GET -> Root / "tests" / testId asAuthed u =>
         for {
-          p <- getTestAndFollowUp(testId)
-          (test, followUpO) = p
-          feature <- alg.getFeature(test.data.feature)
+          ti <- getTestInfo(testId)
+          feature <- alg.getFeature(ti.test.data.feature)
           r <- Ok(
             showTest(
               u,
-              test,
-              followUpO,
-              feature
+              ti.test,
+              ti.followUpO,
+              feature,
+              ti.isShuffled
             )
           )
         } yield r
@@ -340,6 +336,26 @@ object AbtestManagementUI {
       endsAfter: OffsetDateTime,
       feature: Option[FeatureName] = None,
       orderBy: OrderBy = OrderBy.Recent)
+
+  case class TestInfo(
+      test: Entity[Abtest],
+      testsOfFeature: Vector[Entity[Abtest]]) {
+
+    lazy val followUpO: Option[Entity[Abtest]] =
+      testsOfFeature.filter(_.data.start.isAfter(test.data.start)).lastOption
+
+    lazy val previousO: Option[Entity[Abtest]] =
+      testsOfFeature.filter(_.data.start.isBefore(test.data.start)).headOption
+
+    lazy val isShuffled =
+      (previousO.flatMap(_.data.salt), test.data.salt) match {
+        case (None, Some(_)) => true
+        case (Some(_), None) => true
+        case (None, None)    => false
+        case (Some(s1), Some(s2)) =>
+          s1 != s2
+      }
+  }
 
   def fromMongo[F[_]: Timer](
       cfgResourceName: Option[String] = None
