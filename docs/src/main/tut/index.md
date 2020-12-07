@@ -11,8 +11,7 @@ position: 0
 
 <img src="https://iheartradio.github.io/thomas/img/thomas-the-tank-engine.png" width="200px">
 
-**Thomas is a modular Scala library for setting up a service for running A/B tests and multi-arm bandits. **
-
+## Thomas is a modular Scala library for setting up a service for running A/B tests and multi-arm bandits. 
   
   
 ## Major Features 
@@ -20,8 +19,6 @@ position: 0
 - [Real-time hash-based assignment](#real-time-hash-based-assignment)
 - [High performant and resilient assignment HTTP service](#high-performant-and-resilient-assignment-http-service)
 - [A/B test experiment evolution with consistent user assignments](#a-b-test-experiment-evolution-with-consistent-user-assignments)
-  * [Example 1: new treatment group](#example-1--new-treatment-group)
-  * [Example 2: resize of existing groups](#example-2--resize-of-existing-groups)
 - [Bayesian analysis utilities](#bayesian-analysis-utilities)
 - [Advanced eligibility control (targeted audience)](#advanced-eligibility-control--targeted-audience-)
 - [Mutually exclusive experiments](#mutually-exclusive-experiments)
