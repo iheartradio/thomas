@@ -43,16 +43,24 @@ Create a new Scala project and in build.sbt add
 ```
 libraryDependencies += "com.iheart" %% "thomas-http4s" % ThomasVersion
 ``` 
-Then add a `Main` object by following the example of `com.iheart.thomas.http4s.ExampleAbtestServerApp`
+Then add a `Main` object by following the example of`ExampleAbtestServerApp` in http4Example
 
-Then assuming you have a local MongoDB instance already up and running
- 
 `sbt run` shall start the service locally.  
   
 To config MongoDB host you can add this to an `application.conf` in your resource folder.
 ```
 mongoDB.hosts = ["localhost:27017"]
 ```
+
+If you want to use the Web UI, create another new Scala project and in build.sbt add
+
+```
+libraryDependencies += "com.iheart" %% "thomas-http4s" % ThomasVersion
+``` 
+
+Then add a `Main` object by following the example of`ExampleAbtestAdminUIApp` in http4Example
+
+`sbt run` shall start the Web UI locally.
 
 
 #### Step 2 Option 2b: Setting up with Play framework
