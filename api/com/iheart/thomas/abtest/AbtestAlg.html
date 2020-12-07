@@ -395,14 +395,14 @@ Final Tagless encoding</p></div><dl class="attributes block"> <dt>Source</dt><dd
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">create</span><span class="params">(<span name="testSpec">testSpec: <a href="model/AbtestSpec.html" class="extype" name="com.iheart.thomas.abtest.model.AbtestSpec">AbtestSpec</a></span>, <span name="auto">auto: <a href="https://www.scala-lang.org/api/2.12.10/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.AbtestAlg.F">F</span>[<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>]]</span>
+        <span class="name">create</span><span class="params">(<span name="testSpec">testSpec: <a href="model/AbtestSpec.html" class="extype" name="com.iheart.thomas.abtest.model.AbtestSpec">AbtestSpec</a></span>, <span name="auto">auto: <a href="https://www.scala-lang.org/api/2.12.10/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a> = <span class="symbol">false</span></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.AbtestAlg.F">F</span>[<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>]]</span>
       </span>
       
       
-    </li><li name="com.iheart.thomas.abtest.AbtestAlg#getAllFeatures" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="getAllFeatures:F[List[com.iheart.thomas.FeatureName]]"></a><a id="getAllFeatures:F[List[FeatureName]]"></a>
+    </li><li name="com.iheart.thomas.abtest.AbtestAlg#findFeature" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="findFeature(featureName:com.iheart.thomas.FeatureName):F[Option[com.iheart.thomas.abtest.model.Feature]]"></a><a id="findFeature(FeatureName):F[Option[Feature]]"></a>
       <span class="permalink">
-      <a href="../../../../com/iheart/thomas/abtest/AbtestAlg.html#getAllFeatures:F[List[com.iheart.thomas.FeatureName]]" title="Permalink">
+      <a href="../../../../com/iheart/thomas/abtest/AbtestAlg.html#findFeature(featureName:com.iheart.thomas.FeatureName):F[Option[com.iheart.thomas.abtest.model.Feature]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -411,7 +411,39 @@ Final Tagless encoding</p></div><dl class="attributes block"> <dt>Source</dt><dd
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getAllFeatures</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.AbtestAlg.F">F</span>[<a href="../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>]]</span>
+        <span class="name">findFeature</span><span class="params">(<span name="featureName">featureName: <a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.AbtestAlg.F">F</span>[<a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<a href="model/Feature.html" class="extype" name="com.iheart.thomas.abtest.model.Feature">Feature</a>]]</span>
+      </span>
+      
+      
+    </li><li name="com.iheart.thomas.abtest.AbtestAlg#getAllFeatureNames" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="getAllFeatureNames:F[List[com.iheart.thomas.FeatureName]]"></a><a id="getAllFeatureNames:F[List[FeatureName]]"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/abtest/AbtestAlg.html#getAllFeatureNames:F[List[com.iheart.thomas.FeatureName]]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getAllFeatureNames</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.AbtestAlg.F">F</span>[<a href="../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>]]</span>
+      </span>
+      
+      
+    </li><li name="com.iheart.thomas.abtest.AbtestAlg#getAllFeatures" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="getAllFeatures:F[Vector[com.iheart.thomas.abtest.model.Feature]]"></a><a id="getAllFeatures:F[Vector[Feature]]"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/abtest/AbtestAlg.html#getAllFeatures:F[Vector[com.iheart.thomas.abtest.model.Feature]]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getAllFeatures</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.AbtestAlg.F">F</span>[<a href="../../../../scala/index.html#Vector[+A]=scala.collection.immutable.Vector[A]" class="extmbr" name="scala.Vector">Vector</a>[<a href="model/Feature.html" class="extype" name="com.iheart.thomas.abtest.model.Feature">Feature</a>]]</span>
       </span>
       
       
@@ -512,22 +544,6 @@ Final Tagless encoding</p></div><dl class="attributes block"> <dt>Source</dt><dd
       
       <p class="shortcomment cmt">Get the assignments for a list of ids bypassing the eligibility control
 </p>
-    </li><li name="com.iheart.thomas.abtest.AbtestAlg#getGroups" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="getGroups(userId:com.iheart.thomas.UserId,time:Option[java.time.OffsetDateTime],tags:List[com.iheart.thomas.abtest.model.Tag]):F[Map[com.iheart.thomas.FeatureName,com.iheart.thomas.GroupName]]"></a><a id="getGroups(UserId,Option[OffsetDateTime],List[Tag]):F[Map[FeatureName,GroupName]]"></a>
-      <span class="permalink">
-      <a href="../../../../com/iheart/thomas/abtest/AbtestAlg.html#getGroups(userId:com.iheart.thomas.UserId,time:Option[java.time.OffsetDateTime],tags:List[com.iheart.thomas.abtest.model.Tag]):F[Map[com.iheart.thomas.FeatureName,com.iheart.thomas.GroupName]]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier">abstract </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getGroups</span><span class="params">(<span name="userId">userId: <a href="../index.html#UserId=String" class="extmbr" name="com.iheart.thomas.UserId">UserId</a></span>, <span name="time">time: <a href="https://www.scala-lang.org/api/2.12.10/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="java.time.OffsetDateTime">OffsetDateTime</span>]</span>, <span name="tags">tags: <a href="../../../../scala/index.html#List[+A]=List[A]" class="extmbr" name="scala.List">List</a>[<a href="model/index.html#Tag=String" class="extmbr" name="com.iheart.thomas.abtest.model.Tag">Tag</a>]</span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.AbtestAlg.F">F</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<a href="../index.html#FeatureName=String" class="extmbr" name="com.iheart.thomas.FeatureName">FeatureName</a>, <a href="../index.html#GroupName=String" class="extmbr" name="com.iheart.thomas.GroupName">GroupName</a>]]</span>
-      </span>
-      
-      <p class="shortcomment cmt">get all groups of a user by features</p>
     </li><li name="com.iheart.thomas.abtest.AbtestAlg#getGroupsWithMeta" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="getGroupsWithMeta(query:com.iheart.thomas.abtest.model.UserGroupQuery):F[com.iheart.thomas.abtest.model.UserGroupQueryResult]"></a><a id="getGroupsWithMeta(UserGroupQuery):F[UserGroupQueryResult]"></a>
       <span class="permalink">
@@ -717,6 +733,22 @@ Final Tagless encoding</p></div><dl class="attributes block"> <dt>Source</dt><dd
       </span>
       <span class="symbol">
         <span class="name">updateUserMetaCriteria</span><span class="params">(<span name="testId">testId: <a href="model/index.html#TestId=lihua.EntityId" class="extmbr" name="com.iheart.thomas.abtest.model.TestId">TestId</a></span>, <span name="userMetaCriteria">userMetaCriteria: <a href="model/index.html#UserMetaCriteria=Option[com.iheart.thomas.abtest.model.UserMetaCriterion.And]" class="extmbr" name="com.iheart.thomas.abtest.model.UserMetaCriteria">UserMetaCriteria</a></span>, <span name="auto">auto: <a href="https://www.scala-lang.org/api/2.12.10/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a></span>)</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.AbtestAlg.F">F</span>[<a href="https://iheartradio.github.io/lihua/api/lihua/Entity.html#lihua.Entity" class="extype" name="lihua.Entity">Entity</a>[<a href="model/Abtest.html" class="extype" name="com.iheart.thomas.abtest.model.Abtest">Abtest</a>]]</span>
+      </span>
+      
+      
+    </li><li name="com.iheart.thomas.abtest.AbtestAlg#warmUp" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="warmUp:F[Unit]"></a>
+      <span class="permalink">
+      <a href="../../../../com/iheart/thomas/abtest/AbtestAlg.html#warmUp:F[Unit]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">warmUp</span><span class="result">: <span class="extype" name="com.iheart.thomas.abtest.AbtestAlg.F">F</span>[<a href="https://www.scala-lang.org/api/2.12.10/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a>]</span>
       </span>
       
       
