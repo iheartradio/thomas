@@ -5,10 +5,6 @@ section: "home"
 position: 0
 ---
 
-
-# Thomas - a new A/B test library
-
-
 <img src="https://iheartradio.github.io/thomas/img/thomas-the-tank-engine.png" width="200px">
 
 ## Thomas is a modular Scala library for setting up a service for running A/B tests and multi-arm bandits. 
