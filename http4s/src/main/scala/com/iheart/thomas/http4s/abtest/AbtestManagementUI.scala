@@ -29,7 +29,7 @@ import org.http4s.dsl.impl.{
   QueryParamDecoderMatcher
 }
 import org.http4s.twirl._
-import play.api.libs.json.JsObject
+import _root_.play.api.libs.json.JsObject
 
 import scala.concurrent.ExecutionContext
 import admin.Authorization._
