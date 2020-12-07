@@ -203,13 +203,6 @@ lazy val docs = project
     micrositeDocumentationUrl := "/thomas/api/com/iheart/thomas/index.html",
     micrositeDocumentationLabelDescription := "API Documentation",
     micrositeGithubOwner := "iheartradio",
-    micrositeExtraMdFiles := Map(
-      file("README.md") -> ExtraMdFileConfig(
-        "index.md",
-        "home",
-        Map("title" -> "Home", "section" -> "home", "position" -> "0")
-      )
-    ),
     micrositePalette := Map(
       "brand-primary" -> "#51839A",
       "brand-secondary" -> "#EDAF79",
