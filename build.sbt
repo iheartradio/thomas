@@ -22,8 +22,8 @@ lazy val libs = {
     .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
     .add(   name = "cats-retry",            version = "2.0.0",  org = "com.github.cb372")
     .addJVM(name = "decline",               version = "1.3.0",  org = "com.monovore")
-    .addJVM(name = "embedded-kafka",        version = "2.5.1",  org = "io.github.embeddedkafka")
-    .addJVM(name = "evilplot",              version = "0.6.3",  org = "com.cibo")
+    .addJVM(name = "embedded-kafka",        version = "2.5.0",  org = "io.github.embeddedkafka")
+    .addJVM(name = "evilplot",              version = "0.8.0",  org = "com.cibo")
     .addJVM(name = "fs2-kafka",             version = "1.1.0",  org = "com.github.fd4s")
     .addModule("http4s", "http4s-twirl")
     .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
@@ -34,8 +34,8 @@ lazy val libs = {
     .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
     .addJVM(name = "mau",                   version = "0.2.2",  org = "com.kailuowang")
     .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
-    .add(   name = "play",                  version = "2.8.1",  org = "com.typesafe.play")
-    .add(   name = "play-json",             version = "2.8.1",  org = "com.typesafe.play")
+    .add(   name = "play",                  version = "2.8.3",  org = "com.typesafe.play")
+    .add(   name = "play-json",             version = "2.8.3",  org = "com.typesafe.play")
     .addJVM(name = "play-json-derived-codecs", version = "7.0.0", org = "org.julienrf")
     .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
     .addJVM(name = "rainier",               version = "0.3.0",  org ="com.stripe", "rainier-core", "rainier-cats")
@@ -203,13 +203,6 @@ lazy val docs = project
     micrositeDocumentationUrl := "/thomas/api/com/iheart/thomas/index.html",
     micrositeDocumentationLabelDescription := "API Documentation",
     micrositeGithubOwner := "iheartradio",
-    micrositeExtraMdFiles := Map(
-      file("README.md") -> ExtraMdFileConfig(
-        "index.md",
-        "home",
-        Map("title" -> "Home", "section" -> "home", "position" -> "0")
-      )
-    ),
     micrositePalette := Map(
       "brand-primary" -> "#51839A",
       "brand-secondary" -> "#EDAF79",

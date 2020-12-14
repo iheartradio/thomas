@@ -11,7 +11,8 @@
 @(u: User,
 test: Entity[Abtest],
 followUpO: Option[Entity[Abtest]],
-feature: Feature
+feature: Feature,
+isShuffled: Boolean
 )(implicit routes: ReverseRoutes)
 
 
@@ -32,7 +33,7 @@ feature: Feature
     </div>
 
 
-    @testForm(test.data.feature, Some(test.data.toSpec), None, true)
+    @testForm(test.data.feature, Some(test.data.toSpec), None, true, isShuffled = isShuffled)
 
 </form>
 
