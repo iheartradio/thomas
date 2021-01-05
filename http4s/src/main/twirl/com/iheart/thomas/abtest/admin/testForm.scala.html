@@ -28,7 +28,7 @@ isShuffled: Boolean = false
       <input name="groups[].size" class="form-control size-change"
              id="testGroupSize" type="number"
              value="@group.map(_.size)"
-             min="0" max="1" step="0.0001" placeholder="Btw 0 & 1"/>
+             min="0" max="1" step="any" placeholder="Btw 0 & 1"/>
     </div>
   </div>
 
@@ -60,7 +60,7 @@ isShuffled: Boolean = false
         <input name="segmentRanges[].start" class="form-control"
                id="testGroupRangeStart" type="number"
                value="@rg.map(_.start)"
-               min="0" max="1" step="0.0001" placeholder="Btw 0 & 1" />
+               min="0" max="1" step="any" placeholder="Btw 0 & 1" />
       </div>
     </div>
     <div class="col-md">
@@ -69,7 +69,7 @@ isShuffled: Boolean = false
         <input name="segmentRanges[].end" class="form-control"
                id="testGroupRangeEnd" type="number"
                value="@rg.map(_.end)"
-               min="0" max="1" step="0.0001" placeholder="Btw 0 & 1"/>
+               min="0" max="1" step="any" placeholder="Btw 0 & 1"/>
       </div>
     </div>
   </div>

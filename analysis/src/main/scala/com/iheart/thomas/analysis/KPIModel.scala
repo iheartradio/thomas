@@ -41,6 +41,7 @@ object KPIModel {
     j.format[BetaKPIModel]
 }
 
+//todo: rename to BetaModel, remove name field.
 case class BetaKPIModel(
     name: KPIName,
     alphaPrior: Double,
@@ -72,7 +73,7 @@ object BetaKPIModel {
       F: MonadError[F, Throwable]
     ): AssessmentAlg[F, BetaKPIModel] with UpdatableKPI[F, BetaKPIModel] =
     new BayesianAssessmentAlg[F, BetaKPIModel, Conversions]
-    with UpdatableKPI[F, BetaKPIModel] {
+      with UpdatableKPI[F, BetaKPIModel] {
 
       protected def sampleIndicator(
           b: BetaKPIModel,
@@ -130,7 +131,7 @@ object LogNormalKPIModel {
       F: MonadError[F, Throwable]
     ): AssessmentAlg[F, LogNormalKPIModel] with UpdatableKPI[F, LogNormalKPIModel] =
     new BayesianAssessmentAlg[F, LogNormalKPIModel, Measurements]
-    with UpdatableKPI[F, LogNormalKPIModel] {
+      with UpdatableKPI[F, LogNormalKPIModel] {
 
       private def fitModel(
           logNormal: LogNormalKPIModel,

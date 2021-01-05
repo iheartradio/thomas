@@ -14,20 +14,26 @@ import org.http4s.{
   QueryParameterValue
 }
 
+import io.estatico.newtype.Coercible
+import io.estatico.newtype.ops._
 import scala.util.Try
 
 trait CommonQueryParamDecoders {
   implicit val offsetDateTimeQueryParamDecoder: QueryParamDecoder[OffsetDateTime] = {
-    QueryParamDecoder.fromUnsafeCast(
-      qp =>
-        ZonedDateTime.parse(qp.value, Formatters.dateTimeFormatter).toOffsetDateTime
+    QueryParamDecoder.fromUnsafeCast(qp =>
+      ZonedDateTime.parse(qp.value, Formatters.dateTimeFormatter).toOffsetDateTime
     )("OffsetDateTime")
   }
 
   implicit val bigDecimalQPD: QueryParamDecoder[BigDecimal] =
-    QueryParamDecoder.fromUnsafeCast[BigDecimal](
-      qp => BigDecimal(qp.value.toDouble)
+    QueryParamDecoder.fromUnsafeCast[BigDecimal](qp =>
+      BigDecimal(qp.value.toDouble)
     )("BigDecimal")
+
+  implicit def coercibleQueryParamDecoder[A, B](
+      implicit coercible: Coercible[A, B],
+      qpd: QueryParamDecoder[A]
+    ): QueryParamDecoder[B] = qpd.map(_.coerce)
 
   def jsonEntityQueryParamDecoder[A](implicit A: Reads[A]): QueryParamDecoder[A] =
     (qp: QueryParameterValue) =>
@@ -65,3 +71,5 @@ trait CommonFormDecoders extends CommonQueryParamDecoders {
     ).tupled
 
 }
+
+object CommonFormDecoders extends CommonFormDecoders

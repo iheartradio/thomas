@@ -9,4 +9,5 @@ class ReverseRoutes(rootPath: String) {
   val users = s"$rootPath/users"
   val register = s"$rootPath/register"
   val logout = s"$rootPath/logout"
+  val analysis = s"$rootPath/analysis/conversionKPIs"
 }

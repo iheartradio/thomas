@@ -1,0 +1,208 @@
+@import com.iheart.thomas.analysis._
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.admin.User
+@import com.iheart.thomas.http4s.ReverseRoutes
+
+@(
+draftO: Option[ConversionKPI],
+u: User,
+successMsg: Option[String] = None
+)(implicit routes: ReverseRoutes)
+
+
+@criteriaItem(oo: Option[(String, String)], queryName: String) = {
+
+<div class="row criteria-item">
+
+    <div class="col-md">
+        <div class="form-group">
+            <input name="messageQuery.@{queryName}.criteria[]._1" class="form-control"
+                   type="text"
+                   @oo.map(o=> s"value=${o._1}") />
+        </div>
+    </div>
+
+    <div class="col-md d-flex flex-row">
+        <div class="form-group w-100">
+            <input name="messageQuery.@{queryName}.criteria[]._2" class="form-control"
+                   type="text"
+                   @oo.map(o=> s"value=${o._2}") />
+        </div>
+        <div class="text-center">
+            <button class="btn btn-link delete-criteria remove-item mt-1 ml-1"
+                    type="button" onclick="thomas.removeParentItem(this, '.criteria-item')"
+                    title="Remove Criteria">
+                <i class="far fa-trash-alt"></i>
+            </button>
+        </div>
+
+    </div>
+</div>
+
+}
+
+@messageQuery(mqO: Option[MessageQuery], queryName: String) = {
+<div class="query-description">
+    <div class="form-group">
+        <label for="@{queryName}-description-input">Description</label>
+        <textarea name="messageQuery.@{queryName}.description"
+                  class="form-control" cols="1"
+                  id="@{queryName}-description-input"
+        >@mqO.flatMap(_.description)</textarea>
+    </div>
+</div>
+<div id="@{queryName}-criteria">
+    <div class="row criteria-header mt-5">
+        <div class="col-md">
+            <div class="form-group">
+                <lable>Field Name</label>
+            </div>
+        </div>
+
+        <div class="col-md">
+            <div class="form-group">
+                <label>Field Value</label>
+            </div>
+        </div>
+    </div>
+    @for(o <- mqO.toList.flatMap(_.criteria)) {
+    @criteriaItem(Some(o), queryName)
+    }
+    @criteriaItem(None, queryName)
+</div>
+
+<div class="d-none" id="@{queryName}-new-criteria">
+    @criteriaItem(None, queryName)
+</div>
+
+<div class="row float-right">
+    <button type="button" id="btn-@{queryName}-new-criteria"
+            onclick="thomas.appendItem('#@{queryName}-new-criteria','#@{queryName}-criteria')"
+            class="btn btn-secondary">New Criteria
+    </button>
+</div>
+
+
+}
+
+
+@topNav(draftO.map(d => "Conversion KPI " + d.name).getOrElse("New Conversion KPI"), u) {
+
+<form action="../conversionKPIs" method="post">
+    <input type="hidden" name="author" value="@u.username" />
+    <div class="row mt-5">
+        <span class="h4">Conversion KPI <span class="text-success">@draftO.map(_.name)</span></span>
+        @for(msg <- successMsg) {
+        <div id="success-msg" class="alert alert-success" role="alert">
+            @msg
+        </div>
+        }
+    </div>
+    <div class="row mt-3">
+        <div class="col-md">
+            <div id="kpi-basics" class="card">
+                <div class="card-header">
+                    <span class="h5">Basics</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="nameInput">Name</label>
+                        <input name="name"
+                               required
+                               class="form-control"
+                               id="nameInput"
+                               type="text"
+                               value="@draftO.map(_.name)"
+                        ></input>
+                    </div>
+                    <div class="form-group">
+                        <label for="descriptionInput">Description</label>
+                        <textarea name="description"
+                                  class="form-control"
+                                  id="descriptionInput"
+                        >@draftO.flatMap(_.description)</textarea>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+        <div class="col-md">
+            <div id="kpi-model" class="card">
+                <div class="card-header">
+                    <span class="h5">Beta Model</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="alphaPriorInput">Alpha Prior</label>
+                        <input name="model.alphaPrior"
+                               class="form-control"
+                               id="alphaPriorInput"
+                               type="number"
+                               required
+                               step="any"
+                               value="@draftO.map(_.model.alphaPrior)"
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="betaPriorInput">Beta Prior</label>
+                        <input name="model.betaPrior"
+                               class="form-control"
+                               id="betaPriorInput"
+                               type="number"
+                               required
+                               step="any"
+                               value="@draftO.map(_.model.betaPrior)"
+                        />
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div class="row mt-3">
+        <div class="col-md">
+            <div id="message-queries" class="card">
+                <div class="card-header">
+                    <span class="h5">Message Queries</span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md">
+                            <div id="init-message-query" class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Initiation Message Query</h5>
+                                    @messageQuery(draftO.flatMap(_.messageQuery.map(_.initMessage)), "initMessage")
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md">
+                            <div id="converted-message-query" class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Converted Message Query</h5>
+                                    @messageQuery(draftO.flatMap(_.messageQuery.map(_.convertedMessage)),
+                                    "convertedMessage")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+    </div>
+    <div class="row d-flex flex-row-reverse mt-5">
+        <div class="mr-4">
+            <button type="submit" class="btn btn-primary">
+                Update
+            </button>
+            <a href="@routes.analysis" role="button" class="btn btn-warning ml-2">Never Mind</a>
+        </div>
+    </div>
+    </div>
+
+
+</form>
+}
