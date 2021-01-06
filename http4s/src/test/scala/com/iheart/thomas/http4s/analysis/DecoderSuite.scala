@@ -12,10 +12,13 @@ class DecoderSuite extends AnyFunSuiteLike with Matchers {
     UI.Decoders.conversionKPIDecoder.apply(
       Map(
         "name" -> Chain("foo"),
+        "author" -> Chain("bar"),
         "model.alphaPrior" -> Chain("1"),
         "model.betaPrior" -> Chain("2")
       )
-    ) should be(Valid(ConversionKPI(KPIName("foo"), None, BetaModel(1, 2), None)))
+    ) should be(
+      Valid(ConversionKPI(KPIName("foo"), "bar", None, BetaModel(1, 2), None))
+    )
 
   }
 }
