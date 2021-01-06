@@ -31,14 +31,15 @@ import tsec.passwordhashers.jca.BCrypt
 
 class AdminUI[F[_]: MonadThrowable](
     abtestManagementUI: AbtestManagementUI[F],
-    authUI: auth.UI[F, AuthImp]
+    authUI: auth.UI[F, AuthImp],
+    analysisUI: analysis.UI[F]
   )(implicit reverseRoutes: ReverseRoutes,
     authenticator: Authenticator[F, String, User, Token[AuthImp]])
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
 
   val routes = authUI.publicEndpoints <+> liftService(
-    abtestManagementUI.routes <+> authUI.authedService
+    abtestManagementUI.routes <+> authUI.authedService <+> analysisUI.routes
   )
 
   val serverErrorHandler: ServiceErrorHandler[F] = { _ =>
@@ -60,8 +61,8 @@ object AdminUI {
   case class AdminUIConfig(
       key: String,
       rootPath: String,
-      authTableReadCapacity: Long,
-      authTableWriteCapacity: Long,
+      adminTablesReadCapacity: Long,
+      adminTablesWriteCapacity: Long,
       initialAdminUsername: String,
       initialRole: Role)
 
@@ -87,19 +88,26 @@ object AdminUI {
     implicit val rr = new ReverseRoutes(cfg.rootPath)
     Resource.liftF(
       dynamo.AdminDAOs.ensureAuthTables[F](
-        cfg.authTableReadCapacity,
-        cfg.authTableWriteCapacity
+        cfg.adminTablesReadCapacity,
+        cfg.adminTablesWriteCapacity
       )
-    ) *> {
+    ) *>
+      Resource.liftF(
+        dynamo.AnalysisDAOs.ensureAnalysisTables[F](
+          cfg.adminTablesReadCapacity,
+          cfg.adminTablesWriteCapacity
+        )
+      ) *> {
       Resource.liftF(AuthDependencies[F](cfg.key)).flatMap { deps =>
         import deps._
         import dynamo.AdminDAOs._
         implicit val authAlg = AuthenticationAlg[F, BCrypt, AuthImp]
-
         val authUI = new UI(Some(cfg.initialAdminUsername), cfg.initialRole)
 
+        import dynamo.AnalysisDAOs._
+
         AbtestManagementUI.fromMongo[F](mongoAbtest).map { amUI =>
-          new AdminUI(amUI, authUI)
+          new AdminUI(amUI, authUI, new analysis.UI[F])
         }
       }
     }

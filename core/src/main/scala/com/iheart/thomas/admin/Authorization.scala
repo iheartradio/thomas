@@ -31,6 +31,8 @@ object Authorization {
   }
 
   val testManagerRoles = List(Admin, Tester, Developer)
+  val analysisManagerRoles = List(Admin, Analyst)
+
   val readableRoles = Role.values.filter(_ != Guest)
 
   sealed trait Permission
