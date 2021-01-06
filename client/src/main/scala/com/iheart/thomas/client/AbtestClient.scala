@@ -27,33 +27,14 @@ import org.http4s.client.UnexpectedStatus
 
 import scala.concurrent.duration.FiniteDuration
 
-trait AbtestClient[F[_]] extends DataProvider[F] {
+trait ReadOnlyAbtestClient[F[_]] extends DataProvider[F] {
   def tests(asOf: Option[Instant] = None): F[Vector[(Entity[Abtest], Feature)]]
 
   def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]]
 
-  def addGroupMeta(
-      tidOrFeature: Either[TestId, FeatureName],
-      gm: JsObject,
-      auto: Boolean
-    ): F[Entity[Abtest]]
-
-  def removeGroupMetas(
-      tidOrFeature: Either[TestId, FeatureName],
-      auto: Boolean
-    ): F[Entity[Abtest]]
-
   def getKPI(name: String): F[KPIModel]
 
-  def saveKPI(model: KPIModel): F[KPIModel]
-
   def getTest(tid: TestId): F[Entity[Abtest]]
-
-  def updateUserMetaCriteria(
-      tidOrFeature: Either[TestId, FeatureName],
-      userMetaCriteria: UserMetaCriteria,
-      auto: Boolean
-    ): F[Entity[Abtest]]
 
   def test(
       feature: FeatureName,
@@ -90,6 +71,28 @@ trait AbtestClient[F[_]] extends DataProvider[F] {
     ): F[Map[GroupName, GroupMeta]] =
     tidOrFeatureOp(tidOrFeature)(getTest(_)).map(_.data.getGroupMetas)
 
+}
+
+trait AbtestClient[F[_]] extends ReadOnlyAbtestClient[F] {
+
+  def saveKPI(model: KPIModel): F[KPIModel]
+
+  def addGroupMeta(
+      tidOrFeature: Either[TestId, FeatureName],
+      gm: JsObject,
+      auto: Boolean
+    ): F[Entity[Abtest]]
+
+  def removeGroupMetas(
+      tidOrFeature: Either[TestId, FeatureName],
+      auto: Boolean
+    ): F[Entity[Abtest]]
+
+  def updateUserMetaCriteria(
+      tidOrFeature: Either[TestId, FeatureName],
+      userMetaCriteria: UserMetaCriteria,
+      auto: Boolean
+    ): F[Entity[Abtest]]
 }
 
 import org.http4s.client.{Client => HClient}
@@ -186,6 +189,13 @@ object Http4SAbtestClient {
       urls: HttpServiceUrls,
       ec: ExecutionContext
     ): Resource[F, AbtestClient[F]] = {
+    BlazeClientBuilder[F](ec).resource.map(cl => new Http4SAbtestClient[F](cl, urls))
+  }
+
+  def readOnlyResource[F[_]: ConcurrentEffect](
+      urls: HttpServiceUrls,
+      ec: ExecutionContext
+    ): Resource[F, ReadOnlyAbtestClient[F]] = {
     BlazeClientBuilder[F](ec).resource.map(cl => new Http4SAbtestClient[F](cl, urls))
   }
 }

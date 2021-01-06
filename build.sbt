@@ -18,12 +18,12 @@ lazy val libs = {
     .addJVM(name = "akka-slf4j",            version = "2.6.10",  org = "com.typesafe.akka")
     .addJVM(name = "breeze",                version = "1.1",    org ="org.scalanlp", "breeze", "breeze-viz")
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
-    .add(   name = "cats-testkit-scalatest",version = "2.0.0",  org = org.typelevel.typeLevelOrg)
-    .add(   name = "cats-effect-testing-scalatest",    version = "0.4.2",  org = "com.codecommit")
-    .add(   name = "cats-retry",            version = "2.0.0",  org = "com.github.cb372")
+    .add(   name = "cats-testkit-scalatest",version = "2.1.0",  org = org.typelevel.typeLevelOrg)
+    .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
+    .add(   name = "cats-retry",            version = "2.1.0",  org = "com.github.cb372")
     .addJVM(name = "decline",               version = "1.3.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.5.0",  org = "io.github.embeddedkafka")
-    .addJVM(name = "evilplot",              version = "0.6.3",  org = "com.cibo")
+    .addJVM(name = "evilplot",              version = "0.8.0",  org = "com.cibo")
     .addJVM(name = "fs2-kafka",             version = "1.1.0",  org = "com.github.fd4s")
     .addModule("http4s", "http4s-twirl")
     .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
@@ -203,13 +203,6 @@ lazy val docs = project
     micrositeDocumentationUrl := "/thomas/api/com/iheart/thomas/index.html",
     micrositeDocumentationLabelDescription := "API Documentation",
     micrositeGithubOwner := "iheartradio",
-    micrositeExtraMdFiles := Map(
-      file("README.md") -> ExtraMdFileConfig(
-        "index.md",
-        "home",
-        Map("title" -> "Home", "section" -> "home", "position" -> "0")
-      )
-    ),
     micrositePalette := Map(
       "brand-primary" -> "#51839A",
       "brand-secondary" -> "#EDAF79",
