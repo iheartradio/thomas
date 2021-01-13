@@ -56,7 +56,8 @@ object Resources {
           dynamo.BanditsDAOs.banditKey
         ),
         dynamo.AdminDAOs.authTableName -> Seq(dynamo.AdminDAOs.authKey),
-        dynamo.AdminDAOs.userTableName -> Seq(dynamo.AdminDAOs.userKey)
+        dynamo.AdminDAOs.userTableName -> Seq(dynamo.AdminDAOs.userKey),
+        dynamo.AdminDAOs.streamJobTableName -> Seq(dynamo.AdminDAOs.streamJobKey)
       )
 
   lazy val dynamoDAOS: Resource[

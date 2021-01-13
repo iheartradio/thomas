@@ -14,29 +14,36 @@ import cats.effect.Timer
 import scala.concurrent.duration.FiniteDuration
 
 object ConversionBanditUpdater {
-  type ConversionEvent = Boolean
-  val Converted = true
-  val Viewed = false
 
   type Settings = BanditSettings[BanditSettings.Conversion]
 
+  /**
+    * A stream of running bandits, but only when the set of bandits changes meaningfully. See banditIdentifier below
+    * */
   private[stream] def runningBandits[F[_]: Timer: ConcurrentEffect](
       allowedBanditsStaleness: FiniteDuration
     )(implicit
       cbm: ConversionBMABAlg[F],
       log: EventLogger[F]
     ): Stream[F, ConversionBandits] =
-    ((Stream.emit[F, Unit](()) ++ Stream
-      .fixedDelay[F](allowedBanditsStaleness))
-      .evalMap(_ => cbm.runningBandits()))
+    (
+      (Stream.emit[F, Unit](()) ++ Stream
+        .fixedDelay[F](allowedBanditsStaleness))
+        .evalMap(_ => cbm.runningBandits())
+      )
       .scan(
         (
-          Vector.empty[ConversionBandit],
-          none[ConversionBandits]
+          Vector.empty[ConversionBandit], //previous set of bandits
+          none[
+            ConversionBandits
+          ] // current bandits, None if no change from previous bandits
         )
       ) { (memo, current) =>
         val old = memo._1
 
+        /**
+          * Calculate unique identifier of bandits
+          */
         def banditIdentifier(b: BayesianMAB[_, _]) =
           (b.abtest.data.groups.map(_.name).toSet, b.settings)
 
@@ -48,12 +55,11 @@ object ConversionBanditUpdater {
         )
       }
       .mapFilter(_._2)
-      .evalTap(
-        b =>
-          log(
-            Event.BanditKPIUpdate
-              .NewSetOfRunningBanditsDetected(b.map(_.feature))
-          )
+      .evalTap(b =>
+        log(
+          Event.BanditKPIUpdate
+            .NewSetOfRunningBanditsDetected(b.map(_.feature))
+        )
       )
 
   def updatePipes[F[_]: Timer: ConcurrentEffect, I](

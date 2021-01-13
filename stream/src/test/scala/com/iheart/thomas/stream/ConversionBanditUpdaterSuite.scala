@@ -5,7 +5,6 @@ import java.time.OffsetDateTime
 import fs2.Stream
 import cats.effect.IO
 import org.scalatest.matchers.should.Matchers
-import ConversionBanditUpdater.{Converted, Viewed}
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.abtest.model.{Abtest, Group, TestName}

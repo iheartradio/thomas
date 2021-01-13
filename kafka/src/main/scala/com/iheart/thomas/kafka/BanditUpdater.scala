@@ -12,7 +12,7 @@ import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
 import com.iheart.thomas.bandit.tracking.{Event, EventLogger}
 import com.iheart.thomas.stream.ConversionBanditUpdater
-import com.iheart.thomas.stream.ConversionBanditUpdater.ConversionEvent
+import com.iheart.thomas.stream.ConversionEvent
 import fs2.concurrent.SignallingRef
 import fs2.kafka.{AutoOffsetReset, ConsumerSettings, Deserializer, consumerStream}
 import fs2.{Pipe, Stream}
@@ -58,9 +58,7 @@ object BanditUpdater {
     )(implicit ex: ExecutionContext,
       amazonClient: AmazonDynamoDBAsync
     ): Resource[F, BanditUpdater[F]] =
-    ConversionBMABAlgResource[F].evalMap(
-      implicit alg => create[F](cfg)
-    )
+    ConversionBMABAlgResource[F].evalMap(implicit alg => create[F](cfg))
 
   def create[F[_]: Timer: ConcurrentEffect: ContextShift](
       cfg: Config
@@ -113,10 +111,9 @@ object BanditUpdater {
         def conversionBMABAlg: ConversionBMABAlg[F] = cbm
 
         def autoRestartAfterError: Stream[F, Unit] =
-          cfg.restartOnErrorAfter.fold[Stream[F, Unit]](Stream.empty)(
-            wait =>
-              Stream.sleep[F](wait) ++
-                consumer
+          cfg.restartOnErrorAfter.fold[Stream[F, Unit]](Stream.empty)(wait =>
+            Stream.sleep[F](wait) ++
+              consumer
           )
 
         val consumer: Stream[F, Unit] = mainStream.handleErrorWith { e =>

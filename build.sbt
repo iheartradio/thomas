@@ -43,11 +43,13 @@ lazy val libs = {
     .addJVM(name = "scala-view",            version = "0.5",    org = "com.github.darrenjw")
     .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
-    .addJVM(name = "scanamo",               version = "1.0.0-M12-1", org ="org.scanamo", "scanamo-testkit")
+    .addJVM(name = "scanamo",               version = "1.0-M13", org ="org.scanamo", "scanamo-testkit")
     .add(   name = "spark",                 version = "2.4.5",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
     .addJVM(name = "tsec",                  version = "0.2.1",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s")
     .add   (name = "enumeratum",            version = "1.6.1",  org = "com.beachape" )
+    .add(   name = "jawn-ast",              version = "1.0.0",  org = org.typelevel.typeLevelOrg)
+
 }
 // format: on
 
@@ -224,7 +226,7 @@ lazy val mongo = project
   )
 
 lazy val dynamo = project
-  .dependsOn(bandit)
+  .dependsOn(bandit, stream)
   .settings(name := "thomas-dynamo")
   .settings(rootSettings)
   .settings(
@@ -250,7 +252,7 @@ lazy val stream = project
   .settings(name := "thomas-stream")
   .settings(rootSettings)
   .settings(
-    libs.dependencies("fs2-core"),
+    libs.dependencies("fs2-core", "jawn-ast"),
     libs.testDependencies("cats-effect-testing-scalatest")
   )
 
