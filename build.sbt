@@ -56,7 +56,7 @@ lazy val libs = {
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias(
   "validate",
-  s";clean;test;it/IntegrationTest/test;docs/tut"
+  s";clean;test;it/IntegrationTest/test"
 )
 addCommandAlias("it", s"IntegrationTest/test")
 
@@ -199,8 +199,6 @@ lazy val docs = project
   .enablePlugins(MicrositesPlugin)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
-    scalacOptions in Tut ~= (_.filterNot(Set("-Ywarn-unused:imports"))),
-    micrositeCompilingDocsTool := WithTut,
     micrositeSettings(gh, developerKai, "Thomas, a library for A/B tests"),
     micrositeDocumentationUrl := "/thomas/api/com/iheart/thomas/index.html",
     micrositeDocumentationLabelDescription := "API Documentation",

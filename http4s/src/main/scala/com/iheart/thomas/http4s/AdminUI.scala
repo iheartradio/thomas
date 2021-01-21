@@ -11,7 +11,7 @@ import com.iheart.thomas.http4s.auth.{
 }
 import org.http4s.dsl.Http4sDsl
 import cats.implicits._
-import com.iheart.thomas.{MonadThrowable, dynamo}
+import com.iheart.thomas.dynamo
 import cats.effect._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.admin.{Role, User}
@@ -23,13 +23,13 @@ import pureconfig.error.{CannotConvert, FailureReason}
 import pureconfig.{ConfigReader, ConfigSource}
 import pureconfig.module.catseffect._
 import tsec.common.SecureRandomIdGenerator
-
+import cats.MonadThrow
 import scala.concurrent.ExecutionContext
 import org.http4s.twirl._
 import tsec.authentication.Authenticator
 import tsec.passwordhashers.jca.BCrypt
 
-class AdminUI[F[_]: MonadThrowable](
+class AdminUI[F[_]: MonadThrow](
     abtestManagementUI: AbtestManagementUI[F],
     authUI: auth.UI[F, AuthImp],
     analysisUI: analysis.UI[F]

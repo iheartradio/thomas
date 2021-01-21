@@ -56,18 +56,18 @@ trait ReadOnlyAbtestClient[F[_]] extends DataProvider[F] {
   def tidOrFeatureOp[A](
       tidOrFeature: Either[TestId, FeatureName]
     )(f: TestId => F[A]
-    )(implicit F: MonadThrowable[F]
+    )(implicit F: MonadThrow[F]
     ): F[A] = tidOrFeature.fold(f, featureLatestTest(_).flatMap(t => f(t._id)))
 
   def getUserMetaCriteria(
       tidOrFeature: Either[TestId, FeatureName]
-    )(implicit F: MonadThrowable[F]
+    )(implicit F: MonadThrow[F]
     ): F[UserMetaCriteria] =
     tidOrFeatureOp(tidOrFeature)(getTest(_)).map(_.data.userMetaCriteria)
 
   def getGroupMeta(
       tidOrFeature: Either[TestId, FeatureName]
-    )(implicit F: MonadThrowable[F]
+    )(implicit F: MonadThrow[F]
     ): F[Map[GroupName, GroupMeta]] =
     tidOrFeatureOp(tidOrFeature)(getTest(_)).map(_.data.getGroupMetas)
 

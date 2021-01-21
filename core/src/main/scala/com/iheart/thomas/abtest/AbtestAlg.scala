@@ -202,7 +202,7 @@ final class DefaultAbtestAlg[F[_]](
     ],
     refreshRef: RefreshRef[F, TestsData],
     nowF: F[Instant],
-    F: MonadThrowable[F],
+    F: MonadThrow[F],
     eligibilityControl: EligibilityControl[F],
     idSelector: EntityId => JsObject)
     extends AbtestAlg[F] {

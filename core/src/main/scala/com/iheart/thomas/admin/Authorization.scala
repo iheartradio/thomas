@@ -1,9 +1,8 @@
 package com.iheart.thomas.admin
 import Role._
-import com.iheart.thomas.MonadThrowable
 import com.iheart.thomas.abtest.model.Feature
 import scala.util.control.NoStackTrace
-
+import cats.MonadThrow
 object Authorization {
   implicit class userAuthorizationSyntax(private val user: User) extends AnyVal {
 
@@ -26,7 +25,7 @@ object Authorization {
     def managing(features: Seq[Feature]): Seq[Feature] =
       features.filter(f => has(ManageFeature(f)))
 
-    def check[F[_]](permission: Permission)(implicit F: MonadThrowable[F]): F[Unit] =
+    def check[F[_]](permission: Permission)(implicit F: MonadThrow[F]): F[Unit] =
       if (has(permission)) F.unit else F.raiseError(LackPermission)
   }
 

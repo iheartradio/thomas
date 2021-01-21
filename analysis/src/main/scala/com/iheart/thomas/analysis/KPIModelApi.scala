@@ -10,6 +10,7 @@ import cats.tagless.autoFunctorK
 import com.iheart.thomas.abtest.Error.NotFound
 
 import scala.reflect.ClassTag
+import cats.MonadThrow
 
 @autoFunctorK //todo: To be retired, and replaced by ConversionKPIAlg
 trait KPIModelApi[F[_]] {
@@ -26,7 +27,7 @@ object KPIModelApi {
 
   implicit def default[F[_]](
       implicit dao: EntityDAO[F, KPIModel, JsObject],
-      F: MonadThrowable[F]
+      F: MonadThrow[F]
     ): KPIModelApi[F] =
     new KPIModelApi[F] {
       import com.iheart.thomas.abtest.QueryDSL._
