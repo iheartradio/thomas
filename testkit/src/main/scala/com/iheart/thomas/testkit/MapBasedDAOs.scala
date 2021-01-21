@@ -24,7 +24,8 @@ object MapBasedDAOs {
 
     val map: Map[K, A] = TrieMap.empty[K, A]
 
-    def insertO(a: A): F[Option[A]] = F.delay(map.putIfAbsent(keyOf(a), a))
+    def insertO(a: A): F[Option[A]] =
+      F.delay(map.putIfAbsent(keyOf(a), a).fold(a.some)(_ => None))
 
     def insert(a: A): F[A] =
       insertO(a).flatMap(_.liftTo[F](KeyAlreadyExist))
@@ -38,12 +39,16 @@ object MapBasedDAOs {
         )
       )
 
-    def find(k: K): F[Option[A]] = F.delay(map.get(k))
+    def find(k: K): F[Option[A]] =
+      F.delay(map.get(k))
 
-    def all: F[Vector[A]] = map.values.toVector.pure[F]
+    def all: F[Vector[A]] =
+      F.delay {
+        map.values.toVector
+      }
 
     def remove(k: K): F[Unit] =
-      F.delay(map - k).void
+      F.delay(map.remove(k)).void
 
     def update(a: A): F[A] =
       updateO(a).flatMap(_.liftTo[F](NotFound(s"${keyOf(a)} is not found")))
@@ -53,22 +58,30 @@ object MapBasedDAOs {
 
     def upsert(a: A): F[A] =
       F.delay(map.put(keyOf(a), a)).as(a)
+
+    def replace(
+        old: A,
+        newA: A
+      ): F[Option[A]] =
+      F.delay(if (map.replace(keyOf(newA), old, newA)) newA.some else None)
   }
 
-  implicit def streamJobDAO[F[_]: Sync]: JobDAO[F] =
+  def streamJobDAO[F[_]: Sync]: JobDAO[F] =
     new MapBasedDAOs[F, Job, String](_.key) with JobDAO[F] {
       def updateCheckedOut(
           job: Job,
           at: Instant
-        ): F[Option[Job]] = updateO(job.copy(checkedOut = Some(at)))
+        ): F[Option[Job]] =
+        replace(job, job.copy(checkedOut = Some(at)))
     }
 
-  implicit def conversionKPIDAO[F[_]: Sync]: ConversionKPIDAO[F] =
+  def conversionKPIDAO[F[_]](implicit F: Sync[F]): ConversionKPIDAO[F] =
     new MapBasedDAOs[F, ConversionKPI, KPIName](_.name) with ConversionKPIDAO[F] {
       def updateModel(
           name: KPIName,
           model: BetaModel
-        ): F[ConversionKPI] = get(name).flatMap(k => update(k.copy(model = model)))
+        ): F[ConversionKPI] =
+        get(name).flatMap(k => update(k.copy(model = model)))
     }
 
 }

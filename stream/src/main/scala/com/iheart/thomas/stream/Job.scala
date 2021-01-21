@@ -17,6 +17,11 @@ object Job {
   def apply(spec: JobSpec): Job = Job(spec.key, spec, None)
 }
 
+/**
+  * A DAO for job.
+  * Implemenation should pass thomas.stream.JobDAOSuite in the tests module.
+  * @tparam F
+  */
 trait JobDAO[F[_]] {
 
   /**
@@ -25,7 +30,8 @@ trait JobDAO[F[_]] {
   def insertO(job: Job): F[Option[Job]]
 
   /**
-    * Update checkedOut but fails when the existing data is inconsistent with the `consumer` given
+    * Update checkedOut but fails when the existing data is inconsistent with given `job`
+    * @return None if either the job no longer exist or its signature is different, i.e. checkedOut is inconsistent
     */
   def updateCheckedOut(
       job: Job,
@@ -33,6 +39,8 @@ trait JobDAO[F[_]] {
     ): F[Option[Job]]
 
   def remove(jobKey: String): F[Unit]
+
+  def find(jobKey: String): F[Option[Job]]
 
   def all: F[Vector[Job]]
 

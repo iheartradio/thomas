@@ -56,9 +56,9 @@ lazy val libs = {
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias(
   "validate",
-  s";clean;test;it/IntegrationTest/test"
+  s";clean;test;tests/IntegrationTest/test"
 )
-addCommandAlias("it", s"IntegrationTest/test")
+addCommandAlias("tests", s"IntegrationTest/test")
 
 lazy val thomas = project
   .in(file("."))
@@ -68,7 +68,7 @@ lazy val thomas = project
     plot,
     client,
     bandit,
-    it,
+    tests,
     http4s,
     http4sExample,
     cli,
@@ -346,7 +346,7 @@ lazy val stress = project
     )
   )
 
-lazy val it = project
+lazy val tests = project
   .dependsOn(testkit, http4s)
   .configs(IntegrationTest)
   .settings(rootSettings)

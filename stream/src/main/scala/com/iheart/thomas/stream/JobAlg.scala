@@ -30,6 +30,8 @@ trait JobAlg[F[_], Message] {
     */
   def runningPipe: Pipe[F, Message, Unit]
 
+  def allJobs: F[Vector[Job]]
+
 }
 
 object JobAlg {
@@ -38,7 +40,7 @@ object JobAlg {
       extends RuntimeException
       with NoStackTrace
 
-  implicit def apply[F[_], Message](
+  def apply[F[_], Message](
       jobCheckFrequency: FiniteDuration
     )(implicit F: Concurrent[F],
       timer: Timer[F],
@@ -50,6 +52,8 @@ object JobAlg {
       def schedule(spec: JobSpec): F[Option[Job]] = dao.insertO(Job(spec))
 
       def stop(job: Job): F[Unit] = dao.remove(job.key)
+
+      def allJobs: F[Vector[Job]] = dao.all
 
       def jobPipe(spec: JobSpec): F[Pipe[F, Message, Unit]] =
         spec match {
@@ -63,9 +67,7 @@ object JobAlg {
                     query =>
                       { (input: Stream[F, Message]) =>
                         input
-                          .evalMap { m =>
-                            parser.parseConversion(m, query)
-                          }
+                          .evalMap(m => parser.parseConversion(m, query))
                           .flattenOption
                           .take(sampleSize.toLong)
                           .chunks
@@ -86,40 +88,44 @@ object JobAlg {
 
       def runningPipe: Pipe[F, Message, Unit] = {
         val availableJobs: Stream[F, Vector[Job]] =
-          (
-            (Stream.emit[F, Unit](()) ++ Stream
-              .fixedDelay[F](jobCheckFrequency))
-              .evalMap(_ => dao.all.map(_.filter(_.checkedOut.isEmpty)))
+          Stream
+            .fixedDelay[F](jobCheckFrequency)
+            .evalMap(_ => dao.all.map(_.filter(_.checkedOut.isEmpty)))
+
+        val runningJobs = availableJobs
+          .evalScan(
+            (
+              Vector.empty[Job], //previous set of Jobs
+              none[Vector[
+                Job
+              ]] // current Job, None if no change from previous bandits
             )
-            .scan(
+          ) { (memo, newAvailable) =>
+            val currentlyRunning = memo._1
+            for {
+              now <- TimeUtil.now[F]
+              updatedRunning <-
+                currentlyRunning.traverseFilter(dao.updateCheckedOut(_, now))
+              newlyCheckedout <-
+                newAvailable.traverseFilter(dao.updateCheckedOut(_, now))
+            } yield {
+              val newRunning = updatedRunning ++ newlyCheckedout
               (
-                Vector.empty[Job], //previous set of Jobs
-                none[Vector[
-                  Job
-                ]] // current Job, None if no change from previous bandits
-              )
-            ) { (memo, current) =>
-              val old = memo._1
-              (
-                current,
-                if (current.map(_.spec).toSet == old.map(_.spec).toSet)
+                newRunning,
+                if (
+                  newRunning.map(_.spec).toSet == currentlyRunning.map(_.spec).toSet
+                )
                   None
-                else Some(current)
+                else Some(newRunning)
               )
             }
-            .mapFilter(_._2)
 
-        //starts a job with concurrency safety
-        def start(job: Job): F[Option[Pipe[F, Message, Unit]]] =
-          for {
-            now <- TimeUtil.now[F]
-            jobO <- dao.updateCheckedOut(job, now)
-            pipeO <- jobO.traverse(j => jobPipe(j.spec))
-          } yield pipeO
+          }
+          .mapFilter(_._2)
 
         (input: Stream[F, Message]) =>
-          availableJobs.switchMap { jobs =>
-            Stream.eval(jobs.traverseFilter(start)).flatMap { pipes =>
+          runningJobs.switchMap { jobs =>
+            Stream.eval(jobs.traverse(j => jobPipe(j.spec))).flatMap { pipes =>
               input.broadcastTo(pipes: _*)
             }
           }
