@@ -82,6 +82,29 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
 
     }
 
+    "keep checkedout timestamp updated" in withAlg { (kpiDAO, alg) =>
+      (for {
+        pubSub <- Stream.eval {
+          kpiDAO.upsert(kpiA) *>
+            alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 2)) *>
+            createPubSub
+        }
+        start <- Stream.eval(TimeUtil.now[IO])
+        jobs <-
+          pubSub.subscribe
+            .through(alg.runningPipe(100.millis))
+            .interruptAfter(1.second)
+            .drain ++
+            Stream.eval(alg.allJobs)
+
+      } yield (start, jobs)).compile.toList.asserting { r =>
+        val start = r.head._1
+        val job = r.head._2.head
+        job.checkedOut.get.isAfter(start.plusMillis(700)) shouldBe true
+      }
+
+    }
+
     "can stop job" in withAlg { (kpiDAO, alg) =>
       (for {
         pubSub <- Stream.eval {
