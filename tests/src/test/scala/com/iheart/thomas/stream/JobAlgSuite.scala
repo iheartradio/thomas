@@ -30,6 +30,9 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
     f(kpiDAO, alg)
   }
 
+  def cfg(d: FiniteDuration): JobRunnerConfig = JobRunnerConfig(d)
+  val cfg: JobRunnerConfig = cfg(50.millis)
+
   val kpiA = ConversionKPI(
     KPIName("A"),
     "kai",
@@ -71,7 +74,7 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
             createPubSub
         }
         _ <- Stream(
-          pubSub.subscribe.through(alg.runningPipe(50.millis)),
+          pubSub.subscribe.through(alg.runningPipe(cfg)),
           pubSub
             .publish(event("action" -> "click"), event("action" -> "display"))
             .delayBy(300.millis)
@@ -92,7 +95,7 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
         start <- Stream.eval(TimeUtil.now[IO])
         jobs <-
           pubSub.subscribe
-            .through(alg.runningPipe(100.millis))
+            .through(alg.runningPipe(cfg(100.millis)))
             .interruptAfter(1.second)
             .drain ++
             Stream.eval(alg.allJobs)
@@ -112,7 +115,7 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
         }
         job <- Stream.eval(alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 4)))
         _ <- Stream(
-          pubSub.subscribe.through(alg.runningPipe(50.millis)),
+          pubSub.subscribe.through(alg.runningPipe(cfg)),
           pubSub
             .publish(
               event("action" -> "click"),
@@ -141,7 +144,7 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
         }
         jobs <-
           Stream(
-            pubSub.subscribe.through(alg.runningPipe(50.millis)),
+            pubSub.subscribe.through(alg.runningPipe(cfg)),
             pubSub
               .publish(
                 event("action" -> "click"),
@@ -155,9 +158,6 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
         _ shouldBe List(Vector.empty[Job])
       }
     }
-//
-//    "can pick up abandoned obsolete job" in {
-//    }
   }
 
 }

@@ -1,11 +1,13 @@
 package com.iheart.thomas.stream
 
-import cats.effect.{Concurrent, Timer}
+import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
 import com.iheart.thomas.TimeUtil
 import com.iheart.thomas.analysis.{ConversionKPIDAO, Conversions, KPIName}
 import com.iheart.thomas.stream.JobSpec.UpdateKPIPrior
+import com.typesafe.config.Config
 import fs2._
+import pureconfig.ConfigSource
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.control.NoStackTrace
@@ -23,12 +25,7 @@ trait JobAlg[F[_], Message] {
     */
   def stop(job: Job): F[Unit]
 
-  /**
-    * The job running pipe
-    * @param jobCheckFrequency how often it checks new available jobs or running jobs being stoped.
-    * @return
-    */
-  def runningPipe(jobCheckFrequency: FiniteDuration): Pipe[F, Message, Unit]
+  def runningPipe(cfg: JobRunnerConfig): Pipe[F, Message, Unit]
 
   def allJobs: F[Vector[Job]]
 
@@ -86,10 +83,10 @@ object JobAlg {
           case _ => ???
         }
 
-      def runningPipe(jobCheckFrequency: FiniteDuration): Pipe[F, Message, Unit] = {
+      def runningPipe(cfg: JobRunnerConfig): Pipe[F, Message, Unit] = {
         val availableJobs: Stream[F, Vector[Job]] =
           Stream
-            .fixedDelay[F](jobCheckFrequency)
+            .fixedDelay[F](cfg.jobCheckFrequency)
             .evalMap(_ => dao.all.map(_.filter(_.checkedOut.isEmpty)))
 
         val runningJobs = availableJobs
@@ -131,4 +128,18 @@ object JobAlg {
           }
       }
     }
+}
+
+/**
+  *
+  * @param jobCheckFrequency how often it checks new available jobs or running jobs being stoped.
+  */
+case class JobRunnerConfig(jobCheckFrequency: FiniteDuration)
+
+object JobRunnerConfig {
+  def fromConfig[F[_]: Sync](cfg: Config): F[JobRunnerConfig] = {
+    import pureconfig.generic.auto._
+    import pureconfig.module.catseffect._
+    ConfigSource.fromConfig(cfg).at("thomas.stream.job").loadF[F, JobRunnerConfig]
+  }
 }

@@ -137,7 +137,9 @@ lazy val core = project
       "mau",
       "mouse",
       "henkan-convert",
-      "lihua-play-json"
+      "lihua-play-json",
+      "pureconfig-cats-effect",
+      "pureconfig-generic"
     ),
     simulacrumSettings(libs)
   )

@@ -20,6 +20,7 @@ import fs2.{Pipe, Stream}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
+//todo to be retired
 trait BanditUpdater[F[_]] {
   def consumer: Stream[F, Unit]
   def pauseResume(pause: Boolean): F[Unit]
@@ -134,9 +135,9 @@ object BanditUpdater {
       allowedBanditsStaleness: FiniteDuration,
       kafka: KafkaConfig)
 
-  case class KafkaConfig(
-      kafkaServers: String,
-      topic: String,
-      groupId: String)
-
 }
+
+case class KafkaConfig(
+    kafkaServers: String,
+    topic: String,
+    groupId: String)
