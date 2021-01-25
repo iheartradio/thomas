@@ -26,7 +26,7 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
     implicit val kpiDAO = MapBasedDAOs.conversionKPIDAO[IO]
     implicit val jobDAO = MapBasedDAOs.streamJobDAO[IO]
 
-    val alg = JobAlg[IO, JValue](50.millis)
+    val alg = implicitly[JobAlg[IO, JValue]]
     f(kpiDAO, alg)
   }
 
@@ -71,7 +71,7 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
             createPubSub
         }
         _ <- Stream(
-          pubSub.subscribe.through(alg.runningPipe),
+          pubSub.subscribe.through(alg.runningPipe(50.millis)),
           pubSub
             .publish(event("action" -> "click"), event("action" -> "display"))
             .delayBy(300.millis)
@@ -89,7 +89,7 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
         }
         job <- Stream.eval(alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 4)))
         _ <- Stream(
-          pubSub.subscribe.through(alg.runningPipe),
+          pubSub.subscribe.through(alg.runningPipe(50.millis)),
           pubSub
             .publish(
               event("action" -> "click"),
@@ -118,7 +118,7 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
         }
         jobs <-
           Stream(
-            pubSub.subscribe.through(alg.runningPipe),
+            pubSub.subscribe.through(alg.runningPipe(50.millis)),
             pubSub
               .publish(
                 event("action" -> "click"),

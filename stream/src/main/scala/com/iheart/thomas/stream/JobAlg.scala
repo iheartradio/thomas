@@ -24,11 +24,11 @@ trait JobAlg[F[_], Message] {
   def stop(job: Job): F[Unit]
 
   /**
-    * A pipe for consuming message.
-    * Each pipe processes messages for running jobs. Pipe changes when job changes.
+    * The job running pipe
+    * @param jobCheckFrequency how often it checks new available jobs or running jobs being stoped.
     * @return
     */
-  def runningPipe: Pipe[F, Message, Unit]
+  def runningPipe(jobCheckFrequency: FiniteDuration): Pipe[F, Message, Unit]
 
   def allJobs: F[Vector[Job]]
 
@@ -40,9 +40,8 @@ object JobAlg {
       extends RuntimeException
       with NoStackTrace
 
-  def apply[F[_], Message](
-      jobCheckFrequency: FiniteDuration
-    )(implicit F: Concurrent[F],
+  implicit def apply[F[_], Message](
+      implicit F: Concurrent[F],
       timer: Timer[F],
       dao: JobDAO[F],
       cKpiDAO: ConversionKPIDAO[F],
@@ -87,7 +86,7 @@ object JobAlg {
           case _ => ???
         }
 
-      def runningPipe: Pipe[F, Message, Unit] = {
+      def runningPipe(jobCheckFrequency: FiniteDuration): Pipe[F, Message, Unit] = {
         val availableJobs: Stream[F, Vector[Job]] =
           Stream
             .fixedDelay[F](jobCheckFrequency)
