@@ -55,8 +55,8 @@ object JobAlg {
 
       def allJobs: F[Vector[Job]] = dao.all
 
-      def jobPipe(spec: JobSpec): F[Pipe[F, Message, Unit]] =
-        spec match {
+      def jobPipe(job: Job): F[Pipe[F, Message, Unit]] =
+        job.spec match {
           case UpdateKPIPrior(kpiName, sampleSize) =>
             cKpiDAO
               .get(kpiName)
@@ -77,7 +77,8 @@ object JobAlg {
                           .evalMap { c =>
                             cKpiDAO
                               .updateModel(kpiName, kpi.model.updateFrom(c))
-                              .void
+                              .void *>
+                              stop(job)
                           }
                       }
                   }
@@ -125,7 +126,7 @@ object JobAlg {
 
         (input: Stream[F, Message]) =>
           runningJobs.switchMap { jobs =>
-            Stream.eval(jobs.traverse(j => jobPipe(j.spec))).flatMap { pipes =>
+            Stream.eval(jobs.traverse(j => jobPipe(j))).flatMap { pipes =>
               input.broadcastTo(pipes: _*)
             }
           }

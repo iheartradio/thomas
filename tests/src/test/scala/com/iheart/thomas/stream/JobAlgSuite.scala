@@ -52,7 +52,7 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
     })
 
   "JobAlg" - {
-    "can schedule a jo" in withAlg { (_, alg) =>
+    "can schedule a job" in withAlg { (_, alg) =>
       (for {
         job <- alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 2))
         jobs <- alg.allJobs
@@ -109,7 +109,29 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
 
     }
 
-//    "remove job when completed" in {}
+    "remove job when completed" in withAlg { (kpiDAO, alg) =>
+      (for {
+        pubSub <- Stream.eval {
+          kpiDAO.upsert(kpiA) *>
+            alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 2)) *>
+            createPubSub
+        }
+        jobs <-
+          Stream(
+            pubSub.subscribe.through(alg.runningPipe),
+            pubSub
+              .publish(
+                event("action" -> "click"),
+                event("action" -> "display")
+              )
+              .delayBy(300.milliseconds)
+          ).parJoin(4).interruptAfter(500.milliseconds).drain ++
+            Stream.eval(alg.allJobs)
+
+      } yield jobs).compile.toList.asserting {
+        _ shouldBe List(Vector.empty[Job])
+      }
+    }
 //
 //    "can pick up abandoned obsolete job" in {
 //    }
