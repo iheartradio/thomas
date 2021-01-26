@@ -27,6 +27,9 @@ object JobSpec {
       feature: FeatureName,
       kpi: KPIName,
       expiration: Instant)
+      extends JobSpec {
+    val key = "MonitorTest" + feature + "WithKPI" + kpi
+  }
 
   case class UpdateBandit(featureName: FeatureName) extends JobSpec {
     val key = "UpdateBandit" + featureName

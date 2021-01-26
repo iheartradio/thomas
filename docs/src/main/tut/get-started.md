@@ -16,12 +16,19 @@ You can run one locally using docker
 ```bash
 docker run -p 27017-27019:27017-27019 --name mongodb mongo
 ```
-### Step 1a (Optional) setup dynamo cluster
+### Step 1a setup dynamo cluster
 
-If you want to try the Multi Arm Bandit Engine you need a dynamo cluster, you can use Docker to run one locally
+
 ```bash
 docker run -p 8042:8000 amazon/dynamodb-local
+
 ``` 
+If you want to persistent data 
+```bash
+docker run -p 8042:8000 -v ~/dynamodblocal/db:/home/dynamodblocal/db misoca/dynamodb-local-persist
+```
+
+
 
 ### Step 2 create a http service application using either thomas-http4s or thomas-play
 

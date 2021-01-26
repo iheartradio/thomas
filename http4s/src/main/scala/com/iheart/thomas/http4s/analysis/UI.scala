@@ -19,10 +19,14 @@ import cats.implicits._
 import com.iheart.thomas.analysis.html._
 import com.iheart.thomas.html.{errorMsg, redirect}
 import org.http4s.twirl._
-import org.http4s.FormDataDecoder, FormDataDecoder._
+import org.http4s.FormDataDecoder
+import FormDataDecoder._
+import com.iheart.thomas.stream.JobAlg
+import org.typelevel.jawn.ast.JValue
 class UI[F[_]: Async](
     implicit
     conversionKPIDAO: ConversionKPIDAO[F],
+    jobAlg: JobAlg[F, JValue],
     authAlg: AuthenticationAlg[F, AuthImp],
     reverseRoutes: ReverseRoutes)
     extends AuthedEndpointsUtils[F, AuthImp]
@@ -40,16 +44,20 @@ class UI[F[_]: Async](
 
   val managingRoutes = roleBasedService(admin.Authorization.analysisManagerRoles) {
     case GET -> rootPath / "conversionKPI" / "new" asAuthed (u) =>
-      Ok(conversionKPIForm(None, u))
+      Ok(newConversionKPI(u))
+
     case GET -> rootPath / "conversionKPIs" / kpiName asAuthed (u) =>
       conversionKPIDAO.find(kpiName).flatMap { ko =>
-        if (ko.isDefined)
-          Ok(conversionKPIForm(ko, u))
-        else NotFound(s"Cannot find the Conversion KPI under the name $kpiName")
+        ko.fold(
+          NotFound(s"Cannot find the Conversion KPI under the name $kpiName")
+        ) { k =>
+          Ok(editConversionKPI(k, u))
+        }
       }
+
     case GET -> rootPath / "conversionKPIs" / kpiName / "delete" asAuthed (_) =>
       conversionKPIDAO.remove(kpiName) >>
-        Ok(redirect(reverseRoutes.analysis, s"$kpiName, if existed, is deldeted."))
+        Ok(redirect(reverseRoutes.analysis, s"$kpiName, if existed, is deleted."))
 
     case se @ POST -> rootPath / "conversionKPIs" asAuthed u =>
       se.request
@@ -57,13 +65,31 @@ class UI[F[_]: Async](
         .redeemWith(
           e => BadRequest(errorMsg(e.getMessage)),
           kpi =>
-            conversionKPIDAO.upsert(kpi.copy(author = u.username)) >>
+            conversionKPIDAO.insert(kpi.copy(author = u.username)) >>
               Ok(
                 redirect(
                   reverseRoutes.analysis,
-                  s"Conversion KPI ${kpi.name} successfully saved"
+                  s"Conversion KPI ${kpi.name} successfully created."
                 )
               )
+        )
+
+    case se @ POST -> rootPath / "conversionKPIs" / kpiName asAuthed u =>
+      se.request
+        .as[ConversionKPI]
+        .redeemWith(
+          e => BadRequest(errorMsg(e.getMessage)),
+          kpi =>
+            if (kpi.name.n != kpiName) {
+              BadGateway("Cannot change KPI name")
+            } else
+              conversionKPIDAO.update(kpi.copy(author = u.username)) >>
+                Ok(
+                  redirect(
+                    reverseRoutes.analysis,
+                    s"Conversion KPI ${kpi.name} successfully updated."
+                  )
+                )
         )
   }
 

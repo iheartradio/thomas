@@ -53,9 +53,10 @@ object DynamoFormats {
   implicit val userFormat: DynamoFormat[User] =
     deriveDynamoFormat[User]
 
+  implicit val betaFormat: DynamoFormat[BetaModel] = deriveDynamoFormat[BetaModel]
+
   implicit val conversionKPIFormat: DynamoFormat[ConversionKPI] =
     deriveDynamoFormat[ConversionKPI]
 
-  implicit val betaFormat: DynamoFormat[BetaModel] = deriveDynamoFormat[BetaModel]
   implicit val jobFormat: DynamoFormat[Job] = deriveDynamoFormat[Job]
 }

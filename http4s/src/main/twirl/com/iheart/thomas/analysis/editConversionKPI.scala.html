@@ -1,0 +1,29 @@
+@import com.iheart.thomas.analysis._
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.admin.User
+@import com.iheart.thomas.http4s.ReverseRoutes
+
+@(
+kpi: ConversionKPI,
+u: User,
+successMsg: Option[String] = None
+)(implicit routes: ReverseRoutes)
+
+@topNav(s"Editing Conversion KPI ${kpi.name}", u) {
+
+<form action="../conversionKPIs/@kpi.name" method="post">
+
+    @conversionKPIForm(Some(kpi), u, successMsg, false)
+
+    <div class="row d-flex flex-row-reverse mt-5">
+        <div class="mr-4">
+            <button type="submit" class="btn btn-primary">
+                Update
+            </button>
+            <a href="@routes.analysis" role="button" class="btn btn-warning ml-2">Never Mind</a>
+        </div>
+    </div>
+
+
+</form>
+}

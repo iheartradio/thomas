@@ -2,7 +2,6 @@ package com.iheart.thomas
 package kafka
 
 import java.util.UUID
-
 import cats.NonEmptyParallel
 import cats.effect._
 import cats.implicits._
@@ -11,8 +10,7 @@ import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
 import com.iheart.thomas.bandit.tracking.{Event, EventLogger}
-import com.iheart.thomas.stream.ConversionBanditUpdater
-import com.iheart.thomas.stream.ConversionEvent
+import com.iheart.thomas.stream.{ConversionBanditUpdater, ConversionEvent}
 import fs2.concurrent.SignallingRef
 import fs2.kafka.{AutoOffsetReset, ConsumerSettings, Deserializer, consumerStream}
 import fs2.{Pipe, Stream}
@@ -136,8 +134,3 @@ object BanditUpdater {
       kafka: KafkaConfig)
 
 }
-
-case class KafkaConfig(
-    kafkaServers: String,
-    topic: String,
-    groupId: String)

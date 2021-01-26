@@ -24,16 +24,25 @@ import pureconfig.{ConfigReader, ConfigSource}
 import pureconfig.module.catseffect._
 import tsec.common.SecureRandomIdGenerator
 import cats.MonadThrow
+import com.iheart.thomas.kafka.JsonConsumer
+import com.iheart.thomas.stream.JobAlg
+import io.chrisdavenport.log4cats.Logger
+
 import scala.concurrent.ExecutionContext
 import org.http4s.twirl._
+import org.typelevel.jawn.ast.JValue
 import tsec.authentication.Authenticator
 import tsec.passwordhashers.jca.BCrypt
+import fs2.Stream
+
+import java.io.{PrintWriter, StringWriter}
 
 class AdminUI[F[_]: MonadThrow](
     abtestManagementUI: AbtestManagementUI[F],
     authUI: auth.UI[F, AuthImp],
     analysisUI: analysis.UI[F]
   )(implicit reverseRoutes: ReverseRoutes,
+    jobAlg: JobAlg[F, JValue],
     authenticator: Authenticator[F, String, User, Token[AuthImp]])
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
@@ -42,16 +51,37 @@ class AdminUI[F[_]: MonadThrow](
     abtestManagementUI.routes <+> authUI.authedService <+> analysisUI.routes
   )
 
+  def fullStackTrace(t: Throwable): String = {
+    val sw = new StringWriter
+    t.printStackTrace(new PrintWriter(sw))
+    sw.toString
+  }
+
   val serverErrorHandler: ServiceErrorHandler[F] = { _ =>
     {
       case admin.Authorization.LackPermission =>
         Response[F](Unauthorized).pure[F]
       case e =>
         InternalServerError(
-          html.errorMsg("Ooops! something bad happened. " + e.toString)
+          html.errorMsg(
+            s"""Ooops! something bad happened.
+        
+              ${fullStackTrace(e)}
+            """
+          )
         )
     }
   }
+
+  def backgroundProcess(
+      cfg: Config
+    )(implicit ce: ConcurrentEffect[F],
+      t: Timer[F],
+      cs: ContextShift[F],
+      l: Logger[F]
+    ): Stream[F, Unit] =
+    JsonConsumer.jobStream(cfg)
+
 }
 
 object AdminUI {

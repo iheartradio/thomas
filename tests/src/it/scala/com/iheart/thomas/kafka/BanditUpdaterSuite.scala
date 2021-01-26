@@ -10,7 +10,7 @@ import com.iheart.thomas.bandit.{ArmSpec, BanditSpec}
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.{ArmState, BanditSettings}
 import com.iheart.thomas.bandit.tracking.EventLogger
-import com.iheart.thomas.kafka.BanditUpdater.KafkaConfig
+
 import com.iheart.thomas.stream.ConversionBanditUpdater
 import com.iheart.thomas.stream.ConversionEvent
 import com.iheart.thomas.testkit.Resources

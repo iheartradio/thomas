@@ -32,7 +32,9 @@ object MessageQuery {
 }
 
 trait ConversionKPIDAO[F[_]] {
-  def upsert(conversionKPI: ConversionKPI): F[ConversionKPI]
+  def insert(conversionKPI: ConversionKPI): F[ConversionKPI]
+
+  def update(conversionKPI: ConversionKPI): F[ConversionKPI]
 
   def remove(name: KPIName): F[Unit]
 
