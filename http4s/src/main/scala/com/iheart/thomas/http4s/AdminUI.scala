@@ -40,7 +40,8 @@ import java.io.{PrintWriter, StringWriter}
 class AdminUI[F[_]: MonadThrow](
     abtestManagementUI: AbtestManagementUI[F],
     authUI: auth.UI[F, AuthImp],
-    analysisUI: analysis.UI[F]
+    analysisUI: analysis.UI[F],
+    streamUI: stream.UI[F]
   )(implicit reverseRoutes: ReverseRoutes,
     jobAlg: JobAlg[F, JValue],
     authenticator: Authenticator[F, String, User, Token[AuthImp]])
@@ -48,7 +49,7 @@ class AdminUI[F[_]: MonadThrow](
     with Http4sDsl[F] {
 
   val routes = authUI.publicEndpoints <+> liftService(
-    abtestManagementUI.routes <+> authUI.authedService <+> analysisUI.routes
+    abtestManagementUI.routes <+> authUI.authedService <+> analysisUI.routes <+> streamUI.routes
   )
 
   def fullStackTrace(t: Throwable): String = {
@@ -137,7 +138,7 @@ object AdminUI {
         import dynamo.AnalysisDAOs._
 
         AbtestManagementUI.fromMongo[F](mongoAbtest).map { amUI =>
-          new AdminUI(amUI, authUI, new analysis.UI[F])
+          new AdminUI(amUI, authUI, new analysis.UI[F], new stream.UI[F])
         }
       }
     }

@@ -19,7 +19,8 @@ object Authorization {
         case ManageTestSettings(feature: Feature) =>
           has(ManageFeature(feature)) ||
             atLeast(Tester)
-        case ManageUsers => user.isAdmin
+        case ManageUsers      => user.isAdmin
+        case ManageBackground => backgroundManagerRoles.contains(user.role)
       }
 
     def managing(features: Seq[Feature]): Seq[Feature] =
@@ -32,11 +33,14 @@ object Authorization {
   val testManagerRoles = List(Admin, Tester, Developer)
   val analysisManagerRoles = List(Admin, Analyst)
 
+  val backgroundManagerRoles = List(Admin)
+
   val readableRoles = Role.values.filter(_ != Guest)
 
   sealed trait Permission
 
   case object ManageUsers extends Permission
+  case object ManageBackground extends Permission
   case object CreateNewFeature extends Permission
 
   case class ManageFeature(feature: Feature) extends Permission

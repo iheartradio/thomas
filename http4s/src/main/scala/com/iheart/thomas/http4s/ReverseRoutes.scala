@@ -10,4 +10,5 @@ class ReverseRoutes(rootPath: String) {
   val register = s"$rootPath/register"
   val logout = s"$rootPath/logout"
   val analysis = s"$rootPath/analysis/conversionKPIs"
+  val background = s"$rootPath/stream/background"
 }

@@ -16,13 +16,17 @@ import com.iheart.thomas.http4s.{AuthImp, ReverseRoutes}
 import com.iheart.thomas.http4s.auth.{AuthedEndpointsUtils, AuthenticationAlg}
 import org.http4s.dsl.Http4sDsl
 import cats.implicits._
+import org.http4s.twirl._
 import com.iheart.thomas.analysis.html._
 import com.iheart.thomas.html.{errorMsg, redirect}
-import org.http4s.twirl._
 import org.http4s.FormDataDecoder
 import FormDataDecoder._
+import com.iheart.thomas.http4s.analysis.UI.UpdateKPIRequest
 import com.iheart.thomas.stream.JobAlg
+import com.iheart.thomas.stream.JobSpec.UpdateKPIPrior
 import org.typelevel.jawn.ast.JValue
+import tsec.authentication._
+
 class UI[F[_]: Async](
     implicit
     conversionKPIDAO: ConversionKPIDAO[F],
@@ -33,33 +37,35 @@ class UI[F[_]: Async](
     with Http4sDsl[F] {
 
   import UI.Decoders._
-  import tsec.authentication._
   val rootPath = Root / "analysis"
   val readonlyRoutes = roleBasedService(admin.Authorization.readableRoles) {
-    case GET -> rootPath / "conversionKPIs" asAuthed (u) =>
+    case GET -> `rootPath` / "conversionKPIs" asAuthed (u) =>
       conversionKPIDAO.all.flatMap { kpis =>
         Ok(conversionKPIs(kpis, u))
       }
   }
 
   val managingRoutes = roleBasedService(admin.Authorization.analysisManagerRoles) {
-    case GET -> rootPath / "conversionKPI" / "new" asAuthed (u) =>
+    case GET -> `rootPath` / "conversionKPI" / "new" asAuthed (u) =>
       Ok(newConversionKPI(u))
 
-    case GET -> rootPath / "conversionKPIs" / kpiName asAuthed (u) =>
+    case GET -> `rootPath` / "conversionKPIs" / kpiName asAuthed (u) =>
       conversionKPIDAO.find(kpiName).flatMap { ko =>
         ko.fold(
           NotFound(s"Cannot find the Conversion KPI under the name $kpiName")
         ) { k =>
-          Ok(editConversionKPI(k, u))
+          jobAlg.find(UpdateKPIPrior(kpiName, 1)).flatMap { jobO =>
+            Ok(editConversionKPI(k, u, jobO))
+          }
+
         }
       }
 
-    case GET -> rootPath / "conversionKPIs" / kpiName / "delete" asAuthed (_) =>
+    case GET -> `rootPath` / "conversionKPIs" / kpiName / "delete" asAuthed (_) =>
       conversionKPIDAO.remove(kpiName) >>
         Ok(redirect(reverseRoutes.analysis, s"$kpiName, if existed, is deleted."))
 
-    case se @ POST -> rootPath / "conversionKPIs" asAuthed u =>
+    case se @ POST -> `rootPath` / "conversionKPIs" asAuthed u =>
       se.request
         .as[ConversionKPI]
         .redeemWith(
@@ -74,7 +80,7 @@ class UI[F[_]: Async](
               )
         )
 
-    case se @ POST -> rootPath / "conversionKPIs" / kpiName asAuthed u =>
+    case se @ POST -> `rootPath` / "conversionKPIs" / kpiName asAuthed u =>
       se.request
         .as[ConversionKPI]
         .redeemWith(
@@ -91,6 +97,22 @@ class UI[F[_]: Async](
                   )
                 )
         )
+
+    case se @ POST -> `rootPath` / "conversionKPIs" / kpiName / "update-prior" asAuthed u =>
+      se.request.as[UpdateKPIRequest].flatMap { r =>
+        jobAlg.schedule(UpdateKPIPrior(kpiName, r.sampleSize)).flatMap { jo =>
+          jo.fold(
+            BadRequest(errorMsg("It's being updated right now"))
+          )(j =>
+            Ok(
+              redirect(
+                reverseRoutes.analysis + "/" + kpiName,
+                s"Scheduled a background process to update the prior using ongoing data. "
+              )
+            )
+          )
+        }
+      }
   }
 
   val routes = readonlyRoutes <+> managingRoutes
@@ -98,6 +120,9 @@ class UI[F[_]: Async](
 }
 
 object UI {
+
+  case class UpdateKPIRequest(sampleSize: Int)
+
   object Decoders {
 
     import CommonFormDecoders._
@@ -105,6 +130,9 @@ object UI {
       fieldOptional[String]("description"),
       list[(FieldName, FieldValue)]("criteria")
     ).mapN(MessageQuery.apply)
+
+    implicit val uprDecoder: FormDataDecoder[UpdateKPIRequest] =
+      field[Int]("sampleSize").map(UpdateKPIRequest(_))
 
     implicit val conversionMessageQueryDecoder
         : FormDataDecoder[ConversionMessageQuery] = (

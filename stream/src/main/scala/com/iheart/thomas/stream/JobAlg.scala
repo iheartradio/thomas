@@ -23,11 +23,18 @@ trait JobAlg[F[_], Message] {
   /**
     * Stops and removes a job
     */
-  def stop(job: Job): F[Unit]
+  def stop(jobKey: String): F[Unit]
 
   def runningPipe(cfg: JobRunnerConfig): Pipe[F, Message, Unit]
 
   def allJobs: F[Vector[Job]]
+
+  /**
+    * Find job according to spec. Since you can't run two jobs with the same key, find ignores the rest of the spec.
+    * @param spec
+    * @return
+    */
+  def find(spec: JobSpec): F[Option[Job]]
 
 }
 
@@ -47,7 +54,9 @@ object JobAlg {
     new JobAlg[F, Message] {
       def schedule(spec: JobSpec): F[Option[Job]] = dao.insertO(Job(spec))
 
-      def stop(job: Job): F[Unit] = dao.remove(job.key)
+      def stop(jobKey: String): F[Unit] = dao.remove(jobKey)
+
+      def find(spec: JobSpec): F[Option[Job]] = dao.find(spec.key)
 
       def allJobs: F[Vector[Job]] = dao.all
 
@@ -74,7 +83,7 @@ object JobAlg {
                             cKpiDAO
                               .updateModel(kpiName, kpi.model.updateFrom(c))
                               .void *>
-                              stop(job)
+                              stop(job.key)
                           }
                       }
                   }

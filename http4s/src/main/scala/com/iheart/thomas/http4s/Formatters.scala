@@ -2,7 +2,6 @@ package com.iheart.thomas.http4s
 
 import java.time.{Instant, OffsetDateTime, ZoneId}
 import java.time.format.DateTimeFormatter
-
 import com.iheart.thomas.abtest.model.Abtest
 import com.iheart.thomas.abtest.model.Abtest.Status
 import lihua.Entity

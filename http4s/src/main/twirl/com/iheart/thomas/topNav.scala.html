@@ -33,6 +33,11 @@
         <a class="nav-link" href="@routes.users">Users<span class="sr-only">(current)</span></a>
       </li>
       }
+      @if(currentUser.has(ManageBackground)) {
+      <li class="nav-item active">
+        <a class="nav-link" href="@routes.background">Background<span class="sr-only">(current)</span></a>
+      </li>
+      }
       <li class="nav-item">
         <a class="nav-link" target="_blank" href="https://iheartradio.github.io/thomas/">Docs</a>
       </li>
