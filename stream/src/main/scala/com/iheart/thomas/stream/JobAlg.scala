@@ -96,7 +96,9 @@ object JobAlg {
         val availableJobs: Stream[F, Vector[Job]] =
           Stream
             .fixedDelay[F](cfg.jobCheckFrequency)
-            .evalMap(_ => dao.all.map(_.filter(_.checkedOut.isEmpty)))
+            .evalMap(_ =>
+              dao.all.map(_.filter(_.checkedOut.isEmpty))
+            ) //todo: be resilient against DB error with logging.
 
         val runningJobs = availableJobs
           .evalScan(

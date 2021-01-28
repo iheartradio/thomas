@@ -161,28 +161,28 @@ object AdminUI {
   /**
     * Provides a server that serves the Admin UI
     */
-  def serve[F[_]: ConcurrentEffect: Timer: ContextShift](
+  def serverResource[F[_]: ConcurrentEffect: Timer: ContextShift](
       implicit dc: AmazonDynamoDBAsync,
       executionContext: ExecutionContext
-    ): Stream[F, ExitCode] = {
-    Stream.resource(ConfigResource.cfg[F]()).flatMap(serve(_))
+    ): Resource[F, ExitCode] = {
+    ConfigResource.cfg[F]().flatMap(serverResource(_))
   }
 
   /**
     * Provides a server that serves the Admin UI
     */
-  def serve[F[_]: ConcurrentEffect: Timer: ContextShift](
+  def serverResource[F[_]: ConcurrentEffect: Timer: ContextShift](
       cfg: Config
     )(implicit
       dc: AmazonDynamoDBAsync,
       executionContext: ExecutionContext
-    ): Stream[F, ExitCode] = {
+    ): Resource[F, ExitCode] = {
     import org.http4s.server.blaze._
     import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
-    Stream.eval(Slf4jLogger.create[F]).flatMap { implicit logger =>
+    Resource.liftF(Slf4jLogger.create[F]).flatMap { implicit logger =>
       for {
-        adminCfg <- Stream.eval(AdminUI.loadConfig[F](cfg))
-        ui <- Stream.resource(AdminUI.resource[F](adminCfg, cfg))
+        adminCfg <- Resource.liftF(AdminUI.loadConfig[F](cfg))
+        ui <- AdminUI.resource[F](adminCfg, cfg)
         e <-
           BlazeServerBuilder[F](executionContext)
             .bindHttp(8080, "0.0.0.0")
@@ -191,7 +191,12 @@ object AdminUI {
             )
             .withServiceErrorHandler(ui.serverErrorHandler)
             .serve
-            .concurrently(ui.backgroundProcess(cfg).handleErrorWith(_ => Stream(())))
+            .concurrently(
+              ui.backgroundProcess(cfg).handleErrorWith(_ => Stream(()))
+            )
+            .compile
+            .resource
+            .lastOrError //improve error handling with logging
 
       } yield e
     }
