@@ -16,9 +16,9 @@ object TestMessageKafkaProducer extends IOApp {
       args.headOption.flatMap(h => Try(h.toInt).toOption).getOrElse(3).seconds
     (Stream.eval {
       IO.delay {
-        println("=================================")
+        println("=====================================")
         println(s"Running kafka producer for $duration")
-        println("=================================")
+        println("=====================================")
       }
     } ++
       Stream
