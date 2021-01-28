@@ -28,6 +28,13 @@ If you want to persistent data
 docker run -p 8042:8000 -v ~/dynamodblocal/db:/home/dynamodblocal/db misoca/dynamodb-local-persist
 ```
 
+or you can run all of them using docker compose
+
+```bash
+
+cd dependencies
+docker compose up -d
+```
 
 
 ### Step 2 create a http service application using either thomas-http4s or thomas-play

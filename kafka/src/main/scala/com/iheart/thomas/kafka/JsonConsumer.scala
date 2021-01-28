@@ -22,8 +22,8 @@ object JsonConsumer {
         .withBootstrapServers(cfg.kafkaServers)
         .withGroupId(cfg.groupId)
 
-    fs2.kafka
-      .consumerStream[F]
+    fs2.kafka.KafkaConsumer
+      .stream[F]
       .using(consumerSettings)
       .evalTap(_.subscribeTo(cfg.topic))
       .map {

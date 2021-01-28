@@ -12,7 +12,7 @@ import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
 import com.iheart.thomas.bandit.tracking.{Event, EventLogger}
 import com.iheart.thomas.stream.{ConversionBanditUpdater, ConversionEvent}
 import fs2.concurrent.SignallingRef
-import fs2.kafka.{AutoOffsetReset, ConsumerSettings, Deserializer, consumerStream}
+import fs2.kafka.{AutoOffsetReset, ConsumerSettings, Deserializer, KafkaConsumer}
 import fs2.{Pipe, Stream}
 
 import scala.concurrent.ExecutionContext
@@ -94,7 +94,8 @@ object BanditUpdater {
                     .withGroupId(cfg.kafka.groupId)
 
                 Stream.eval(log(Event.BanditKPIUpdate.UpdateStreamStarted)) ++
-                  consumerStream[F]
+                  KafkaConsumer
+                    .stream[F]
                     .using(consumerSettings)
                     .evalTap(_.subscribeTo(cfg.kafka.topic))
                     .flatMap(_.stream.pauseWhen(pauseSig))
