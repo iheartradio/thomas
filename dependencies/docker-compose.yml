@@ -25,9 +25,11 @@ services:
       - zookeeper
 
   mongo:
-    image: 'mongo'
+    image: 'mongo:4.2.11'
     ports:
       - '27017-27019:27017-27019'
+    volumes:
+      - "mongo_data:/data/db"
 
   dynamo:
     image: 'misoca/dynamodb-local-persist'

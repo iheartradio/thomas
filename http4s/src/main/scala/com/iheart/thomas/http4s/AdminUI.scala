@@ -17,7 +17,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.admin.{Role, User}
 import com.typesafe.config.Config
 import org.http4s.Response
-import org.http4s.server.{Router, Server, ServiceErrorHandler}
+import org.http4s.server.{Router, ServiceErrorHandler}
 import org.http4s.server.blaze.BlazeServerBuilder
 import pureconfig.error.{CannotConvert, FailureReason}
 import pureconfig.{ConfigReader, ConfigSource}
@@ -34,6 +34,7 @@ import org.typelevel.jawn.ast.JValue
 import tsec.authentication.Authenticator
 import tsec.passwordhashers.jca.BCrypt
 import fs2.Stream
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 
 import java.io.{PrintWriter, StringWriter}
 
@@ -160,36 +161,39 @@ object AdminUI {
   /**
     * Provides a server that serves the Admin UI
     */
-  def serverResource[F[_]: ConcurrentEffect: Timer](
+  def serve[F[_]: ConcurrentEffect: Timer: ContextShift](
       implicit dc: AmazonDynamoDBAsync,
       executionContext: ExecutionContext
-    ): Resource[F, Server[F]] = {
-    ConfigResource.cfg[F]().flatMap(c => serverResourceWithDynamoClient(c))
+    ): Stream[F, ExitCode] = {
+    Stream.resource(ConfigResource.cfg[F]()).flatMap(serve(_))
   }
 
   /**
     * Provides a server that serves the Admin UI
     */
-  def serverResourceWithDynamoClient[F[_]: ConcurrentEffect: Timer](
+  def serve[F[_]: ConcurrentEffect: Timer: ContextShift](
       cfg: Config
     )(implicit
       dc: AmazonDynamoDBAsync,
       executionContext: ExecutionContext
-    ): Resource[F, Server[F]] = {
+    ): Stream[F, ExitCode] = {
     import org.http4s.server.blaze._
     import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
+    Stream.eval(Slf4jLogger.create[F]).flatMap { implicit logger =>
+      for {
+        adminCfg <- Stream.eval(AdminUI.loadConfig[F](cfg))
+        ui <- Stream.resource(AdminUI.resource[F](adminCfg, cfg))
+        e <-
+          BlazeServerBuilder[F](executionContext)
+            .bindHttp(8080, "0.0.0.0")
+            .withHttpApp(
+              Router(adminCfg.rootPath -> ui.routes).orNotFound
+            )
+            .withServiceErrorHandler(ui.serverErrorHandler)
+            .serve
+            .concurrently(ui.backgroundProcess(cfg).handleErrorWith(_ => Stream(())))
 
-    for {
-      adminCfg <- Resource.liftF(AdminUI.loadConfig[F](cfg))
-      ui <- AdminUI.resource[F](adminCfg, cfg)
-      server <- BlazeServerBuilder[F](executionContext)
-        .bindHttp(8080, "0.0.0.0")
-        .withHttpApp(
-          Router(adminCfg.rootPath -> ui.routes).orNotFound
-        )
-        .withServiceErrorHandler(ui.serverErrorHandler)
-        .resource
-
-    } yield server
+      } yield e
+    }
   }
 }

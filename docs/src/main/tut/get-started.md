@@ -10,9 +10,17 @@ position: 10
 
 ### Step 1 setup a Mongo cluster for Thomas
 
-Thomas needs a basic data store to store test metadata. Since the amount of data is quite small and Thomas strives keep the data in memory, the requirement for this data store is minimum. Thomas is designed in a way so that it can support different data stores. As of now, only one MongoDB is supported through the module `thomas-mongo`. For local development, you just need to install and run a MongoDB instance locally.  
+Thomas runs on mongodb, dynamodb. It uses kafka for consuming analytics events.
 
-You can run one locally using docker
+You can run all of these deps using docker compose
+```bash
+
+cd dependencies
+docker compose up -d
+```
+
+
+Or you can run individually using docker
 ```bash
 docker run -p 27017-27019:27017-27019 --name mongodb mongo
 ```
@@ -28,13 +36,8 @@ If you want to persistent data
 docker run -p 8042:8000 -v ~/dynamodblocal/db:/home/dynamodblocal/db misoca/dynamodb-local-persist
 ```
 
-or you can run all of them using docker compose
 
-```bash
 
-cd dependencies
-docker compose up -d
-```
 
 
 ### Step 2 create a http service application using either thomas-http4s or thomas-play
