@@ -11,7 +11,8 @@ class PubSub[F[_]: Concurrent] private (topic: Topic[F, JValue])
 
   def publish(js: JValue*): Stream[F, Unit] = topic.publish(Stream(js: _*))
 
-  def subscribe: Stream[F, JValue] = topic.subscribe(10)
+  def subscribe: Stream[F, JValue] =
+    topic.subscribe(10).drop(1) //topic returns always returns the last message
 }
 
 object PubSub {

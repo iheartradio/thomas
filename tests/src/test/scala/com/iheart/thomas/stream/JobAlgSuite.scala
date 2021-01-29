@@ -3,11 +3,13 @@ package stream
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
+import cats.implicits._
 import com.iheart.thomas.analysis.{
   BetaModel,
   ConversionKPI,
   ConversionKPIDAO,
   ConversionMessageQuery,
+  Conversions,
   KPIName,
   MessageQuery
 }
@@ -20,7 +22,7 @@ import fs2.Stream
 
 import concurrent.duration._
 
-class JobAlgSuite extends AsyncIOSpec with Matchers {
+abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
   def withAlg[A](
       f: (ConversionKPIDAO[IO], JobAlg[IO], PubSub[IO]) => IO[A]
     )(implicit config: Config = cfg
@@ -35,14 +37,14 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
   }
 
   def cfg(d: FiniteDuration): Config = ConfigFactory.parseString(s"""
-      |thomas {
-      |  stream {
-      |    job {
-      |      job-check-frequency: $d
-      |    }
-      |  }  
-      |}
-      |""".stripMargin)
+                                                                    |thomas {
+                                                                    |  stream {
+                                                                    |    job {
+                                                                    |      job-check-frequency: $d
+                                                                    |    }
+                                                                    |  }  
+                                                                    |}
+                                                                    |""".stripMargin)
 
   val cfg: Config = cfg(50.millis)
 
@@ -64,6 +66,10 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
       case (k, v) =>
         k -> (JString(v): JValue)
     })
+
+}
+
+class JobAlgSuite extends JobAlgSuiteBase {
 
   "JobAlg" - {
     "can schedule a job" in withAlg { (_, alg, _) =>
@@ -91,7 +97,9 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
         ).parJoin(2)
 
       } yield ()).interruptAfter(1.second).compile.drain *>
-        kpiDAO.get(kpiA.name).asserting(_.model shouldBe BetaModel(2, 2))
+        kpiDAO
+          .get(kpiA.name)
+          .asserting(_.model shouldBe kpiA.model.updateFrom(Conversions(1, 2)))
 
     }
 
@@ -138,7 +146,6 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
         kpiDAO
           .get(kpiA.name)
           .asserting(_.model shouldBe kpiA.model) //didn't reach sample size.
-
     }
 
     "remove job when completed" in withAlg { (kpiDAO, alg, pubSub) =>
@@ -163,6 +170,38 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
         _ shouldBe List(Vector.empty[Job])
       }
     }
-  }
 
+    "can pickup new job" in withAlg { (kpiDAO, alg, pubSub) =>
+      val kpiC = kpiA.copy(name = KPIName("C"))
+      val kpiB = kpiA.copy(name = KPIName("B"))
+      (for {
+        _ <- Stream.eval(kpiDAO.insert(kpiC) *> kpiDAO.insert(kpiB))
+        _ <- Stream.eval(alg.schedule(UpdateKPIPrior(kpiC.name, sampleSize = 4)))
+        _ <- Stream(
+          alg.runStream,
+          pubSub
+            .publish(
+              event("action" -> "click", "b" -> "1"),
+              event("action" -> "display", "b" -> "1")
+            )
+            .delayBy(300.milliseconds),
+          Stream
+            .eval(alg.schedule(UpdateKPIPrior(kpiB.name, sampleSize = 2)))
+            .delayBy(500.milliseconds),
+          pubSub
+            .publish(
+              event("action" -> "display", "b" -> "2"),
+              event("action" -> "display", "b" -> "2")
+            )
+            .delayBy(800.milliseconds)
+        ).parJoin(4)
+
+      } yield ()).interruptAfter(2.second).compile.drain *>
+        (kpiDAO.get(kpiC.name), kpiDAO.get(kpiB.name)).tupled.asserting {
+          case (kC, kB) =>
+            kB.model should be(kpiB.model.updateFrom(Conversions(0, 2)))
+            kC.model should be(kpiC.model.updateFrom(Conversions(1, 4)))
+        }
+    }
+  }
 }

@@ -139,7 +139,8 @@ object JobAlg {
               .mapFilter(_._2)
             runningJobs.switchMap { jobs =>
               Stream.eval(jobs.traverse(j => jobPipe(j))).flatMap { pipes =>
-                messageSubscriber.subscribe.broadcastTo(pipes: _*)
+                messageSubscriber.subscribe
+                  .broadcastTo(pipes: _*)
               }
             }
           }
