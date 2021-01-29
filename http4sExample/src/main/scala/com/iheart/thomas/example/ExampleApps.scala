@@ -25,7 +25,7 @@ object ExampleAbtestAdminUIApp extends IOApp {
   def run(args: List[String]): IO[ExitCode] = {
     LocalDynamo
       .client[IO]
-      .flatMap(implicit c => AdminUI.serverResource[IO])
+      .flatMap(implicit c => AdminUI.serverResourceAutoLoadConfig[IO])
       .use(_ => IO.never)
 
   }

@@ -22,7 +22,7 @@ lazy val libs = {
     .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
     .add(   name = "cats-retry",            version = "2.1.0",  org = "com.github.cb372")
     .addJVM(name = "decline",               version = "1.3.0",  org = "com.monovore")
-    .addJVM(name = "embedded-kafka",        version = "2.5.0",  org = "io.github.embeddedkafka")
+    .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
     .addJVM(name = "evilplot",              version = "0.8.0",  org = "com.cibo")
     .addJVM(name = "fs2-kafka",             version = "1.3.1",  org = "com.github.fd4s")
     .addModule("http4s", "http4s-twirl")
@@ -315,8 +315,7 @@ lazy val http4sExample = project
     noPublishSettings,
     mainClass in reStart := Some(
       "com.iheart.thomas.example.ExampleAbtestAdminUIApp"
-    ),
-    localDynamoSettings
+    )
   )
 
 lazy val monitor = project
@@ -359,26 +358,8 @@ lazy val tests = project
     libs.dependency("cats-effect-testing-scalatest", Some(IntegrationTest.name)),
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
     libs.dependency("akka-slf4j", Some(IntegrationTest.name)),
-    libs.dependency("embedded-kafka", Some(IntegrationTest.name)),
-    dynamoTestSettings
+    libs.dependency("embedded-kafka", Some(IntegrationTest.name))
   )
-
-lazy val dynamoTestSettings = localDynamoSettings ++ Seq(
-  libs.dependency("lihua-dynamo-testkit", Some(IntegrationTest.name)),
-  dynamoDBLocalCleanAfterStop := true,
-  startDynamoDBLocal := startDynamoDBLocal.dependsOn(compile in Test).value,
-  test in IntegrationTest := (test in IntegrationTest)
-    .dependsOn(startDynamoDBLocal)
-    .value,
-  testOnly in IntegrationTest := (testOnly in IntegrationTest)
-    .dependsOn(startDynamoDBLocal)
-    .evaluated,
-  testOptions in IntegrationTest += dynamoDBLocalTestCleanup.value
-)
-
-lazy val localDynamoSettings = Seq(
-  dynamoDBLocalPort := 8042
-)
 
 lazy val play = project
   .dependsOn(mongo, dynamo)
@@ -418,7 +399,7 @@ lazy val playExample = project
   )
 
 lazy val noPublishing = Seq(skip in publish := true)
-lazy val defaultScalaVer = "2.12.10"
+lazy val defaultScalaVer = libs.vers("scalac_2.12")
 
 lazy val developerKai = Developer(
   "Kailuo Wang",

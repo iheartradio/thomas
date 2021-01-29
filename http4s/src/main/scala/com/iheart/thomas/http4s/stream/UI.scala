@@ -6,7 +6,6 @@ import com.iheart.thomas.http4s.{AuthImp, ReverseRoutes}
 import com.iheart.thomas.http4s.auth.{AuthedEndpointsUtils, AuthenticationAlg}
 import com.iheart.thomas.stream.JobAlg
 import org.http4s.dsl.Http4sDsl
-import org.typelevel.jawn.ast.JValue
 import tsec.authentication._
 import cats.implicits._
 import com.iheart.thomas.html.redirect
@@ -15,7 +14,7 @@ import com.iheart.thomas.stream.html._
 
 class UI[F[_]: Async](
     implicit
-    jobAlg: JobAlg[F, JValue],
+    jobAlg: JobAlg[F],
     authAlg: AuthenticationAlg[F, AuthImp],
     reverseRoutes: ReverseRoutes)
     extends AuthedEndpointsUtils[F, AuthImp]

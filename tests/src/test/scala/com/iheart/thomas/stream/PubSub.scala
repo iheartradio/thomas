@@ -6,7 +6,8 @@ import org.typelevel.jawn.ast.JValue
 import fs2.Stream
 import cats.implicits._
 
-class PubSub[F[_]: Concurrent] private (topic: Topic[F, JValue]) {
+class PubSub[F[_]: Concurrent] private (topic: Topic[F, JValue])
+    extends MessageSubscriber[F, JValue] {
 
   def publish(js: JValue*): Stream[F, Unit] = topic.publish(Stream(js: _*))
 

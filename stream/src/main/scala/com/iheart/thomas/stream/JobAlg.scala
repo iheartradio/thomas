@@ -12,7 +12,7 @@ import pureconfig.ConfigSource
 import scala.concurrent.duration.FiniteDuration
 import scala.util.control.NoStackTrace
 
-trait JobAlg[F[_], Message] {
+trait JobAlg[F[_]] {
 
   /**
     * Creates a job if the job key is not already in the job list
@@ -25,7 +25,7 @@ trait JobAlg[F[_], Message] {
     */
   def stop(jobKey: String): F[Unit]
 
-  def runningPipe(cfg: JobRunnerConfig): Pipe[F, Message, Unit]
+  def runStream: Stream[F, Unit]
 
   def allJobs: F[Vector[Job]]
 
@@ -49,9 +49,11 @@ object JobAlg {
       timer: Timer[F],
       dao: JobDAO[F],
       cKpiDAO: ConversionKPIDAO[F],
-      parser: ConversionParser[F, Message]
-    ): JobAlg[F, Message] =
-    new JobAlg[F, Message] {
+      parser: ConversionParser[F, Message],
+      config: Config,
+      messageSubscriber: MessageSubscriber[F, Message]
+    ): JobAlg[F] =
+    new JobAlg[F] {
       def schedule(spec: JobSpec): F[Option[Job]] = dao.insertO(Job(spec))
 
       def stop(jobKey: String): F[Unit] = dao.remove(jobKey)
@@ -92,52 +94,55 @@ object JobAlg {
           case _ => ???
         }
 
-      def runningPipe(cfg: JobRunnerConfig): Pipe[F, Message, Unit] = {
-        val availableJobs: Stream[F, Vector[Job]] =
-          Stream
-            .fixedDelay[F](cfg.jobCheckFrequency)
-            .evalMap(_ =>
-              dao.all.map(_.filter(_.checkedOut.isEmpty))
-            ) //todo: be resilient against DB error with logging.
+      def runStream: Stream[F, Unit] =
+        Stream
+          .eval(JobRunnerConfig.fromConfig(config))
+          .flatMap { cfg =>
+            val availableJobs: Stream[F, Vector[Job]] =
+              Stream
+                .fixedDelay[F](cfg.jobCheckFrequency)
+                .evalMap(_ =>
+                  dao.all.map(_.filter(_.checkedOut.isEmpty))
+                ) //todo: be resilient against DB error with logging.
 
-        val runningJobs = availableJobs
-          .evalScan(
-            (
-              Vector.empty[Job], //previous set of Jobs
-              none[Vector[
-                Job
-              ]] // current Job, None if no change from previous bandits
-            )
-          ) { (memo, newAvailable) =>
-            val currentlyRunning = memo._1
-            for {
-              now <- TimeUtil.now[F]
-              updatedRunning <-
-                currentlyRunning.traverseFilter(dao.updateCheckedOut(_, now))
-              newlyCheckedout <-
-                newAvailable.traverseFilter(dao.updateCheckedOut(_, now))
-            } yield {
-              val newRunning = updatedRunning ++ newlyCheckedout
-              (
-                newRunning,
-                if (
-                  newRunning.map(_.spec).toSet == currentlyRunning.map(_.spec).toSet
+            val runningJobs = availableJobs
+              .evalScan(
+                (
+                  Vector.empty[Job], //previous set of Jobs
+                  none[Vector[
+                    Job
+                  ]] // current Job, None if no change from previous bandits
                 )
-                  None
-                else Some(newRunning)
-              )
-            }
+              ) { (memo, newAvailable) =>
+                val currentlyRunning = memo._1
+                for {
+                  now <- TimeUtil.now[F]
+                  updatedRunning <-
+                    currentlyRunning.traverseFilter(dao.updateCheckedOut(_, now))
+                  newlyCheckedout <-
+                    newAvailable.traverseFilter(dao.updateCheckedOut(_, now))
+                } yield {
+                  val newRunning = updatedRunning ++ newlyCheckedout
+                  (
+                    newRunning,
+                    if (
+                      newRunning
+                        .map(_.spec)
+                        .toSet == currentlyRunning.map(_.spec).toSet
+                    )
+                      None
+                    else Some(newRunning)
+                  )
+                }
 
-          }
-          .mapFilter(_._2)
-
-        (input: Stream[F, Message]) =>
-          runningJobs.switchMap { jobs =>
-            Stream.eval(jobs.traverse(j => jobPipe(j))).flatMap { pipes =>
-              input.broadcastTo(pipes: _*)
+              }
+              .mapFilter(_._2)
+            runningJobs.switchMap { jobs =>
+              Stream.eval(jobs.traverse(j => jobPipe(j))).flatMap { pipes =>
+                messageSubscriber.subscribe.broadcastTo(pipes: _*)
+              }
             }
           }
-      }
     }
 }
 

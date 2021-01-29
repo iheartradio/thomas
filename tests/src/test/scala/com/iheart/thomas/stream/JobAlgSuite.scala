@@ -12,6 +12,7 @@ import com.iheart.thomas.analysis.{
   MessageQuery
 }
 import com.iheart.thomas.stream.JobSpec.UpdateKPIPrior
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.matchers.should.Matchers
 import org.typelevel.jawn.ast.{JObject, JString, JValue}
 import testkit.MapBasedDAOs
@@ -21,17 +22,29 @@ import concurrent.duration._
 
 class JobAlgSuite extends AsyncIOSpec with Matchers {
   def withAlg[A](
-      f: (ConversionKPIDAO[IO], JobAlg[IO, JValue]) => IO[A]
-    ) = {
+      f: (ConversionKPIDAO[IO], JobAlg[IO], PubSub[IO]) => IO[A]
+    )(implicit config: Config = cfg
+    ): IO[A] = {
     implicit val kpiDAO = MapBasedDAOs.conversionKPIDAO[IO]
     implicit val jobDAO = MapBasedDAOs.streamJobDAO[IO]
 
-    val alg = implicitly[JobAlg[IO, JValue]]
-    f(kpiDAO, alg)
+    PubSub.create[IO](event("type" -> "init")).flatMap { implicit pubSub =>
+      f(kpiDAO, implicitly[JobAlg[IO]], pubSub)
+    }
+
   }
 
-  def cfg(d: FiniteDuration): JobRunnerConfig = JobRunnerConfig(d)
-  val cfg: JobRunnerConfig = cfg(50.millis)
+  def cfg(d: FiniteDuration): Config = ConfigFactory.parseString(s"""
+      |thomas {
+      |  stream {
+      |    job {
+      |      job-check-frequency: $d
+      |    }
+      |  }  
+      |}
+      |""".stripMargin)
+
+  val cfg: Config = cfg(50.millis)
 
   val kpiA = ConversionKPI(
     KPIName("A"),
@@ -46,8 +59,6 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
     )
   )
 
-  val createPubSub = PubSub.create[IO](event("type" -> "init"))
-
   def event(vs: (String, String)*) =
     JObject.fromSeq(vs.toList.map {
       case (k, v) =>
@@ -55,7 +66,7 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
     })
 
   "JobAlg" - {
-    "can schedule a job" in withAlg { (_, alg) =>
+    "can schedule a job" in withAlg { (_, alg, _) =>
       (for {
         job <- alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 2))
         jobs <- alg.allJobs
@@ -66,15 +77,14 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
 
     }
 
-    "get can process one KPI update job" in withAlg { (kpiDAO, alg) =>
+    "get can process one KPI update job" in withAlg { (kpiDAO, alg, pubSub) =>
       (for {
-        pubSub <- Stream.eval {
-          kpiDAO.upsert(kpiA) *>
-            alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 2)) *>
-            createPubSub
+        _ <- Stream.eval {
+          kpiDAO.insert(kpiA) *>
+            alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 2))
         }
         _ <- Stream(
-          pubSub.subscribe.through(alg.runningPipe(cfg)),
+          alg.runStream,
           pubSub
             .publish(event("action" -> "click"), event("action" -> "display"))
             .delayBy(300.millis)
@@ -85,20 +95,18 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
 
     }
 
-    "keep checkedout timestamp updated" in withAlg { (kpiDAO, alg) =>
+    "keep checkedout timestamp updated" in withAlg { (kpiDAO, alg, pubSub) =>
       (for {
-        pubSub <- Stream.eval {
-          kpiDAO.upsert(kpiA) *>
-            alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 2)) *>
-            createPubSub
+        _ <- Stream.eval {
+          kpiDAO.insert(kpiA) *>
+            alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 2))
         }
         start <- Stream.eval(TimeUtil.now[IO])
-        jobs <-
-          pubSub.subscribe
-            .through(alg.runningPipe(cfg(100.millis)))
+        _ <-
+          alg.runStream
             .interruptAfter(1.second)
-            .drain ++
-            Stream.eval(alg.allJobs)
+            .last
+        jobs <- Stream.eval(alg.allJobs)
 
       } yield (start, jobs)).compile.toList.asserting { r =>
         val start = r.head._1
@@ -108,21 +116,19 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
 
     }
 
-    "can stop job" in withAlg { (kpiDAO, alg) =>
+    "can stop job" in withAlg { (kpiDAO, alg, pubSub) =>
       (for {
-        pubSub <- Stream.eval {
-          kpiDAO.upsert(kpiA) *> createPubSub
-        }
+        _ <- Stream.eval(kpiDAO.insert(kpiA))
         job <- Stream.eval(alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 4)))
         _ <- Stream(
-          pubSub.subscribe.through(alg.runningPipe(cfg)),
+          alg.runStream,
           pubSub
             .publish(
               event("action" -> "click"),
               event("action" -> "display")
             )
             .delayBy(300.milliseconds),
-          Stream.eval(alg.stop(job.get)).delayBy(1.second),
+          Stream.eval(alg.stop(job.get.key)).delayBy(1.second),
           pubSub
             .publish(event("action" -> "click"), event("action" -> "display"))
             .delayBy(1500.milliseconds)
@@ -135,16 +141,15 @@ class JobAlgSuite extends AsyncIOSpec with Matchers {
 
     }
 
-    "remove job when completed" in withAlg { (kpiDAO, alg) =>
+    "remove job when completed" in withAlg { (kpiDAO, alg, pubSub) =>
       (for {
-        pubSub <- Stream.eval {
-          kpiDAO.upsert(kpiA) *>
-            alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 2)) *>
-            createPubSub
+        _ <- Stream.eval {
+          kpiDAO.insert(kpiA) *>
+            alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 2))
         }
         jobs <-
           Stream(
-            pubSub.subscribe.through(alg.runningPipe(cfg)),
+            alg.runStream,
             pubSub
               .publish(
                 event("action" -> "click"),

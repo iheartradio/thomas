@@ -14,7 +14,7 @@ class ConversionKPIDAOSuite extends AsyncIOSpec with Matchers {
 
     daoR
       .use(
-        _.upsert(toInsert)
+        _.insert(toInsert)
       )
       .asserting(_ shouldBe toInsert)
   }

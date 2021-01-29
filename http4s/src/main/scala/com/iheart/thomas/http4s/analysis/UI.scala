@@ -24,13 +24,12 @@ import FormDataDecoder._
 import com.iheart.thomas.http4s.analysis.UI.UpdateKPIRequest
 import com.iheart.thomas.stream.JobAlg
 import com.iheart.thomas.stream.JobSpec.UpdateKPIPrior
-import org.typelevel.jawn.ast.JValue
 import tsec.authentication._
 
 class UI[F[_]: Async](
     implicit
     conversionKPIDAO: ConversionKPIDAO[F],
-    jobAlg: JobAlg[F, JValue],
+    jobAlg: JobAlg[F],
     authAlg: AuthenticationAlg[F, AuthImp],
     reverseRoutes: ReverseRoutes)
     extends AuthedEndpointsUtils[F, AuthImp]
