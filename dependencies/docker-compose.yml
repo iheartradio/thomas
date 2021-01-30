@@ -41,10 +41,6 @@ services:
 
 volumes:
   zookeeper_data:
-    driver: local
   kafka_data:
-    driver: local
   mongo_data:
-    driver: local
   dynamo_data:
-    driver: local

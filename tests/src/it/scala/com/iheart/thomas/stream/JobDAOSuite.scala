@@ -69,7 +69,6 @@ abstract class JobDAOSuite(daoR: Resource[IO, JobDAO[IO]])
 
     "update checkedOut successfully when the job has matched checkedOut timestamp" in {
       val newTimeStamp = Instant.now.plusSeconds(10)
-
       daoR
         .use { dao =>
           for {
