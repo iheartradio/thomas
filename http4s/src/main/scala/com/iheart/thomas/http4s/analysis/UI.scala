@@ -26,6 +26,8 @@ import com.iheart.thomas.stream.JobAlg
 import com.iheart.thomas.stream.JobSpec.UpdateKPIPrior
 import tsec.authentication._
 
+import java.time.{Instant, OffsetDateTime}
+
 class UI[F[_]: Async](
     implicit
     conversionKPIDAO: ConversionKPIDAO[F],
@@ -53,7 +55,7 @@ class UI[F[_]: Async](
         ko.fold(
           NotFound(s"Cannot find the Conversion KPI under the name $kpiName")
         ) { k =>
-          jobAlg.find(UpdateKPIPrior(kpiName, 1)).flatMap { jobO =>
+          jobAlg.find(UpdateKPIPrior(kpiName, Instant.MIN)).flatMap { jobO =>
             Ok(editConversionKPI(k, u, jobO))
           }
 
@@ -99,7 +101,7 @@ class UI[F[_]: Async](
 
     case se @ POST -> `rootPath` / "conversionKPIs" / kpiName / "update-prior" asAuthed u =>
       se.request.as[UpdateKPIRequest].flatMap { r =>
-        jobAlg.schedule(UpdateKPIPrior(kpiName, r.sampleSize)).flatMap { jo =>
+        jobAlg.schedule(UpdateKPIPrior(kpiName, r.until.toInstant)).flatMap { jo =>
           jo.fold(
             BadRequest(errorMsg("It's being updated right now"))
           )(j =>
@@ -120,7 +122,7 @@ class UI[F[_]: Async](
 
 object UI {
 
-  case class UpdateKPIRequest(sampleSize: Int)
+  case class UpdateKPIRequest(until: OffsetDateTime)
 
   object Decoders {
 
@@ -131,7 +133,7 @@ object UI {
     ).mapN(MessageQuery.apply)
 
     implicit val uprDecoder: FormDataDecoder[UpdateKPIRequest] =
-      field[Int]("sampleSize").map(UpdateKPIRequest(_))
+      field[OffsetDateTime]("until").map(UpdateKPIRequest(_))
 
     implicit val conversionMessageQueryDecoder
         : FormDataDecoder[ConversionMessageQuery] = (

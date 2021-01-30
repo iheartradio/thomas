@@ -19,11 +19,11 @@ object JobSpec {
     */
   case class UpdateKPIPrior(
       kpiName: KPIName,
-      sampleSize: Int = 1000)
+      until: Instant)
       extends JobSpec {
     val key = "Update_KPI_Prior_For_" + kpiName.n
     val description =
-      s"Update the prior for KPI $kpiName with a sample size of $sampleSize"
+      s"Update the prior for KPI $kpiName using ongoing data until $until"
   }
 
   case class MonitorTest(

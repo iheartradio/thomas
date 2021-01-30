@@ -16,6 +16,16 @@ case class BetaModel(
       alphaPrior = conversions.converted + 1d,
       betaPrior = conversions.total - conversions.converted + 1d
     )
+
+  def accumulativeUpdate(
+      converted: Long,
+      init: Long
+    ): BetaModel = {
+    copy(
+      alphaPrior = alphaPrior + converted.toDouble,
+      betaPrior = betaPrior + init.toDouble - converted.toDouble
+    )
+  }
 }
 
 case class ConversionMessageQuery(

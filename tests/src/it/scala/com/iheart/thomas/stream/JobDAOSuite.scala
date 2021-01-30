@@ -10,13 +10,13 @@ import com.iheart.thomas.testkit.MapBasedDAOs
 import com.iheart.thomas.testkit.Resources.localDynamoR
 import org.scalatest.matchers.should.Matchers
 
-import java.time.Instant
+import java.time.{Instant, LocalDateTime}
 
 abstract class JobDAOSuite(daoR: Resource[IO, JobDAO[IO]])
     extends AsyncIOSpec
     with Matchers {
 
-  val jobSpec = UpdateKPIPrior(KPIName("foo"))
+  val jobSpec = UpdateKPIPrior(KPIName("foo"), Instant.parse("2021-01-30T00:00:00Z"))
 
   "JobDAO" - {
     "insertO new job" in {
@@ -41,8 +41,8 @@ abstract class JobDAOSuite(daoR: Resource[IO, JobDAO[IO]])
     }
 
     "cannot re-insert same job with the same key" in {
-      val job = Job(jobSpec.copy(sampleSize = 100))
-      val job2 = Job(jobSpec.copy(sampleSize = 200))
+      val job = Job(jobSpec.copy(until = Instant.now))
+      val job2 = Job(jobSpec.copy(until = Instant.now.plusSeconds(1)))
       daoR
         .use { dao =>
           dao.insertO(job) >>
@@ -59,7 +59,6 @@ abstract class JobDAOSuite(daoR: Resource[IO, JobDAO[IO]])
             job <- dao.insertO(Job(jobSpec))
             jobUpdated <- dao.updateCheckedOut(job.get, newTimeStamp)
           } yield jobUpdated
-
         }
         .asserting(
           _.flatMap(_.checkedOut.map(_.toEpochMilli)) shouldBe Some(

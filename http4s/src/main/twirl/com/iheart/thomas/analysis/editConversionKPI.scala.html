@@ -30,47 +30,63 @@ successMsg: Option[String] = None
 
 </form>
 
-    <div class="row mt-3">
-        <div class="col-6">
-            <div id="kpi-update-prior" class="card">
-                <div class="card-header">
-                    <span class="h5">Update prior using ongoing data</span>
-                </div>
-                <div class="card-body">
-                    @if(runningJobO.isEmpty) {
-
-                    <form action="../conversionKPIs/@kpi.name/update-prior" method="post">
-                        <div class="form-group">
-                            <label for="sampleSizeInput">Sample Size</label>
-                            <input name="sampleSize"
-                                   required
-                                   class="form-control"
-                                   id="sampleSizeInput"
-                                   type="number"
-                                   step="1"
-                            />
-                        </div>
-                        <div class="row d-flex flex-row-reverse mt-5">
-                            <div class="mr-4">
-                                <button type="submit" class="btn btn-primary">
-                                    Schedule Prior Update
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                    } else {
-                        @for(job <- runningJobO) {
-                            <span class="h5 font-weight-light text-success">
-                              @job.spec.description
-                            </span>
-                            @jobStatusBadge(job)
-
-                        }
-                    }
-
-                </div>
+<div class="row mt-3">
+    <div class="col-6">
+        <div id="kpi-update-prior" class="card">
+            <div class="card-header">
+                <span class="h5">Update prior using ongoing data</span>
             </div>
+            <div class="card-body">
+                @if(runningJobO.isEmpty) {
 
+                <form action="../conversionKPIs/@kpi.name/update-prior" method="post">
+                    <div class="form-group">
+                        <label for="update-until">Collect data until</label>
+                        <input name="until"
+                               required
+                               class="form-control"
+                               id="update-until"
+                               type="text"
+                        />
+                    </div>
+                    <div class="row d-flex flex-row-reverse mt-5">
+                        <div class="mr-4">
+                            <button type="submit" class="btn btn-primary">
+                                Schedule Prior Update
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                } else {
+                    @for(job <- runningJobO) {
+                        <span class="h5 font-weight-light text-success">
+                          @job.spec.description
+                        </span>
+                        @jobStatusBadge(job)
+
+                    }
+                }
+
+            </div>
         </div>
+
     </div>
+</div>
+
+
+
+
+
+@if(runningJobO.isEmpty) {
+    <script>
+    $(document).ready(function() {
+        var pickerSettings =  {
+            'format': 'Y-m-d H:i:s T'
+        };
+        $('#update-until').datetimepicker(pickerSettings);
+    });
+
+    </script>
+}
+
 }

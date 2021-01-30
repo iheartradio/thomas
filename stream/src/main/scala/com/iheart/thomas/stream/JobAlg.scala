@@ -3,7 +3,7 @@ package com.iheart.thomas.stream
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
 import com.iheart.thomas.TimeUtil
-import com.iheart.thomas.analysis.{ConversionKPIDAO, Conversions, KPIName}
+import com.iheart.thomas.analysis.{ConversionKPIDAO, KPIName}
 import com.iheart.thomas.stream.JobSpec.UpdateKPIPrior
 import com.typesafe.config.Config
 import fs2._
@@ -40,6 +40,10 @@ trait JobAlg[F[_]] {
 
 object JobAlg {
 
+  case class ConversionEventStats(
+      initCount: Int,
+      convertedCount: Int)
+
   case class CannotUpdateKPIWithoutQuery(kpiName: KPIName)
       extends RuntimeException
       with NoStackTrace
@@ -62,42 +66,53 @@ object JobAlg {
 
       def allJobs: F[Vector[Job]] = dao.all
 
-      def jobPipe(job: Job): F[Pipe[F, Message, Unit]] =
-        job.spec match {
-          case UpdateKPIPrior(kpiName, sampleSize) =>
-            cKpiDAO
-              .get(kpiName)
-              .flatMap { kpi =>
-                kpi.messageQuery
-                  .liftTo[F](CannotUpdateKPIWithoutQuery(kpiName))
-                  .map {
-                    query =>
-                      { (input: Stream[F, Message]) =>
-                        input
-                          .evalMap(m => parser.parseConversion(m, query))
-                          .flattenOption
-                          .take(sampleSize.toLong)
-                          .chunks
-                          .foldMap { chunk =>
-                            Conversions(chunk.count(identity), chunk.size.toLong)
-                          }
-                          .evalMap { c =>
-                            cKpiDAO
-                              .updateModel(kpiName, kpi.model.updateFrom(c))
-                              .void *>
-                              stop(job.key)
-                          }
-                      }
-                  }
-              }
-
-          case _ => ???
-        }
-
       def runStream: Stream[F, Unit] =
         Stream
           .eval(JobRunnerConfig.fromConfig(config))
           .flatMap { cfg =>
+            def jobPipe(job: Job): F[Pipe[F, Message, Unit]] =
+              job.spec match {
+                case UpdateKPIPrior(kpiName, until) =>
+                  cKpiDAO
+                    .get(kpiName)
+                    .flatMap { kpi =>
+                      kpi.messageQuery
+                        .liftTo[F](CannotUpdateKPIWithoutQuery(kpiName))
+                        .map { query =>
+                          val checkJobComplete = Stream
+                            .fixedDelay(cfg.jobCheckFrequency)
+                            .evalMap(_ => TimeUtil.now[F].map(_.isAfter(until)))
+                            .evalTap { completed =>
+                              if (completed) stop(job.key)
+                              else F.unit
+                            }
+
+                          { (input: Stream[F, Message]) =>
+                            input
+                              .evalMap(m => parser.parseConversion(m, query))
+                              .flattenOption
+                              .interruptWhen(checkJobComplete)
+                              .chunkMin(cfg.minChunkSize)
+                              .evalMap { chunk =>
+                                val converted = chunk.count(identity)
+                                val init = chunk.size - converted
+                                cKpiDAO
+                                  .get(kpiName)
+                                  .flatMap { k =>
+                                    cKpiDAO.updateModel(
+                                      kpiName,
+                                      k.model.accumulativeUpdate(converted, init)
+                                    )
+                                  }
+                                  .void
+                              }
+                          }
+                        }
+                    }
+
+                case _ => ???
+              }
+
             val availableJobs: Stream[F, Vector[Job]] =
               Stream
                 .fixedDelay[F](cfg.jobCheckFrequency)
@@ -134,14 +149,16 @@ object JobAlg {
                     else Some(newRunning)
                   )
                 }
-
               }
               .mapFilter(_._2)
+
             runningJobs.switchMap { jobs =>
-              Stream.eval(jobs.traverse(j => jobPipe(j))).flatMap { pipes =>
-                messageSubscriber.subscribe
-                  .broadcastTo(pipes: _*)
-              }
+              Stream
+                .eval(jobs.traverse(j => jobPipe(j)))
+                .flatMap { pipes =>
+                  messageSubscriber.subscribe
+                    .broadcastTo(pipes: _*)
+                }
             }
           }
     }
@@ -151,7 +168,9 @@ object JobAlg {
   *
   * @param jobCheckFrequency how often it checks new available jobs or running jobs being stoped.
   */
-case class JobRunnerConfig(jobCheckFrequency: FiniteDuration)
+case class JobRunnerConfig(
+    jobCheckFrequency: FiniteDuration,
+    minChunkSize: Int)
 
 object JobRunnerConfig {
   def fromConfig[F[_]: Sync](cfg: Config): F[JobRunnerConfig] = {

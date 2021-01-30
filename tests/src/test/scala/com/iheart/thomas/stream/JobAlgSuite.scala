@@ -20,6 +20,7 @@ import org.typelevel.jawn.ast.{JObject, JString, JValue}
 import testkit.MapBasedDAOs
 import fs2.Stream
 
+import java.time.Instant
 import concurrent.duration._
 
 abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
@@ -41,6 +42,7 @@ abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
                                                                     |  stream {
                                                                     |    job {
                                                                     |      job-check-frequency: $d
+                                                                    |      min-chunk-size: 2
                                                                     |    }
                                                                     |  }  
                                                                     |}
@@ -52,7 +54,7 @@ abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
     KPIName("A"),
     "kai",
     None,
-    BetaModel(0, 0),
+    BetaModel(1, 1),
     Some(
       ConversionMessageQuery(
         MessageQuery(None, List("action" -> "display")),
@@ -74,7 +76,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
   "JobAlg" - {
     "can schedule a job" in withAlg { (_, alg, _) =>
       (for {
-        job <- alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 2))
+        job <- alg.schedule(UpdateKPIPrior(kpiA.name, Instant.now.plusSeconds(3)))
         jobs <- alg.allJobs
 
       } yield (job, jobs)).asserting {
@@ -87,27 +89,27 @@ class JobAlgSuite extends JobAlgSuiteBase {
       (for {
         _ <- Stream.eval {
           kpiDAO.insert(kpiA) *>
-            alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 2))
+            alg.schedule(UpdateKPIPrior(kpiA.name, Instant.now.plusMillis(800)))
         }
         _ <- Stream(
           alg.runStream,
           pubSub
             .publish(event("action" -> "click"), event("action" -> "display"))
-            .delayBy(300.millis)
+            .delayBy(200.millis)
         ).parJoin(2)
 
       } yield ()).interruptAfter(1.second).compile.drain *>
         kpiDAO
           .get(kpiA.name)
-          .asserting(_.model shouldBe kpiA.model.updateFrom(Conversions(1, 2)))
+          .asserting(_.model shouldBe kpiA.model.updateFrom(Conversions(1, 1)))
 
     }
 
-    "keep checkedout timestamp updated" in withAlg { (kpiDAO, alg, pubSub) =>
+    "keep checkedout timestamp updated" in withAlg { (kpiDAO, alg, _) =>
       (for {
         _ <- Stream.eval {
           kpiDAO.insert(kpiA) *>
-            alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 2))
+            alg.schedule(UpdateKPIPrior(kpiA.name, Instant.now.plusSeconds(2)))
         }
         start <- Stream.eval(TimeUtil.now[IO])
         _ <-
@@ -127,7 +129,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
     "can stop job" in withAlg { (kpiDAO, alg, pubSub) =>
       (for {
         _ <- Stream.eval(kpiDAO.insert(kpiA))
-        job <- Stream.eval(alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 4)))
+        job <- Stream.eval(alg.schedule(UpdateKPIPrior(kpiA.name, Instant.now.plusSeconds(1))))
         _ <- Stream(
           alg.runStream,
           pubSub
@@ -135,24 +137,24 @@ class JobAlgSuite extends JobAlgSuiteBase {
               event("action" -> "click"),
               event("action" -> "display")
             )
-            .delayBy(300.milliseconds),
-          Stream.eval(alg.stop(job.get.key)).delayBy(1.second),
+            .delayBy(200.milliseconds),
+          Stream.eval(alg.stop(job.get.key)).delayBy(500.milliseconds),
           pubSub
             .publish(event("action" -> "click"), event("action" -> "display"))
-            .delayBy(1500.milliseconds)
+            .delayBy(800.milliseconds)
         ).parJoin(4)
 
       } yield ()).interruptAfter(2.second).compile.drain *>
         kpiDAO
           .get(kpiA.name)
-          .asserting(_.model shouldBe kpiA.model) //didn't reach sample size.
+          .asserting(_.model shouldBe kpiA.model.updateFrom(Conversions(1, 1)))
     }
 
     "remove job when completed" in withAlg { (kpiDAO, alg, pubSub) =>
       (for {
         _ <- Stream.eval {
           kpiDAO.insert(kpiA) *>
-            alg.schedule(UpdateKPIPrior(kpiA.name, sampleSize = 2))
+            alg.schedule(UpdateKPIPrior(kpiA.name, Instant.now.plusMillis(400)))
         }
         jobs <-
           Stream(
@@ -162,8 +164,8 @@ class JobAlgSuite extends JobAlgSuiteBase {
                 event("action" -> "click"),
                 event("action" -> "display")
               )
-              .delayBy(300.milliseconds)
-          ).parJoin(4).interruptAfter(500.milliseconds).drain ++
+              .delayBy(200.milliseconds)
+          ).parJoin(4).interruptAfter(600.milliseconds).drain ++
             Stream.eval(alg.allJobs)
 
       } yield jobs).compile.toList.asserting {
@@ -176,31 +178,31 @@ class JobAlgSuite extends JobAlgSuiteBase {
       val kpiB = kpiA.copy(name = KPIName("B"))
       (for {
         _ <- Stream.eval(kpiDAO.insert(kpiC) *> kpiDAO.insert(kpiB))
-        _ <- Stream.eval(alg.schedule(UpdateKPIPrior(kpiC.name, sampleSize = 4)))
+        _ <- Stream.eval(alg.schedule(UpdateKPIPrior(kpiC.name, Instant.now.plusMillis(2400))))
         _ <- Stream(
           alg.runStream,
           pubSub
             .publish(
-              event("action" -> "click", "b" -> "1"),
-              event("action" -> "display", "b" -> "1")
+              event("action" -> "click"),
+              event("action" -> "display"),
             )
-            .delayBy(300.milliseconds),
+            .delayBy(200.milliseconds),
           Stream
-            .eval(alg.schedule(UpdateKPIPrior(kpiB.name, sampleSize = 2)))
+            .eval(alg.schedule(UpdateKPIPrior(kpiB.name, Instant.now.plusMillis(1800))))
             .delayBy(500.milliseconds),
           pubSub
             .publish(
-              event("action" -> "display", "b" -> "2"),
-              event("action" -> "display", "b" -> "2")
+              event("action" -> "display"),
+              event("action" -> "display"),
             )
             .delayBy(800.milliseconds)
         ).parJoin(4)
 
-      } yield ()).interruptAfter(2.second).compile.drain *>
+      } yield ()).interruptAfter(3.second).compile.drain *>
         (kpiDAO.get(kpiC.name), kpiDAO.get(kpiB.name)).tupled.asserting {
           case (kC, kB) =>
             kB.model should be(kpiB.model.updateFrom(Conversions(0, 2)))
-            kC.model should be(kpiC.model.updateFrom(Conversions(1, 4)))
+            kC.model should be(kpiC.model.updateFrom(Conversions(1, 3)))
         }
     }
   }
