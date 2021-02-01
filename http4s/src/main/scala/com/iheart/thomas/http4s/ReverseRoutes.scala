@@ -1,6 +1,8 @@
 package com.iheart.thomas.http4s
 
-class ReverseRoutes(rootPath: String) {
+import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
+
+case class ReverseRoutes(rootPath: String) {
   val tests = s"$rootPath/tests"
   val home = tests
   val features = s"$rootPath/features"
@@ -11,4 +13,9 @@ class ReverseRoutes(rootPath: String) {
   val logout = s"$rootPath/logout"
   val analysis = s"$rootPath/analysis/conversionKPIs"
   val background = s"$rootPath/stream/background"
+}
+
+object ReverseRoutes {
+  implicit def apply(implicit cfg: AdminUIConfig): ReverseRoutes =
+    ReverseRoutes(cfg.rootPath)
 }

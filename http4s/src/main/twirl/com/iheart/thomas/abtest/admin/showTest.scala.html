@@ -2,21 +2,21 @@
 @import lihua._
 @import java.time.Instant
 @import com.iheart.thomas.http4s.Formatters._
-@import com.iheart.thomas.http4s.ReverseRoutes
+@import com.iheart.thomas.http4s.UIEnv
 @import com.iheart.thomas.html._
-@import com.iheart.thomas.admin.User
+
 @import com.iheart.thomas.admin.Authorization._
 
 
-@(u: User,
+@(
 test: Entity[Abtest],
 followUpO: Option[Entity[Abtest]],
 feature: Feature,
 isShuffled: Boolean
-)(implicit routes: ReverseRoutes)
+)(implicit env: UIEnv)
 
 
-@topNav("A/B Test for feature " + test.data.feature, u) {
+@topNav("A/B Test for feature " + test.data.feature) {
 
 
 <form action="#" method="post">
@@ -38,7 +38,7 @@ isShuffled: Boolean
 </form>
 
 <div class="row d-flex flex-row-reverse mt-5">
-    @if(u.has(ManageFeature(feature))) {
+    @if(env.currentUser.has(ManageFeature(feature))) {
     <div class="mr-4">
         @if(followUpO.isEmpty) {
         <a href="@test._id/new_revision" class="btn btn-primary" role="button">
@@ -81,7 +81,7 @@ isShuffled: Boolean
         <div class="card">
             <div class="card-header">
         <span class="h6">Overridden assignment for
-          <a class="text-primary" href="@routes.features/@test.data.feature">@test.data.feature</a> </span>
+          <a class="text-primary" href="@env.routes.features/@test.data.feature">@test.data.feature</a> </span>
             </div>
             <div class="card-body">
                 @if(feature.overrides.nonEmpty){
@@ -103,11 +103,11 @@ isShuffled: Boolean
 
                 </table>
                 } else {
-                <span> <a class="text-primary" href="@routes.features/@test.data.feature">@test.data.feature</a> </span>
+                <span> <a class="text-primary" href="@env.routes.features/@test.data.feature">@test.data.feature</a> </span>
                 has no overriding assignments.
                 }
-                @if(u.has(ManageFeature(feature))) {
-                Go to <a class="text-primary" href="@routes.features/@test.data.feature">@test.data.feature</a> to edit
+                @if(env.currentUser.has(ManageFeature(feature))) {
+                Go to <a class="text-primary" href="@env.routes.features/@test.data.feature">@test.data.feature</a> to edit
                 overrides.</span>
                 }
             </div>

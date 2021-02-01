@@ -21,6 +21,7 @@ import com.iheart.thomas.analysis.html._
 import com.iheart.thomas.html.{errorMsg, redirect}
 import org.http4s.FormDataDecoder
 import FormDataDecoder._
+import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.http4s.analysis.UI.UpdateKPIRequest
 import com.iheart.thomas.stream.JobAlg
 import com.iheart.thomas.stream.JobSpec.UpdateKPIPrior
@@ -33,22 +34,22 @@ class UI[F[_]: Async](
     conversionKPIDAO: ConversionKPIDAO[F],
     jobAlg: JobAlg[F],
     authAlg: AuthenticationAlg[F, AuthImp],
-    reverseRoutes: ReverseRoutes)
+    aCfg: AdminUIConfig)
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
-
+  val reverseRoutes = ReverseRoutes(aCfg)
   import UI.Decoders._
   val rootPath = Root / "analysis"
   val readonlyRoutes = roleBasedService(admin.Authorization.readableRoles) {
     case GET -> `rootPath` / "conversionKPIs" asAuthed (u) =>
       conversionKPIDAO.all.flatMap { kpis =>
-        Ok(conversionKPIs(kpis, u))
+        Ok(conversionKPIs(kpis)(UIEnv(u)))
       }
   }
 
   val managingRoutes = roleBasedService(admin.Authorization.analysisManagerRoles) {
     case GET -> `rootPath` / "conversionKPI" / "new" asAuthed (u) =>
-      Ok(newConversionKPI(u))
+      Ok(newConversionKPI()(UIEnv(u)))
 
     case GET -> `rootPath` / "conversionKPIs" / kpiName asAuthed (u) =>
       conversionKPIDAO.find(kpiName).flatMap { ko =>
@@ -56,9 +57,8 @@ class UI[F[_]: Async](
           NotFound(s"Cannot find the Conversion KPI under the name $kpiName")
         ) { k =>
           jobAlg.find(UpdateKPIPrior(kpiName, Instant.MIN)).flatMap { jobO =>
-            Ok(editConversionKPI(k, u, jobO))
+            Ok(editConversionKPI(k, jobO)(UIEnv(u)))
           }
-
         }
       }
 
