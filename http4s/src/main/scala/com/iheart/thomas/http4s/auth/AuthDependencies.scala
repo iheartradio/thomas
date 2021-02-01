@@ -4,7 +4,7 @@ package http4s.auth
 import cats.data.OptionT
 import cats.effect.Sync
 import cats.implicits._
-import com.iheart.thomas.{MonadThrowable, Username}
+import com.iheart.thomas.Username
 import com.iheart.thomas.admin.{AuthRecord, AuthRecordDAO, User, UserDAO}
 import com.iheart.thomas.http4s.AuthImp
 import com.iheart.thomas.http4s.auth.AuthDependencies.tokenCookieName
@@ -23,11 +23,11 @@ import tsec.jwt.algorithms.JWTMacAlgo
 import tsec.mac.jca.{HMACSHA256, MacErrorM, MacSigningKey}
 
 import concurrent.duration._
-
+import cats.MonadThrow
 class AuthDependencies[A](key: MacSigningKey[A]) {
   type Token = AugmentedJWT[A, Username]
 
-  implicit def backingStore[F[_]: MonadThrowable](
+  implicit def backingStore[F[_]: MonadThrow](
       implicit dao: AuthRecordDAO[F],
       hs: JWSSerializer[JWSMacHeader[A]],
       s: JWSMacCV[MacErrorM, A]

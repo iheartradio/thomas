@@ -11,35 +11,51 @@ import com.iheart.thomas.http4s.auth.{
 }
 import org.http4s.dsl.Http4sDsl
 import cats.implicits._
-import com.iheart.thomas.{MonadThrowable, dynamo}
+import com.iheart.thomas.dynamo
 import cats.effect._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.admin.{Role, User}
 import com.typesafe.config.Config
 import org.http4s.Response
-import org.http4s.server.{Router, Server, ServiceErrorHandler}
+import org.http4s.server.{Router, ServiceErrorHandler}
 import org.http4s.server.blaze.BlazeServerBuilder
 import pureconfig.error.{CannotConvert, FailureReason}
 import pureconfig.{ConfigReader, ConfigSource}
 import pureconfig.module.catseffect._
 import tsec.common.SecureRandomIdGenerator
+import cats.MonadThrow
+import com.iheart.thomas.kafka.JsonMessageSubscriber
+import com.iheart.thomas.stream.JobAlg
+import io.chrisdavenport.log4cats.Logger
 
 import scala.concurrent.ExecutionContext
 import org.http4s.twirl._
 import tsec.authentication.Authenticator
 import tsec.passwordhashers.jca.BCrypt
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 
-class AdminUI[F[_]: MonadThrowable](
+import java.io.{PrintWriter, StringWriter}
+
+class AdminUI[F[_]: MonadThrow](
     abtestManagementUI: AbtestManagementUI[F],
-    authUI: auth.UI[F, AuthImp]
+    authUI: auth.UI[F, AuthImp],
+    analysisUI: analysis.UI[F],
+    streamUI: stream.UI[F]
   )(implicit reverseRoutes: ReverseRoutes,
+    jobAlg: JobAlg[F],
     authenticator: Authenticator[F, String, User, Token[AuthImp]])
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
 
   val routes = authUI.publicEndpoints <+> liftService(
-    abtestManagementUI.routes <+> authUI.authedService
+    abtestManagementUI.routes <+> authUI.authedService <+> analysisUI.routes <+> streamUI.routes
   )
+
+  def fullStackTrace(t: Throwable): String = {
+    val sw = new StringWriter
+    t.printStackTrace(new PrintWriter(sw))
+    sw.toString
+  }
 
   val serverErrorHandler: ServiceErrorHandler[F] = { _ =>
     {
@@ -47,10 +63,18 @@ class AdminUI[F[_]: MonadThrowable](
         Response[F](Unauthorized).pure[F]
       case e =>
         InternalServerError(
-          html.errorMsg("Ooops! something bad happened. " + e.toString)
+          html.errorMsg(
+            s"""Ooops! something bad happened.
+        
+              ${fullStackTrace(e)}
+            """
+          )
         )
     }
   }
+
+  def backgroundProcess = jobAlg.runStream
+
 }
 
 object AdminUI {
@@ -60,8 +84,8 @@ object AdminUI {
   case class AdminUIConfig(
       key: String,
       rootPath: String,
-      authTableReadCapacity: Long,
-      authTableWriteCapacity: Long,
+      adminTablesReadCapacity: Long,
+      adminTablesWriteCapacity: Long,
       initialAdminUsername: String,
       initialRole: Role)
 
@@ -77,80 +101,89 @@ object AdminUI {
     ConfigSource.fromConfig(cfg).at("thomas.admin-ui").loadF[F, AdminUIConfig]
   }
 
-  def resource[F[_]: Concurrent: Timer](
-      cfg: AdminUIConfig,
-      mongoAbtest: Config
-    )(implicit dc: AmazonDynamoDBAsync,
+  def resource[F[_]: ConcurrentEffect: Timer: Logger: ContextShift](
+      implicit dc: AmazonDynamoDBAsync,
+      config: Config,
       ec: ExecutionContext
-    ): Resource[F, AdminUI[F]] = {
+    ): Resource[F, AdminUI[F]] =
+    Resource.liftF(loadConfig(config)).flatMap { cfg =>
+      implicit val rr = new ReverseRoutes(cfg.rootPath)
 
-    implicit val rr = new ReverseRoutes(cfg.rootPath)
-    Resource.liftF(
-      dynamo.AdminDAOs.ensureAuthTables[F](
-        cfg.authTableReadCapacity,
-        cfg.authTableWriteCapacity
-      )
-    ) *> {
-      Resource.liftF(AuthDependencies[F](cfg.key)).flatMap { deps =>
-        import deps._
-        import dynamo.AdminDAOs._
-        implicit val authAlg = AuthenticationAlg[F, BCrypt, AuthImp]
+      Resource.liftF(
+        dynamo.AdminDAOs.ensureAuthTables[F](
+          cfg.adminTablesReadCapacity,
+          cfg.adminTablesWriteCapacity
+        )
+      ) *>
+        Resource.liftF(
+          dynamo.AnalysisDAOs.ensureAnalysisTables[F](
+            cfg.adminTablesReadCapacity,
+            cfg.adminTablesWriteCapacity
+          )
+        ) *> {
+        Resource.liftF(AuthDependencies[F](cfg.key)).flatMap { deps =>
+          import deps._
+          import dynamo.AdminDAOs._
+          implicit val authAlg = AuthenticationAlg[F, BCrypt, AuthImp]
+          val authUI = new UI(Some(cfg.initialAdminUsername), cfg.initialRole)
 
-        val authUI = new UI(Some(cfg.initialAdminUsername), cfg.initialRole)
-
-        AbtestManagementUI.fromMongo[F](mongoAbtest).map { amUI =>
-          new AdminUI(amUI, authUI)
+          import dynamo.AnalysisDAOs._
+          import JsonMessageSubscriber._
+          AbtestManagementUI.fromMongo[F](config).map { amUI =>
+            new AdminUI(amUI, authUI, new analysis.UI[F], new stream.UI[F])
+          }
         }
       }
     }
-  }
 
-  def resource[F[_]: ConcurrentEffect: Timer](
-      cfg: Config
-    )(implicit
+  def resourceFromDynamo[F[_]: ConcurrentEffect: Timer: Logger: ContextShift](
+      implicit
+      cfg: Config,
       ec: ExecutionContext
     ): Resource[F, AdminUI[F]] =
     dynamo
       .client(ConfigSource.fromConfig(cfg).at("thomas.admin-ui.dynamo"))
-      .flatMap { implicit dc =>
-        Resource.liftF(AdminUI.loadConfig[F](cfg)).flatMap { adminCfg =>
-          resource(adminCfg, cfg)
-        }
-      }
+      .flatMap { implicit dc => resource }
 
   /**
     * Provides a server that serves the Admin UI
     */
-  def serverResource[F[_]: ConcurrentEffect: Timer](
+  def serverResourceAutoLoadConfig[F[_]: ConcurrentEffect: Timer: ContextShift](
       implicit dc: AmazonDynamoDBAsync,
       executionContext: ExecutionContext
-    ): Resource[F, Server[F]] = {
-    ConfigResource.cfg[F]().flatMap(c => serverResourceWithDynamoClient(c))
+    ): Resource[F, ExitCode] = {
+    ConfigResource.cfg[F]().flatMap(implicit c => serverResource[F])
   }
 
   /**
     * Provides a server that serves the Admin UI
     */
-  def serverResourceWithDynamoClient[F[_]: ConcurrentEffect: Timer](
-      cfg: Config
-    )(implicit
+  def serverResource[F[_]: ConcurrentEffect: Timer: ContextShift](
+      implicit
+      cfg: Config,
       dc: AmazonDynamoDBAsync,
       executionContext: ExecutionContext
-    ): Resource[F, Server[F]] = {
+    ): Resource[F, ExitCode] = {
     import org.http4s.server.blaze._
     import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
+    Resource.liftF(Slf4jLogger.create[F]).flatMap { implicit logger =>
+      for {
+        adminCfg <- Resource.liftF(loadConfig[F](cfg))
+        ui <- AdminUI.resource[F]
+        e <-
+          BlazeServerBuilder[F](executionContext)
+            .bindHttp(8080, "0.0.0.0")
+            .withHttpApp(
+              Router(adminCfg.rootPath -> ui.routes).orNotFound
+            )
+            .withServiceErrorHandler(ui.serverErrorHandler)
+            .serve
+            .concurrently(ui.backgroundProcess)
+            .compile
+            .resource
+            .lastOrError
 
-    for {
-      adminCfg <- Resource.liftF(AdminUI.loadConfig[F](cfg))
-      ui <- AdminUI.resource[F](adminCfg, cfg)
-      server <- BlazeServerBuilder[F](executionContext)
-        .bindHttp(8080, "0.0.0.0")
-        .withHttpApp(
-          Router(adminCfg.rootPath -> ui.routes).orNotFound
-        )
-        .withServiceErrorHandler(ui.serverErrorHandler)
-        .resource
-
-    } yield server
+      } yield e
+    }
   }
 }

@@ -21,9 +21,10 @@ object Role {
     Role("Developer") //can start their own test and become feature admin
   val Tester: Role = Role("Tester") //can change overrides
   val User: Role = Role("User") //readonly but can be feature admin
+  val Analyst: Role = Role("Analyst") //Cannot do anything
   val Guest: Role = Role("Guest") //Cannot do anything
 
-  val values = List(Admin, User, Developer, Tester, Guest)
+  val values = List(Admin, User, Developer, Tester, Analyst, Guest)
 
   implicit val roleFmt: Format[Role] = Json.format[Role]
   implicit val eqRole: Eq[Role] = Eq.fromUniversalEquals[Role]

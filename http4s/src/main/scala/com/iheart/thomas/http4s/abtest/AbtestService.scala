@@ -127,24 +127,13 @@ class AbtestService[F[_]: Async](
         req.as[UserGroupQuery] >>= (ugq => respond(api.getGroupsWithMeta(ugq)))
     }
 
-  def internal =
+  def readonly: HttpRoutes[F] =
     HttpRoutes.of[F] {
-
-      case req @ POST -> Root / "tests" :? auto(a) =>
-        req.as[AbtestSpec] >>= (t => respond(api.create(t, a.getOrElse(false))))
-
       case GET -> Root / "health" =>
         respond(api.warmUp.as(Map("status" -> "healthy")))
 
-      case req @ POST -> Root / "tests" / "auto" =>
-        req.as[AbtestSpec] >>= (t => respond(api.create(t, true)))
-
-      case req @ PUT -> Root / "tests" =>
-        req.as[AbtestSpec] >>= (t => respond(api.continue(t)))
-
       case GET -> Root / "tests" / "history" / LongVar(at) =>
         respond(api.getAllTestsEpoch(Some(at)))
-
       case GET -> Root / "tests" / LongVar(endAfter) =>
         respond(api.getAllTestsEndAfter(endAfter))
 
@@ -172,6 +161,34 @@ class AbtestService[F[_]: Async](
       case GET -> Root / "tests" / testId =>
         respond(api.getTest(EntityId(testId)))
 
+      case GET -> Root / "tests" / "cache" :? at(a) =>
+        respond(api.getAllTestsCachedEpoch(a))
+
+      case GET -> Root / "features" =>
+        respond(api.getAllFeatureNames)
+
+      case GET -> Root / "features" / feature / "tests" =>
+        respond(api.getTestsByFeature(feature))
+
+      case GET -> Root / "features" / feature / "overrides" =>
+        respond(api.getOverrides(feature))
+
+      case GET -> Root / "KPIs" / name =>
+        respondOption(kpiAPI.get(name), s"No Kpi under name $name")
+    }
+
+  def managing =
+    HttpRoutes.of[F] {
+
+      case req @ POST -> Root / "tests" :? auto(a) =>
+        req.as[AbtestSpec] >>= (t => respond(api.create(t, a.getOrElse(false))))
+
+      case req @ POST -> Root / "tests" / "auto" =>
+        req.as[AbtestSpec] >>= (t => respond(api.create(t, true)))
+
+      case req @ PUT -> Root / "tests" =>
+        req.as[AbtestSpec] >>= (t => respond(api.continue(t)))
+
       case DELETE -> Root / "tests" / testId =>
         respondOption(
           api.terminate(EntityId(testId)),
@@ -190,15 +207,6 @@ class AbtestService[F[_]: Async](
           api.removeGroupMetas(EntityId(testId), a.getOrElse(false))
         )
 
-      case GET -> Root / "tests" / "cache" :? at(a) =>
-        respond(api.getAllTestsCachedEpoch(a))
-
-      case GET -> Root / "features" =>
-        respond(api.getAllFeatureNames)
-
-      case GET -> Root / "features" / feature / "tests" =>
-        respond(api.getTestsByFeature(feature))
-
       case PUT -> Root / "features" / feature / "groups" / groupName / "overrides" / userId =>
         respond(api.addOverrides(feature, Map(userId -> groupName)))
 
@@ -213,19 +221,10 @@ class AbtestService[F[_]: Async](
       case DELETE -> Root / "features" / feature / "overrides" =>
         respond(api.removeAllOverrides(feature))
 
-      case GET -> Root / "features" / feature / "overrides" =>
-        respond(api.getOverrides(feature))
-
       case req @ POST -> Root / "features" / feature / "overrides" =>
         req.as[Map[UserId, GroupName]] >>= (m =>
           respond(api.addOverrides(feature, m))
         )
-
-      case GET -> Root / "KPIs" / name =>
-        respondOption(kpiAPI.get(name), s"No Kpi under name $name")
-
-      case req @ POST -> Root / "KPIs" =>
-        req.as[KPIModel] >>= (k => respond(kpiAPI.upsert(k)))
 
       case req @ PUT -> Root / "tests" / testId / "userMetaCriteria" =>
         req.as[UpdateUserMetaCriteriaRequest] >>= { r =>
@@ -234,6 +233,14 @@ class AbtestService[F[_]: Async](
           )
         }
     }
+
+  def kpiManaging =
+    HttpRoutes.of[F] {
+      case req @ POST -> Root / "KPIs" =>
+        req.as[KPIModel] >>= (k => respond(kpiAPI.upsert(k)))
+    }
+
+  def internal: HttpRoutes[F] = readonly <+> managing <+> kpiManaging
 
 }
 

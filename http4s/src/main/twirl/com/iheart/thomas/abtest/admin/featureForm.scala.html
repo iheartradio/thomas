@@ -72,7 +72,7 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
            value="@feature.name"/>
 
 
-    <div class="container" id="test-form">
+    <div class="container" id="feature-form">
         @for(msg <- errorMsg) {
         <div id="error-msg" class="alert alert-warning" role="alert">
             @msg
@@ -108,7 +108,7 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
 
                 <div class="card mt-4" id="feature-devs">
                     <div class="card-header">
-                        <span class="h5">Developers</span>
+                        <span class="h5">Managing Users</span>
                     </div>
                     <div class="card-body">
                         @if(!u.has(ManageFeature(feature))) {
@@ -119,7 +119,7 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
                                 d-none
                              }
                              ">
-                            <label>click a developer to remove</label>
+                            <label>click a user to remove</label>
                             <select class="form-control" multiple
 
                                     name="developers" id="feature-developers">
@@ -130,7 +130,7 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
                             @if(u.has(ManageFeature(feature))) {
                             <div class="form-group mt-3">
                                 <select class="form-control" onchange="addFeatureDeveloperItem()" name="username" id="add-developer">
-                                    <option>Select a user to add as developer</option>
+                                    <option>Select to add as a managing user</option>
                                     @for(candidate <- devCandidates){
                                     <option>@candidate</option>
                                     }
@@ -159,7 +159,12 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
                                            @if(!u.has(ManageTestSettings(feature))) {
                                              disabled readonly
                                            }
-                                           value="@feature.overrideEligibility"/>
+                                           value="true"
+                                           @if(feature.overrideEligibility) {
+                                            checked
+                                           }
+
+                                    />
                                     <label for="overrideEligibilityCB" class="small">ALLOW OVERRIDES TO TAKE PRECEDENCE
                                         OVER ELIGIBILITY
                                         CONTROL</label>

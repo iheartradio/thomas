@@ -7,7 +7,6 @@ import lihua.dynamo.testkit.LocalDynamo
 import org.http4s.server.blaze._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
 object ExampleAbtestServerApp extends IOApp {
   def run(args: List[String]): IO[ExitCode] =
     AbtestService.fromMongo[IO]().use { s =>
@@ -23,10 +22,12 @@ object ExampleAbtestServerApp extends IOApp {
 
 object ExampleAbtestAdminUIApp extends IOApp {
 
-  def run(args: List[String]): IO[ExitCode] =
+  def run(args: List[String]): IO[ExitCode] = {
     LocalDynamo
       .client[IO]
-      .flatMap(implicit c => AdminUI.serverResource[IO])
+      .flatMap(implicit c => AdminUI.serverResourceAutoLoadConfig[IO])
       .use(_ => IO.never)
-      .as(ExitCode.Success)
+
+  }
+
 }

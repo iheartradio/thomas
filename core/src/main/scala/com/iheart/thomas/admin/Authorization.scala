@@ -1,9 +1,8 @@
 package com.iheart.thomas.admin
 import Role._
-import com.iheart.thomas.MonadThrowable
 import com.iheart.thomas.abtest.model.Feature
 import scala.util.control.NoStackTrace
-
+import cats.MonadThrow
 object Authorization {
   implicit class userAuthorizationSyntax(private val user: User) extends AnyVal {
 
@@ -20,22 +19,28 @@ object Authorization {
         case ManageTestSettings(feature: Feature) =>
           has(ManageFeature(feature)) ||
             atLeast(Tester)
-        case ManageUsers => user.isAdmin
+        case ManageUsers      => user.isAdmin
+        case ManageBackground => backgroundManagerRoles.contains(user.role)
       }
 
     def managing(features: Seq[Feature]): Seq[Feature] =
       features.filter(f => has(ManageFeature(f)))
 
-    def check[F[_]](permission: Permission)(implicit F: MonadThrowable[F]): F[Unit] =
+    def check[F[_]](permission: Permission)(implicit F: MonadThrow[F]): F[Unit] =
       if (has(permission)) F.unit else F.raiseError(LackPermission)
   }
 
   val testManagerRoles = List(Admin, Tester, Developer)
+  val analysisManagerRoles = List(Admin, Analyst)
+
+  val backgroundManagerRoles = List(Admin)
+
   val readableRoles = Role.values.filter(_ != Guest)
 
   sealed trait Permission
 
   case object ManageUsers extends Permission
+  case object ManageBackground extends Permission
   case object CreateNewFeature extends Permission
 
   case class ManageFeature(feature: Feature) extends Permission

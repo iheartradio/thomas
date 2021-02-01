@@ -10,9 +10,9 @@ import com.iheart.thomas.bandit.{ArmSpec, BanditSpec}
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.{ArmState, BanditSettings}
 import com.iheart.thomas.bandit.tracking.EventLogger
-import com.iheart.thomas.kafka.BanditUpdater.KafkaConfig
+
 import com.iheart.thomas.stream.ConversionBanditUpdater
-import com.iheart.thomas.stream.ConversionBanditUpdater.ConversionEvent
+import com.iheart.thomas.stream.ConversionEvent
 import com.iheart.thomas.testkit.Resources
 import fs2.Stream
 import fs2.kafka._
@@ -152,10 +152,13 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
             for {
               _ <- spec(300, 2) flatMap updater.conversionBMABAlg.init
               _ <- ioTimer.sleep(1.second) //wait for spec to start
-              _ <- updater.consumer
-                .interruptAfter(10.seconds) //10 seconds needed for all message processed
-                .compile
-                .drain
+              _ <-
+                updater.consumer
+                  .interruptAfter(
+                    10.seconds
+                  ) //10 seconds needed for all message processed
+                  .compile
+                  .drain
 
               state <- updater.conversionBMABAlg.currentState("feature1")
             } yield state
@@ -187,10 +190,13 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
             for {
               _ <- spec() flatMap updater.conversionBMABAlg.init
               _ <- ioTimer.sleep(1.second) //wait for spec to start
-              _ <- updater.consumer
-                .interruptAfter(10.seconds) //10 seconds needed for all message processed
-                .compile
-                .drain
+              _ <-
+                updater.consumer
+                  .interruptAfter(
+                    10.seconds
+                  ) //10 seconds needed for all message processed
+                  .compile
+                  .drain
 
               state <- updater.conversionBMABAlg.currentState("feature1")
             } yield state
@@ -225,12 +231,13 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
               ]]
             for {
               _ <- spec() flatMap updater.conversionBMABAlg.init
-              _ <- publish
-                .concurrently(updater.consumer)
-                .concurrently(Stream.eval(updater.pauseResume(true)))
-                .interruptAfter(10.seconds)
-                .compile
-                .toVector
+              _ <-
+                publish
+                  .concurrently(updater.consumer)
+                  .concurrently(Stream.eval(updater.pauseResume(true)))
+                  .interruptAfter(10.seconds)
+                  .compile
+                  .toVector
 
               state <- updater.conversionBMABAlg.currentState("feature1")
             } yield state
@@ -261,11 +268,12 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
               ]]
             for {
               _ <- spec() flatMap updater.conversionBMABAlg.init
-              _ <- publish
-                .concurrently(updater.consumer)
-                .interruptAfter(10.seconds)
-                .compile
-                .toVector
+              _ <-
+                publish
+                  .concurrently(updater.consumer)
+                  .interruptAfter(10.seconds)
+                  .compile
+                  .toVector
 
               state <- updater.conversionBMABAlg.currentState("feature1")
 
@@ -297,16 +305,17 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
               ]]
             for {
               _ <- spec() flatMap updater.conversionBMABAlg.init
-              _ <- publish
-                .concurrently(updater.consumer)
-                .concurrently(
-                  Stream.eval(updater.pauseResume(true)) ++
-                    Stream.sleep(40.millis) ++
-                    Stream.eval(updater.pauseResume(false))
-                )
-                .interruptAfter(10.seconds)
-                .compile
-                .toVector
+              _ <-
+                publish
+                  .concurrently(updater.consumer)
+                  .concurrently(
+                    Stream.eval(updater.pauseResume(true)) ++
+                      Stream.sleep(40.millis) ++
+                      Stream.eval(updater.pauseResume(false))
+                  )
+                  .interruptAfter(10.seconds)
+                  .compile
+                  .toVector
 
               state <- updater.conversionBMABAlg.currentState("feature1")
             } yield state
@@ -347,15 +356,16 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
               ]]
             for {
               _ <- spec() flatMap updater.conversionBMABAlg.init
-              _ <- publish
-                .concurrently(updater.consumer)
-                .concurrently(
-                  Stream.sleep[IO](2.seconds) *> Stream
-                    .eval(spec2.flatMap(updater.conversionBMABAlg.init))
-                )
-                .interruptAfter(12.seconds)
-                .compile
-                .toVector
+              _ <-
+                publish
+                  .concurrently(updater.consumer)
+                  .concurrently(
+                    Stream.sleep[IO](2.seconds) *> Stream
+                      .eval(spec2.flatMap(updater.conversionBMABAlg.init))
+                  )
+                  .interruptAfter(12.seconds)
+                  .compile
+                  .toVector
 
               state1 <- updater.conversionBMABAlg.currentState("feature1")
               state2 <- updater.conversionBMABAlg.currentState("feature2")
@@ -369,7 +379,10 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
 
   "Can update bandits in parallel" in {
     withRunningKafka {
-      createCustomTopic(topic, partitions = 4) //force distribute to different consumers
+      createCustomTopic(
+        topic,
+        partitions = 4
+      ) //force distribute to different consumers
       val count = new java.util.concurrent.atomic.AtomicLong(0)
 
       val totalPublish = 100L
@@ -388,13 +401,14 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
             ]]
           for {
             _ <- spec(1) flatMap updater.conversionBMABAlg.init
-            _ <- publish
-              .concurrently(updater.consumer)
-              .concurrently(updater.consumer)
-              .concurrently(updater.consumer)
-              .interruptAfter(10.seconds)
-              .compile
-              .toVector
+            _ <-
+              publish
+                .concurrently(updater.consumer)
+                .concurrently(updater.consumer)
+                .concurrently(updater.consumer)
+                .interruptAfter(10.seconds)
+                .compile
+                .toVector
 
             state <- updater.conversionBMABAlg.currentState("feature1")
           } yield state

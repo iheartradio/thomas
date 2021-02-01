@@ -8,7 +8,9 @@
 draft: Option[AbtestSpec],
 errorMsg: Option[String] = None,
 readonly: Boolean = false,
-groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
+groupSizeChangeAllowed: Boolean = true,
+isShuffled: Boolean = false
+)(implicit routes: ReverseRoutes)
 
 @group(group: Option[Group]) = {
 
@@ -26,7 +28,7 @@ groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
       <input name="groups[].size" class="form-control size-change"
              id="testGroupSize" type="number"
              value="@group.map(_.size)"
-             min="0" step="0.01" max="1"/>
+             min="0" max="1" step="any" placeholder="Btw 0 & 1"/>
     </div>
   </div>
 
@@ -58,7 +60,7 @@ groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
         <input name="segmentRanges[].start" class="form-control"
                id="testGroupRangeStart" type="number"
                value="@rg.map(_.start)"
-               min="0" step="0.001" max="1"/>
+               min="0" max="1" step="any" placeholder="Btw 0 & 1" />
       </div>
     </div>
     <div class="col-md">
@@ -67,7 +69,7 @@ groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
         <input name="segmentRanges[].end" class="form-control"
                id="testGroupRangeEnd" type="number"
                value="@rg.map(_.end)"
-               min="0" step="0.001" max="1"/>
+               min="0" max="1" step="any" placeholder="Btw 0 & 1"/>
       </div>
     </div>
   </div>
@@ -95,13 +97,17 @@ groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
         <div class="card-body">
           <div class="form-group">
             <label for="testName">Name</label>
-            <input name="name" class="form-control" id="testName" type="text"
+            <input name="name" class="form-control" required id="testName" type="text"
                    value="@draft.map(_.name)"/>
           </div>
           <div class="row">
             <div class="col-md">
               <div class="form-group">
                 <label for="testStart">Start</label>
+                @if(!readonly) {
+                  <input class="ml-3" type="checkbox" id="immediateStart">
+                  <label for="immediateStart">Immediately</label>
+                }
                 <input name="start" class="form-control" id="testStart" type="text"
                        value="@draft.map(_.start).map(formatDate)"/>
               </div>
@@ -123,11 +129,20 @@ groupSizeChangeAllowed: Boolean = true)(implicit routes: ReverseRoutes)
         <div class="card-body">
           <div class="row">
             <div class="col-md">
+              @if(!readonly) {
               <div class="form-group form-check">
                 <input name="reshuffle" class="form-check-input" id="testReshuffle" type="checkbox"
-                       value="@draft.map(_.reshuffle).getOrElse(false)"/>
+                       value="true"
+                       @if(draft.map(_.reshuffle).getOrElse(false)) { checked }
+                />
                 <label for="testReshuffle">Reshuffle users from previous test</label>
               </div>
+              } else if(isShuffled) {
+                <div class="mr-3 text-warning pb-2">
+                  This test reshuffles users from previous test
+                </div>
+              }
+
               <div class="form-group">
                 <label for="testAlternativeIdName">Alternative Id meta field name</label>
                 <input name="alternativeIdName" class="form-control" id="testAlternativeIdName" type="text"
@@ -249,6 +264,16 @@ $(document).ready(function() {
   var pickerSettings =  {
     'format': 'Y-m-d H:i:s T'
   };
+
+  $('#immediateStart').change(function() {
+     if(this.checked) {
+       $('#testStart').val('');
+       $('#testStart').hide();
+     } else {
+       $('#testStart').show();
+     }
+
+  });
 
   @if(readonly) {
     $('#test-form input').attr('readonly', 'readonly').attr('disabled', 'disabled');

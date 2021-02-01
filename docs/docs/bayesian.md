@@ -68,7 +68,7 @@ KPI stands for Key Performance Indicator, it is what we use to evaluate the effe
 
 Thus depending on which type of KPI you are analyzing, you need to instantiate different type of `AnalysisAPI`. Take Gamma KPI distribution as an example:
 
-```tut:silent
+```scala
 import com.iheart.thomas.client._
 import com.iheart.thomas.client.AbtestClient.HttpServiceUrlsPlay
 import cats.effect.IO

@@ -6,9 +6,12 @@ import com.amazonaws.services.dynamodbv2.{
   AmazonDynamoDBAsync,
   AmazonDynamoDBAsyncClient
 }
+import io.estatico.newtype.Coercible
 import pureconfig.ConfigSource
 
 object `package` {
+
+  implicit def coercible[A]: Coercible[A, A] = new Coercible[A, A] {}
 
   def client[F[_]](
       config: ClientConfig

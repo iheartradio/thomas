@@ -15,4 +15,5 @@ object `package` {
 
   type Measurements = List[Double]
   type Indicator = Variable[Real]
+
 }

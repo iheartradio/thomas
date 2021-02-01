@@ -4,16 +4,15 @@ package dynamo
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import java.time.OffsetDateTime
 import java.util.concurrent.TimeUnit
-
-import com.iheart.thomas.admin.{AuthRecord, Role, User}
-import com.iheart.thomas.analysis.{Conversions, KPIName, Probability}
+import com.iheart.thomas.admin.{AuthRecord, User}
+import com.iheart.thomas.analysis._
 import org.scanamo.DynamoFormat
 import io.estatico.newtype.ops._
 import com.iheart.thomas.bandit.bayesian._
 
 import scala.concurrent.duration
 import scala.concurrent.duration.FiniteDuration
-
+import stream._
 object DynamoFormats {
 
   import org.scanamo.generic.semiauto._
@@ -26,9 +25,8 @@ object DynamoFormats {
 
   implicit val dfOffsetTime: DynamoFormat[OffsetDateTime] =
     DynamoFormat
-      .coercedXmap[OffsetDateTime, String, DateTimeParseException](
-        (s: String) =>
-          OffsetDateTime.parse(s, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+      .coercedXmap[OffsetDateTime, String, DateTimeParseException]((s: String) =>
+        OffsetDateTime.parse(s, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
       )(
         _.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
       )
@@ -52,9 +50,13 @@ object DynamoFormats {
   implicit val authRecordFormat: DynamoFormat[AuthRecord] =
     deriveDynamoFormat[AuthRecord]
 
-  implicit val roleFormat: DynamoFormat[Role] =
-    deriveDynamoFormat[Role]
-
   implicit val userFormat: DynamoFormat[User] =
     deriveDynamoFormat[User]
+
+  implicit val betaFormat: DynamoFormat[BetaModel] = deriveDynamoFormat[BetaModel]
+
+  implicit val conversionKPIFormat: DynamoFormat[ConversionKPI] =
+    deriveDynamoFormat[ConversionKPI]
+
+  implicit val jobFormat: DynamoFormat[Job] = deriveDynamoFormat[Job]
 }

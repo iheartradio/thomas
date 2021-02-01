@@ -6,10 +6,17 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType
 import com.iheart.thomas.dynamo.ScanamoDAOHelper.NotFound
 import lihua.dynamo.ScanamoEntityDAO.ScanamoError
-import org.scanamo.PutReturn.Nothing
 import org.scanamo.ops.ScanamoOps
 import org.scanamo.syntax._
-import org.scanamo.{DynamoFormat, DynamoReadError, ScanamoCats, Table}
+import org.scanamo.{
+  ConditionNotMet,
+  DynamoFormat,
+  DynamoReadError,
+  ScanamoCats,
+  Table
+}
+import io.estatico.newtype.ops._
+import io.estatico.newtype.Coercible
 
 import scala.util.control.NoStackTrace
 
@@ -50,47 +57,62 @@ abstract class ScanamoDAOHelper[F[_], A](
   def insert(a: A): F[A] = {
     toF(
       sc.exec(
-          table
-            .given(attributeNotExists(keyName))
-            .putAndReturn(Nothing)(a)
-        )
-        .map(_.getOrElse(a.asRight))
-    )
+        table
+          .given(attributeNotExists(keyName))
+          .put(a)
+      )
+    ).as(a)
   }
+
+  def insertO(a: A): F[Option[A]] =
+    insert(a).map(Option(_)).recover {
+      case ScanamoError(ConditionNotMet(_)) => None
+    }
 
 }
 
-abstract class ScanamoDAOHelperStringKey[F[_], A: DynamoFormat](
+abstract class ScanamoDAOHelperStringLikeKey[F[_], A: DynamoFormat, K](
     tableName: String,
     keyName: String,
     client: AmazonDynamoDBAsync
-  )(implicit F: Async[F])
+  )(implicit F: Async[F],
+    coercible: Coercible[K, String])
     extends ScanamoDAOHelper[F, A](
       tableName,
       keyName,
       client
     ) {
 
-  def get(k: String): F[A] =
+  def get(k: K): F[A] =
     find(k).flatMap(
       _.liftTo[F](
         NotFound(
-          s"Cannot find in the table a record whose ${keyName} is '$k'. "
+          s"Cannot find in the table a record whose ${keyName} is '${k.coerce[String]}'. "
         )
       )
     )
 
-  def find(k: String): F[Option[A]] = toFOption(sc.exec(table.get(keyName -> k)))
+  def find(k: K): F[Option[A]] =
+    toFOption(sc.exec(table.get(keyName -> k.coerce)))
 
   def all: F[Vector[A]] = execTraversableOnce(table.scan())
 
-  def remove(k: String): F[Unit] =
-    sc.exec(table.delete(keyName -> k)).void
+  def remove(k: K): F[Unit] =
+    sc.exec(table.delete(keyName -> k.coerce))
 
   def update(a: A): F[A] =
     sc.exec(table.given(attributeExists(keyName)).put(a)).as(a)
 
+  def upsert(a: A): F[A] =
+    sc.exec(table.put(a)).as(a)
+
 }
+
+abstract class ScanamoDAOHelperStringKey[F[_]: Async, A: DynamoFormat](
+    tableName: String,
+    keyName: String,
+    client: AmazonDynamoDBAsync)
+    extends ScanamoDAOHelperStringLikeKey[F, A, String](tableName, keyName, client)
 
 object ScanamoDAOHelperStringKey {
   def keyOf(keyName: String) =

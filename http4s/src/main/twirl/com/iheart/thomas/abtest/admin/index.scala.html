@@ -82,7 +82,7 @@ filters: Filters
           <label for="testsFeature">Show Feature</label>
           <select id="testsFeature" name="feature" class="form-control form-filter">
             <option value="_ALL_FEATURES_">All</option>
-            @for(fn <- features.map(_.name)) {
+            @for(fn <- features.map(_.name).sorted) {
             <option value="@fn"
                     @if(filters.feature.fold(false)(_== fn)){
                     selected
@@ -140,7 +140,7 @@ filters: Filters
               <div class="form-group col-sm">
                 <label for="featuresSelect">Or for an existing feature</label>
                 <select id="featuresSelect" name="feature" class="form-control form-filter">
-                  @for(feature <- u.managing(features)) {
+                  @for(feature <- u.managing(features).sortBy(_.name)) {
                   <option value="@feature.name">@feature.name</option>
                   }
                 </select>

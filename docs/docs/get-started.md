@@ -10,18 +10,35 @@ position: 10
 
 ### Step 1 setup a Mongo cluster for Thomas
 
-Thomas needs a basic data store to store test metadata. Since the amount of data is quite small and Thomas strives keep the data in memory, the requirement for this data store is minimum. Thomas is designed in a way so that it can support different data stores. As of now, only one MongoDB is supported through the module `thomas-mongo`. For local development, you just need to install and run a MongoDB instance locally.  
+Thomas runs on mongodb, dynamodb. It uses kafka for consuming analytics events.
 
-You can run one locally using docker
+You can run all of these deps using docker compose
+```bash
+
+cd dependencies
+docker compose up -d
+```
+
+
+Or you can run individually using docker
 ```bash
 docker run -p 27017-27019:27017-27019 --name mongodb mongo
 ```
-### Step 1a (Optional) setup dynamo cluster
+### Step 1a setup dynamo cluster
 
-If you want to try the Multi Arm Bandit Engine you need a dynamo cluster, you can use Docker to run one locally
+
 ```bash
 docker run -p 8042:8000 amazon/dynamodb-local
+
 ``` 
+If you want to persistent data 
+```bash
+docker run -p 8042:8000 -v ~/dynamodblocal/db:/home/dynamodblocal/db misoca/dynamodb-local-persist
+```
+
+
+
+
 
 ### Step 2 create a http service application using either thomas-http4s or thomas-play
 
@@ -43,16 +60,24 @@ Create a new Scala project and in build.sbt add
 ```
 libraryDependencies += "com.iheart" %% "thomas-http4s" % ThomasVersion
 ``` 
-Then add a `Main` object by following the example of `com.iheart.thomas.http4s.ExampleAbtestServerApp`
+Then add a `Main` object by following the example of`ExampleAbtestServerApp` in http4Example
 
-Then assuming you have a local MongoDB instance already up and running
- 
 `sbt run` shall start the service locally.  
   
 To config MongoDB host you can add this to an `application.conf` in your resource folder.
 ```
 mongoDB.hosts = ["localhost:27017"]
 ```
+
+If you want to use the Web UI, create another new Scala project and in build.sbt add
+
+```
+libraryDependencies += "com.iheart" %% "thomas-http4s" % ThomasVersion
+``` 
+
+Then add a `Main` object by following the example of`ExampleAbtestAdminUIApp` in http4Example
+
+`sbt run` shall start the Web UI locally.
 
 
 #### Step 2 Option 2b: Setting up with Play framework

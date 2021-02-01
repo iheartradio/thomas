@@ -6,6 +6,10 @@ import com.iheart.thomas.admin.{AuthRecord, AuthRecordDAO, User, UserDAO}
 import lihua.dynamo.ScanamoManagement
 import DynamoFormats._
 import cats.implicits._
+import com.iheart.thomas.stream.{Job, JobDAO}
+import org.scanamo.syntax._
+
+import java.time.Instant
 
 object AdminDAOs extends ScanamoManagement {
   val authTableName = "ds-abtest-auth"
@@ -16,18 +20,29 @@ object AdminDAOs extends ScanamoManagement {
   val userKeyName = "username"
   val userKey = ScanamoDAOHelperStringKey.keyOf(userKeyName)
 
+  val streamJobTableName = "ds-abtest-stream-job"
+  val streamJobKeyName = "key"
+  val streamJobKey = ScanamoDAOHelperStringKey.keyOf(streamJobKeyName)
+
   def ensureAuthTables[F[_]: Async](
       readCapacity: Long,
       writeCapacity: Long
     )(implicit dc: AmazonDynamoDBAsync
     ): F[Unit] =
-    ensureTable(
-      dc,
-      authTableName,
-      Seq(authKey),
-      readCapacity,
-      writeCapacity
-    ) *> ensureTable(dc, userTableName, Seq(userKey), readCapacity, writeCapacity)
+    List(
+      (authTableName, authKey),
+      (userTableName, userKey),
+      (streamJobTableName, streamJobKey)
+    ).traverse {
+      case (tn, key) =>
+        ensureTable(
+          dc,
+          tn,
+          Seq(key),
+          readCapacity,
+          writeCapacity
+        )
+    }.void
 
   implicit def authRecordDAO[F[_]: Async](
       implicit dynamoClient: AmazonDynamoDBAsync
@@ -46,4 +61,36 @@ object AdminDAOs extends ScanamoManagement {
       userKeyName,
       dynamoClient
     ) with UserDAO[F]
+
+  implicit def streamJobDAO[F[_]: Async](
+      implicit dynamoClient: AmazonDynamoDBAsync
+    ): JobDAO[F] =
+    new ScanamoDAOHelperStringKey[F, Job](
+      streamJobTableName,
+      streamJobKeyName,
+      dynamoClient
+    ) with JobDAO[F] {
+
+      def updateCheckedOut(
+          job: Job,
+          at: Instant
+        ): F[Option[Job]] = {
+        val cond = streamJobKeyName -> job.key
+        val setV = set("checkedOut" -> Some(at))
+        sc.exec(
+            job.checkedOut
+              .fold(
+                table
+                  .given(attributeNotExists("checkedOut"))
+                  .update(cond, setV)
+              )(c =>
+                table
+                  .given("checkedOut" -> c)
+                  .update(cond, setV)
+              )
+          )
+          .map(_.toOption)
+      }
+
+    }
 }

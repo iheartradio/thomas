@@ -17,7 +17,7 @@ import com.iheart.thomas.admin.User
 import com.iheart.thomas.html.{errorMsg, redirect}
 import com.iheart.thomas.http4s.abtest.AbtestManagementUI._
 import com.iheart.thomas.http4s.abtest.AbtestService.validationErrorMsg
-import com.iheart.thomas.http4s.auth.{AuthenticationAlg, AuthedEndpointsUtils}
+import com.iheart.thomas.http4s.auth.{AuthedEndpointsUtils, AuthenticationAlg}
 import com.typesafe.config.Config
 import io.estatico.newtype.ops._
 import lihua.{Entity, EntityId}
@@ -29,12 +29,14 @@ import org.http4s.dsl.impl.{
   QueryParamDecoderMatcher
 }
 import org.http4s.twirl._
-import play.api.libs.json.JsObject
+import _root_.play.api.libs.json.JsObject
 
 import scala.concurrent.ExecutionContext
 import admin.Authorization._
+import cats.Functor
+import TimeUtil._
 
-class AbtestManagementUI[F[_]: Async](
+class AbtestManagementUI[F[_]: Async: Timer](
     alg: AbtestAlg[F],
     authAlg: AuthenticationAlg[F, AuthImp]
   )(implicit reverseRoutes: ReverseRoutes)
@@ -92,7 +94,7 @@ class AbtestManagementUI[F[_]: Async](
           case OrderBy.Alphabetical =>
             testData.sortBy(_._1.name.toLowerCase)
           case OrderBy.Recent =>
-            testData.sortBy(_._2.head.data.start).reverse
+            testData.sortBy(_._2.last.data.start).reverse
         }
 
         Ok(index(u, sorted, features, filters))
@@ -119,18 +121,13 @@ class AbtestManagementUI[F[_]: Async](
       } yield r
     }
 
-    def getTestAndFollowUp(
+    def getTestInfo(
         testId: String
-      ): F[(Entity[Abtest], Option[Entity[Abtest]])] =
+      ): F[TestInfo] =
       for {
         test <- get(testId)
         otherFeatureTests <- alg.getTestsByFeature(test.data.feature)
-      } yield (
-        test,
-        otherFeatureTests
-          .filter(_.data.start.isAfter(test.data.start))
-          .headOption
-      )
+      } yield TestInfo(test, otherFeatureTests)
 
     implicit class UserAuthSyntax(user: User) {
       def canEdit(testId: String): F[Unit] =
@@ -204,8 +201,7 @@ class AbtestManagementUI[F[_]: Async](
             .as[SpecForm]
             .redeemWith(
               e => BadRequest(editTest(u, fromTest, Some(displayError(e)))),
-              sf => {
-                val spec = sf.toAbtestSpec(u, fromTest.data.feature)
+              _.toAbtestSpec[F](u, fromTest.data.feature).flatMap { spec =>
                 u.canEdit(fromTest) *>
                   (if (fromTest.data.end.fold(true)(_.isAfter(spec.startI)))
                      alg.continue(spec)
@@ -223,9 +219,10 @@ class AbtestManagementUI[F[_]: Async](
         }
 
       case GET -> Root / "tests" / testId / "edit" asAuthed u =>
-        getTestAndFollowUp(testId).flatMap {
-          case (test, followUpO) =>
-            u.canEdit(test) *> Ok(editTest(u, test = test, followUpO = followUpO))
+        getTestInfo(testId).flatMap { ti =>
+          u.canEdit(ti.test) *> Ok(
+            editTest(u, test = ti.test, followUpO = ti.followUpO)
+          )
         }
 
       case GET -> Root / "tests" / testId / "delete" asAuthed u =>
@@ -248,8 +245,7 @@ class AbtestManagementUI[F[_]: Async](
                   get(testId).flatMap { t =>
                     BadRequest(editTest(u, t, Some(displayError(e))))
                   },
-                sf => {
-                  val spec = sf.toAbtestSpec(u, test.data.feature)
+                _.toAbtestSpec[F](u, test.data.feature).flatMap { spec =>
                   alg
                     .updateTest(
                       testId.coerce[EntityId],
@@ -270,8 +266,7 @@ class AbtestManagementUI[F[_]: Async](
           .as[SpecForm]
           .redeemWith(
             e => BadRequest(errorMsg(e.getMessage)),
-            sf => {
-              val spec = sf.toAbtestSpec(u, feature)
+            _.toAbtestSpec[F](u, feature).flatMap { spec =>
               u.canAddTest(feature) *>
                 alg
                   .create(spec, false)
@@ -306,15 +301,15 @@ class AbtestManagementUI[F[_]: Async](
 
       case GET -> Root / "tests" / testId asAuthed u =>
         for {
-          p <- getTestAndFollowUp(testId)
-          (test, followUpO) = p
-          feature <- alg.getFeature(test.data.feature)
+          ti <- getTestInfo(testId)
+          feature <- alg.getFeature(ti.test.data.feature)
           r <- Ok(
             showTest(
               u,
-              test,
-              followUpO,
-              feature
+              ti.test,
+              ti.followUpO,
+              feature,
+              ti.isShuffled
             )
           )
         } yield r
@@ -341,6 +336,26 @@ object AbtestManagementUI {
       endsAfter: OffsetDateTime,
       feature: Option[FeatureName] = None,
       orderBy: OrderBy = OrderBy.Recent)
+
+  case class TestInfo(
+      test: Entity[Abtest],
+      testsOfFeature: Vector[Entity[Abtest]]) {
+
+    lazy val followUpO: Option[Entity[Abtest]] =
+      testsOfFeature.filter(_.data.start.isAfter(test.data.start)).lastOption
+
+    lazy val previousO: Option[Entity[Abtest]] =
+      testsOfFeature.filter(_.data.start.isBefore(test.data.start)).headOption
+
+    lazy val isShuffled =
+      (previousO.flatMap(_.data.salt), test.data.salt) match {
+        case (None, Some(_)) => true
+        case (Some(_), None) => true
+        case (None, None)    => false
+        case (Some(s1), Some(s2)) =>
+          s1 != s2
+      }
+  }
 
   def fromMongo[F[_]: Timer](
       cfgResourceName: Option[String] = None
@@ -410,7 +425,7 @@ object AbtestManagementUI {
 
     case class SpecForm(
         name: TestName,
-        start: OffsetDateTime,
+        start: Option[OffsetDateTime],
         end: Option[OffsetDateTime],
         groups: List[Group],
         requiredTags: List[Tag] = Nil,
@@ -418,29 +433,33 @@ object AbtestManagementUI {
         userMetaCriteria: UserMetaCriteria = None,
         reshuffle: Boolean = false,
         segmentRanges: List[GroupRange] = Nil) {
-      def toAbtestSpec(
+      def toAbtestSpec[F[_]: Functor: Timer](
           u: User,
           feature: FeatureName
-        ) =
-        AbtestSpec(
-          name = name,
-          feature = feature,
-          author = u.username,
-          start = start,
-          end = end,
-          groups = groups,
-          requiredTags = requiredTags,
-          alternativeIdName = alternativeIdName,
-          userMetaCriteria = userMetaCriteria,
-          reshuffle = reshuffle,
-          segmentRanges = segmentRanges
-        )
+        ) = {
+        now[F].map { now =>
+          AbtestSpec(
+            name = name,
+            feature = feature,
+            author = u.username,
+            start = start.getOrElse(now.toOffsetDateTimeSystemDefault),
+            end = end,
+            groups = groups,
+            requiredTags = requiredTags,
+            alternativeIdName = alternativeIdName,
+            userMetaCriteria = userMetaCriteria,
+            reshuffle = reshuffle,
+            segmentRanges = segmentRanges
+          )
+        }
+
+      }
     }
 
     implicit val abtestSpecFormDecoder: FormDataDecoder[SpecForm] =
       (
         field[TestName]("name"),
-        field[OffsetDateTime]("start"),
+        fieldOptional[OffsetDateTime]("start"),
         fieldOptional[OffsetDateTime]("end"),
         list[Group]("groups"),
         tags("requiredTags"),
