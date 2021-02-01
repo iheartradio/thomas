@@ -8,7 +8,7 @@ package client
 
 import java.time.Instant
 
-import cats.{Functor, MonadError}
+import cats.{Functor, MonadError, MonadThrow}
 import cats.effect._
 import com.iheart.thomas.abtest.model._
 import lihua.Entity
