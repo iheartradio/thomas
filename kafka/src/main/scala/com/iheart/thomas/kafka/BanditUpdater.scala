@@ -2,7 +2,6 @@ package com.iheart.thomas
 package kafka
 
 import java.util.UUID
-
 import cats.NonEmptyParallel
 import cats.effect._
 import cats.implicits._
@@ -11,15 +10,15 @@ import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
 import com.iheart.thomas.bandit.tracking.{Event, EventLogger}
-import com.iheart.thomas.stream.ConversionBanditUpdater
-import com.iheart.thomas.stream.ConversionBanditUpdater.ConversionEvent
+import com.iheart.thomas.stream.{ConversionBanditUpdater, ConversionEvent}
 import fs2.concurrent.SignallingRef
-import fs2.kafka.{AutoOffsetReset, ConsumerSettings, Deserializer, consumerStream}
+import fs2.kafka.{AutoOffsetReset, ConsumerSettings, Deserializer, KafkaConsumer}
 import fs2.{Pipe, Stream}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
+//todo to be retired
 trait BanditUpdater[F[_]] {
   def consumer: Stream[F, Unit]
   def pauseResume(pause: Boolean): F[Unit]
@@ -58,9 +57,7 @@ object BanditUpdater {
     )(implicit ex: ExecutionContext,
       amazonClient: AmazonDynamoDBAsync
     ): Resource[F, BanditUpdater[F]] =
-    ConversionBMABAlgResource[F].evalMap(
-      implicit alg => create[F](cfg)
-    )
+    ConversionBMABAlgResource[F].evalMap(implicit alg => create[F](cfg))
 
   def create[F[_]: Timer: ConcurrentEffect: ContextShift](
       cfg: Config
@@ -97,7 +94,8 @@ object BanditUpdater {
                     .withGroupId(cfg.kafka.groupId)
 
                 Stream.eval(log(Event.BanditKPIUpdate.UpdateStreamStarted)) ++
-                  consumerStream[F]
+                  KafkaConsumer
+                    .stream[F]
                     .using(consumerSettings)
                     .evalTap(_.subscribeTo(cfg.kafka.topic))
                     .flatMap(_.stream.pauseWhen(pauseSig))
@@ -113,10 +111,9 @@ object BanditUpdater {
         def conversionBMABAlg: ConversionBMABAlg[F] = cbm
 
         def autoRestartAfterError: Stream[F, Unit] =
-          cfg.restartOnErrorAfter.fold[Stream[F, Unit]](Stream.empty)(
-            wait =>
-              Stream.sleep[F](wait) ++
-                consumer
+          cfg.restartOnErrorAfter.fold[Stream[F, Unit]](Stream.empty)(wait =>
+            Stream.sleep[F](wait) ++
+              consumer
           )
 
         val consumer: Stream[F, Unit] = mainStream.handleErrorWith { e =>
@@ -136,10 +133,5 @@ object BanditUpdater {
       restartOnErrorAfter: Option[FiniteDuration],
       allowedBanditsStaleness: FiniteDuration,
       kafka: KafkaConfig)
-
-  case class KafkaConfig(
-      kafkaServers: String,
-      topic: String,
-      groupId: String)
 
 }

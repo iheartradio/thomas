@@ -4,7 +4,6 @@ package auth
 
 import cats.{Applicative, Monad}
 import cats.data.{Kleisli, OptionT}
-import com.iheart.thomas.MonadThrowable
 import com.iheart.thomas.admin.{Role, User}
 import org.http4s.{HttpRoutes, Request, Response, Uri}
 import org.http4s.dsl.Http4sDsl
@@ -13,6 +12,8 @@ import tsec.authorization.{AuthGroup, AuthorizationInfo, BasicRBAC}
 import org.http4s.twirl._
 import cats.implicits._
 import org.http4s.headers.Location
+import cats.MonadThrow
+
 trait AuthedEndpointsUtils[F[_], Auth] {
   self: Http4sDsl[F] =>
 
@@ -62,7 +63,7 @@ trait AuthedEndpointsUtils[F[_], Auth] {
       authGroup: AuthGroup[Role]
     )(pf: AuthEndpoint
     )(implicit
-      F: MonadThrowable[F],
+      F: MonadThrow[F],
       reverseRoutes: ReverseRoutes
     ): AuthService = {
     val auth = BasicRBAC.fromGroup[F, Role, User, Token[Auth]](authGroup)
@@ -91,7 +92,7 @@ trait AuthedEndpointsUtils[F[_], Auth] {
       roles: Seq[Role]
     )(pf: AuthEndpoint
     )(implicit
-      F: MonadThrowable[F],
+      F: MonadThrow[F],
       reverseRoutes: ReverseRoutes
     ): AuthService = roleBasedService(AuthGroup.fromSeq(roles))(pf)
 

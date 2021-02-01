@@ -1,13 +1,12 @@
 @import com.iheart.thomas.analysis._
-@import com.iheart.thomas.html._
 @import com.iheart.thomas.admin.User
-@import com.iheart.thomas.http4s.ReverseRoutes
 
 @(
 draftO: Option[ConversionKPI],
 u: User,
-successMsg: Option[String] = None
-)(implicit routes: ReverseRoutes)
+successMsg: Option[String] = None,
+showNameField: Boolean = true
+)
 
 
 @criteriaItem(oo: Option[(String, String)], queryName: String) = {
@@ -86,123 +85,116 @@ successMsg: Option[String] = None
 }
 
 
-@topNav(draftO.map(d => "Conversion KPI " + d.name).getOrElse("New Conversion KPI"), u) {
 
-<form action="../conversionKPIs" method="post">
-    <input type="hidden" name="author" value="@u.username" />
-    <div class="row mt-5">
-        <span class="h4">Conversion KPI <span class="text-success">@draftO.map(_.name)</span></span>
-        @for(msg <- successMsg) {
-        <div id="success-msg" class="alert alert-success" role="alert">
-            @msg
-        </div>
-        }
+<input type="hidden" name="author" value="@u.username" />
+<div class="row mt-5">
+    <span class="h4">Conversion KPI <span class="text-success">@draftO.map(_.name)</span></span>
+    @for(msg <- successMsg) {
+    <div id="success-msg" class="alert alert-success" role="alert">
+        @msg
     </div>
-    <div class="row mt-3">
-        <div class="col-md">
-            <div id="kpi-basics" class="card">
-                <div class="card-header">
-                    <span class="h5">Basics</span>
+    }
+</div>
+<div class="row mt-3">
+    <div class="col-md">
+        <div id="kpi-basics" class="card">
+            <div class="card-header">
+                <span class="h5">Basics</span>
+            </div>
+            <div class="card-body">
+                @if( showNameField ) {
+                <div class="form-group">
+                    <label for="nameInput">Name</label>
+                    <input name="name"
+                           required
+                           class="form-control"
+                           id="nameInput"
+                           type="text"
+                           value="@draftO.map(_.name)"
+                    />
                 </div>
-                <div class="card-body">
-                    <div class="form-group">
-                        <label for="nameInput">Name</label>
-                        <input name="name"
-                               required
-                               class="form-control"
-                               id="nameInput"
-                               type="text"
-                               value="@draftO.map(_.name)"
-                        ></input>
-                    </div>
-                    <div class="form-group">
-                        <label for="descriptionInput">Description</label>
-                        <textarea name="description"
-                                  class="form-control"
-                                  id="descriptionInput"
-                        >@draftO.flatMap(_.description)</textarea>
-                    </div>
+                } else {
+                    <input name="name"
+                           type="hidden"
+                           value="@draftO.map(_.name)" />
+                }
 
+                <div class="form-group">
+                    <label for="descriptionInput">Description</label>
+                    <textarea name="description"
+                              class="form-control"
+                              id="descriptionInput"
+                    >@draftO.flatMap(_.description)</textarea>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+    <div class="col-md">
+        <div id="kpi-model" class="card">
+            <div class="card-header">
+                <span class="h5">Beta Model</span>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="alphaPriorInput">Alpha Prior</label>
+                    <input name="model.alphaPrior"
+                           class="form-control"
+                           id="alphaPriorInput"
+                           type="number"
+                           required
+                           step="any"
+                           value="@draftO.map(_.model.alphaPrior).getOrElse(1)"
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="betaPriorInput">Beta Prior</label>
+                    <input name="model.betaPrior"
+                           class="form-control"
+                           id="betaPriorInput"
+                           type="number"
+                           required
+                           step="any"
+                           value="@draftO.map(_.model.betaPrior).getOrElse(1)"
+                    />
                 </div>
             </div>
-
         </div>
-        <div class="col-md">
-            <div id="kpi-model" class="card">
-                <div class="card-header">
-                    <span class="h5">Beta Model</span>
-                </div>
-                <div class="card-body">
-                    <div class="form-group">
-                        <label for="alphaPriorInput">Alpha Prior</label>
-                        <input name="model.alphaPrior"
-                               class="form-control"
-                               id="alphaPriorInput"
-                               type="number"
-                               required
-                               step="any"
-                               value="@draftO.map(_.model.alphaPrior)"
-                        />
-                    </div>
-                    <div class="form-group">
-                        <label for="betaPriorInput">Beta Prior</label>
-                        <input name="model.betaPrior"
-                               class="form-control"
-                               id="betaPriorInput"
-                               type="number"
-                               required
-                               step="any"
-                               value="@draftO.map(_.model.betaPrior)"
-                        />
-                    </div>
-                </div>
-            </div>
 
-        </div>
     </div>
-    <div class="row mt-3">
-        <div class="col-md">
-            <div id="message-queries" class="card">
-                <div class="card-header">
-                    <span class="h5">Message Queries</span>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md">
-                            <div id="init-message-query" class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Initiation Message Query</h5>
-                                    @messageQuery(draftO.flatMap(_.messageQuery.map(_.initMessage)), "initMessage")
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md">
-                            <div id="converted-message-query" class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Converted Message Query</h5>
-                                    @messageQuery(draftO.flatMap(_.messageQuery.map(_.convertedMessage)),
-                                    "convertedMessage")
-                                </div>
+</div>
+<div class="row mt-3">
+    <div class="col-md">
+        <div id="message-queries" class="card">
+            <div class="card-header">
+                <span class="h5">Message Queries</span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md">
+                        <div id="init-message-query" class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Initiation Message Query</h5>
+                                @messageQuery(draftO.flatMap(_.messageQuery.map(_.initMessage)), "initMessage")
                             </div>
                         </div>
                     </div>
+                    <div class="col-md">
+                        <div id="converted-message-query" class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Converted Message Query</h5>
+                                @messageQuery(draftO.flatMap(_.messageQuery.map(_.convertedMessage)),
+                                "convertedMessage")
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-
         </div>
 
-    </div>
-    <div class="row d-flex flex-row-reverse mt-5">
-        <div class="mr-4">
-            <button type="submit" class="btn btn-primary">
-                Update
-            </button>
-            <a href="@routes.analysis" role="button" class="btn btn-warning ml-2">Never Mind</a>
-        </div>
-    </div>
+
     </div>
 
+</div>
 
-</form>
-}

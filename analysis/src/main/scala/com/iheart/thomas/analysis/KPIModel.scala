@@ -41,7 +41,7 @@ object KPIModel {
     j.format[BetaKPIModel]
 }
 
-//todo: rename to BetaModel, remove name field.
+//todo: to be retired
 case class BetaKPIModel(
     name: KPIName,
     alphaPrior: Double,

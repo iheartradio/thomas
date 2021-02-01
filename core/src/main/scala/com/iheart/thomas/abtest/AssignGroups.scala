@@ -5,7 +5,7 @@
 
 package com.iheart.thomas
 package abtest
-
+import cats.MonadThrow
 import java.time.Instant
 
 import cats.Monad
@@ -37,7 +37,8 @@ object AssignGroups {
       if (eligible)
         overriddenGroup orElse {
           idToUse.flatMap(uid => Bucketing.getGroup(uid, test))
-        } else if (feature.overrideEligibility)
+        }
+      else if (feature.overrideEligibility)
         overriddenGroup
       else
         None
@@ -48,7 +49,7 @@ object AssignGroups {
       tests: TestsData,
       query: UserGroupQuery,
       consistencyTolerance: FiniteDuration
-    )(implicit F: MonadThrowable[F],
+    )(implicit F: MonadThrow[F],
       nowF: F[Instant]
     ): F[Map[FeatureName, AssignmentResult]] = {
 
@@ -63,12 +64,14 @@ object AssignGroups {
                 )
               else
                 assign[F](test.data, feature, query).map(
-                  _.map(
-                    gn =>
-                      (
-                        feature.name,
-                        AssignmentWithMeta(gn, test.data.getGroupMetas.get(gn)): AssignmentResult
-                      )
+                  _.map(gn =>
+                    (
+                      feature.name,
+                      AssignmentWithMeta(
+                        gn,
+                        test.data.getGroupMetas.get(gn)
+                      ): AssignmentResult
+                    )
                   )
                 )
           }

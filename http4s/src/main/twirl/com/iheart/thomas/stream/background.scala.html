@@ -1,0 +1,62 @@
+@import com.iheart.thomas.stream.Job
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.admin.User
+@import com.iheart.thomas.http4s.ReverseRoutes
+@(jobs: Vector[Job], u: User)(implicit routes: ReverseRoutes)
+
+
+@topNav("Background Processes", u) {
+<div class="row mt-5">
+    <span class="h4">Background Processes</span>
+</div>
+<div class="row mt-3">
+    <div class="list-group w-100">
+        @for(job <- jobs) {
+
+        <div class="list-group-item">
+            <div class="row">
+                <div class="col-8">
+                    <div>
+
+                        <span class="mb-1 h5 font-weight-light text-success">@job.key</span>
+                        @jobStatusBadge(job)
+                    </div>
+                    <div class="mt-1">
+                        @job.spec.description
+                    </div>
+                </div>
+
+                <div class="col-3 text-sm-right">
+                   @if(job.checkedOut.nonEmpty) {
+                    <small><span class="font-weight-light ml-3">
+                    Last Check: </span>
+                        <span class="font-weight-heavy">
+                           @job.checkedOut.get
+                        </span>
+                    </small>
+                    }
+
+
+                </div>
+                <div class="col-1">
+                    <a href="./background/@job.key/stop"
+                       role="button" class="btn ml-2"
+                       onclick="return confirm('Please confirm you want to stop @job.key?')">
+                        <i class="far fa-trash-alt"></i>
+                    </a>
+                </div>
+
+            </div>
+        </div>
+        }
+
+        @if(jobs.isEmpty) {
+        <div id="success-msg" class="alert alert-success" role="alert">
+            There are no running background processes.
+        </div>
+        }
+
+    </div>
+</div>
+
+}

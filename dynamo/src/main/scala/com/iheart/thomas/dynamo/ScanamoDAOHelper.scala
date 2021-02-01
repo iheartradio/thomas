@@ -6,12 +6,18 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType
 import com.iheart.thomas.dynamo.ScanamoDAOHelper.NotFound
 import lihua.dynamo.ScanamoEntityDAO.ScanamoError
-import org.scanamo.PutReturn.Nothing
 import org.scanamo.ops.ScanamoOps
 import org.scanamo.syntax._
-import org.scanamo.{DynamoFormat, DynamoReadError, ScanamoCats, Table}
+import org.scanamo.{
+  ConditionNotMet,
+  DynamoFormat,
+  DynamoReadError,
+  ScanamoCats,
+  Table
+}
 import io.estatico.newtype.ops._
 import io.estatico.newtype.Coercible
+
 import scala.util.control.NoStackTrace
 
 abstract class ScanamoDAOHelper[F[_], A](
@@ -51,13 +57,17 @@ abstract class ScanamoDAOHelper[F[_], A](
   def insert(a: A): F[A] = {
     toF(
       sc.exec(
-          table
-            .given(attributeNotExists(keyName))
-            .putAndReturn(Nothing)(a)
-        )
-        .map(_.getOrElse(a.asRight))
-    )
+        table
+          .given(attributeNotExists(keyName))
+          .put(a)
+      )
+    ).as(a)
   }
+
+  def insertO(a: A): F[Option[A]] =
+    insert(a).map(Option(_)).recover {
+      case ScanamoError(ConditionNotMet(_)) => None
+    }
 
 }
 
@@ -88,7 +98,7 @@ abstract class ScanamoDAOHelperStringLikeKey[F[_], A: DynamoFormat, K](
   def all: F[Vector[A]] = execTraversableOnce(table.scan())
 
   def remove(k: K): F[Unit] =
-    sc.exec(table.delete(keyName -> k.coerce)).void
+    sc.exec(table.delete(keyName -> k.coerce))
 
   def update(a: A): F[A] =
     sc.exec(table.given(attributeExists(keyName)).put(a)).as(a)

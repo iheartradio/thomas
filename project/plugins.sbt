@@ -1,5 +1,3 @@
-addSbtPlugin("com.localytics" % "sbt-dynamodb" % "2.0.3")
-
 addSbtPlugin("com.typesafe.play" %% "sbt-plugin" % "2.8.7")
 
 addSbtPlugin("io.gatling" %% "gatling-sbt" % "3.2.1")
@@ -11,7 +9,7 @@ addSbtPlugin(
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.10")
 
 addSbtPlugin(
-  "org.typelevel" %% "sbt-catalysts" % "0.41"
+  "org.typelevel" %% "sbt-catalysts" % "0.42"
 )
 
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.9.0")

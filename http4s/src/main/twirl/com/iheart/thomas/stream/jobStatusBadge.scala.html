@@ -1,0 +1,13 @@
+@import com.iheart.thomas.stream.Job
+
+@(job: Job)
+
+@if(job.checkedOut.isEmpty) {
+<span class="badge  badge-secondary">
+                                Scheduled
+                            </span>
+} else {
+<span class="badge  badge-success">
+                              Running
+                            </span>
+}

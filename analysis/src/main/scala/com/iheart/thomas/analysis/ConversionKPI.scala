@@ -10,7 +10,23 @@ case class ConversionKPI(
 
 case class BetaModel(
     alphaPrior: Double,
-    betaPrior: Double)
+    betaPrior: Double) {
+  def updateFrom(conversions: Conversions): BetaModel =
+    copy(
+      alphaPrior = conversions.converted + 1d,
+      betaPrior = conversions.total - conversions.converted + 1d
+    )
+
+  def accumulativeUpdate(
+      converted: Long,
+      init: Long
+    ): BetaModel = {
+    copy(
+      alphaPrior = alphaPrior + converted.toDouble,
+      betaPrior = betaPrior + init.toDouble - converted.toDouble
+    )
+  }
+}
 
 case class ConversionMessageQuery(
     initMessage: MessageQuery,
@@ -26,7 +42,9 @@ object MessageQuery {
 }
 
 trait ConversionKPIDAO[F[_]] {
-  def upsert(conversionKPI: ConversionKPI): F[ConversionKPI]
+  def insert(conversionKPI: ConversionKPI): F[ConversionKPI]
+
+  def update(conversionKPI: ConversionKPI): F[ConversionKPI]
 
   def remove(name: KPIName): F[Unit]
 
@@ -35,5 +53,10 @@ trait ConversionKPIDAO[F[_]] {
   def all: F[Vector[ConversionKPI]]
 
   def get(name: KPIName): F[ConversionKPI]
+
+  def updateModel(
+      name: KPIName,
+      model: BetaModel
+    ): F[ConversionKPI]
 
 }

@@ -31,10 +31,14 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
 
-      - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.3.0
+      - name: Setup Docker
+        uses: docker-practice/actions-setup-docker@master
         with:
-          mongodb-version: "4.0"
+          docker_channel: stable
+          docker_version: 20.10
+
+      - name: Start infrastructure using docker compose
+        run: cd dependencies && docker-compose up -d
 
       - name: Cache sbt
         uses: actions/cache@v2

@@ -22,9 +22,9 @@ lazy val libs = {
     .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
     .add(   name = "cats-retry",            version = "2.1.0",  org = "com.github.cb372")
     .addJVM(name = "decline",               version = "1.3.0",  org = "com.monovore")
-    .addJVM(name = "embedded-kafka",        version = "2.5.0",  org = "io.github.embeddedkafka")
+    .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
     .addJVM(name = "evilplot",              version = "0.8.0",  org = "com.cibo")
-    .addJVM(name = "fs2-kafka",             version = "1.1.0",  org = "com.github.fd4s")
+    .addJVM(name = "fs2-kafka",             version = "1.3.1",  org = "com.github.fd4s")
     .addModule("http4s", "http4s-twirl")
     .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
     .add(   name = "jawn",                  version = "1.0.0",  org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
@@ -43,20 +43,22 @@ lazy val libs = {
     .addJVM(name = "scala-view",            version = "0.5",    org = "com.github.darrenjw")
     .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
-    .addJVM(name = "scanamo",               version = "1.0.0-M12-1", org ="org.scanamo", "scanamo-testkit")
+    .addJVM(name = "scanamo",               version = "1.0-M14", org ="org.scanamo", "scanamo-testkit")
     .add(   name = "spark",                 version = "2.4.5",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
     .addJVM(name = "tsec",                  version = "0.2.1",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s")
     .add   (name = "enumeratum",            version = "1.6.1",  org = "com.beachape" )
+    .add(   name = "jawn-ast",              version = "1.0.0",  org = org.typelevel.typeLevelOrg)
+
 }
 // format: on
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias(
   "validate",
-  s";clean;test;it/IntegrationTest/test;docs/tut"
+  s";clean;test;tests/IntegrationTest/test"
 )
-addCommandAlias("it", s"IntegrationTest/test")
+addCommandAlias("tests", s"IntegrationTest/test")
 
 lazy val thomas = project
   .in(file("."))
@@ -66,7 +68,7 @@ lazy val thomas = project
     plot,
     client,
     bandit,
-    it,
+    tests,
     http4s,
     http4sExample,
     cli,
@@ -135,7 +137,9 @@ lazy val core = project
       "mau",
       "mouse",
       "henkan-convert",
-      "lihua-play-json"
+      "lihua-play-json",
+      "pureconfig-cats-effect",
+      "pureconfig-generic"
     ),
     simulacrumSettings(libs)
   )
@@ -197,8 +201,6 @@ lazy val docs = project
   .enablePlugins(MicrositesPlugin)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
-    scalacOptions in Tut ~= (_.filterNot(Set("-Ywarn-unused:imports"))),
-    micrositeCompilingDocsTool := WithTut,
     micrositeSettings(gh, developerKai, "Thomas, a library for A/B tests"),
     micrositeDocumentationUrl := "/thomas/api/com/iheart/thomas/index.html",
     micrositeDocumentationLabelDescription := "API Documentation",
@@ -224,7 +226,7 @@ lazy val mongo = project
   )
 
 lazy val dynamo = project
-  .dependsOn(bandit)
+  .dependsOn(bandit, stream)
   .settings(name := "thomas-dynamo")
   .settings(rootSettings)
   .settings(
@@ -238,7 +240,7 @@ lazy val dynamo = project
   )
 
 lazy val testkit = project
-  .dependsOn(dynamo, mongo)
+  .dependsOn(dynamo, mongo, kafka)
   .settings(name := "thomas-testkit")
   .settings(rootSettings)
   .settings(
@@ -250,7 +252,7 @@ lazy val stream = project
   .settings(name := "thomas-stream")
   .settings(rootSettings)
   .settings(
-    libs.dependencies("fs2-core"),
+    libs.dependencies("fs2-core", "jawn-ast"),
     libs.testDependencies("cats-effect-testing-scalatest")
   )
 
@@ -313,8 +315,7 @@ lazy val http4sExample = project
     noPublishSettings,
     mainClass in reStart := Some(
       "com.iheart.thomas.example.ExampleAbtestAdminUIApp"
-    ),
-    localDynamoSettings
+    )
   )
 
 lazy val monitor = project
@@ -346,7 +347,7 @@ lazy val stress = project
     )
   )
 
-lazy val it = project
+lazy val tests = project
   .dependsOn(testkit, http4s)
   .configs(IntegrationTest)
   .settings(rootSettings)
@@ -357,26 +358,8 @@ lazy val it = project
     libs.dependency("cats-effect-testing-scalatest", Some(IntegrationTest.name)),
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
     libs.dependency("akka-slf4j", Some(IntegrationTest.name)),
-    libs.dependency("embedded-kafka", Some(IntegrationTest.name)),
-    dynamoTestSettings
+    libs.dependency("embedded-kafka", Some(IntegrationTest.name))
   )
-
-lazy val dynamoTestSettings = localDynamoSettings ++ Seq(
-  libs.dependency("lihua-dynamo-testkit", Some(IntegrationTest.name)),
-  dynamoDBLocalCleanAfterStop := true,
-  startDynamoDBLocal := startDynamoDBLocal.dependsOn(compile in Test).value,
-  test in IntegrationTest := (test in IntegrationTest)
-    .dependsOn(startDynamoDBLocal)
-    .value,
-  testOnly in IntegrationTest := (testOnly in IntegrationTest)
-    .dependsOn(startDynamoDBLocal)
-    .evaluated,
-  testOptions in IntegrationTest += dynamoDBLocalTestCleanup.value
-)
-
-lazy val localDynamoSettings = Seq(
-  dynamoDBLocalPort := 8042
-)
 
 lazy val play = project
   .dependsOn(mongo, dynamo)
@@ -416,7 +399,7 @@ lazy val playExample = project
   )
 
 lazy val noPublishing = Seq(skip in publish := true)
-lazy val defaultScalaVer = "2.12.10"
+lazy val defaultScalaVer = libs.vers("scalac_2.12")
 
 lazy val developerKai = Developer(
   "Kailuo Wang",

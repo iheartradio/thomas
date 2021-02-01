@@ -3,7 +3,7 @@ package http4s
 package auth
 
 import cats.effect.Concurrent
-import com.iheart.thomas.{MonadThrowable, dynamo}
+import com.iheart.thomas.dynamo
 import com.iheart.thomas.admin.{Role, User, UserDAO}
 import tsec.authentication.Authenticator
 import tsec.passwordhashers.{PasswordHash, PasswordHasher}
@@ -14,7 +14,7 @@ import org.http4s.Response
 import tsec.common.Verified
 import tsec.mac.jca.HMACSHA256
 import tsec.passwordhashers.jca.BCrypt
-
+import cats.MonadThrow
 import scala.util.control.NoStackTrace
 trait AuthenticationAlg[F[_], Auth] {
 
@@ -44,7 +44,7 @@ trait AuthenticationAlg[F[_], Auth] {
 
 object AuthenticationAlg {
 
-  implicit def apply[F[_]: MonadThrowable, C, Auth](
+  implicit def apply[F[_]: MonadThrow, C, Auth](
       implicit userDAO: UserDAO[F],
       cryptService: PasswordHasher[F, C],
       auth: Authenticator[F, String, User, Token[Auth]]
