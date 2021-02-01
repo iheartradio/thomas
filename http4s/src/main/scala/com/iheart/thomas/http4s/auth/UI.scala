@@ -16,21 +16,25 @@ import org.http4s.{FormDataDecoder, HttpRoutes, ParseFailure, Uri, UrlForm}
 import FormDataDecoder._
 import tsec.passwordhashers.jca.BCrypt
 import UI.roleFormatter
+import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
+
 import scala.util.control.NoStackTrace
 
 class UI[F[_]: Async, Auth](
     initialAdminUsername: Option[String],
     initialRole: Role
   )(implicit alg: AuthenticationAlg[F, Auth],
-    reverseRoutes: ReverseRoutes)
+    adminUICfg: AdminUIConfig)
     extends Http4sDsl[F]
     with AuthedEndpointsUtils[F, Auth] {
   import tsec.authentication._
 
+  val reverseRoutes = implicitly[ReverseRoutes]
+
   val authedService = roleBasedService(Seq(Role.Admin)) {
-    case GET -> Root / "users" asAuthed user =>
+    case GET -> Root / "users" asAuthed u =>
       alg.allUsers.flatMap { allUsers =>
-        Ok(html.users(allUsers, user))
+        Ok(html.users(allUsers)(UIEnv(u)))
       }
     case req @ POST -> Root / "users" / username / "role" asAuthed _ =>
       for {
@@ -153,6 +157,7 @@ object UI extends {
       initialAdminUsername: Option[String],
       initialRole: Role
     )(implicit dc: AmazonDynamoDBAsync,
+      adminUIConfig: AdminUIConfig,
       rv: ReverseRoutes
     ): UI[F, AuthImp] = {
 

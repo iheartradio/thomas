@@ -1,11 +1,12 @@
 @import com.iheart.thomas.stream.Job
 @import com.iheart.thomas.html._
-@import com.iheart.thomas.admin.User
-@import com.iheart.thomas.http4s.ReverseRoutes
-@(jobs: Vector[Job], u: User)(implicit routes: ReverseRoutes)
+
+@import com.iheart.thomas.http4s.UIEnv
+
+@(jobs: Vector[Job])(implicit env: UIEnv)
 
 
-@topNav("Background Processes", u) {
+@topNav("Background Processes") {
 <div class="row mt-5">
     <span class="h4">Background Processes</span>
 </div>

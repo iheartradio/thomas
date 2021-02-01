@@ -1,16 +1,14 @@
 @import com.iheart.thomas.abtest.model._
-@import com.iheart.thomas.http4s.ReverseRoutes
+@import com.iheart.thomas.http4s.UIEnv
 @import com.iheart.thomas.html._
-@import com.iheart.thomas.admin.User
 @import com.iheart.thomas.Username
 @import com.iheart.thomas.admin.Authorization._
 
-@(u: User,
-feature: Feature,
+@(feature: Feature,
 testsCount: Int,
 errorMsg: Option[String] = None,
 successMsg: Option[String] = None,
-devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
+devCandidates: List[Username] = Nil)(implicit env: UIEnv)
 
 @overrideItem(oo: Option[(String, String)]) = {
 
@@ -20,7 +18,7 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
         <div class="form-group">
             <input name="overrides[]._1" class="form-control"
                    type="text"
-                   @if(!u.has(ManageTestSettings(feature))) {
+                   @if(!env.currentUser.has(ManageTestSettings(feature))) {
                    readonly disabled
                    }
                    @oo.map(o=> s"value=${o._1}") />
@@ -31,14 +29,14 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
         <div class="form-group w-100">
             <input name="overrides[]._2" class="form-control"
                    type="text"
-                   @if(!u.has(ManageTestSettings(feature))) {
+                   @if(!env.currentUser.has(ManageTestSettings(feature))) {
                      readonly disabled
                    }
 
                    @oo.map(o=> s"value=${o._2}") />
         </div>
         <div class="text-center">
-            @if(u.has(ManageTestSettings(feature))) {
+            @if(env.currentUser.has(ManageTestSettings(feature))) {
 
 
             <button class="btn btn-link delete-override remove-item mt-1 ml-1"
@@ -54,7 +52,7 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
 
 }
 
-@topNav("Feature " + feature.name, u){
+@topNav("Feature " + feature.name){
 
 <div class="mb-3 mt-3">
     <span class="h4">Feature <span class="text-success">@feature.name</span></span>
@@ -97,7 +95,7 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
                                       class="form-control"
                                       id="descriptionInput"
                                       type="text"
-                                      @if(!u.has(ManageFeature(feature))) {
+                                      @if(!env.currentUser.has(ManageFeature(feature))) {
                                         disabled readonly
                                       }
                             >@feature.description</textarea>
@@ -111,11 +109,11 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
                         <span class="h5">Managing Users</span>
                     </div>
                     <div class="card-body">
-                        @if(!u.has(ManageFeature(feature))) {
+                        @if(!env.currentUser.has(ManageFeature(feature))) {
                             @feature.developers.mkString(", ")
                         }
                         <div class="form-group
-                             @if(!u.has(ManageFeature(feature))) {
+                             @if(!env.currentUser.has(ManageFeature(feature))) {
                                 d-none
                              }
                              ">
@@ -127,7 +125,7 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
                                   <option selected="true">@dev</option>
                                 }
                             </select>
-                            @if(u.has(ManageFeature(feature))) {
+                            @if(env.currentUser.has(ManageFeature(feature))) {
                             <div class="form-group mt-3">
                                 <select class="form-control" onchange="addFeatureDeveloperItem()" name="username" id="add-developer">
                                     <option>Select to add as a managing user</option>
@@ -156,7 +154,7 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
                                            class="form-check-input"
                                            id="overrideEligibilityCB"
                                            type="checkbox"
-                                           @if(!u.has(ManageTestSettings(feature))) {
+                                           @if(!env.currentUser.has(ManageTestSettings(feature))) {
                                              disabled readonly
                                            }
                                            value="true"
@@ -188,11 +186,11 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
                             @for(o <- feature.overrides) {
                             @overrideItem(Some(o))
                             }
-                            @if(u.has(ManageTestSettings(feature))) {
+                            @if(env.currentUser.has(ManageTestSettings(feature))) {
                                 @overrideItem(None)
                             }
                         </div>
-                        @if(u.has(ManageTestSettings(feature))) {
+                        @if(env.currentUser.has(ManageTestSettings(feature))) {
                         <div class="d-none" id="new-override">
                             @overrideItem(None)
                         </div>
@@ -206,7 +204,7 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
                         }
                     </div>
                 </div>
-                @if(u.has(ManageTestSettings(feature))) {
+                @if(env.currentUser.has(ManageTestSettings(feature))) {
                 <div class="card mt-4" id="feature-batch-overrides">
                     <div class="card-header"><span class="h5">Batch Overrides</span></div>
                     <div class="card-body">
@@ -229,13 +227,13 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
 
     </div>
 
-    @if(u.has(ManageTestSettings(feature)) || u.has(ManageFeature(feature))){
+    @if(env.currentUser.has(ManageTestSettings(feature)) || env.currentUser.has(ManageFeature(feature))){
     <div class="row d-flex flex-row-reverse mt-5">
         <div class="mr-4">
             <button type="submit" class="btn btn-primary">
                 Update
             </button>
-            <a href="@routes.tests" role="button" class="btn btn-warning ml-2">Cancel Change</a>
+            <a href="@env.routes.tests" role="button" class="btn btn-warning ml-2">Cancel Change</a>
             </a>
         </div>
     </div>
@@ -245,7 +243,7 @@ devCandidates: List[Username] = Nil)(implicit routes: ReverseRoutes)
 
 </form>
 }
-@if(u.has(ManageFeature(feature))) {
+@if(env.currentUser.has(ManageFeature(feature))) {
 
 <script>
     function addFeatureDeveloperItem() {

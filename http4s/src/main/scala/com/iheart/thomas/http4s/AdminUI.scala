@@ -24,6 +24,7 @@ import pureconfig.{ConfigReader, ConfigSource}
 import pureconfig.module.catseffect._
 import tsec.common.SecureRandomIdGenerator
 import cats.MonadThrow
+import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.kafka.JsonMessageSubscriber
 import com.iheart.thomas.stream.JobAlg
 import io.chrisdavenport.log4cats.Logger
@@ -41,7 +42,7 @@ class AdminUI[F[_]: MonadThrow](
     authUI: auth.UI[F, AuthImp],
     analysisUI: analysis.UI[F],
     streamUI: stream.UI[F]
-  )(implicit reverseRoutes: ReverseRoutes,
+  )(implicit adminUICfg: AdminUIConfig,
     jobAlg: JobAlg[F],
     authenticator: Authenticator[F, String, User, Token[AuthImp]])
     extends AuthedEndpointsUtils[F, AuthImp]
@@ -87,7 +88,8 @@ object AdminUI {
       adminTablesReadCapacity: Long,
       adminTablesWriteCapacity: Long,
       initialAdminUsername: String,
-      initialRole: Role)
+      initialRole: Role,
+      siteName: String)
 
   implicit val roleCfgReader: ConfigReader[Role] =
     ConfigReader.fromNonEmptyString(s =>
@@ -103,42 +105,44 @@ object AdminUI {
 
   def resource[F[_]: ConcurrentEffect: Timer: Logger: ContextShift](
       implicit dc: AmazonDynamoDBAsync,
+      cfg: AdminUIConfig,
       config: Config,
       ec: ExecutionContext
-    ): Resource[F, AdminUI[F]] =
-    Resource.liftF(loadConfig(config)).flatMap { cfg =>
-      implicit val rr = new ReverseRoutes(cfg.rootPath)
+    ): Resource[F, AdminUI[F]] = {
 
+    implicit val rr = new ReverseRoutes(cfg.rootPath)
+
+    Resource.liftF(
+      dynamo.AdminDAOs.ensureAuthTables[F](
+        cfg.adminTablesReadCapacity,
+        cfg.adminTablesWriteCapacity
+      )
+    ) *>
       Resource.liftF(
-        dynamo.AdminDAOs.ensureAuthTables[F](
+        dynamo.AnalysisDAOs.ensureAnalysisTables[F](
           cfg.adminTablesReadCapacity,
           cfg.adminTablesWriteCapacity
         )
-      ) *>
-        Resource.liftF(
-          dynamo.AnalysisDAOs.ensureAnalysisTables[F](
-            cfg.adminTablesReadCapacity,
-            cfg.adminTablesWriteCapacity
-          )
-        ) *> {
-        Resource.liftF(AuthDependencies[F](cfg.key)).flatMap { deps =>
-          import deps._
-          import dynamo.AdminDAOs._
-          implicit val authAlg = AuthenticationAlg[F, BCrypt, AuthImp]
-          val authUI = new UI(Some(cfg.initialAdminUsername), cfg.initialRole)
+      ) *> {
+      Resource.liftF(AuthDependencies[F](cfg.key)).flatMap { deps =>
+        import deps._
+        import dynamo.AdminDAOs._
+        implicit val authAlg = AuthenticationAlg[F, BCrypt, AuthImp]
+        val authUI = new UI(Some(cfg.initialAdminUsername), cfg.initialRole)
 
-          import dynamo.AnalysisDAOs._
-          import JsonMessageSubscriber._
-          AbtestManagementUI.fromMongo[F](config).map { amUI =>
-            new AdminUI(amUI, authUI, new analysis.UI[F], new stream.UI[F])
-          }
+        import dynamo.AnalysisDAOs._
+        import JsonMessageSubscriber._
+        AbtestManagementUI.fromMongo[F](config).map { amUI =>
+          new AdminUI(amUI, authUI, new analysis.UI[F], new stream.UI[F])
         }
       }
     }
+  }
 
   def resourceFromDynamo[F[_]: ConcurrentEffect: Timer: Logger: ContextShift](
       implicit
       cfg: Config,
+      adminUIConfig: AdminUIConfig,
       ec: ExecutionContext
     ): Resource[F, AdminUI[F]] =
     dynamo
@@ -152,7 +156,11 @@ object AdminUI {
       implicit dc: AmazonDynamoDBAsync,
       executionContext: ExecutionContext
     ): Resource[F, ExitCode] = {
-    ConfigResource.cfg[F]().flatMap(implicit c => serverResource[F])
+    ConfigResource.cfg[F]().flatMap { implicit c =>
+      Resource.liftF(loadConfig[F](c)).flatMap { implicit cfg =>
+        serverResource[F]
+      }
+    }
   }
 
   /**
@@ -160,7 +168,8 @@ object AdminUI {
     */
   def serverResource[F[_]: ConcurrentEffect: Timer: ContextShift](
       implicit
-      cfg: Config,
+      adminCfg: AdminUIConfig,
+      config: Config,
       dc: AmazonDynamoDBAsync,
       executionContext: ExecutionContext
     ): Resource[F, ExitCode] = {
@@ -168,7 +177,6 @@ object AdminUI {
     import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
     Resource.liftF(Slf4jLogger.create[F]).flatMap { implicit logger =>
       for {
-        adminCfg <- Resource.liftF(loadConfig[F](cfg))
         ui <- AdminUI.resource[F]
         e <-
           BlazeServerBuilder[F](executionContext)
