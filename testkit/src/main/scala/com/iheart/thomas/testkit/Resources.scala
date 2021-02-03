@@ -48,19 +48,13 @@ object Resources {
         }
     }
 
+  val tables =
+    dynamo.BanditsDAOs.tables ++ dynamo.AdminDAOs.tables ++ dynamo.AnalysisDAOs.tables
+
   lazy val localDynamoR =
     LocalDynamo
       .clientWithTables[IO](
-        dynamo.BanditsDAOs.banditStateTableName -> Seq(dynamo.BanditsDAOs.banditKey),
-        dynamo.BanditsDAOs.banditSettingsTableName -> Seq(
-          dynamo.BanditsDAOs.banditKey
-        ),
-        dynamo.AdminDAOs.authTableName -> Seq(dynamo.AdminDAOs.authKey),
-        dynamo.AdminDAOs.userTableName -> Seq(dynamo.AdminDAOs.userKey),
-        dynamo.AdminDAOs.streamJobTableName -> Seq(dynamo.AdminDAOs.streamJobKey),
-        dynamo.AnalysisDAOs.conversionKPITableName -> Seq(
-          dynamo.AnalysisDAOs.conversionKPIKey
-        )
+        tables.map(_.map(Seq(_))): _*
       )
 
   lazy val dynamoDAOS: Resource[

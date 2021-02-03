@@ -7,7 +7,7 @@ import com.iheart.thomas.analysis.MessageQuery.{FieldName, FieldValue}
 import com.iheart.thomas.analysis.{
   BetaModel,
   ConversionKPI,
-  ConversionKPIDAO,
+  ConversionKPIAlg,
   ConversionMessageQuery,
   KPIName,
   MessageQuery
@@ -31,7 +31,7 @@ import java.time.{Instant, OffsetDateTime}
 
 class UI[F[_]: Async](
     implicit
-    conversionKPIDAO: ConversionKPIDAO[F],
+    convKpiAlg: ConversionKPIAlg[F],
     jobAlg: JobAlg[F],
     authAlg: AuthenticationAlg[F, AuthImp],
     aCfg: AdminUIConfig)
@@ -42,7 +42,7 @@ class UI[F[_]: Async](
   val rootPath = Root / "analysis"
   val readonlyRoutes = roleBasedService(admin.Authorization.readableRoles) {
     case GET -> `rootPath` / "conversionKPIs" asAuthed (u) =>
-      conversionKPIDAO.all.flatMap { kpis =>
+      convKpiAlg.all.flatMap { kpis =>
         Ok(conversionKPIs(kpis)(UIEnv(u)))
       }
   }
@@ -52,7 +52,7 @@ class UI[F[_]: Async](
       Ok(newConversionKPI()(UIEnv(u)))
 
     case GET -> `rootPath` / "conversionKPIs" / kpiName asAuthed (u) =>
-      conversionKPIDAO.find(kpiName).flatMap { ko =>
+      convKpiAlg.find(kpiName).flatMap { ko =>
         ko.fold(
           NotFound(s"Cannot find the Conversion KPI under the name $kpiName")
         ) { k =>
@@ -63,7 +63,7 @@ class UI[F[_]: Async](
       }
 
     case GET -> `rootPath` / "conversionKPIs" / kpiName / "delete" asAuthed (_) =>
-      conversionKPIDAO.remove(kpiName) >>
+      convKpiAlg.remove(kpiName) >>
         Ok(redirect(reverseRoutes.analysis, s"$kpiName, if existed, is deleted."))
 
     case se @ POST -> `rootPath` / "conversionKPIs" asAuthed u =>
@@ -72,7 +72,7 @@ class UI[F[_]: Async](
         .redeemWith(
           e => BadRequest(errorMsg(e.getMessage)),
           kpi =>
-            conversionKPIDAO.insert(kpi.copy(author = u.username)) >>
+            convKpiAlg.create(kpi.copy(author = u.username)) >>
               Ok(
                 redirect(
                   reverseRoutes.analysis,
@@ -90,7 +90,7 @@ class UI[F[_]: Async](
             if (kpi.name.n != kpiName) {
               BadGateway("Cannot change KPI name")
             } else
-              conversionKPIDAO.update(kpi.copy(author = u.username)) >>
+              convKpiAlg.update(kpi.copy(author = u.username)) >>
                 Ok(
                   redirect(
                     reverseRoutes.analysis,

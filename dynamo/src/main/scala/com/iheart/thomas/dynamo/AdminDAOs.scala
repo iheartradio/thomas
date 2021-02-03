@@ -3,7 +3,6 @@ package com.iheart.thomas.dynamo
 import cats.effect.Async
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.admin.{AuthRecord, AuthRecordDAO, User, UserDAO}
-import lihua.dynamo.ScanamoManagement
 import DynamoFormats._
 import cats.implicits._
 import com.iheart.thomas.stream.{Job, JobDAO}
@@ -24,25 +23,17 @@ object AdminDAOs extends ScanamoManagement {
   val streamJobKeyName = "key"
   val streamJobKey = ScanamoDAOHelperStringKey.keyOf(streamJobKeyName)
 
+  val tables = List(
+    (authTableName, authKey),
+    (userTableName, userKey),
+    (streamJobTableName, streamJobKey)
+  )
+
   def ensureAuthTables[F[_]: Async](
       readCapacity: Long,
       writeCapacity: Long
     )(implicit dc: AmazonDynamoDBAsync
-    ): F[Unit] =
-    List(
-      (authTableName, authKey),
-      (userTableName, userKey),
-      (streamJobTableName, streamJobKey)
-    ).traverse {
-      case (tn, key) =>
-        ensureTable(
-          dc,
-          tn,
-          Seq(key),
-          readCapacity,
-          writeCapacity
-        )
-    }.void
+    ): F[Unit] = ensureTables(tables, readCapacity, writeCapacity)
 
   implicit def authRecordDAO[F[_]: Async](
       implicit dynamoClient: AmazonDynamoDBAsync

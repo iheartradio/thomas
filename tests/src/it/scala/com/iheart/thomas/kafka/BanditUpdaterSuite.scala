@@ -7,12 +7,11 @@ import cats.effect.{ContextShift, IO, Sync, Timer}
 import cats.implicits._
 import com.iheart.thomas.analysis._
 import com.iheart.thomas.bandit.{ArmSpec, BanditSpec}
-import com.iheart.thomas.bandit.`package`.ArmName
+
 import com.iheart.thomas.bandit.bayesian.{ArmState, BanditSettings}
 import com.iheart.thomas.bandit.tracking.EventLogger
 
 import com.iheart.thomas.stream.ConversionBanditUpdater
-import com.iheart.thomas.stream.ConversionEvent
 import com.iheart.thomas.testkit.Resources
 import fs2.Stream
 import fs2.kafka._
@@ -46,7 +45,7 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
       : Deserializer[IO, (FeatureName, ArmName, ConversionEvent)] =
     Deserializer[IO, String].map { s =>
       s.split('|').toList match {
-        case List(fn, an, ce) => (fn, an, ce == true.toString)
+        case List(fn, an, ce) => (fn, an, ce == "converted")
       }
     }
 
@@ -136,7 +135,16 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
       createCustomTopic(topic)
 
       (1 to 200)
-        .map(_ => List("A|true", "A|false", "B|false", "B|true", "B|true", "B|true"))
+        .map(_ =>
+          List(
+            "A|init",
+            "A|converted",
+            "B|init",
+            "B|converted",
+            "B|converted",
+            "B|converted"
+          )
+        )
         .flatten
         .foreach { m =>
           publishToKafka(topic, s"feature1|$m")
@@ -175,10 +183,10 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
     withRunningKafka {
       createCustomTopic(topic)
 
-      List("A|true", "A|false", "B|false", "B|false", "B|true", "B|true").foreach {
-        m =>
+      List("A|converted", "A|init", "B|init", "B|init", "B|converted", "B|converted")
+        .foreach { m =>
           publishToKafka(topic, s"feature1|$m")
-      }
+        }
 
       val resultState =
         updaterResource
@@ -204,8 +212,8 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
           .unsafeRunSync()
 
       resultState.state.arms.toSet shouldBe Set(
-        ArmState("A", Conversions(1, 2), None),
-        ArmState("B", Conversions(2, 4), None)
+        ArmState("A", Conversions(1, 1), None),
+        ArmState("B", Conversions(2, 2), None)
       )
     }
 
@@ -218,7 +226,8 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
       val publish = Stream.repeatEval(
         IO.delay {
           count.incrementAndGet()
-          publishToKafka(topic, s"feature1|A|true")
+          publishToKafka(topic, s"feature1|A|converted")
+          publishToKafka(topic, s"feature1|A|init")
         }
       )
 
@@ -255,7 +264,8 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
       val publish = Stream.repeatEval(
         IO.delay {
           count.incrementAndGet()
-          publishToKafka(topic, s"feature1|A|true")
+          publishToKafka(topic, s"feature1|A|converted")
+          publishToKafka(topic, s"feature1|A|init")
         }
       )
 
@@ -292,7 +302,8 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
       val publish = Stream.repeatEval(
         IO.delay {
           count.incrementAndGet()
-          publishToKafka(topic, s"feature1|A|true")
+          publishToKafka(topic, s"feature1|A|converted")
+          publishToKafka(topic, s"feature1|A|init")
         }
       )
 
@@ -336,14 +347,33 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
 
       val publish = Stream.fixedDelay(50.millis) >> Stream.eval(
         IO.delay {
-          List("A|true", "A|false", "B|false", "B|false", "B|true", "B|true")
-            .foreach { m =>
-              publishToKafka(topic, s"feature1|$m")
-            }
-          List("A|true", "A|false", "C|true", "C|false", "A|true", "C|true")
-            .foreach { m =>
-              publishToKafka(topic, s"feature2|$m")
-            }
+          List(
+            "A|init",
+            "A|converted",
+            "A|init",
+            "B|init",
+            "B|init",
+            "B|init",
+            "B|init",
+            "B|converted",
+            "B|converted"
+          ).foreach { m =>
+            publishToKafka(topic, s"feature1|$m")
+          }
+          List(
+            "A|init",
+            "A|converted",
+            "A|init",
+            "A|init",
+            "C|init",
+            "C|converted",
+            "C|init",
+            "C|init",
+            "A|converted",
+            "C|converted"
+          ).foreach { m =>
+            publishToKafka(topic, s"feature2|$m")
+          }
         }
       )
 
@@ -388,9 +418,10 @@ class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
       val totalPublish = 100L
       val publish = Stream.fixedDelay(5.millis) >> Stream
         .eval(IO.delay(count.getAndIncrement()).map { c =>
-          if (c < totalPublish)
-            publishToKafka(topic, s"feature1|A|true")
-          else ()
+          if (c < totalPublish) {
+            publishToKafka(topic, s"feature1|A|converted")
+            publishToKafka(topic, s"feature1|A|init")
+          } else ()
         })
 
       val result = updaterResource

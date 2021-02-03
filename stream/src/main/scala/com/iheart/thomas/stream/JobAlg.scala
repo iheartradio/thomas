@@ -3,8 +3,11 @@ package com.iheart.thomas.stream
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
 import com.iheart.thomas.TimeUtil
-import com.iheart.thomas.analysis.{ConversionKPIDAO, KPIName}
-import com.iheart.thomas.stream.JobSpec.UpdateKPIPrior
+import TimeUtil._
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
+import com.iheart.thomas.analysis.monitor.MonitorAlg
+import com.iheart.thomas.analysis.{ConversionKPIAlg, ConversionMessageQuery, KPIName}
+import com.iheart.thomas.stream.JobSpec.{MonitorTest, RunBandit, UpdateKPIPrior}
 import com.typesafe.config.Config
 import fs2._
 import pureconfig.ConfigSource
@@ -52,8 +55,10 @@ object JobAlg {
       implicit F: Concurrent[F],
       timer: Timer[F],
       dao: JobDAO[F],
-      cKpiDAO: ConversionKPIDAO[F],
-      parser: ConversionParser[F, Message],
+      cKpiAlg: ConversionKPIAlg[F],
+      armParser: ArmParser[F, Message],
+      monitorAlg: MonitorAlg[F],
+      convParser: ConversionParser[F, Message],
       config: Config,
       messageSubscriber: MessageSubscriber[F, Message]
     ): JobAlg[F] =
@@ -70,48 +75,80 @@ object JobAlg {
         Stream
           .eval(JobRunnerConfig.fromConfig(config))
           .flatMap { cfg =>
-            def jobPipe(job: Job): F[Pipe[F, Message, Unit]] =
+            def jobPipe(job: Job): F[Pipe[F, Message, Unit]] = {
+
+              val checkJobComplete = {
+                Stream
+                  .fixedDelay(cfg.jobCheckFrequency)
+                  .evalMap(_ =>
+                    job.spec match {
+                      case UpdateKPIPrior(_, until) => until.passed
+                      case MonitorTest(_, _, until) => until.passed
+                      case RunBandit(_)             => ???
+                    }
+                  )
+                  .evalTap { completed =>
+                    if (completed) stop(job.key)
+                    else F.unit
+                  }
+              }
+
+              def kpiQuery(name: KPIName): F[ConversionMessageQuery] =
+                cKpiAlg
+                  .get(name)
+                  .flatMap { kpi =>
+                    kpi.messageQuery
+                      .liftTo[F](CannotUpdateKPIWithoutQuery(name))
+                  }
+
               job.spec match {
                 case UpdateKPIPrior(kpiName, until) =>
-                  cKpiDAO
-                    .get(kpiName)
-                    .flatMap { kpi =>
-                      kpi.messageQuery
-                        .liftTo[F](CannotUpdateKPIWithoutQuery(kpiName))
-                        .map { query =>
-                          val checkJobComplete = Stream
-                            .fixedDelay(cfg.jobCheckFrequency)
-                            .evalMap(_ => TimeUtil.now[F].map(_.isAfter(until)))
-                            .evalTap { completed =>
-                              if (completed) stop(job.key)
-                              else F.unit
+                  kpiQuery(kpiName)
+                    .map {
+                      query =>
+                        { (input: Stream[F, Message]) =>
+                          input
+                            .evalMapFilter(m => convParser.parseConversion(m, query))
+                            .interruptWhen(checkJobComplete)
+                            .chunkMin(cfg.minChunkSize)
+                            .evalMap { chunk =>
+                              cKpiAlg.updateModel(
+                                kpiName,
+                                chunk
+                              )
                             }
-
-                          { (input: Stream[F, Message]) =>
-                            input
-                              .evalMap(m => parser.parseConversion(m, query))
-                              .flattenOption
-                              .interruptWhen(checkJobComplete)
-                              .chunkMin(cfg.minChunkSize)
-                              .evalMap { chunk =>
-                                val converted = chunk.count(identity)
-                                val init = chunk.size - converted
-                                cKpiDAO
-                                  .get(kpiName)
-                                  .flatMap { k =>
-                                    cKpiDAO.updateModel(
-                                      kpiName,
-                                      k.model.accumulativeUpdate(converted, init)
-                                    )
-                                  }
-                                  .void
-                              }
-                          }
+                            .void
                         }
                     }
 
-                case _ => ???
+                case MonitorTest(feature, kpiName, expiration) =>
+                  kpiQuery(kpiName)
+                    .map {
+                      query =>
+                        { (input: Stream[F, Message]) =>
+                          input
+                            .evalMapFilter { m =>
+                              armParser.parseArm(m, feature).flatMap { armO =>
+                                armO.flatTraverse { arm =>
+                                  convParser
+                                    .parseConversion(m, query)
+                                    .map(_.map((arm, _)))
+                                }
+                              }
+                            }
+                            .interruptWhen(checkJobComplete)
+                            .chunkMin(cfg.minChunkSize)
+                            .evalMap { chunk =>
+                              monitorAlg.updateState(Key(feature, kpiName), chunk)
+                            }
+                            .void
+                        }
+
+                    }
+
+                case RunBandit(_) => ???
               }
+            }
 
             val availableJobs: Stream[F, Vector[Job]] =
               Stream

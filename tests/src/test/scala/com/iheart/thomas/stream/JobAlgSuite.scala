@@ -7,7 +7,7 @@ import cats.implicits._
 import com.iheart.thomas.analysis.{
   BetaModel,
   ConversionKPI,
-  ConversionKPIDAO,
+  ConversionKPIAlg,
   ConversionMessageQuery,
   Conversions,
   KPIName,
@@ -22,14 +22,16 @@ import fs2.Stream
 
 import java.time.Instant
 import concurrent.duration._
+import com.iheart.thomas.testkit.ExampleArmParse._
 
 abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
   def withAlg[A](
-      f: (ConversionKPIDAO[IO], JobAlg[IO], PubSub[IO]) => IO[A]
+      f: (ConversionKPIAlg[IO], JobAlg[IO], PubSub[IO]) => IO[A]
     )(implicit config: Config = cfg
     ): IO[A] = {
-    implicit val kpiDAO = MapBasedDAOs.conversionKPIDAO[IO]
+    implicit val kpiDAO = MapBasedDAOs.conversionKPIAlg[IO]
     implicit val jobDAO = MapBasedDAOs.streamJobDAO[IO]
+    implicit val eStateDAO = MapBasedDAOs.experimentStateDAO[IO, Conversions]
 
     PubSub.create[IO](event("type" -> "init")).flatMap { implicit pubSub =>
       f(kpiDAO, implicitly[JobAlg[IO]], pubSub)
@@ -88,7 +90,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
     "get can process one KPI update job" in withAlg { (kpiDAO, alg, pubSub) =>
       (for {
         _ <- Stream.eval {
-          kpiDAO.insert(kpiA) *>
+          kpiDAO.create(kpiA) *>
             alg.schedule(UpdateKPIPrior(kpiA.name, Instant.now.plusMillis(800)))
         }
         _ <- Stream(
@@ -108,7 +110,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
     "keep checkedout timestamp updated" in withAlg { (kpiDAO, alg, _) =>
       (for {
         _ <- Stream.eval {
-          kpiDAO.insert(kpiA) *>
+          kpiDAO.create(kpiA) *>
             alg.schedule(UpdateKPIPrior(kpiA.name, Instant.now.plusSeconds(2)))
         }
         start <- Stream.eval(TimeUtil.now[IO])
@@ -128,7 +130,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
 
     "can stop job" in withAlg { (kpiDAO, alg, pubSub) =>
       (for {
-        _ <- Stream.eval(kpiDAO.insert(kpiA))
+        _ <- Stream.eval(kpiDAO.create(kpiA))
         job <- Stream.eval(alg.schedule(UpdateKPIPrior(kpiA.name, Instant.now.plusSeconds(1))))
         _ <- Stream(
           alg.runStream,
@@ -153,7 +155,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
     "remove job when completed" in withAlg { (kpiDAO, alg, pubSub) =>
       (for {
         _ <- Stream.eval {
-          kpiDAO.insert(kpiA) *>
+          kpiDAO.create(kpiA) *>
             alg.schedule(UpdateKPIPrior(kpiA.name, Instant.now.plusMillis(400)))
         }
         jobs <-
@@ -177,7 +179,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
       val kpiC = kpiA.copy(name = KPIName("C"))
       val kpiB = kpiA.copy(name = KPIName("B"))
       (for {
-        _ <- Stream.eval(kpiDAO.insert(kpiC) *> kpiDAO.insert(kpiB))
+        _ <- Stream.eval(kpiDAO.create(kpiC) *> kpiDAO.create(kpiB))
         _ <- Stream.eval(alg.schedule(UpdateKPIPrior(kpiC.name, Instant.now.plusMillis(2400))))
         _ <- Stream(
           alg.runStream,

@@ -1,19 +1,21 @@
 package com.iheart.thomas.testkit
 
-import cats.effect.Sync
-
-import collection.concurrent._
+import cats.effect.{Sync, Timer}
 import cats.implicits._
+import com.iheart.thomas.TimeUtil
 import com.iheart.thomas.abtest.Error.NotFound
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
+import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
 import com.iheart.thomas.analysis.{
   BetaModel,
   ConversionKPI,
-  ConversionKPIDAO,
+  ConversionKPIAlg,
   KPIName
 }
 import com.iheart.thomas.stream.{Job, JobDAO}
 
 import java.time.Instant
+import scala.collection.concurrent._
 import scala.util.control.NoStackTrace
 
 object MapBasedDAOs {
@@ -54,7 +56,7 @@ object MapBasedDAOs {
       updateO(a).flatMap(_.liftTo[F](NotFound(s"${keyOf(a)} is not found")))
 
     def updateO(a: A): F[Option[A]] =
-      F.delay(map.replace(keyOf(a), a))
+      F.delay(map.replace(keyOf(a), a).as(a))
 
     def upsert(a: A): F[A] =
       F.delay(map.put(keyOf(a), a)).as(a)
@@ -75,9 +77,30 @@ object MapBasedDAOs {
         replace(job, job.copy(checkedOut = Some(at)))
     }
 
-  def conversionKPIDAO[F[_]](implicit F: Sync[F]): ConversionKPIDAO[F] =
-    new MapBasedDAOs[F, ConversionKPI, KPIName](_.name) with ConversionKPIDAO[F] {
-      def updateModel(
+  def experimentStateDAO[F[_]: Sync, R]: ExperimentKPIStateDAO[F, R] =
+    new MapBasedDAOs[F, ExperimentKPIState[R], Key](_.key)
+      with ExperimentKPIStateDAO[F, R] {
+
+      def updateState(
+          key: ExperimentKPIState.Key
+        )(updateArms: List[ArmState[R]] => List[ArmState[R]]
+        )(implicit T: Timer[F]
+        ): F[ExperimentKPIState[R]] =
+        for {
+          now <- TimeUtil.now[F]
+          s <- get(key)
+          r <- update(
+            s.copy(
+              arms = updateArms(s.arms),
+              lastUpdated = now
+            )
+          )
+        } yield r
+    }
+
+  def conversionKPIAlg[F[_]](implicit F: Sync[F]): ConversionKPIAlg[F] =
+    new MapBasedDAOs[F, ConversionKPI, KPIName](_.name) with ConversionKPIAlg[F] {
+      def setModel(
           name: KPIName,
           model: BetaModel
         ): F[ConversionKPI] =

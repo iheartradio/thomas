@@ -1,9 +1,10 @@
-package com.iheart.thomas.kafka
+package com.iheart.thomas
+package kafka
 
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.analysis.KPIName
-import com.iheart.thomas.bandit.`package`.ArmName
-import com.iheart.thomas.stream.ConversionEvent
+
+import com.iheart.thomas.analysis.ConversionEvent
 import fs2.Pipe
 import fs2.kafka.RecordDeserializer
 

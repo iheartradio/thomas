@@ -16,4 +16,8 @@ object `package` {
   type Measurements = List[Double]
   type Indicator = Variable[Real]
 
+  type ConversionEvent = Boolean
+  val Converted = true
+  val Viewed = false
+
 }

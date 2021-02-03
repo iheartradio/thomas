@@ -21,6 +21,7 @@ object ExampleAbtestServerApp extends IOApp {
 }
 
 object ExampleAbtestAdminUIApp extends IOApp {
+  import com.iheart.thomas.testkit.ExampleArmParse._
 
   def run(args: List[String]): IO[ExitCode] = {
     LocalDynamo

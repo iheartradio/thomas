@@ -29,11 +29,11 @@ object JobSpec {
   case class MonitorTest(
       feature: FeatureName,
       kpi: KPIName,
-      expiration: Instant)
+      until: Instant)
       extends JobSpec {
     val key = "Monitor_Test_" + feature + "_With_KPI_" + kpi
     val description =
-      s"Real time monitor for A/B tests on feature $feature using KPI $kpi. (expires on $expiration)"
+      s"Real time monitor for A/B tests on feature $feature using KPI $kpi. (expires on $until)"
   }
 
   case class RunBandit(featureName: FeatureName) extends JobSpec {

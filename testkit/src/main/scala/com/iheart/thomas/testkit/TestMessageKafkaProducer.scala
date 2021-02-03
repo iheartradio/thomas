@@ -1,6 +1,7 @@
 package com.iheart.thomas.testkit
 
 import cats.effect.{ExitCode, IO, IOApp}
+import com.iheart.thomas.GroupName
 import com.iheart.thomas.kafka.KafkaConfig
 import com.typesafe.config.ConfigFactory
 import fs2.kafka.{KafkaProducer, ProducerRecord, ProducerRecords, ProducerSettings}
@@ -43,21 +44,43 @@ object TestMessageKafkaProducer extends IOApp {
 
   }
 
-  val initMessage =
-    """
+  def initMessage(
+      gn1: GroupName,
+      gn2: GroupName
+    ) =
+    s"""
       |{ 
-      |   "page_shown": "front_page"
+      |   "page_shown": "front_page",
+      |   
+      |   "treatment-groups": {
+      |      "feature1" : "$gn1",
+      |      "feature2" : "$gn2"    
+      |    }
+      |     
       |}
       |""".stripMargin
 
-  val clickMessage =
-    """
+  def clickMessage(
+      gn1: GroupName,
+      gn2: GroupName
+    ) =
+    s"""
       |{ 
-      |   "click": "front_page_recommendation"
+      |   "click": "front_page_recommendation",
+      |   "treatment-groups": {
+      |      "feature1" : "$gn1",
+      |      "feature2" : "$gn2"    
+      |    }
+      |        |
       |}
       |""".stripMargin
 
   val messages =
-    Random.shuffle(List.fill(10)(initMessage) ++ List.fill(4)(clickMessage))
+    Random.shuffle(
+      List.fill(10)(initMessage("A", "B")) ++
+        List.fill(13)(initMessage("B", "A")) ++
+        List.fill(4)(clickMessage("A", "B")) ++
+        List.fill(2)(clickMessage("B", "A"))
+    )
 
 }
