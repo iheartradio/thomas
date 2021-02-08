@@ -18,7 +18,7 @@ import com.amazonaws.services.dynamodbv2.model.{
 }
 import com.iheart.thomas.TimeUtil
 import com.iheart.thomas.dynamo.ScanamoDAOHelper.NotFound
-import lihua.dynamo.ScanamoEntityDAO.ScanamoError
+
 import org.scanamo.ops.ScanamoOps
 import org.scanamo.syntax._
 import org.scanamo.{
@@ -136,6 +136,12 @@ abstract class ScanamoDAOHelperStringFormatKey[F[_], A: DynamoFormat, K](
 
   def upsert(a: A): F[A] =
     sc.exec(table.put(a)).as(a)
+
+  def update(
+      k: K,
+      ue: UpdateExpression
+    ) =
+    toF(sc.exec(table.update(keyName -> stringKey(k), ue)))
 
 }
 
@@ -305,3 +311,8 @@ trait ScanamoManagement {
     }
   }
 }
+
+object ScanamoManagement extends ScanamoManagement
+
+case class ScanamoError(se: org.scanamo.ScanamoError)
+    extends RuntimeException(se.toString)

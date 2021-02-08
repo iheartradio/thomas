@@ -97,7 +97,8 @@ class UI[F[_]: Async, Auth](
         _ <- alg.register(
           username,
           password,
-          if (initialAdminUsername.fold(false)(_ == username)) Role.Admin
+          if (initialAdminUsername.fold(false)(_ == username))
+            Role.Admin //todo: this logic might be too critical to leave in UI
           else initialRole
         )
         r <- Ok(

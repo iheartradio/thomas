@@ -87,6 +87,21 @@ class JobAlgSuite extends JobAlgSuiteBase {
 
     }
 
+    "set the started time when started" in withAlg { (kpiDAO, alg, pubSub) =>
+      val spec = UpdateKPIPrior(kpiA.name, Instant.now.plusMillis(800))
+      (for {
+        _ <- Stream.eval {
+          kpiDAO.create(kpiA) *>
+            alg.schedule(spec)
+        }
+        _ <- alg.runStream
+
+      } yield ()).interruptAfter(200.millis).compile.drain *>
+        alg.find(spec)
+          .asserting(_.flatMap(_.started).nonEmpty shouldBe true)
+
+    }
+
     "get can process one KPI update job" in withAlg { (kpiDAO, alg, pubSub) =>
       (for {
         _ <- Stream.eval {

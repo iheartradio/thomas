@@ -16,8 +16,7 @@ import com.iheart.thomas.bandit.bayesian.{
   BanditState,
   StateDAO
 }
-import lihua.dynamo.ScanamoEntityDAO.ScanamoError
-import org.scanamo.{ConditionNotMet, DynamoFormat, ScanamoError}
+import org.scanamo.{ConditionNotMet, DynamoFormat}
 import org.scanamo.syntax._
 import org.scanamo.update.UpdateExpression
 

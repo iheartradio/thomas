@@ -19,6 +19,8 @@ trait MonitorAlg[F[_]] {
       kpi: KPIName
     ): F[ExperimentKPIState[Conversions]]
 
+  def getConversion(key: Key): F[Option[ExperimentKPIState[Conversions]]]
+
 }
 
 object MonitorAlg {
@@ -75,5 +77,7 @@ object MonitorAlg {
         }
       }
 
+      def getConversion(key: Key): F[Option[ExperimentKPIState[Conversions]]] =
+        cStateDAO.find(key)
     }
 }

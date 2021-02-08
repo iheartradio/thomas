@@ -42,6 +42,9 @@ object TimeUtil {
 
   }
 
+  def epochDay: Instant =
+    LocalDate.EPOCH.atStartOfDay().toInstant(ZoneOffset.UTC)
+
   def parse(
       value: String,
       defaultOffset: ZoneOffset

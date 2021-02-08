@@ -15,7 +15,7 @@ case class ExperimentKPIState[R](
     lastUpdated: Instant) {
 
   def rewardState: Map[ArmName, R] =
-    arms.map(as => (as.name, as.rewardState)).toMap
+    arms.map(as => (as.name, as.kpiStats)).toMap
 
   def distribution: Map[ArmName, Probability] =
     arms.mapFilter(as => as.likelihoodOptimum.map((as.name, _))).toMap
@@ -41,7 +41,7 @@ object ExperimentKPIState {
 
   case class ArmState[R](
       name: ArmName,
-      rewardState: R,
+      kpiStats: R,
       likelihoodOptimum: Option[Probability])
 
 }
@@ -50,6 +50,8 @@ trait ExperimentKPIStateDAO[F[_], R] {
 
   private[analysis] def insert(s: ExperimentKPIState[R]): F[ExperimentKPIState[R]]
 
+  def get(key: Key): F[ExperimentKPIState[R]]
+  def find(key: Key): F[Option[ExperimentKPIState[R]]]
   def updateState(
       key: Key
     )(updateArms: List[ArmState[R]] => List[ArmState[R]]

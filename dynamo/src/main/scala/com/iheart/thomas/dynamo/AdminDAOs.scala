@@ -83,5 +83,9 @@ object AdminDAOs extends ScanamoManagement {
           .map(_.toOption)
       }
 
+      def setStarted(
+          job: Job,
+          at: Instant
+        ): F[Job] = update(job.key, set("started" -> Some(at)))
     }
 }

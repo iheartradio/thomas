@@ -17,7 +17,7 @@ import com.iheart.thomas.testkit.Resources.localDynamoR
 import concurrent.duration._
 
 abstract class ExperimentKPIStateDAOSuite(
-    daoR: Resource[IO, ExperimentKPIStateDAO[IO, Conversions]])
+    val daoR: Resource[IO, ExperimentKPIStateDAO[IO, Conversions]])
     extends AsyncIOSpec
     with Matchers {
 

@@ -59,6 +59,10 @@ addCommandAlias(
   s";clean;test;tests/IntegrationTest/test"
 )
 addCommandAlias("tests", s"IntegrationTest/test")
+addCommandAlias(
+  "injectDevData",
+  s"testkit/runMain com.iheart.thomas.testkit.Factory"
+)
 
 lazy val thomas = project
   .in(file("."))
@@ -240,7 +244,7 @@ lazy val dynamo = project
   )
 
 lazy val testkit = project
-  .dependsOn(dynamo, mongo, kafka)
+  .dependsOn(dynamo, mongo, kafka, http4s)
   .settings(name := "thomas-testkit")
   .settings(rootSettings)
   .settings(
@@ -279,7 +283,6 @@ lazy val spark = project
 lazy val http4s = project
   .dependsOn(kafka)
   .enablePlugins(SbtTwirl)
-  .dependsOn(testkit % Test)
   .settings(name := "thomas-http4s")
   .settings(rootSettings)
   .settings(taglessSettings)

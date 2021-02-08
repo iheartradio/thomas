@@ -75,6 +75,12 @@ object MapBasedDAOs {
           at: Instant
         ): F[Option[Job]] =
         replace(job, job.copy(checkedOut = Some(at)))
+
+      def setStarted(
+          job: Job,
+          at: Instant
+        ): F[Job] = update(job.copy(started = Some(at)))
+
     }
 
   def experimentStateDAO[F[_]: Sync, R]: ExperimentKPIStateDAO[F, R] =

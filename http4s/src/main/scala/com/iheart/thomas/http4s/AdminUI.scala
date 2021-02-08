@@ -22,7 +22,6 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import pureconfig.error.{CannotConvert, FailureReason}
 import pureconfig.{ConfigReader, ConfigSource}
 import pureconfig.module.catseffect._
-import tsec.common.SecureRandomIdGenerator
 import cats.MonadThrow
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.kafka.JsonMessageSubscriber
@@ -35,8 +34,7 @@ import tsec.authentication.Authenticator
 import tsec.passwordhashers.jca.BCrypt
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.typelevel.jawn.ast.JValue
-
-import java.io.{PrintWriter, StringWriter}
+import ThrowableExtension._
 
 class AdminUI[F[_]: MonadThrow](
     abtestManagementUI: AbtestManagementUI[F],
@@ -53,12 +51,6 @@ class AdminUI[F[_]: MonadThrow](
     abtestManagementUI.routes <+> authUI.authedService <+> analysisUI.routes <+> streamUI.routes
   )
 
-  def fullStackTrace(t: Throwable): String = {
-    val sw = new StringWriter
-    t.printStackTrace(new PrintWriter(sw))
-    sw.toString
-  }
-
   val serverErrorHandler: ServiceErrorHandler[F] = { _ =>
     {
       case admin.Authorization.LackPermission =>
@@ -68,7 +60,7 @@ class AdminUI[F[_]: MonadThrow](
           html.errorMsg(
             s"""Ooops! something bad happened.
         
-              ${fullStackTrace(e)}
+              ${e.fullStackTrace}
             """
           )
         )
@@ -80,8 +72,6 @@ class AdminUI[F[_]: MonadThrow](
 }
 
 object AdminUI {
-  def generateKey: String =
-    SecureRandomIdGenerator(256).generate
 
   case class AdminUIConfig(
       key: String,

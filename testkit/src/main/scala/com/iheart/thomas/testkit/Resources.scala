@@ -2,7 +2,6 @@ package com.iheart.thomas
 package testkit
 
 import java.time.Instant
-
 import cats.effect.{IO, Resource}
 import cats.implicits._
 import com.iheart.thomas.abtest.AbtestAlg
@@ -19,6 +18,9 @@ import com.stripe.rainier.sampler.{RNG, Sampler}
 import com.typesafe.config.ConfigFactory
 import lihua.dynamo.testkit.LocalDynamo
 import _root_.play.api.libs.json.Json
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
+import com.iheart.thomas.http4s.AuthImp
+import com.iheart.thomas.http4s.auth.AuthenticationAlg
 import dynamo.DynamoFormats._
 
 import scala.concurrent.duration._
@@ -98,5 +100,23 @@ object Resources {
             )
           }
       }
+
+  def authAlg(
+      implicit dc: AmazonDynamoDBAsync
+    ): Resource[IO, AuthenticationAlg[IO, AuthImp]] =
+    Resource.liftF(AuthenticationAlg.default[IO](sys.env("THOMAS_ADMIN_KEY")))
+
+  def abtestAlg(
+      implicit logger: EventLogger[IO] = EventLogger.noop[IO],
+      nowF: IO[Instant] = defaultNowF
+    ): Resource[
+    IO,
+    AbtestAlg[IO]
+  ] =
+    mangoDAOs.flatMap { daos =>
+      implicit val (abtestDAO, featureDAO, kpiDAO) = daos
+      lazy val refreshPeriod = 0.seconds
+      AbtestAlg.defaultResource[IO](refreshPeriod)
+    }
 
 }

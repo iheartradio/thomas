@@ -2,7 +2,7 @@ package com.iheart.thomas.stream
 
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
-import com.iheart.thomas.TimeUtil
+import com.iheart.thomas.{FeatureName, TimeUtil}
 import TimeUtil._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
 import com.iheart.thomas.analysis.monitor.MonitorAlg
@@ -13,6 +13,7 @@ import fs2._
 import pureconfig.ConfigSource
 
 import scala.concurrent.duration.FiniteDuration
+import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
 
 trait JobAlg[F[_]] {
@@ -31,6 +32,13 @@ trait JobAlg[F[_]] {
   def runStream: Stream[F, Unit]
 
   def allJobs: F[Vector[Job]]
+
+  def findInfo[JS <: JobSpec: ClassTag](
+      condition: JS => Boolean
+    ): F[Vector[JobInfo[JS]]]
+
+  def monitors(feature: FeatureName): F[Vector[JobInfo[MonitorTest]]] =
+    findInfo((m: MonitorTest) => m.feature == feature)
 
   /**
     * Find job according to spec. Since you can't run two jobs with the same key, find ignores the rest of the spec.
@@ -68,6 +76,13 @@ object JobAlg {
       def stop(jobKey: String): F[Unit] = dao.remove(jobKey)
 
       def find(spec: JobSpec): F[Option[Job]] = dao.find(spec.key)
+
+      def findInfo[JS <: JobSpec: ClassTag](
+          condition: JS => Boolean
+        ): F[Vector[JobInfo[JS]]] =
+        allJobs.map(_.collect {
+          case Job(_, js: JS, _, started) if (condition(js)) => JobInfo(started, js)
+        })
 
       def allJobs: F[Vector[Job]] = dao.all
 
@@ -173,8 +188,9 @@ object JobAlg {
                     currentlyRunning.traverseFilter(dao.updateCheckedOut(_, now))
                   newlyCheckedout <-
                     newAvailable.traverseFilter(dao.updateCheckedOut(_, now))
+                  newlyStarted <- newlyCheckedout.traverse(dao.setStarted(_, now))
                 } yield {
-                  val newRunning = updatedRunning ++ newlyCheckedout
+                  val newRunning = updatedRunning ++ newlyStarted
                   (
                     newRunning,
                     if (
@@ -198,6 +214,7 @@ object JobAlg {
                 }
             }
           }
+
     }
 }
 

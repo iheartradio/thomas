@@ -31,9 +31,16 @@ object JobSpec {
       kpi: KPIName,
       until: Instant)
       extends JobSpec {
-    val key = "Monitor_Test_" + feature + "_With_KPI_" + kpi
+    val key = MonitorTest.jobKey(feature, kpi)
     val description =
       s"Real time monitor for A/B tests on feature $feature using KPI $kpi. (expires on $until)"
+  }
+
+  object MonitorTest {
+    def jobKey(
+        feature: FeatureName,
+        kpi: KPIName
+      ) = "Monitor_Test_" + feature + "_With_KPI_" + kpi
   }
 
   case class RunBandit(featureName: FeatureName) extends JobSpec {
