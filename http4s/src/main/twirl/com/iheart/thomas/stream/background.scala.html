@@ -16,7 +16,7 @@
 
         <div class="list-group-item">
             <div class="row">
-                <div class="col-8">
+                <div class="col-7">
                     <div>
 
                         <span class="mb-1 h5 font-weight-light text-success">@job.key</span>
@@ -27,14 +27,26 @@
                     </div>
                 </div>
 
-                <div class="col-3 text-sm-right">
-                   @if(job.checkedOut.nonEmpty) {
+                <div class="col-4 text-sm-right">
+                    @for(started <- job.started) {
+                    <div>
+                        <small><span class="font-weight-light ml-3">
+                    Started at: </span>
+                            <span class="font-weight-heavy">
+                           @started
+                        </span>
+                        </small>
+                    </div>
+                    }
+                   @for(checkedOut <- job.checkedOut) {
+                    <div>
                     <small><span class="font-weight-light ml-3">
                     Last Check: </span>
                         <span class="font-weight-heavy">
-                           @job.checkedOut.get
+                           @checkedOut
                         </span>
                     </small>
+                    </div>
                     }
 
 
@@ -43,7 +55,7 @@
                     <a href="./background/@job.key/stop"
                        role="button" class="btn ml-2"
                        onclick="return confirm('Please confirm you want to stop @job.key?')">
-                        <i class="far fa-trash-alt"></i>
+                        <i class="far fa-stop-circle" title="stop"></i>
                     </a>
                 </div>
 

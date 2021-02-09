@@ -1,5 +1,6 @@
 package com.iheart.thomas.http4s
 
+import com.iheart.thomas.FeatureName
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 
 case class ReverseRoutes(rootPath: String) {
@@ -13,6 +14,7 @@ case class ReverseRoutes(rootPath: String) {
   val logout = s"$rootPath/logout"
   val analysis = s"$rootPath/analysis/conversionKPIs"
   val background = s"$rootPath/stream/background"
+  def analysisOf(feature: FeatureName) = s"$rootPath/analysis/abtests/$feature/"
 }
 
 object ReverseRoutes {

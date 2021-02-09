@@ -22,11 +22,10 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import pureconfig.error.{CannotConvert, FailureReason}
 import pureconfig.{ConfigReader, ConfigSource}
 import pureconfig.module.catseffect._
-import tsec.common.SecureRandomIdGenerator
 import cats.MonadThrow
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.kafka.JsonMessageSubscriber
-import com.iheart.thomas.stream.JobAlg
+import com.iheart.thomas.stream.{ArmParser, JobAlg}
 import io.chrisdavenport.log4cats.Logger
 
 import scala.concurrent.ExecutionContext
@@ -34,8 +33,8 @@ import org.http4s.twirl._
 import tsec.authentication.Authenticator
 import tsec.passwordhashers.jca.BCrypt
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-
-import java.io.{PrintWriter, StringWriter}
+import org.typelevel.jawn.ast.JValue
+import ThrowableExtension._
 
 class AdminUI[F[_]: MonadThrow](
     abtestManagementUI: AbtestManagementUI[F],
@@ -52,12 +51,6 @@ class AdminUI[F[_]: MonadThrow](
     abtestManagementUI.routes <+> authUI.authedService <+> analysisUI.routes <+> streamUI.routes
   )
 
-  def fullStackTrace(t: Throwable): String = {
-    val sw = new StringWriter
-    t.printStackTrace(new PrintWriter(sw))
-    sw.toString
-  }
-
   val serverErrorHandler: ServiceErrorHandler[F] = { _ =>
     {
       case admin.Authorization.LackPermission =>
@@ -67,7 +60,7 @@ class AdminUI[F[_]: MonadThrow](
           html.errorMsg(
             s"""Ooops! something bad happened.
         
-              ${fullStackTrace(e)}
+              ${e.fullStackTrace}
             """
           )
         )
@@ -79,8 +72,6 @@ class AdminUI[F[_]: MonadThrow](
 }
 
 object AdminUI {
-  def generateKey: String =
-    SecureRandomIdGenerator(256).generate
 
   case class AdminUIConfig(
       key: String,
@@ -107,7 +98,8 @@ object AdminUI {
       implicit dc: AmazonDynamoDBAsync,
       cfg: AdminUIConfig,
       config: Config,
-      ec: ExecutionContext
+      ec: ExecutionContext,
+      ap: ArmParser[F, JValue]
     ): Resource[F, AdminUI[F]] = {
 
     implicit val rr = new ReverseRoutes(cfg.rootPath)
@@ -143,7 +135,8 @@ object AdminUI {
       implicit
       cfg: Config,
       adminUIConfig: AdminUIConfig,
-      ec: ExecutionContext
+      ec: ExecutionContext,
+      ap: ArmParser[F, JValue]
     ): Resource[F, AdminUI[F]] =
     dynamo
       .client(ConfigSource.fromConfig(cfg).at("thomas.admin-ui.dynamo"))
@@ -154,7 +147,8 @@ object AdminUI {
     */
   def serverResourceAutoLoadConfig[F[_]: ConcurrentEffect: Timer: ContextShift](
       implicit dc: AmazonDynamoDBAsync,
-      executionContext: ExecutionContext
+      executionContext: ExecutionContext,
+      ap: ArmParser[F, JValue]
     ): Resource[F, ExitCode] = {
     ConfigResource.cfg[F]().flatMap { implicit c =>
       Resource.liftF(loadConfig[F](c)).flatMap { implicit cfg =>
@@ -171,7 +165,8 @@ object AdminUI {
       adminCfg: AdminUIConfig,
       config: Config,
       dc: AmazonDynamoDBAsync,
-      executionContext: ExecutionContext
+      executionContext: ExecutionContext,
+      ap: ArmParser[F, JValue]
     ): Resource[F, ExitCode] = {
     import org.http4s.server.blaze._
     import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT

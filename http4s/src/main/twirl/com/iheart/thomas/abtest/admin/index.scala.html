@@ -28,6 +28,10 @@ filters: Filters
               Developers: </span>
     <span class="font-weight-heavy"> @feature.developers.mkString(", ") </span>
   </small>
+  <small><span class="font-weight-light ml-3 text-secondary">
+              <a href="@env.routes.analysisOf(feature.name)"> <i class="fas fa-chart-line"></i> Analysis</a> </span>
+
+  </small>
 </div>
 @for(test <- tests) {
 

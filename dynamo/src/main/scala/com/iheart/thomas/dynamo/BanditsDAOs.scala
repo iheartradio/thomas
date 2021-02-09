@@ -1,4 +1,5 @@
-package com.iheart.thomas.dynamo
+package com.iheart.thomas
+package dynamo
 
 import java.time.Instant
 import java.util.concurrent.TimeUnit
@@ -7,7 +8,7 @@ import cats.effect.{Async, Timer}
 import cats.implicits._
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.FeatureName
-import com.iheart.thomas.bandit.`package`.ArmName
+
 import com.iheart.thomas.bandit.bayesian.{
   ArmState,
   BanditSettings,
@@ -15,9 +16,7 @@ import com.iheart.thomas.bandit.bayesian.{
   BanditState,
   StateDAO
 }
-import lihua.dynamo.ScanamoEntityDAO.ScanamoError
-import lihua.dynamo.ScanamoManagement
-import org.scanamo.{ConditionNotMet, DynamoFormat, ScanamoError}
+import org.scanamo.{ConditionNotMet, DynamoFormat}
 import org.scanamo.syntax._
 import org.scanamo.update.UpdateExpression
 
@@ -29,24 +28,15 @@ object BanditsDAOs extends ScanamoManagement {
   val banditKeyName = "feature"
   val banditKey = ScanamoDAOHelperStringKey.keyOf(banditKeyName)
 
+  val tables =
+    List((banditStateTableName, banditKey), (banditSettingsTableName, banditKey))
+
   def ensureBanditTables[F[_]: Async](
       readCapacity: Long,
       writeCapacity: Long
     )(implicit dc: AmazonDynamoDBAsync
     ): F[Unit] =
-    ensureTable(
-      dc,
-      banditStateTableName,
-      Seq(banditKey),
-      readCapacity,
-      writeCapacity
-    ) *> ensureTable( //todo: separate the capacity between the two tables
-      dc,
-      banditSettingsTableName,
-      Seq(banditKey),
-      readCapacity,
-      writeCapacity
-    )
+    ensureTables(tables, readCapacity, writeCapacity)
 
   def banditSettings[F[_]: Async: Timer, S](
       implicit dynamoClient: AmazonDynamoDBAsync,
@@ -91,9 +81,11 @@ object BanditsDAOs extends ScanamoManagement {
             newArmsHistory <- updateArmsHistory(bs.historical, bs.arms)
           } yield {
             val (newHistory, newArms) = newArmsHistory
-            if (bs.iterationStart
-                  .plusNanos(expirationDuration.toNanos)
-                  .toEpochMilli < epochMS)
+            if (
+              bs.iterationStart
+                .plusNanos(expirationDuration.toNanos)
+                .toEpochMilli < epochMS
+            )
               Some(
                 set("historical" -> Some(newHistory)) and set(
                   "iterationStart" ->
@@ -131,7 +123,8 @@ object BanditsDAOs extends ScanamoManagement {
         if (keepRetrying) {
           import retry._
           retryingOnSomeErrors(
-            RetryPolicies.constantDelay[F](40.milliseconds), { (e: Throwable) =>
+            RetryPolicies.constantDelay[F](40.milliseconds),
+            { (e: Throwable) =>
               e match {
                 case ScanamoError(ConditionNotMet(_)) => true
                 case _                                => false

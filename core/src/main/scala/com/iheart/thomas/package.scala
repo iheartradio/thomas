@@ -6,4 +6,5 @@ package object thomas {
   type GroupName = String
   type Username = String
   type UserId = String
+  type ArmName = GroupName
 }

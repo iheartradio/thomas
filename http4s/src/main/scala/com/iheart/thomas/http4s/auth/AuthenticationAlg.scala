@@ -12,7 +12,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
 import com.iheart.thomas.http4s.auth.AuthError._
 import org.http4s.Response
 import tsec.common.Verified
-import tsec.mac.jca.HMACSHA256
 import tsec.passwordhashers.jca.BCrypt
 import cats.MonadThrow
 import scala.util.control.NoStackTrace
@@ -122,12 +121,12 @@ object AuthenticationAlg {
   def default[F[_]: Concurrent](
       key: String
     )(implicit dc: AmazonDynamoDBAsync
-    ): F[AuthenticationAlg[F, HMACSHA256]] =
+    ): F[AuthenticationAlg[F, AuthImp]] =
     AuthDependencies[F](key).map { deps =>
       import dynamo.AdminDAOs._
       import BCrypt._
       import deps._
-      implicitly[AuthenticationAlg[F, HMACSHA256]]
+      implicitly[AuthenticationAlg[F, AuthImp]]
     }
 }
 
