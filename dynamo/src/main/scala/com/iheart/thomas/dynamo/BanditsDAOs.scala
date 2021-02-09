@@ -3,12 +3,10 @@ package dynamo
 
 import java.time.Instant
 import java.util.concurrent.TimeUnit
-
-import cats.effect.{Async, Timer}
+import cats.effect.{Async, Concurrent, Timer}
 import cats.implicits._
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.FeatureName
-
 import com.iheart.thomas.bandit.bayesian.{
   ArmState,
   BanditSettings,
@@ -31,15 +29,15 @@ object BanditsDAOs extends ScanamoManagement {
   val tables =
     List((banditStateTableName, banditKey), (banditSettingsTableName, banditKey))
 
-  def ensureBanditTables[F[_]: Async](
+  def ensureBanditTables[F[_]: Concurrent](
       readCapacity: Long,
       writeCapacity: Long
-    )(implicit dc: AmazonDynamoDBAsync
+    )(implicit dc: DynamoDbAsyncClient
     ): F[Unit] =
     ensureTables(tables, readCapacity, writeCapacity)
 
   def banditSettings[F[_]: Async: Timer, S](
-      implicit dynamoClient: AmazonDynamoDBAsync,
+      implicit dynamoClient: DynamoDbAsyncClient,
       bsformat: DynamoFormat[BanditSettings[S]]
     ): BanditSettingsDAO[F, S] =
     new ScanamoDAOHelperStringKey[F, BanditSettings[S]](
@@ -49,7 +47,7 @@ object BanditsDAOs extends ScanamoManagement {
     ) with BanditSettingsDAO[F, S]
 
   def banditState[F[_]: Async, R](
-      implicit dynamoClient: AmazonDynamoDBAsync,
+      implicit dynamoClient: DynamoDbAsyncClient,
       bsformat: DynamoFormat[BanditState[R]],
       armformat: DynamoFormat[ArmState[R]],
       rFormat: DynamoFormat[R],
@@ -66,7 +64,7 @@ object BanditsDAOs extends ScanamoManagement {
           update: List[ArmState[R]] => F[List[ArmState[R]]]
         ): F[BanditState[R]] =
         updateSafe(featureName) { bs =>
-          update(bs.arms).map(ua => Some(set("arms" -> ua)))
+          update(bs.arms).map(ua => Some(set("arms", ua)))
         }.map(r => r._2.getOrElse(r._1))
 
       def newIteration(
@@ -87,10 +85,10 @@ object BanditsDAOs extends ScanamoManagement {
                 .toEpochMilli < epochMS
             )
               Some(
-                set("historical" -> Some(newHistory)) and set(
-                  "iterationStart" ->
-                    Instant.ofEpochMilli(epochMS)
-                ) and set("arms" -> newArms)
+                set("historical", Some(newHistory)) and set(
+                  "iterationStart",
+                  Instant.ofEpochMilli(epochMS)
+                ) and set("arms", newArms)
               )
             else None
           }
@@ -108,11 +106,12 @@ object BanditsDAOs extends ScanamoManagement {
             toF(
               sc.exec(
                 table
-                  .given("version" -> existing.version)
+                  .when("version" === existing.version)
                   .update(
-                    banditKeyName -> featureName,
+                    banditKeyName === featureName,
                     updateExp and set(
-                      "version" -> (existing.version + 1L)
+                      "version",
+                      (existing.version + 1L)
                     )
                   )
               )

@@ -4,15 +4,7 @@ package stream
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.implicits._
-import com.iheart.thomas.analysis.{
-  BetaModel,
-  ConversionKPI,
-  ConversionKPIAlg,
-  ConversionMessageQuery,
-  Conversions,
-  KPIName,
-  MessageQuery
-}
+import com.iheart.thomas.analysis.{BetaModel, ConversionKPI, ConversionKPIAlg, ConversionMessageQuery, Conversions, Criteria, KPIName, MessageQuery}
 import com.iheart.thomas.stream.JobSpec.UpdateKPIPrior
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.matchers.should.Matchers
@@ -59,8 +51,8 @@ abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
     BetaModel(1, 1),
     Some(
       ConversionMessageQuery(
-        MessageQuery(None, List("action" -> "display")),
-        MessageQuery(None, List("action" -> "click"))
+        MessageQuery(None, List(Criteria("action", "display"))),
+        MessageQuery(None, List(Criteria("action", "click")))
       )
     )
   )

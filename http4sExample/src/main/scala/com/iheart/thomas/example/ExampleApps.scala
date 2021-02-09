@@ -1,12 +1,14 @@
-package com.iheart.thomas.example
+package com.iheart.thomas
+package example
 
 import cats.effect._
 import com.iheart.thomas.http4s.AdminUI
 import com.iheart.thomas.http4s.abtest.AbtestService
-import lihua.dynamo.testkit.LocalDynamo
+import testkit.LocalDynamo
 import org.http4s.server.blaze._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+
 object ExampleAbtestServerApp extends IOApp {
   def run(args: List[String]): IO[ExitCode] =
     AbtestService.fromMongo[IO]().use { s =>

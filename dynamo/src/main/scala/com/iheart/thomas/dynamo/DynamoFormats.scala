@@ -1,19 +1,19 @@
 package com.iheart.thomas
 package dynamo
 
-import java.time.format.{DateTimeFormatter, DateTimeParseException}
-import java.time.OffsetDateTime
-import java.util.concurrent.TimeUnit
-import com.iheart.thomas.admin.{AuthRecord, User}
+import com.iheart.thomas.admin.{AuthRecord, Role, User}
 import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState
-import org.scanamo.{DynamoFormat, TypeCoercionError}
-import io.estatico.newtype.ops._
 import com.iheart.thomas.bandit.bayesian._
+import com.iheart.thomas.stream._
+import io.estatico.newtype.ops._
+import org.scanamo.{DynamoFormat, TypeCoercionError}
 
+import java.time.OffsetDateTime
+import java.time.format.{DateTimeFormatter, DateTimeParseException}
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration
 import scala.concurrent.duration.FiniteDuration
-import stream._
 
 object DynamoFormats {
 
@@ -27,9 +27,9 @@ object DynamoFormats {
 
   implicit val dfOffsetTime: DynamoFormat[OffsetDateTime] =
     DynamoFormat
-      .coercedXmap[OffsetDateTime, String, DateTimeParseException]((s: String) =>
-        OffsetDateTime.parse(s, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-      )(
+      .coercedXmap[OffsetDateTime, String, DateTimeParseException](
+        (s: String) =>
+          OffsetDateTime.parse(s, DateTimeFormatter.ISO_OFFSET_DATE_TIME),
         _.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
       )
 
@@ -43,8 +43,12 @@ object DynamoFormats {
 
   implicit val fddf: DynamoFormat[duration.FiniteDuration] =
     DynamoFormat.coercedXmap[FiniteDuration, Long, Throwable](
-      FiniteDuration(_, TimeUnit.NANOSECONDS)
-    )(_.toNanos)
+      FiniteDuration(_, TimeUnit.NANOSECONDS),
+      _.toNanos
+    )
+
+  implicit val bssc: DynamoFormat[BanditSettings.Conversion] =
+    deriveDynamoFormat[BanditSettings.Conversion]
 
   implicit val bss: DynamoFormat[BanditSettings[BanditSettings.Conversion]] =
     deriveDynamoFormat[BanditSettings[BanditSettings.Conversion]]
@@ -52,22 +56,39 @@ object DynamoFormats {
   implicit val authRecordFormat: DynamoFormat[AuthRecord] =
     deriveDynamoFormat[AuthRecord]
 
+  implicit val roleFormat: DynamoFormat[Role] =
+    deriveDynamoFormat[Role]
+
   implicit val userFormat: DynamoFormat[User] =
     deriveDynamoFormat[User]
 
   implicit val betaFormat: DynamoFormat[BetaModel] = deriveDynamoFormat[BetaModel]
 
+  implicit val critFormat: DynamoFormat[Criteria] =
+    deriveDynamoFormat[Criteria]
+
+  implicit val mqFormat: DynamoFormat[MessageQuery] =
+    deriveDynamoFormat[MessageQuery]
+
+  implicit val cmqFormat: DynamoFormat[ConversionMessageQuery] =
+    deriveDynamoFormat[ConversionMessageQuery]
+
   implicit val conversionKPIFormat: DynamoFormat[ConversionKPI] =
     deriveDynamoFormat[ConversionKPI]
 
+  implicit val jobSpecFormat: DynamoFormat[JobSpec] = deriveDynamoFormat[JobSpec]
   implicit val jobFormat: DynamoFormat[Job] = deriveDynamoFormat[Job]
 
   implicit val estateKeyFormat: DynamoFormat[ExperimentKPIState.Key] =
-    DynamoFormat.xmap[ExperimentKPIState.Key, String](s =>
-      ExperimentKPIState
-        .parseKey(s)
-        .toRight(TypeCoercionError(new Exception("Invalid key format in DB: " + s)))
-    )(_.toStringKey)
+    DynamoFormat.xmap[ExperimentKPIState.Key, String](
+      s =>
+        ExperimentKPIState
+          .parseKey(s)
+          .toRight(
+            TypeCoercionError(new Exception("Invalid key format in DB: " + s))
+          ),
+      _.toStringKey
+    )
 
   implicit val armStateConversionFormat
       : DynamoFormat[ExperimentKPIState.ArmState[Conversions]] =

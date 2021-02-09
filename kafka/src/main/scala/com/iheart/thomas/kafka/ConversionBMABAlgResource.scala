@@ -5,7 +5,7 @@ import java.time.Instant
 
 import cats.NonEmptyParallel
 import cats.effect._
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.analysis.Conversions
 import com.iheart.thomas.bandit.bayesian.{BanditSettings, ConversionBMABAlg}
@@ -23,7 +23,7 @@ object ConversionBMABAlgResource {
       implicit ex: ExecutionContext,
       F: Concurrent[F],
       mongoDAOs: mongo.DAOs[F],
-      amazonClient: AmazonDynamoDBAsync
+      amazonClient: DynamoDbAsyncClient
     ): Resource[F, ConversionBMABAlg[F]] = {
     import mongo.idSelector
     implicit val stateDAO =
@@ -31,7 +31,8 @@ object ConversionBMABAlgResource {
     implicit val settingDAO =
       dynamo.BanditsDAOs.banditSettings[F, BanditSettings.Conversion]
     implicit val (abtestDAO, featureDAO, kpiDAO) = mongoDAOs
-    lazy val refreshPeriod = 0.seconds //No cache is needed for abtests in Conversion API
+    lazy val refreshPeriod =
+      0.seconds //No cache is needed for abtests in Conversion API
 
     AbtestAlg.defaultResource[F](refreshPeriod).map { implicit abtestAlg =>
       implicit val ss = Sampler.default
@@ -44,7 +45,7 @@ object ConversionBMABAlgResource {
   def apply[F[_]: Timer: Concurrent: EventLogger: NonEmptyParallel](
       mongoConfig: Config
     )(implicit ex: ExecutionContext,
-      amazonClient: AmazonDynamoDBAsync
+      amazonClient: DynamoDbAsyncClient
     ): Resource[F, ConversionBMABAlg[F]] =
     mongo.daosResource(mongoConfig).flatMap(implicit mongo => apply)
 

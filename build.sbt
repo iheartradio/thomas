@@ -28,7 +28,7 @@ lazy val libs = {
     .addModule("http4s", "http4s-twirl")
     .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
     .add(   name = "jawn",                  version = "1.0.0",  org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
-    .addJVM(name = "lihua",                 version = "0.36",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-dynamo", "lihua-dynamo-testkit", "lihua-play-json")
+    .addJVM(name = "lihua",                 version = "0.36",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-play-json")
     .addJVM(name = "log4cats",              version = "1.1.1",  org = "io.chrisdavenport", "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
     .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
@@ -43,7 +43,7 @@ lazy val libs = {
     .addJVM(name = "scala-view",            version = "0.5",    org = "com.github.darrenjw")
     .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
-    .addJVM(name = "scanamo",               version = "1.0-M14", org ="org.scanamo", "scanamo-testkit")
+    .addJVM(name = "scanamo",               version = "1.0.0-M15", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
     .add(   name = "spark",                 version = "2.4.5",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
     .addJVM(name = "tsec",                  version = "0.2.1",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s")
@@ -232,7 +232,7 @@ lazy val dynamo = project
   .settings(rootSettings)
   .settings(
     libs.dependencies(
-      "lihua-dynamo",
+      "scanamo-cats-effect",
       "cats-retry",
       "pureconfig-cats-effect",
       "pureconfig-generic"
@@ -245,7 +245,7 @@ lazy val testkit = project
   .settings(name := "thomas-testkit")
   .settings(rootSettings)
   .settings(
-    libs.dependencies("lihua-dynamo-testkit", "cats-effect-testing-scalatest")
+    libs.dependencies("scanamo-testkit", "cats-effect-testing-scalatest")
   )
 
 lazy val stream = project

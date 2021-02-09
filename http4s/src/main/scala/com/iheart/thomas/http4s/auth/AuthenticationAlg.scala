@@ -8,7 +8,7 @@ import com.iheart.thomas.admin.{Role, User, UserDAO}
 import tsec.authentication.Authenticator
 import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 import cats.implicits._
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.http4s.auth.AuthError._
 import org.http4s.Response
 import tsec.common.Verified
@@ -120,7 +120,7 @@ object AuthenticationAlg {
     */
   def default[F[_]: Concurrent](
       key: String
-    )(implicit dc: AmazonDynamoDBAsync
+    )(implicit dc: DynamoDbAsyncClient
     ): F[AuthenticationAlg[F, AuthImp]] =
     AuthDependencies[F](key).map { deps =>
       import dynamo.AdminDAOs._

@@ -10,12 +10,12 @@ import com.iheart.thomas.analysis.{
   BetaModel,
   ConversionKPI,
   ConversionMessageQuery,
+  Criteria,
   KPIName,
   MessageQuery
 }
 import com.iheart.thomas.dynamo.{AnalysisDAOs, ScanamoManagement}
 import com.iheart.thomas.http4s.MongoResources
-import lihua.dynamo.testkit.LocalDynamo
 import ThrowableExtension._
 import cats.implicits._
 
@@ -75,11 +75,13 @@ object Factory extends IOApp {
                   BetaModel(2d, 2d),
                   Some(
                     ConversionMessageQuery(
-                      initMessage =
-                        MessageQuery(None, List("page_shown" -> "front_page")),
+                      initMessage = MessageQuery(
+                        None,
+                        List(Criteria("page_shown", "front_page"))
+                      ),
                       convertedMessage = MessageQuery(
                         None,
-                        List("click" -> "front_page_recommendation")
+                        List(Criteria("click", "front_page_recommendation"))
                       )
                     )
                   )

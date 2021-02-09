@@ -5,7 +5,7 @@ import java.util.UUID
 import cats.NonEmptyParallel
 import cats.effect._
 import cats.implicits._
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.analysis.ConversionEvent
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
@@ -42,7 +42,7 @@ object BanditUpdater {
         Pipe[F, Message, (ArmName, ConversionEvent)]
       ]
     )(implicit ex: ExecutionContext,
-      amazonClient: AmazonDynamoDBAsync,
+      amazonClient: DynamoDbAsyncClient,
       deserializer: Deserializer[F, Message]
     ): Resource[F, BanditUpdater[F]] = {
     implicit val mp = MessageProcessor(toEvent)
@@ -55,7 +55,7 @@ object BanditUpdater {
       F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs: MessageProcessor: EventLogger: NonEmptyParallel
     ](cfg: Config
     )(implicit ex: ExecutionContext,
-      amazonClient: AmazonDynamoDBAsync
+      amazonClient: DynamoDbAsyncClient
     ): Resource[F, BanditUpdater[F]] =
     ConversionBMABAlgResource[F].evalMap(implicit alg => create[F](cfg))
 
