@@ -40,21 +40,11 @@ docker run -p 8042:8000 -v ~/dynamodblocal/db:/home/dynamodblocal/db misoca/dyna
 
 
 
-### Step 2 create a http service application using either thomas-http4s or thomas-play
+### Step 2 create a http service application using thomas-http4s
 
 `thomas-core` provides the core functionality through [a facade API](https://iheartradio.github.io/thomas/api/com/iheart/thomas/API.html). If your product is using the typical server-client architecture, you can either incorporate this library into your existing service (it needs to be scala compatible though), or set up a standalone http service to serve this API. 
 
-#### Step 2 Option 1: incorporate Thomas-core library into existing scala http service application
-
-Basically you need to instantiate the [Thomas facade API](https://iheartradio.github.io/thomas/api/com/iheart/thomas/API.html) and have your http service delegate to it. To instantiate this API you need an implementation of the data access layer. Right now thomas-mongo provide one for the MongoDB. 
-
-Since the instance maintains DB connection pool, it's a resource that needs to be managed. Depending on the paradigm of your existing http service application, you can follow [the example in thomas-http4s](https://iheartradio.github.io/thomas/api/com/iheart/thomas/http4s/AbtestService$.html) if it's pure functional, or [the example in thomas-play](https://iheartradio.github.io/thomas/api/com/iheart/thomas/play/APIProvider.html) if it's more traditionally OO.  
-
-
-If you choose to set up a standalone service, you can utilize either `thomas-http4s` or `thomas-play`.
  
-#### Step 2 Option 2a: Setting up with http4s
-
 Create a new Scala project and in build.sbt add
 
 ```
