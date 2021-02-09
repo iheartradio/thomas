@@ -43,7 +43,7 @@ object TimeUtil {
   }
 
   def epochDay: Instant =
-    LocalDate.EPOCH.atStartOfDay().toInstant(ZoneOffset.UTC)
+    LocalDate.of(1970, 1, 1).atStartOfDay().toInstant(ZoneOffset.UTC)
 
   def parse(
       value: String,
