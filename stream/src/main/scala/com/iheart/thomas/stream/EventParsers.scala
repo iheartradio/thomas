@@ -58,8 +58,8 @@ object JValueSyntax {
       ): JValue =
       getPath(path).getString.filter(_ == value).as(jv).getOrElse(JNull)
 
-    def filterAnd(crit: (String, String)*): JValue =
-      crit.foldLeft(jv)((m, p) => m.filter(p._1, p._2))
+    def filterAnd(crit: Criteria*): JValue =
+      crit.foldLeft(jv)((m, c) => m.filter(c.fieldName, c.matchingValue))
 
   }
 }

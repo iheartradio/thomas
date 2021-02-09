@@ -1,13 +1,11 @@
 package com.iheart.thomas.dynamo
 
 import cats.effect.{Resource, Sync}
-import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
-import com.amazonaws.services.dynamodbv2.{
-  AmazonDynamoDBAsync,
-  AmazonDynamoDBAsyncClient
-}
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import io.estatico.newtype.Coercible
 import pureconfig.ConfigSource
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.regions.Region
 
 object `package` {
 
@@ -16,28 +14,23 @@ object `package` {
   def client[F[_]](
       config: ClientConfig
     )(implicit F: Sync[F]
-    ): Resource[F, AmazonDynamoDBAsync] = {
+    ): Resource[F, DynamoDbAsyncClient] = {
     import config._
     Resource.make(
       F.delay(
-        AmazonDynamoDBAsyncClient
-          .asyncBuilder()
-          .withCredentials(
-            new AWSStaticCredentialsProvider(
-              new BasicAWSCredentials(accessKey, secretKey)
-            )
+        DynamoDbAsyncClient
+          .builder()
+          .region(Region.of(region))
+          .credentialsProvider(() =>
+            AwsBasicCredentials.create(accessKey, secretKey)
           )
-          .withRegion(region)
-          //          .withEndpointConfiguration(
-          //            new EndpointConfiguration(serviceEndpoint, signingRegion)
-          //          )
           .build()
       )
-    )(c => F.delay(c.shutdown()))
+    )(c => F.delay(c.close()))
 
   }
 
-  def client[F[_]: Sync](cfg: ConfigSource): Resource[F, AmazonDynamoDBAsync] = {
+  def client[F[_]: Sync](cfg: ConfigSource): Resource[F, DynamoDbAsyncClient] = {
     import pureconfig.generic.auto._
     import pureconfig.module.catseffect._
     Resource

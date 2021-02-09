@@ -37,7 +37,11 @@ case class ConversionMessageQuery(
 
 case class MessageQuery(
     description: Option[String],
-    criteria: List[(FieldName, FieldValue)])
+    criteria: List[Criteria])
+
+case class Criteria(
+    fieldName: FieldName,
+    matchingValue: FieldValue)
 
 object MessageQuery {
   type FieldName = String

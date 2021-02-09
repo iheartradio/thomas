@@ -13,7 +13,7 @@ import org.http4s.dsl.Http4sDsl
 import cats.implicits._
 import com.iheart.thomas.dynamo
 import cats.effect._
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.admin.{Role, User}
 import com.typesafe.config.Config
 import org.http4s.Response
@@ -95,7 +95,7 @@ object AdminUI {
   }
 
   def resource[F[_]: ConcurrentEffect: Timer: Logger: ContextShift](
-      implicit dc: AmazonDynamoDBAsync,
+      implicit dc: DynamoDbAsyncClient,
       cfg: AdminUIConfig,
       config: Config,
       ec: ExecutionContext,
@@ -146,7 +146,7 @@ object AdminUI {
     * Provides a server that serves the Admin UI
     */
   def serverResourceAutoLoadConfig[F[_]: ConcurrentEffect: Timer: ContextShift](
-      implicit dc: AmazonDynamoDBAsync,
+      implicit dc: DynamoDbAsyncClient,
       executionContext: ExecutionContext,
       ap: ArmParser[F, JValue]
     ): Resource[F, ExitCode] = {
@@ -164,7 +164,7 @@ object AdminUI {
       implicit
       adminCfg: AdminUIConfig,
       config: Config,
-      dc: AmazonDynamoDBAsync,
+      dc: DynamoDbAsyncClient,
       executionContext: ExecutionContext,
       ap: ArmParser[F, JValue]
     ): Resource[F, ExitCode] = {

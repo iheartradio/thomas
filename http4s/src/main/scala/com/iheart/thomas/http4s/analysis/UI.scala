@@ -3,12 +3,12 @@ package http4s
 package analysis
 
 import cats.effect.Async
-import com.iheart.thomas.analysis.MessageQuery.{FieldName, FieldValue}
 import com.iheart.thomas.analysis.{
   BetaModel,
   ConversionKPI,
   ConversionKPIAlg,
   ConversionMessageQuery,
+  Criteria,
   KPIName,
   MessageQuery
 }
@@ -167,9 +167,15 @@ object UI {
   object Decoders {
 
     import CommonFormDecoders._
+
+    implicit val criteriaQueryDecoder: FormDataDecoder[Criteria] = (
+      field[String]("fieldName"),
+      field[String]("matchingValue")
+    ).mapN(Criteria.apply)
+
     implicit val messageQueryDecoder: FormDataDecoder[MessageQuery] = (
       fieldOptional[String]("description"),
-      list[(FieldName, FieldValue)]("criteria")
+      list[Criteria]("criteria")
     ).mapN(MessageQuery.apply)
 
     implicit val uprDecoder: FormDataDecoder[UpdateKPIRequest] =

@@ -16,9 +16,8 @@ import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.{dynamo, mongo}
 import com.stripe.rainier.sampler.{RNG, Sampler}
 import com.typesafe.config.ConfigFactory
-import lihua.dynamo.testkit.LocalDynamo
 import _root_.play.api.libs.json.Json
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.http4s.AuthImp
 import com.iheart.thomas.http4s.auth.AuthenticationAlg
 import dynamo.DynamoFormats._
@@ -102,7 +101,7 @@ object Resources {
       }
 
   def authAlg(
-      implicit dc: AmazonDynamoDBAsync
+      implicit dc: DynamoDbAsyncClient
     ): Resource[IO, AuthenticationAlg[IO, AuthImp]] =
     Resource.liftF(AuthenticationAlg.default[IO](sys.env("THOMAS_ADMIN_KEY")))
 

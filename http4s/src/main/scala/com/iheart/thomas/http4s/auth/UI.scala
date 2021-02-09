@@ -3,7 +3,7 @@ package http4s
 package auth
 import cats.effect.Async
 import cats.implicits._
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.admin.Role
 import com.iheart.thomas.auth.html
 import com.iheart.thomas.html.redirect
@@ -157,7 +157,7 @@ object UI extends {
       authDeps: AuthDependencies[AuthImp],
       initialAdminUsername: Option[String],
       initialRole: Role
-    )(implicit dc: AmazonDynamoDBAsync,
+    )(implicit dc: DynamoDbAsyncClient,
       adminUIConfig: AdminUIConfig,
       rv: ReverseRoutes
     ): UI[F, AuthImp] = {

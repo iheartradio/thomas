@@ -1,15 +1,12 @@
 package com.iheart.thomas.dynamo
 
-import cats.effect.{Async, Timer}
+import cats.effect.{Async, Concurrent, Timer}
 import cats.implicits._
-import com.amazonaws.handlers.AsyncHandler
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
-import com.amazonaws.services.dynamodbv2.model.{
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
+import software.amazon.awssdk.services.dynamodb.model.{
   AttributeDefinition,
   CreateTableRequest,
-  CreateTableResult,
   DescribeTableRequest,
-  DescribeTableResult,
   KeySchemaElement,
   KeyType,
   ProvisionedThroughput,
@@ -18,7 +15,6 @@ import com.amazonaws.services.dynamodbv2.model.{
 }
 import com.iheart.thomas.TimeUtil
 import com.iheart.thomas.dynamo.ScanamoDAOHelper.NotFound
-
 import org.scanamo.ops.ScanamoOps
 import org.scanamo.syntax._
 import org.scanamo.{
@@ -33,12 +29,18 @@ import io.estatico.newtype.Coercible
 import org.scanamo.update.UpdateExpression
 
 import java.time.Instant
+import java.util.concurrent.{
+  CancellationException,
+  CompletableFuture,
+  CompletionException
+}
+import java.util.function.BiFunction
 import scala.util.control.NoStackTrace
 
 abstract class ScanamoDAOHelper[F[_], A](
     tableName: String,
     keyName: String,
-    client: AmazonDynamoDBAsync
+    client: DynamoDbAsyncClient
   )(implicit F: Async[F],
     DA: DynamoFormat[A]) {
 
@@ -73,7 +75,7 @@ abstract class ScanamoDAOHelper[F[_], A](
     toF(
       sc.exec(
         table
-          .given(attributeNotExists(keyName))
+          .when(attributeNotExists(keyName))
           .put(a)
       )
     ).as(a)
@@ -89,7 +91,7 @@ abstract class ScanamoDAOHelper[F[_], A](
 abstract class ScanamoDAOHelperStringLikeKey[F[_], A: DynamoFormat, K](
     tableName: String,
     keyName: String,
-    client: AmazonDynamoDBAsync
+    client: DynamoDbAsyncClient
   )(implicit F: Async[F],
     coercible: Coercible[K, String])
     extends ScanamoDAOHelperStringFormatKey[F, A, K](
@@ -104,7 +106,7 @@ abstract class ScanamoDAOHelperStringLikeKey[F[_], A: DynamoFormat, K](
 abstract class ScanamoDAOHelperStringFormatKey[F[_], A: DynamoFormat, K](
     val tableName: String,
     val keyName: String,
-    client: AmazonDynamoDBAsync
+    client: DynamoDbAsyncClient
   )(implicit F: Async[F])
     extends ScanamoDAOHelper[F, A](
       tableName,
@@ -124,15 +126,15 @@ abstract class ScanamoDAOHelperStringFormatKey[F[_], A: DynamoFormat, K](
     )
 
   def find(k: K): F[Option[A]] =
-    toFOption(sc.exec(table.get(keyName -> stringKey(k))))
+    toFOption(sc.exec(table.get(keyName === stringKey(k))))
 
   def all: F[Vector[A]] = execTraversableOnce(table.scan())
 
   def remove(k: K): F[Unit] =
-    sc.exec(table.delete(keyName -> stringKey(k)))
+    sc.exec(table.delete(keyName === stringKey(k)))
 
   def update(a: A): F[A] =
-    sc.exec(table.given(attributeExists(keyName)).put(a)).as(a)
+    sc.exec(table.when(attributeExists(keyName)).put(a)).as(a)
 
   def upsert(a: A): F[A] =
     sc.exec(table.put(a)).as(a)
@@ -141,7 +143,7 @@ abstract class ScanamoDAOHelperStringFormatKey[F[_], A: DynamoFormat, K](
       k: K,
       ue: UpdateExpression
     ) =
-    toF(sc.exec(table.update(keyName -> stringKey(k), ue)))
+    toF(sc.exec(table.update(keyName === stringKey(k), ue)))
 
 }
 
@@ -168,11 +170,11 @@ trait AtomicUpdatable[F[_], A, K] {
       r <- toF(
         sc.exec(
           table
-            .given(lastUpdatedFieldName -> A.lastUpdated(existing))
+            .when(lastUpdatedFieldName === A.lastUpdated(existing))
             .update(
-              keyName -> stringKey(k),
+              keyName === stringKey(k),
               updateExpression(existing)
-                and set(lastUpdatedFieldName -> now)
+                and set(lastUpdatedFieldName, now)
             )
         )
       )
@@ -197,7 +199,7 @@ trait AtomicUpdatable[F[_], A, K] {
 abstract class ScanamoDAOHelperStringKey[F[_]: Async, A: DynamoFormat](
     tableName: String,
     keyName: String,
-    client: AmazonDynamoDBAsync)
+    client: DynamoDbAsyncClient)
     extends ScanamoDAOHelperStringLikeKey[F, A, String](tableName, keyName, client)
 
 object ScanamoDAOHelperStringKey {
@@ -216,67 +218,72 @@ object ScanamoDAOHelper {
 
 trait ScanamoManagement {
   import scala.collection.JavaConverters._
-  private def attributeDefinitions(
-      attributes: Seq[(String, ScalarAttributeType)]
-    ) =
-    attributes.map {
-      case (symbol, attributeType) =>
-        new AttributeDefinition(symbol, attributeType)
-    }.asJava
 
   private def keySchema(attributes: Seq[(String, ScalarAttributeType)]) = {
     val hashKeyWithType :: rangeKeyWithType = attributes.toList
-    val keySchemas = hashKeyWithType._1 -> KeyType.HASH :: rangeKeyWithType
-      .map(_._1 -> KeyType.RANGE)
+    val keySchemas = hashKeyWithType._1 -> KeyType.HASH :: rangeKeyWithType.map(
+      _._1 -> KeyType.RANGE
+    )
     keySchemas.map {
-      case (symbol, keyType) => new KeySchemaElement(symbol, keyType)
+      case (symbol, keyType) =>
+        KeySchemaElement.builder.attributeName(symbol).keyType(keyType).build
     }.asJava
   }
 
-  private def asyncHandle[F[_], Req <: com.amazonaws.AmazonWebServiceRequest, Resp](
-      f: AsyncHandler[Req, Resp] => java.util.concurrent.Future[Resp]
-    )(implicit F: Async[F]
-    ): F[Resp] =
-    F.async { (cb: Either[Throwable, Resp] => Unit) =>
-      val handler = new AsyncHandler[Req, Resp] {
-        def onError(exception: Exception): Unit =
-          cb(Left(exception))
-
-        def onSuccess(
-            req: Req,
-            result: Resp
-          ): Unit =
-          cb(Right(result))
-      }
-
-      f(handler)
-      ()
+  private def lift[F[_], A](
+      fcf: => CompletableFuture[A]
+    )(implicit F: Concurrent[F]
+    ): F[A] =
+    F.delay(fcf).flatMap { cf =>
+      F.cancelable(cb => {
+        cf.handle[Unit](new BiFunction[A, Throwable, Unit] {
+          override def apply(
+              result: A,
+              err: Throwable
+            ): Unit =
+            err match {
+              case null                     => cb(Right(result))
+              case _: CancellationException => ()
+              case ex: CompletionException if ex.getCause ne null =>
+                cb(Left(ex.getCause))
+              case ex => cb(Left(ex))
+            }
+        })
+        F.delay(cf.cancel(true)).void
+      })
     }
 
-  def createTable[F[_]](
-      client: AmazonDynamoDBAsync,
+  def createTable[F[_]: Concurrent](
+      client: DynamoDbAsyncClient,
       tableName: String,
       keyAttributes: Seq[(String, ScalarAttributeType)],
       readCapacityUnits: Long,
       writeCapacityUnits: Long
     )(implicit F: Async[F]
-    ): F[Unit] = {
-    val req = new CreateTableRequest(tableName, keySchema(keyAttributes))
-      .withAttributeDefinitions(attributeDefinitions(keyAttributes))
-      .withProvisionedThroughput(
-        new ProvisionedThroughput(readCapacityUnits, writeCapacityUnits)
-      )
-
-    asyncHandle[F, CreateTableRequest, CreateTableResult](
-      client.createTableAsync(req, _)
+    ): F[Unit] =
+    lift(
+      client
+        .createTable(
+          CreateTableRequest.builder
+            .attributeDefinitions(attributeDefinitions(keyAttributes))
+            .tableName(tableName)
+            .keySchema(keySchema(keyAttributes))
+            .provisionedThroughput(
+              ProvisionedThroughput
+                .builder()
+                .readCapacityUnits(readCapacityUnits)
+                .writeCapacityUnits(writeCapacityUnits)
+                .build
+            )
+            .build
+        )
     ).void
-  }
 
-  def ensureTables[F[_]: Async](
+  def ensureTables[F[_]: Concurrent](
       tables: List[(String, (String, ScalarAttributeType))],
       readCapacityUnits: Long,
       writeCapacityUnits: Long
-    )(implicit dynamo: AmazonDynamoDBAsync
+    )(implicit dynamo: DynamoDbAsyncClient
     ): F[Unit] =
     tables.traverse {
       case (tableName, keyAttribute) =>
@@ -289,16 +296,19 @@ trait ScanamoManagement {
         )
     }.void
 
-  def ensureTable[F[_]](
-      client: AmazonDynamoDBAsync,
+  def ensureTable[F[_]: Concurrent](
+      client: DynamoDbAsyncClient,
       tableName: String,
       keyAttributes: Seq[(String, ScalarAttributeType)],
       readCapacityUnits: Long,
       writeCapacityUnits: Long
-    )(implicit F: Async[F]
     ): F[Unit] = {
-    asyncHandle[F, DescribeTableRequest, DescribeTableResult](
-      client.describeTableAsync(new DescribeTableRequest(tableName), _)
+    lift(
+      client.describeTable(
+        DescribeTableRequest.builder
+          .tableName(tableName)
+          .build
+      )
     ).void.recoverWith {
       case e: ResourceNotFoundException =>
         createTable(
@@ -310,6 +320,15 @@ trait ScanamoManagement {
         )
     }
   }
+
+  private def attributeDefinitions(attributes: Seq[(String, ScalarAttributeType)]) =
+    attributes.map {
+      case (symbol, attributeType) =>
+        AttributeDefinition.builder
+          .attributeName(symbol)
+          .attributeType(attributeType)
+          .build
+    }.asJava
 }
 
 object ScanamoManagement extends ScanamoManagement
