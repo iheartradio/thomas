@@ -67,8 +67,6 @@ addCommandAlias(
 lazy val thomas = project
   .in(file("."))
   .aggregate(
-    playExample,
-    play,
     plot,
     client,
     bandit,
@@ -194,7 +192,6 @@ lazy val docs = project
       taglessSettings,
       client,
       http4s,
-      play,
       core,
       analysis,
       cli,
@@ -362,43 +359,6 @@ lazy val tests = project
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
     libs.dependency("akka-slf4j", Some(IntegrationTest.name)),
     libs.dependency("embedded-kafka", Some(IntegrationTest.name))
-  )
-
-lazy val play = project
-  .dependsOn(mongo, dynamo)
-  .aggregate(mongo, core)
-  .configs(IntegrationTest)
-  .settings(rootSettings)
-  .settings(
-    name := "thomas-play",
-    Defaults.itSettings,
-    parallelExecution in IntegrationTest := false,
-    taglessSettings,
-    libs.dependency("log4j-core", Some(IntegrationTest.name)),
-    libs.dependency("scalatestplus-play", Some(IntegrationTest.name)),
-    libs.dependencies("scala-java8-compat", "play")
-  )
-
-lazy val playExample = project
-  .enablePlugins(PlayScala, SwaggerPlugin)
-  .dependsOn(play)
-  .aggregate(play)
-  .settings(
-    rootSettings,
-    noPublishing
-  )
-  .settings(
-    name := "thomas-play-example",
-    libs.dependency("scanamo-testkit"),
-    libraryDependencies ++= Seq(
-      guice,
-      ws,
-      filters,
-      "org.webjars" % "swagger-ui" % "3.25.4"
-    ),
-    dockerExposedPorts in Docker := Seq(9000),
-    swaggerDomainNameSpaces := Seq("com.iheart.thomas"),
-    (stage in Docker) := (stage in Docker).dependsOn(swagger).value
   )
 
 lazy val noPublishing = Seq(skip in publish := true)
