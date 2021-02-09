@@ -129,7 +129,7 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
 
 }
 
-class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
+abstract class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
   "reallocates bandit" in {
     withRunningKafka {
       createCustomTopic(topic)
