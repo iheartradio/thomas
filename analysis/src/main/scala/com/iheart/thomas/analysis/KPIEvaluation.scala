@@ -3,7 +3,7 @@ package com.iheart.thomas.analysis
 import cats.Applicative
 import cats.data.NonEmptyList
 import com.iheart.thomas.{ArmName, GroupName}
-import com.stripe.rainier.sampler.{RNG, Sampler}
+import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import cats.implicits._
 import com.stripe.rainier.core.Beta
 
@@ -36,10 +36,13 @@ trait KPIEvaluation[F[_], Model, Measurement] {
 }
 
 object KPIEvaluation {
+  def apply[F[_], Model, Measurement](
+      implicit inst: KPIEvaluation[F, Model, Measurement]
+    ): KPIEvaluation[F, Model, Measurement] = inst
 
   implicit def betaBayesianInstance[F[_]: Applicative](
       implicit
-      sampler: Sampler,
+      sampler: SamplerConfig,
       rng: RNG
     ): KPIEvaluation[F, BetaModel, Conversions] =
     new BayesianKPIEvaluation[F, BetaModel, Conversions] {
@@ -52,7 +55,7 @@ object KPIEvaluation {
 
   abstract class BayesianKPIEvaluation[F[_], Model, Measurement](
       implicit
-      sampler: Sampler,
+      sampler: SamplerConfig,
       rng: RNG,
       F: Applicative[F])
       extends KPIEvaluation[F, Model, Measurement] {

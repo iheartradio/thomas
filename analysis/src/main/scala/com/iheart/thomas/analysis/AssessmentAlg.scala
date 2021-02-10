@@ -4,7 +4,7 @@ package analysis
 import java.time.Instant
 
 import com.iheart.thomas.abtest.model.Abtest
-import com.stripe.rainier.sampler.{RNG, Sampler}
+import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import cats.implicits._
 
 import scala.util.control.NoStackTrace
@@ -77,7 +77,7 @@ object AssessmentAlg {
 
   abstract class BayesianAssessmentAlg[F[_], K, M](
       implicit
-      sampler: Sampler,
+      sampler: SamplerConfig,
       rng: RNG,
       K: Measurable[F, M, K],
       F: MonadError[F, Throwable])

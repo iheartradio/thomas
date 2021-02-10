@@ -14,7 +14,7 @@ case class ExperimentKPIState[R](
     arms: List[ArmState[R]],
     lastUpdated: Instant) {
 
-  def rewardState: Map[ArmName, R] =
+  def armsStateMap: Map[ArmName, R] =
     arms.map(as => (as.name, as.kpiStats)).toMap
 
   def distribution: Map[ArmName, Probability] =
@@ -48,7 +48,7 @@ object ExperimentKPIState {
 
 trait ExperimentKPIStateDAO[F[_], R] {
 
-  private[analysis] def insert(s: ExperimentKPIState[R]): F[ExperimentKPIState[R]]
+  private[analysis] def upsert(s: ExperimentKPIState[R]): F[ExperimentKPIState[R]]
 
   def get(key: Key): F[ExperimentKPIState[R]]
   def find(key: Key): F[Option[ExperimentKPIState[R]]]

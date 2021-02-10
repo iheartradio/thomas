@@ -120,7 +120,7 @@ abstract class ScanamoDAOHelperStringFormatKey[F[_], A: DynamoFormat, K](
     find(k).flatMap(
       _.liftTo[F](
         NotFound(
-          s"Cannot find in the table a record whose ${keyName} is '${stringKey(k)}'. "
+          s"Cannot find in the table $tableName a record whose $keyName is '${stringKey(k)}'. "
         )
       )
     )
@@ -213,7 +213,6 @@ object ScanamoDAOHelper {
       with NoStackTrace
       with Product
       with Serializable
-
 }
 
 trait ScanamoManagement {

@@ -17,7 +17,7 @@ import scala.util.Random
 
 class LogNormalKPIModelSuite extends AnyFunSuiteLike with Matchers {
   implicit val rng = RNG.default
-  implicit val sampler = Sampler.default //.copy(iterations = 10000)
+  implicit val sampler = SamplerConfig.default //.copy(iterations = 10000)
 
   type F[A] = Either[Throwable, A]
   def mock(

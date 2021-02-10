@@ -11,7 +11,7 @@ import com.iheart.thomas.analysis.Conversions
 import com.iheart.thomas.bandit.bayesian.{BanditSettings, ConversionBMABAlg}
 import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.{dynamo, mongo}
-import com.stripe.rainier.sampler.{RNG, Sampler}
+import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import com.typesafe.config.Config
 
 import scala.concurrent.ExecutionContext
@@ -35,7 +35,7 @@ object ConversionBMABAlgResource {
       0.seconds //No cache is needed for abtests in Conversion API
 
     AbtestAlg.defaultResource[F](refreshPeriod).map { implicit abtestAlg =>
-      implicit val ss = Sampler.default
+      implicit val ss = SamplerConfig.default
       implicit val rng = RNG.default
       implicit val nowF = F.delay(Instant.now)
       implicitly

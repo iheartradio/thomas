@@ -1,47 +1,56 @@
-@import com.iheart.thomas.stream._
 @import com.iheart.thomas.analysis._
 @import com.iheart.thomas.html._
+@import com.iheart.thomas.http4s.analysis.UI.MonitorInfo
 @import com.iheart.thomas._
-@import JobSpec.MonitorTest
 
 @import com.iheart.thomas.http4s.UIEnv
 
 @(
 feature: FeatureName,
-monitors: Vector[JobInfo[MonitorTest]],
+monitors: Vector[MonitorInfo[Conversions]],
 kpis: Seq[KPIName]
 )(implicit env: UIEnv)
 
 @topNav(s"Analysis Of A/B test on ${feature}") {
 <div class="row mt-3">
     <div class="list-group w-100">
-        @for(job <- monitors) {
+        @for(monitor <- monitors) {
 
         <div class="list-group-item">
             <div class="row">
                 <div class="col-8">
                     <div>
                         Monitoring
-                        <span class="mb-1 h5 font-weight-light text-success">@job.spec.kpi</span>
-                        <small>until @job.spec.until</small>
+                        <span class="mb-1 h5 font-weight-light text-success">@monitor.kpi</span>
+                        <small>until @monitor.job.spec.until</small>
                     </div>
-                </div>
 
-                <div class="col-3 text-sm-right">
-                    @for(started <- job.started) {
-                    <small><span class="font-weight-light ml-3">
-                    Started at: </span>
-                        <span class="font-weight-heavy">
-                           @started
-                        </span>
-                    </small>
+                    @for(state <- monitor.state) {
+                        <div class="d-flex">
+                            @for(arm <- state.arms) {
+                                <div>
+                                    <h5>Group @arm.name </h5>
+                                    <b>Total: @arm.kpiStats.total</b>
+                                    <b>Converted: @arm.kpiStats.converted</b>
+                                    <b>Rate: @arm.kpiStats.rate</b>
+                                </div>
+                             }
+                        </div>
                     }
-
-
+                </div>
+                <div class="col-3 text-sm-right">
+                    @for(started <- monitor.job.started) {
+                        <small><span class="font-weight-light ml-3">
+                        Started at: </span>
+                            <span class="font-weight-heavy">
+                               @started
+                            </span>
+                        </small>
+                    }
                 </div>
                 <div class="col-1">
-                    <a href="monitors/@job.spec.kpi/stop"
-                       onclick="return confirm('Are you sure you would like to stop monitoring @job.spec.kpi for this @feature?');"
+                    <a href="monitors/@monitor.kpi/stop"
+                       onclick="return confirm('Are you sure you would like to stop monitoring @monitor.kpi for this @feature?');"
                        role="button">
                         <i class="far fa-stop-circle" title="stop this monitor"></i>
                     </a>

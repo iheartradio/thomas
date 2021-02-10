@@ -21,9 +21,15 @@ import com.iheart.thomas.analysis.html._
 import com.iheart.thomas.html.{errorMsg, redirect}
 import org.http4s.FormDataDecoder
 import FormDataDecoder._
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
+import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, MonitorAlg}
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
-import com.iheart.thomas.http4s.analysis.UI.{StartMonitorRequest, UpdateKPIRequest}
-import com.iheart.thomas.stream.JobAlg
+import com.iheart.thomas.http4s.analysis.UI.{
+  MonitorInfo,
+  StartMonitorRequest,
+  UpdateKPIRequest
+}
+import com.iheart.thomas.stream.{JobAlg, JobInfo}
 import com.iheart.thomas.stream.JobSpec.{MonitorTest, UpdateKPIPrior}
 import tsec.authentication._
 
@@ -33,6 +39,7 @@ class UI[F[_]: Async](
     implicit
     convKpiAlg: ConversionKPIAlg[F],
     jobAlg: JobAlg[F],
+    monitorAlg: MonitorAlg[F],
     authAlg: AuthenticationAlg[F, AuthImp],
     aCfg: AdminUIConfig)
     extends AuthedEndpointsUtils[F, AuthImp]
@@ -53,17 +60,21 @@ class UI[F[_]: Async](
     case GET -> `rootPath` / "abtests" / feature / "" asAuthed (u) =>
       for {
         js <- jobAlg.monitors(feature)
+        monitors <- js.traverse { j =>
+          monitorAlg.getConversion(Key(feature, j.spec.kpi)).map(MonitorInfo(j, _))
+        }
         kpis <- convKpiAlg.all
         availableKpis =
           kpis.map(_.name).filter(k => js.find(_.spec.kpi == k).isEmpty)
         r <- Ok(
-          abtest(feature, js, availableKpis)(UIEnv(u))
+          abtest(feature, monitors, availableKpis)(UIEnv(u))
         )
       } yield r
 
     case se @ POST -> `rootPath` / "abtests" / feature / "monitors" asAuthed (u) =>
       se.request.as[StartMonitorRequest].flatMap { r =>
-        jobAlg.schedule(MonitorTest(feature, r.kpi, r.until.toInstant)) *>
+        monitorAlg.initConversion(feature, r.kpi) *>
+          jobAlg.schedule(MonitorTest(feature, r.kpi, r.until.toInstant)) *>
           Ok(
             redirect(
               reverseRoutes.analysisOf(feature),
@@ -163,6 +174,12 @@ object UI {
   case class StartMonitorRequest(
       kpi: KPIName,
       until: OffsetDateTime)
+
+  case class MonitorInfo[R](
+      job: JobInfo[MonitorTest],
+      state: Option[ExperimentKPIState[R]]) {
+    def kpi: KPIName = job.spec.kpi
+  }
 
   object Decoders {
 

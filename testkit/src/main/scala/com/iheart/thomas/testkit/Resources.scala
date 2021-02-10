@@ -14,7 +14,7 @@ import com.iheart.thomas.bandit.bayesian.{
 }
 import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.{dynamo, mongo}
-import com.stripe.rainier.sampler.{RNG, Sampler}
+import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import com.typesafe.config.ConfigFactory
 import _root_.play.api.libs.json.Json
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
@@ -89,7 +89,7 @@ object Resources {
           implicit val issd = ssd
 
           AbtestAlg.defaultResource[IO](refreshPeriod).map { implicit abtestAlg =>
-            implicit val ss = Sampler.default
+            implicit val ss = SamplerConfig.default
             implicit val rng = RNG.default
 
             (

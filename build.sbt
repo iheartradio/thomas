@@ -38,7 +38,7 @@ lazy val libs = {
     .add(   name = "play-json",             version = "2.8.3",  org = "com.typesafe.play")
     .addJVM(name = "play-json-derived-codecs", version = "7.0.0", org = "org.julienrf")
     .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
-    .addJVM(name = "rainier",               version = "0.3.0",  org ="com.stripe", "rainier-core", "rainier-cats")
+    .addJVM(name = "rainier",               version = "0.3.3",  org ="com.stripe", "rainier-core", "rainier-cats")
     .addJVM(name = "scala-java8-compat",    version = "0.9.1",  org = "org.scala-lang.modules")
     .addJVM(name = "scala-view",            version = "0.5",    org = "com.github.darrenjw")
     .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
@@ -62,6 +62,10 @@ addCommandAlias("it", s"tests/IntegrationTest/test")
 addCommandAlias(
   "injectDevData",
   s"testkit/runMain com.iheart.thomas.testkit.Factory"
+)
+addCommandAlias(
+  "publishDevDataKafka",
+  s"testkit/runMain com.iheart.thomas.testkit.TestMessageKafkaProducer 60"
 )
 
 lazy val thomas = project
@@ -164,6 +168,7 @@ lazy val analysis = project
   .settings(rootSettings)
   .settings(taglessSettings)
   .settings(
+    resolvers += Resolver.bintrayRepo("rainier", "maven"),
     libs.testDependencies("scalacheck", "cats-effect-testing-scalatest"),
     libs.dependencies(
       "rainier-core",

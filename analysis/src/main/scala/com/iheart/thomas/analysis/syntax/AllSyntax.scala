@@ -4,7 +4,7 @@ package syntax
 import com.iheart.thomas.analysis.syntax.RealSyntax.RealSyntaxOps
 import com.stripe.rainier.compute.Real
 import com.stripe.rainier.core.Model
-import com.stripe.rainier.sampler.Sampler
+import com.stripe.rainier.sampler.SamplerConfig
 
 trait AllSyntax extends KPISyntax with RealSyntax
 
@@ -16,6 +16,6 @@ trait RealSyntax {
 
 object RealSyntax {
   private[syntax] class RealSyntaxOps(private val real: Real) extends AnyVal {
-    def sample(implicit sampler: Sampler) = Model.sample(real, sampler)
+    def sample(implicit sc: SamplerConfig) = Model.sample(real, sc)
   }
 }
