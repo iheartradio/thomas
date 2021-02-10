@@ -73,8 +73,7 @@ class UI[F[_]: Async](
 
     case se @ POST -> `rootPath` / "abtests" / feature / "monitors" asAuthed (u) =>
       se.request.as[StartMonitorRequest].flatMap { r =>
-        monitorAlg.initConversion(feature, r.kpi) *>
-          jobAlg.schedule(MonitorTest(feature, r.kpi, r.until.toInstant)) *>
+        jobAlg.schedule(MonitorTest(feature, r.kpi, r.until.toInstant)) *>
           Ok(
             redirect(
               reverseRoutes.analysisOf(feature),

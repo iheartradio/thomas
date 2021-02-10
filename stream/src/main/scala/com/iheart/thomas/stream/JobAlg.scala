@@ -136,22 +136,23 @@ object JobAlg {
                     .map {
                       query =>
                         { (input: Stream[F, Message]) =>
-                          input
-                            .evalMapFilter { m =>
-                              armParser.parseArm(m, feature).flatMap { armO =>
-                                armO.flatTraverse { arm =>
-                                  convParser
-                                    .parseConversion(m, query)
-                                    .map(_.map((arm, _)))
+                          Stream.eval(monitorAlg.initConversion(feature, kpiName)) *>
+                            input
+                              .evalMapFilter { m =>
+                                armParser.parseArm(m, feature).flatMap { armO =>
+                                  armO.flatTraverse { arm =>
+                                    convParser
+                                      .parseConversion(m, query)
+                                      .map(_.map((arm, _)))
+                                  }
                                 }
                               }
-                            }
-                            .interruptWhen(checkJobComplete(expiration))
-                            .chunkMin(cfg.minChunkSize)
-                            .evalMap { chunk =>
-                              monitorAlg.updateState(Key(feature, kpiName), chunk)
-                            }
-                            .void
+                              .interruptWhen(checkJobComplete(expiration))
+                              .chunkMin(cfg.minChunkSize)
+                              .evalMap { chunk =>
+                                monitorAlg.updateState(Key(feature, kpiName), chunk)
+                              }
+                              .void
                         }
 
                     }
