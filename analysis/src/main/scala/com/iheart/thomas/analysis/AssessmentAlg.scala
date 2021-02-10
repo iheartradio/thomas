@@ -8,8 +8,7 @@ import com.stripe.rainier.sampler.{RNG, Sampler}
 import cats.implicits._
 
 import scala.util.control.NoStackTrace
-import cats.{Applicative, MonadError}
-import cats.data.NonEmptyList
+import cats.MonadError
 import com.stripe.rainier.core.{Generator, ToGenerator}
 trait AssessmentAlg[F[_], K] {
   def assess(
@@ -20,18 +19,6 @@ trait AssessmentAlg[F[_], K] {
       end: Option[Instant] = None
     ): F[Map[GroupName, NumericGroupResult]]
 
-}
-
-trait BasicAssessmentAlg[F[_], K, M] {
-  def assessOptimumGroup(
-      k: K,
-      measurements: Map[GroupName, M]
-    ): F[Map[GroupName, Probability]] =
-    assessOptimumGroup(measurements.mapValues((_, k)))
-
-  def assessOptimumGroup(
-      measurements: Map[GroupName, (M, K)]
-    ): F[Map[GroupName, Probability]]
 }
 
 trait UpdatableKPI[F[_], K] {
@@ -79,56 +66,14 @@ object AssessmentAlg {
   implicit def toGeneratorTuple[A, B, U](
       implicit tga: ToGenerator[A, A],
       tgB: ToGenerator[B, U]
-    ): ToGenerator[(A, B), U] = new ToGenerator[(A, B), U] {
-    def apply(p: (A, B)): Generator[U] = tga(p._1).zip(tgB(p._2)).map(_._2)
-  }
+    ): ToGenerator[(A, B), U] =
+    new ToGenerator[(A, B), U] {
+      def apply(p: (A, B)): Generator[U] = tga(p._1).zip(tgB(p._2)).map(_._2)
+    }
 
   case object ControlGroupMeasurementMissing
       extends RuntimeException
       with NoStackTrace
-
-  abstract class BayesianBasicAssessmentAlg[F[_], K, M](
-      implicit
-      sampler: Sampler,
-      rng: RNG,
-      F: Applicative[F])
-      extends BasicAssessmentAlg[F, K, M] {
-
-    protected def sampleIndicator(
-        k: K,
-        data: M
-      ): Indicator
-
-    def assessOptimumGroup(
-        allMeasurement: Map[GroupName, (M, K)]
-      ): F[Map[GroupName, Probability]] =
-      NonEmptyList
-        .fromList(allMeasurement.toList)
-        .map {
-          _.nonEmptyTraverse {
-            case (gn, (ms, k)) => sampleIndicator(k, ms).map((gn, _))
-          }
-        }
-        .fold(F.pure(Map.empty[GroupName, Probability])) { rvGroupResults =>
-          val numericGroupResult =
-            rvGroupResults
-              .map(_.toList.toMap)
-              .predict()
-
-          val initCounts = allMeasurement.map { case (gn, _) => (gn, 0L) }
-
-          val winnerCounts = numericGroupResult.foldLeft(initCounts) {
-            (counts, groupResult) =>
-              val winnerGroup = groupResult.maxBy(_._2)._1
-              counts.updated(winnerGroup, counts(winnerGroup) + 1)
-          }
-
-          val total = winnerCounts.toList.map(_._2).sum
-          F.pure(winnerCounts.map {
-            case (gn, c) => (gn, Probability(c.toDouble / total.toDouble))
-          })
-        }
-  }
 
   abstract class BayesianAssessmentAlg[F[_], K, M](
       implicit
@@ -152,9 +97,10 @@ object AssessmentAlg {
 
       for {
         allMeasurement <- K.measureAbtest(k, abtest, start, end)
-        baselineMeasurements <- allMeasurement
-          .get(baselineGroup)
-          .liftTo[F](BaselineGroupNameNotFound(baselineGroup, allMeasurement.keys))
+        baselineMeasurements <-
+          allMeasurement
+            .get(baselineGroup)
+            .liftTo[F](BaselineGroupNameNotFound(baselineGroup, allMeasurement.keys))
       } yield {
         val groupMeasurements = allMeasurement.filterKeys(_ != baselineGroup)
 

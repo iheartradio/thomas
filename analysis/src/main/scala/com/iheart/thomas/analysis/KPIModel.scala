@@ -2,13 +2,9 @@ package com.iheart.thomas
 package analysis
 
 import java.time.Instant
-
 import cats.MonadError
 import com.iheart.thomas.abtest.json.play.Formats.j
-import com.iheart.thomas.analysis.AssessmentAlg.{
-  BayesianAssessmentAlg,
-  BayesianBasicAssessmentAlg
-}
+import com.iheart.thomas.analysis.AssessmentAlg.BayesianAssessmentAlg
 import com.iheart.thomas.analysis.DistributionSpec.{Normal, Uniform}
 import com.stripe.rainier.compute.Real
 import com.stripe.rainier.core._
@@ -18,6 +14,7 @@ import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
 import _root_.play.api.libs.json._
 import cats.effect.Sync
 import cats.implicits._
+import com.iheart.thomas.analysis.KPIEvaluation.BayesianKPIEvaluation
 
 sealed trait KPIModel extends Serializable with Product {
   def name: KPIName
@@ -99,8 +96,8 @@ object BetaKPIModel {
       sampler: Sampler,
       rng: RNG,
       F: Sync[F]
-    ): BasicAssessmentAlg[F, BetaKPIModel, Conversions] =
-    new BayesianBasicAssessmentAlg[F, BetaKPIModel, Conversions] {
+    ): KPIEvaluation[F, BetaKPIModel, Conversions] =
+    new BayesianKPIEvaluation[F, BetaKPIModel, Conversions] {
       protected def sampleIndicator(
           b: BetaKPIModel,
           data: Conversions

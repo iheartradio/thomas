@@ -58,7 +58,7 @@ addCommandAlias(
   "validate",
   s";clean;test;tests/IntegrationTest/test"
 )
-addCommandAlias("tests", s"IntegrationTest/test")
+addCommandAlias("it", s"tests/IntegrationTest/test")
 addCommandAlias(
   "injectDevData",
   s"testkit/runMain com.iheart.thomas.testkit.Factory"
