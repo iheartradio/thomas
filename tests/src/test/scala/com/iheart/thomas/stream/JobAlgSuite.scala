@@ -88,7 +88,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
         }
         _ <- alg.runStream
 
-      } yield ()).interruptAfter(200.millis).compile.drain *>
+      } yield ()).interruptAfter(500.millis).compile.drain *>
         alg.find(spec)
           .asserting(_.flatMap(_.started).nonEmpty shouldBe true)
 
