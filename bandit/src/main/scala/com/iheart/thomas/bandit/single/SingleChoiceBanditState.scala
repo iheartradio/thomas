@@ -1,10 +1,11 @@
-package com.iheart.thomas.bandit.single
+package com.iheart.thomas
+package bandit.single
 
 import java.time.Instant
 
 import cats.Monoid
 import com.iheart.thomas.bandit.BanditSpec
-import com.iheart.thomas.bandit.`package`.{ArmName, ExpectedReward, Reward}
+import com.iheart.thomas.bandit.{ExpectedReward, Reward}
 
 import cats.Monoid
 import monocle.macros.syntax.lens._

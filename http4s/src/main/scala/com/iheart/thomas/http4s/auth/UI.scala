@@ -3,7 +3,7 @@ package http4s
 package auth
 import cats.effect.Async
 import cats.implicits._
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.admin.Role
 import com.iheart.thomas.auth.html
 import com.iheart.thomas.html.redirect
@@ -16,21 +16,25 @@ import org.http4s.{FormDataDecoder, HttpRoutes, ParseFailure, Uri, UrlForm}
 import FormDataDecoder._
 import tsec.passwordhashers.jca.BCrypt
 import UI.roleFormatter
+import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
+
 import scala.util.control.NoStackTrace
 
 class UI[F[_]: Async, Auth](
     initialAdminUsername: Option[String],
     initialRole: Role
   )(implicit alg: AuthenticationAlg[F, Auth],
-    reverseRoutes: ReverseRoutes)
+    adminUICfg: AdminUIConfig)
     extends Http4sDsl[F]
     with AuthedEndpointsUtils[F, Auth] {
   import tsec.authentication._
 
+  val reverseRoutes = implicitly[ReverseRoutes]
+
   val authedService = roleBasedService(Seq(Role.Admin)) {
-    case GET -> Root / "users" asAuthed user =>
+    case GET -> Root / "users" asAuthed u =>
       alg.allUsers.flatMap { allUsers =>
-        Ok(html.users(allUsers, user))
+        Ok(html.users(allUsers)(UIEnv(u)))
       }
     case req @ POST -> Root / "users" / username / "role" asAuthed _ =>
       for {
@@ -93,7 +97,8 @@ class UI[F[_]: Async, Auth](
         _ <- alg.register(
           username,
           password,
-          if (initialAdminUsername.fold(false)(_ == username)) Role.Admin
+          if (initialAdminUsername.fold(false)(_ == username))
+            Role.Admin //todo: this logic might be too critical to leave in UI
           else initialRole
         )
         r <- Ok(
@@ -152,7 +157,8 @@ object UI extends {
       authDeps: AuthDependencies[AuthImp],
       initialAdminUsername: Option[String],
       initialRole: Role
-    )(implicit dc: AmazonDynamoDBAsync,
+    )(implicit dc: DynamoDbAsyncClient,
+      adminUIConfig: AdminUIConfig,
       rv: ReverseRoutes
     ): UI[F, AuthImp] = {
 

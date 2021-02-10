@@ -6,15 +6,22 @@ import java.time.Instant
   * Job to process Stream of messages
   *
   * @param spec
-  * @param checkedOut
+  * @param checkedOut last time a worker reported that it's working on it
+  * @param started latest start time when a worker started working on it.
+  *
   */
 case class Job(
     key: String,
     spec: JobSpec,
-    checkedOut: Option[Instant])
+    checkedOut: Option[Instant],
+    started: Option[Instant])
+
+case class JobInfo[JS <: JobSpec](
+    started: Option[Instant],
+    spec: JS)
 
 object Job {
-  def apply(spec: JobSpec): Job = Job(spec.key, spec, None)
+  def apply(spec: JobSpec): Job = Job(spec.key, spec, None, None)
 }
 
 /**
@@ -37,6 +44,11 @@ trait JobDAO[F[_]] {
       job: Job,
       at: Instant
     ): F[Option[Job]]
+
+  def setStarted(
+      job: Job,
+      at: Instant
+    ): F[Job]
 
   def remove(jobKey: String): F[Unit]
 

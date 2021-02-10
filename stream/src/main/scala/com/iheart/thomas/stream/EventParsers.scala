@@ -1,13 +1,21 @@
-package com.iheart.thomas.stream
+package com.iheart.thomas
+package stream
 
 import cats.Applicative
-import com.iheart.thomas.GroupName
-import com.iheart.thomas.analysis.ConversionMessageQuery
+import com.iheart.thomas.analysis._
 import cats.implicits._
 import org.typelevel.jawn.ast.{JNull, JValue}
 
-trait GroupParser[F[_], Message] {
-  def parseGroup(m: Message): F[GroupName]
+import scala.annotation.implicitNotFound
+
+@implicitNotFound(
+  "Need to provide a parse that can parse group name (or arm name) out of ${Message} of event "
+)
+trait ArmParser[F[_], Message] {
+  def parseArm(
+      m: Message,
+      feature: FeatureName
+    ): F[Option[ArmName]]
 }
 
 trait ConversionParser[F[_], Message] {
@@ -35,23 +43,23 @@ object ConversionParser {
 
     }
 
-  object JValueSyntax {
+}
 
-    implicit class jValueSyntaxExtension(private val jv: JValue) extends AnyVal {
+object JValueSyntax {
 
-      def getPath(path: String): JValue =
-        path.split('.').foldLeft(jv)((j, k) => j.get(k))
+  implicit class jValueSyntaxExtension(private val jv: JValue) extends AnyVal {
 
-      def filter(
-          path: String,
-          value: String
-        ): JValue =
-        getPath(path).getString.filter(_ == value).as(jv).getOrElse(JNull)
+    def getPath(path: String): JValue =
+      path.split('.').foldLeft(jv)((j, k) => j.get(k))
 
-      def filterAnd(crit: (String, String)*): JValue =
-        crit.foldLeft(jv)((m, p) => m.filter(p._1, p._2))
+    def filter(
+        path: String,
+        value: String
+      ): JValue =
+      getPath(path).getString.filter(_ == value).as(jv).getOrElse(JNull)
 
-    }
+    def filterAnd(crit: Criteria*): JValue =
+      crit.foldLeft(jv)((m, c) => m.filter(c.fieldName, c.matchingValue))
+
   }
-
 }

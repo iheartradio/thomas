@@ -1,9 +1,9 @@
-package com.iheart.thomas.bandit.bayesian
+package com.iheart.thomas
+package bandit.bayesian
 
 import cats.FlatMap
 import cats.implicits._
 import com.iheart.thomas.analysis._
-import com.iheart.thomas.bandit.`package`.ArmName
 
 trait RewardAnalytics[F[_], R] {
   def sampleSize(r: R): Long

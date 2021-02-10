@@ -1,9 +1,8 @@
 package com.iheart.thomas.dynamo
 
-import cats.effect.Async
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
+import cats.effect.{Async, Concurrent}
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.admin.{AuthRecord, AuthRecordDAO, User, UserDAO}
-import lihua.dynamo.ScanamoManagement
 import DynamoFormats._
 import cats.implicits._
 import com.iheart.thomas.stream.{Job, JobDAO}
@@ -24,28 +23,20 @@ object AdminDAOs extends ScanamoManagement {
   val streamJobKeyName = "key"
   val streamJobKey = ScanamoDAOHelperStringKey.keyOf(streamJobKeyName)
 
-  def ensureAuthTables[F[_]: Async](
+  val tables = List(
+    (authTableName, authKey),
+    (userTableName, userKey),
+    (streamJobTableName, streamJobKey)
+  )
+
+  def ensureAuthTables[F[_]: Concurrent](
       readCapacity: Long,
       writeCapacity: Long
-    )(implicit dc: AmazonDynamoDBAsync
-    ): F[Unit] =
-    List(
-      (authTableName, authKey),
-      (userTableName, userKey),
-      (streamJobTableName, streamJobKey)
-    ).traverse {
-      case (tn, key) =>
-        ensureTable(
-          dc,
-          tn,
-          Seq(key),
-          readCapacity,
-          writeCapacity
-        )
-    }.void
+    )(implicit dc: DynamoDbAsyncClient
+    ): F[Unit] = ensureTables(tables, readCapacity, writeCapacity)
 
   implicit def authRecordDAO[F[_]: Async](
-      implicit dynamoClient: AmazonDynamoDBAsync
+      implicit dynamoClient: DynamoDbAsyncClient
     ): AuthRecordDAO[F] =
     new ScanamoDAOHelperStringKey[F, AuthRecord](
       authTableName,
@@ -54,7 +45,7 @@ object AdminDAOs extends ScanamoManagement {
     ) with AuthRecordDAO[F]
 
   implicit def userDAO[F[_]: Async](
-      implicit dynamoClient: AmazonDynamoDBAsync
+      implicit dynamoClient: DynamoDbAsyncClient
     ): UserDAO[F] =
     new ScanamoDAOHelperStringKey[F, User](
       userTableName,
@@ -63,7 +54,7 @@ object AdminDAOs extends ScanamoManagement {
     ) with UserDAO[F]
 
   implicit def streamJobDAO[F[_]: Async](
-      implicit dynamoClient: AmazonDynamoDBAsync
+      implicit dynamoClient: DynamoDbAsyncClient
     ): JobDAO[F] =
     new ScanamoDAOHelperStringKey[F, Job](
       streamJobTableName,
@@ -75,22 +66,26 @@ object AdminDAOs extends ScanamoManagement {
           job: Job,
           at: Instant
         ): F[Option[Job]] = {
-        val cond = streamJobKeyName -> job.key
-        val setV = set("checkedOut" -> Some(at))
+        val cond = streamJobKeyName === job.key
+        val setV = set("checkedOut", Some(at))
         sc.exec(
             job.checkedOut
               .fold(
                 table
-                  .given(attributeNotExists("checkedOut"))
+                  .when(attributeNotExists("checkedOut"))
                   .update(cond, setV)
               )(c =>
                 table
-                  .given("checkedOut" -> c)
+                  .when("checkedOut" === c)
                   .update(cond, setV)
               )
           )
           .map(_.toOption)
       }
 
+      def setStarted(
+          job: Job,
+          at: Instant
+        ): F[Job] = update(job.key, set("started", Some(at)))
     }
 }

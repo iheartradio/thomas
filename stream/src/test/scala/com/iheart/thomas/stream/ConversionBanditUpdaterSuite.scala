@@ -1,16 +1,15 @@
-package com.iheart.thomas.stream
+package com.iheart.thomas
+package stream
 
 import java.time.OffsetDateTime
-
 import fs2.Stream
 import cats.effect.IO
 import org.scalatest.matchers.should.Matchers
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.abtest.model.{Abtest, Group, TestName}
-import com.iheart.thomas.analysis.{Conversions, KPIName}
+import com.iheart.thomas.analysis._
 import com.iheart.thomas.bandit.BanditSpec
-import com.iheart.thomas.bandit.`package`.ArmName
 import com.iheart.thomas.bandit.bayesian.{
   BanditSettings,
   BanditState,
@@ -29,11 +28,11 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
       val input = Stream.fromIterator[IO](
         List(
           "A" -> Viewed,
-          "B" -> Converted,
+          "B" -> Viewed,
           "B" -> Converted,
           "A" -> Converted,
           "B" -> Viewed,
-          "B" -> Converted
+          "B" -> Viewed
         ).iterator
       )
       ConversionBanditUpdater
@@ -43,8 +42,8 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
         .asserting(
           _ shouldBe List(
             Map(
-              "A" -> Conversions(1, 2),
-              "B" -> Conversions(3, 4)
+              "A" -> Conversions(1, 1),
+              "B" -> Conversions(1, 3)
             )
           )
         )

@@ -4,7 +4,7 @@ package bandit
 
 import cats.effect.{Async, ConcurrentEffect, ContextShift, Resource, Sync, Timer}
 import cats.implicits._
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.bandit.bayesian.{
   BanditSettings,
   ConversionBMABAlg,
@@ -59,8 +59,8 @@ class BanditService[F[_]: Async: Timer] private (
         Ok("conversions are being updated")
 
     case GET -> Root / "conversions" / "updating" =>
-      banditUpdater.isPaused.flatMap(
-        b => Ok(Json.prettyPrint(Json.obj("updating" -> JsBoolean(!b))))
+      banditUpdater.isPaused.flatMap(b =>
+        Ok(Json.prettyPrint(Json.obj("updating" -> JsBoolean(!b))))
       )
     case DELETE -> Root / "conversions" / "updating" =>
       banditUpdater
@@ -172,7 +172,7 @@ object BanditService {
       F[_]: ConcurrentEffect: Timer: ContextShift: mongo.DAOs: MessageProcessor: EventLogger: NonEmptyParallel
     ](buConfig: BanditUpdater.Config
     )(implicit ex: ExecutionContext,
-      amazonClient: AmazonDynamoDBAsync
+      amazonClient: DynamoDbAsyncClient
     ): Resource[F, BanditService[F]] = {
     import mongo.extracKPIDistDAO
     ConversionBMABAlgResource[F].evalMap { implicit conversionBMAB =>

@@ -30,7 +30,6 @@ import com.iheart.thomas.abtest.model.{AbtestSpec, Group}
 import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.testkit.Resources.timer
 import com.stripe.rainier.sampler.RNG
-import lihua.dynamo.testkit.LocalDynamo
 
 import concurrent.duration._
 
@@ -276,7 +275,10 @@ class ConversionBMABAlgSuite extends ConversionBMABAlgSuiteBase {
         _ <- api.updateRewardState(
           spec.feature,
           Map(
-            "A" -> Conversions(200, total = 1800), //the new samples are the same rate as the old one.
+            "A" -> Conversions(
+              200,
+              total = 1800
+            ), //the new samples are the same rate as the old one.
             "B" -> Conversions(300, total = 3000)
           )
         )

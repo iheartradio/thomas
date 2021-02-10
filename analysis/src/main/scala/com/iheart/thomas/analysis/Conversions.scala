@@ -1,15 +1,13 @@
 package com.iheart.thomas
 package analysis
 
+import cats.UnorderedFoldable
 import cats.kernel.Monoid
+import cats.implicits._
 
 case class Conversions(
     converted: Long,
     total: Long) {
-  assert(
-    converted <= total,
-    s"Cannot crate a conversions whose converted count $converted is more than total count $total"
-  )
   def rate = converted.toDouble / total.toDouble
 
   def sampleSize: Long = total
@@ -30,5 +28,13 @@ object Conversions {
         x.converted + y.converted,
         x.total + y.total
       )
+  }
+
+  def apply[C[_]: UnorderedFoldable](
+      events: C[ConversionEvent]
+    ): Conversions = {
+    val converted = events.count(identity)
+    val init = events.size - converted
+    Conversions(converted, init)
   }
 }

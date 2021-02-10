@@ -98,4 +98,7 @@ object AuthDependencies {
   def apply[F[_]: Sync](key: String): F[AuthDependencies[AuthImp]] =
     key.hexBytes.flatMap(HMACSHA256.buildKey[F]).map(new AuthDependencies(_))
 
+  def generateKey: String =
+    SecureRandomIdGenerator(256).generate
+
 }

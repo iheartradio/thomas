@@ -1,12 +1,12 @@
 @import com.iheart.thomas.analysis.ConversionKPI
 @import com.iheart.thomas.html._
-@import com.iheart.thomas.admin.User
-@import com.iheart.thomas.http4s.ReverseRoutes
 
-@(kpis: Vector[ConversionKPI], u: User)(implicit routes: ReverseRoutes)
+@import com.iheart.thomas.http4s.UIEnv
+
+@(kpis: Vector[ConversionKPI])(implicit env: UIEnv)
 
 
-@topNav("Conversion KPIs", u) {
+@topNav("Conversion KPIs") {
 <div class="row mt-5">
     <span class="h4">Conversion KPIs</span>
 </div>

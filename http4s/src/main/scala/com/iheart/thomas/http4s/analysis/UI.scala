@@ -3,12 +3,12 @@ package http4s
 package analysis
 
 import cats.effect.Async
-import com.iheart.thomas.analysis.MessageQuery.{FieldName, FieldValue}
 import com.iheart.thomas.analysis.{
   BetaModel,
   ConversionKPI,
-  ConversionKPIDAO,
+  ConversionKPIAlg,
   ConversionMessageQuery,
+  Criteria,
   KPIName,
   MessageQuery
 }
@@ -21,119 +21,169 @@ import com.iheart.thomas.analysis.html._
 import com.iheart.thomas.html.{errorMsg, redirect}
 import org.http4s.FormDataDecoder
 import FormDataDecoder._
-import com.iheart.thomas.http4s.analysis.UI.UpdateKPIRequest
+import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
+import com.iheart.thomas.http4s.analysis.UI.{StartMonitorRequest, UpdateKPIRequest}
 import com.iheart.thomas.stream.JobAlg
-import com.iheart.thomas.stream.JobSpec.UpdateKPIPrior
+import com.iheart.thomas.stream.JobSpec.{MonitorTest, UpdateKPIPrior}
 import tsec.authentication._
 
 import java.time.{Instant, OffsetDateTime}
 
 class UI[F[_]: Async](
     implicit
-    conversionKPIDAO: ConversionKPIDAO[F],
+    convKpiAlg: ConversionKPIAlg[F],
     jobAlg: JobAlg[F],
     authAlg: AuthenticationAlg[F, AuthImp],
-    reverseRoutes: ReverseRoutes)
+    aCfg: AdminUIConfig)
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
-
+  val reverseRoutes = ReverseRoutes(aCfg)
   import UI.Decoders._
   val rootPath = Root / "analysis"
+
   val readonlyRoutes = roleBasedService(admin.Authorization.readableRoles) {
     case GET -> `rootPath` / "conversionKPIs" asAuthed (u) =>
-      conversionKPIDAO.all.flatMap { kpis =>
-        Ok(conversionKPIs(kpis, u))
+      convKpiAlg.all.flatMap { kpis =>
+        Ok(conversionKPIs(kpis)(UIEnv(u)))
       }
   }
 
-  val managingRoutes = roleBasedService(admin.Authorization.analysisManagerRoles) {
-    case GET -> `rootPath` / "conversionKPI" / "new" asAuthed (u) =>
-      Ok(newConversionKPI(u))
+  val abtestRoutes = roleBasedService(admin.Authorization.analysisManagerRoles) {
 
-    case GET -> `rootPath` / "conversionKPIs" / kpiName asAuthed (u) =>
-      conversionKPIDAO.find(kpiName).flatMap { ko =>
-        ko.fold(
-          NotFound(s"Cannot find the Conversion KPI under the name $kpiName")
-        ) { k =>
-          jobAlg.find(UpdateKPIPrior(kpiName, Instant.MIN)).flatMap { jobO =>
-            Ok(editConversionKPI(k, u, jobO))
-          }
+    case GET -> `rootPath` / "abtests" / feature / "" asAuthed (u) =>
+      for {
+        js <- jobAlg.monitors(feature)
+        kpis <- convKpiAlg.all
+        availableKpis =
+          kpis.map(_.name).filter(k => js.find(_.spec.kpi == k).isEmpty)
+        r <- Ok(
+          abtest(feature, js, availableKpis)(UIEnv(u))
+        )
+      } yield r
 
-        }
+    case se @ POST -> `rootPath` / "abtests" / feature / "monitors" asAuthed (u) =>
+      se.request.as[StartMonitorRequest].flatMap { r =>
+        jobAlg.schedule(MonitorTest(feature, r.kpi, r.until.toInstant)) *>
+          Ok(
+            redirect(
+              reverseRoutes.analysisOf(feature),
+              s"Started monitoring $feature on ${r.kpi}"
+            )
+          )
       }
 
-    case GET -> `rootPath` / "conversionKPIs" / kpiName / "delete" asAuthed (_) =>
-      conversionKPIDAO.remove(kpiName) >>
-        Ok(redirect(reverseRoutes.analysis, s"$kpiName, if existed, is deleted."))
-
-    case se @ POST -> `rootPath` / "conversionKPIs" asAuthed u =>
-      se.request
-        .as[ConversionKPI]
-        .redeemWith(
-          e => BadRequest(errorMsg(e.getMessage)),
-          kpi =>
-            conversionKPIDAO.insert(kpi.copy(author = u.username)) >>
-              Ok(
-                redirect(
-                  reverseRoutes.analysis,
-                  s"Conversion KPI ${kpi.name} successfully created."
-                )
-              )
+    case GET -> `rootPath` / "abtests" / feature / "monitors" / kpi / "stop" asAuthed (u) =>
+      jobAlg.stop(MonitorTest.jobKey(feature, KPIName(kpi))) *>
+        Ok(
+          redirect(
+            reverseRoutes.analysisOf(feature),
+            s"Stopped monitoring $feature on $kpi"
+          )
         )
 
-    case se @ POST -> `rootPath` / "conversionKPIs" / kpiName asAuthed u =>
-      se.request
-        .as[ConversionKPI]
-        .redeemWith(
-          e => BadRequest(errorMsg(e.getMessage)),
-          kpi =>
-            if (kpi.name.n != kpiName) {
-              BadGateway("Cannot change KPI name")
-            } else
-              conversionKPIDAO.update(kpi.copy(author = u.username)) >>
+  }
+
+  val kpiManagementRoutes =
+    roleBasedService(admin.Authorization.analysisManagerRoles) {
+      case GET -> `rootPath` / "conversionKPI" / "new" asAuthed (u) =>
+        Ok(newConversionKPI()(UIEnv(u)))
+
+      case GET -> `rootPath` / "conversionKPIs" / kpiName asAuthed (u) =>
+        convKpiAlg.find(kpiName).flatMap { ko =>
+          ko.fold(
+            NotFound(s"Cannot find the Conversion KPI under the name $kpiName")
+          ) { k =>
+            jobAlg.find(UpdateKPIPrior(kpiName, Instant.MIN)).flatMap { jobO =>
+              Ok(editConversionKPI(k, jobO)(UIEnv(u)))
+            }
+          }
+        }
+
+      case GET -> `rootPath` / "conversionKPIs" / kpiName / "delete" asAuthed (_) =>
+        convKpiAlg.remove(kpiName) >>
+          Ok(redirect(reverseRoutes.analysis, s"$kpiName, if existed, is deleted."))
+
+      case se @ POST -> `rootPath` / "conversionKPIs" asAuthed u =>
+        se.request
+          .as[ConversionKPI]
+          .redeemWith(
+            e => BadRequest(errorMsg(e.getMessage)),
+            kpi =>
+              convKpiAlg.create(kpi.copy(author = u.username)) >>
                 Ok(
                   redirect(
                     reverseRoutes.analysis,
-                    s"Conversion KPI ${kpi.name} successfully updated."
+                    s"Conversion KPI ${kpi.name} successfully created."
                   )
                 )
-        )
+          )
 
-    case se @ POST -> `rootPath` / "conversionKPIs" / kpiName / "update-prior" asAuthed u =>
-      se.request.as[UpdateKPIRequest].flatMap { r =>
-        jobAlg.schedule(UpdateKPIPrior(kpiName, r.until.toInstant)).flatMap { jo =>
-          jo.fold(
-            BadRequest(errorMsg("It's being updated right now"))
-          )(j =>
-            Ok(
-              redirect(
-                reverseRoutes.analysis + "/" + kpiName,
-                s"Scheduled a background process to update the prior using ongoing data. "
+      case se @ POST -> `rootPath` / "conversionKPIs" / kpiName asAuthed u =>
+        se.request
+          .as[ConversionKPI]
+          .redeemWith(
+            e => BadRequest(errorMsg(e.getMessage)),
+            kpi =>
+              if (kpi.name.n != kpiName) {
+                BadGateway("Cannot change KPI name")
+              } else
+                convKpiAlg.update(kpi.copy(author = u.username)) >>
+                  Ok(
+                    redirect(
+                      reverseRoutes.analysis,
+                      s"Conversion KPI ${kpi.name} successfully updated."
+                    )
+                  )
+          )
+
+      case se @ POST -> `rootPath` / "conversionKPIs" / kpiName / "update-prior" asAuthed u =>
+        se.request.as[UpdateKPIRequest].flatMap { r =>
+          jobAlg.schedule(UpdateKPIPrior(kpiName, r.until.toInstant)).flatMap { jo =>
+            jo.fold(
+              BadRequest(errorMsg("It's being updated right now"))
+            )(j =>
+              Ok(
+                redirect(
+                  reverseRoutes.analysis + "/" + kpiName,
+                  s"Scheduled a background process to update the prior using ongoing data. "
+                )
               )
             )
-          )
+          }
         }
-      }
-  }
+    }
 
-  val routes = readonlyRoutes <+> managingRoutes
+  val routes = readonlyRoutes <+> kpiManagementRoutes <+> abtestRoutes
 
 }
 
 object UI {
 
   case class UpdateKPIRequest(until: OffsetDateTime)
+  case class StartMonitorRequest(
+      kpi: KPIName,
+      until: OffsetDateTime)
 
   object Decoders {
 
     import CommonFormDecoders._
+
+    implicit val criteriaQueryDecoder: FormDataDecoder[Criteria] = (
+      field[String]("fieldName"),
+      field[String]("matchingValue")
+    ).mapN(Criteria.apply)
+
     implicit val messageQueryDecoder: FormDataDecoder[MessageQuery] = (
       fieldOptional[String]("description"),
-      list[(FieldName, FieldValue)]("criteria")
+      list[Criteria]("criteria")
     ).mapN(MessageQuery.apply)
 
     implicit val uprDecoder: FormDataDecoder[UpdateKPIRequest] =
       field[OffsetDateTime]("until").map(UpdateKPIRequest(_))
+
+    implicit val smrDecoder: FormDataDecoder[StartMonitorRequest] =
+      (field[KPIName]("kpi"), field[OffsetDateTime]("until"))
+        .mapN(StartMonitorRequest.apply)
 
     implicit val conversionMessageQueryDecoder
         : FormDataDecoder[ConversionMessageQuery] = (
