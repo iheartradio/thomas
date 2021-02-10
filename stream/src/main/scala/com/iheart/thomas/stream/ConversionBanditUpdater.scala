@@ -1,11 +1,12 @@
-package com.iheart.thomas.stream
+package com.iheart.thomas
+package stream
 
 import cats.effect.ConcurrentEffect
 import fs2.{Pipe, Stream}
 import com.iheart.thomas.FeatureName
-import com.iheart.thomas.analysis.{Conversions, KPIName}
+import com.iheart.thomas.analysis.{Conversions, KPIName, ConversionEvent}
 import cats.implicits._
-import com.iheart.thomas.bandit.`package`.ArmName
+
 import com.iheart.thomas.bandit.bayesian._
 
 import com.iheart.thomas.bandit.tracking.{Event, EventLogger}
@@ -134,7 +135,7 @@ object ConversionBanditUpdater {
                 an,
                 Conversions(
                   converted = convertedCount.toLong,
-                  total = ces.size.toLong
+                  total = (ces.size - convertedCount).toLong
                 )
               )
           }

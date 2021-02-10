@@ -227,9 +227,7 @@ This feature is still being actively developed.
 Thomas is developed in small modules so that users can pick what they need. 
  - **thomas-core**: core logic and algorithms
  - **thomas-http4s**: library for creating an HTTP service using Http4s, also runs out of box
- - **thomas-http4s-example**: an example Thomas http service application using thomas-play and Play Framework
- - **thomas-play**: library for creating an HTTP service using Play framework
- - **thomas-play-example**: an example Thomas http service application using thomas-play and Play Framework 
+ - **thomas-http4s-example**: an example Thomas http service application using thomas-http4s and Http4s Framework
  - **thomas-mongo**: data access layer using MongoDB
  - **thomas-client**: the distributed client that provides assignment by running the algorithm locally
  - **thomas-analysis**: Bayesian analysis utilities

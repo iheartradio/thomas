@@ -1,12 +1,12 @@
-package com.iheart.thomas.dynamo
+package com.iheart.thomas.analysis
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import com.iheart.thomas.analysis.{BetaModel, ConversionKPI, KPIName}
+import com.iheart.thomas.dynamo.AnalysisDAOs
 import com.iheart.thomas.testkit.Resources.localDynamoR
 import org.scalatest.matchers.should.Matchers
 
-class ConversionKPIDAOSuite extends AsyncIOSpec with Matchers {
+class ConversionKPIAlgSuite extends AsyncIOSpec with Matchers {
   val daoR = localDynamoR.map(implicit ld => AnalysisDAOs.conversionKPIDAO[IO])
 
   "Can insert a new KPI" in {
@@ -14,7 +14,7 @@ class ConversionKPIDAOSuite extends AsyncIOSpec with Matchers {
 
     daoR
       .use(
-        _.insert(toInsert)
+        _.create(toInsert)
       )
       .asserting(_ shouldBe toInsert)
   }

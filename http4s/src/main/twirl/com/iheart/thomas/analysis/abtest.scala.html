@@ -1,0 +1,111 @@
+@import com.iheart.thomas.stream._
+@import com.iheart.thomas.analysis._
+@import com.iheart.thomas.html._
+@import com.iheart.thomas._
+@import JobSpec.MonitorTest
+
+@import com.iheart.thomas.http4s.UIEnv
+
+@(
+feature: FeatureName,
+monitors: Vector[JobInfo[MonitorTest]],
+kpis: Seq[KPIName]
+)(implicit env: UIEnv)
+
+@topNav(s"Analysis Of A/B test on ${feature}") {
+<div class="row mt-3">
+    <div class="list-group w-100">
+        @for(job <- monitors) {
+
+        <div class="list-group-item">
+            <div class="row">
+                <div class="col-8">
+                    <div>
+                        Monitoring
+                        <span class="mb-1 h5 font-weight-light text-success">@job.spec.kpi</span>
+                        <small>until @job.spec.until</small>
+                    </div>
+                </div>
+
+                <div class="col-3 text-sm-right">
+                    @for(started <- job.started) {
+                    <small><span class="font-weight-light ml-3">
+                    Started at: </span>
+                        <span class="font-weight-heavy">
+                           @started
+                        </span>
+                    </small>
+                    }
+
+
+                </div>
+                <div class="col-1">
+                    <a href="monitors/@job.spec.kpi/stop"
+                       onclick="return confirm('Are you sure you would like to stop monitoring @job.spec.kpi for this @feature?');"
+                       role="button">
+                        <i class="far fa-stop-circle" title="stop this monitor"></i>
+                    </a>
+
+                </div>
+
+            </div>
+        </div>
+        }
+
+    </div>
+</div>
+
+
+
+@if(monitors.isEmpty) {
+ <h4 class="text-warning mt-5 mb-4">
+     This test is not being monitored at the moment.
+ </h4>
+}
+
+@if(kpis.nonEmpty) {
+
+<form action="monitors" method="post" class="form-inline">
+    <div class="form-group mx-sm-3">
+        <label for="kpisSelect" class="sr-only">Select a KPI to start monitoring</label>
+        <select id="kpisSelect" name="kpi" class="form-control form-filter" required>
+            <option value="" disabled selected hidden>
+                Select a KPI to start monitoring
+            </option>
+            @for(kpi <- kpis.sortBy(_.n)) {
+                <option value="@kpi.n">@kpi.n</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-group mx-sm-3">
+        <label for="monitor-until" class="sr-only">Expires</label>
+        <input name="until"
+               required
+               class="form-control"
+               id="monitor-until"
+               type="text"
+               placeholder="Expires At"
+               style="width:210px"
+        />
+    </div>
+    <button class="btn btn-primary" type="submit">
+        Start Monitor
+    </button>
+
+
+</form>
+
+
+<script>
+    $(document).ready(function() {
+        var pickerSettings =  {
+            'format': 'Y-m-d H:i:s T'
+        };
+        $('#monitor-until').datetimepicker(pickerSettings);
+    });
+
+</script>
+}
+
+}

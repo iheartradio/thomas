@@ -34,7 +34,16 @@ object TimeUtil {
     def plusDuration(duration: FiniteDuration): Instant =
       me.plusNanos(duration.toNanos)
 
+    /**
+      * Whether the instant has passed according to the Timer
+      */
+    def passed[F[_]: Timer: Functor]: F[Boolean] =
+      now[F].map(_.isAfter(me))
+
   }
+
+  def epochDay: Instant =
+    LocalDate.of(1970, 1, 1).atStartOfDay().toInstant(ZoneOffset.UTC)
 
   def parse(
       value: String,
@@ -45,8 +54,12 @@ object TimeUtil {
         .parse(value, DateTimeFormatter.ISO_ZONED_DATE_TIME)
         .toOffsetDateTime
     ).toOption orElse
-      Try(OffsetDateTime.parse(value, DateTimeFormatter.ISO_OFFSET_DATE_TIME)).toOption orElse
-      Try(OffsetDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME)).toOption orElse
+      Try(
+        OffsetDateTime.parse(value, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+      ).toOption orElse
+      Try(
+        OffsetDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME)
+      ).toOption orElse
       List(
         DateTimeFormatter.ISO_DATE_TIME,
         DateTimeFormatter.ISO_LOCAL_DATE_TIME,
@@ -70,4 +83,5 @@ object TimeUtil {
 
   def now[F[_]: Functor](implicit T: Timer[F]): F[Instant] =
     T.clock.realTime(TimeUnit.MILLISECONDS).map(Instant.ofEpochMilli)
+
 }

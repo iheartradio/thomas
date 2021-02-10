@@ -1,4 +1,5 @@
-package com.iheart.thomas.bandit.bayesian
+package com.iheart.thomas
+package bandit.bayesian
 
 import java.time.temporal.ChronoUnit
 import java.time.{OffsetDateTime, ZoneOffset}
@@ -10,7 +11,7 @@ import com.iheart.thomas.TimeUtil._
 import com.iheart.thomas.abtest.model.Abtest.Specialization
 import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group, GroupSize}
 import com.iheart.thomas.analysis.Probability
-import com.iheart.thomas.bandit.`package`.ArmName
+
 import com.iheart.thomas.bandit.tracking.Event.BanditPolicyUpdate.Reallocated
 import com.iheart.thomas.bandit.tracking.{Event, EventLogger}
 import com.iheart.thomas.bandit.{AbtestNotFound, BanditSpec, RewardState}

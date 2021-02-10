@@ -1,31 +1,30 @@
 @import com.iheart.thomas.analysis._
-@import com.iheart.thomas.admin.User
+@import com.iheart.thomas.http4s.UIEnv
 
 @(
 draftO: Option[ConversionKPI],
-u: User,
 successMsg: Option[String] = None,
 showNameField: Boolean = true
-)
+)(implicit env: UIEnv)
 
 
-@criteriaItem(oo: Option[(String, String)], queryName: String) = {
+@criteriaItem(oo: Option[Criteria], queryName: String) = {
 
 <div class="row criteria-item">
 
     <div class="col-md">
         <div class="form-group">
-            <input name="messageQuery.@{queryName}.criteria[]._1" class="form-control"
+            <input name="messageQuery.@{queryName}.criteria[].fieldName" class="form-control"
                    type="text"
-                   @oo.map(o=> s"value=${o._1}") />
+                   @oo.map(o=> s"value=${o.fieldName}") />
         </div>
     </div>
 
     <div class="col-md d-flex flex-row">
         <div class="form-group w-100">
-            <input name="messageQuery.@{queryName}.criteria[]._2" class="form-control"
+            <input name="messageQuery.@{queryName}.criteria[].matchingValue" class="form-control"
                    type="text"
-                   @oo.map(o=> s"value=${o._2}") />
+                   @oo.map(o=> s"value=${o.matchingValue}") />
         </div>
         <div class="text-center">
             <button class="btn btn-link delete-criteria remove-item mt-1 ml-1"
@@ -86,7 +85,7 @@ showNameField: Boolean = true
 
 
 
-<input type="hidden" name="author" value="@u.username" />
+<input type="hidden" name="author" value="@env.currentUser.username" />
 <div class="row mt-5">
     <span class="h4">Conversion KPI <span class="text-success">@draftO.map(_.name)</span></span>
     @for(msg <- successMsg) {

@@ -3,18 +3,17 @@
 @import com.iheart.thomas.http4s.Formatters._
 @import com.iheart.thomas.http4s.abtest.AbtestManagementUI.Filters
 @import com.iheart.thomas.http4s.abtest.AbtestManagementUI.OrderBy
-@import com.iheart.thomas.http4s.ReverseRoutes
+@import com.iheart.thomas.http4s.UIEnv
 @import com.iheart.thomas.html._
-@import com.iheart.thomas.admin.User
 @import com.iheart.thomas.admin.Authorization._
 
 
 
-@(u: User,
+@(
 tests: List[(Feature, List[Entity[Abtest]])],
 features: Vector[Feature],
 filters: Filters
-)(implicit routes: ReverseRoutes)
+)(implicit env: UIEnv)
 
 
 @featureCard(feature: Feature, tests: List[Entity[Abtest]]) = {
@@ -28,6 +27,10 @@ filters: Filters
   <small><span class="font-weight-light ml-3">
               Developers: </span>
     <span class="font-weight-heavy"> @feature.developers.mkString(", ") </span>
+  </small>
+  <small><span class="font-weight-light ml-3 text-secondary">
+              <a href="@env.routes.analysisOf(feature.name)"> <i class="fas fa-chart-line"></i> Analysis</a> </span>
+
   </small>
 </div>
 @for(test <- tests) {
@@ -66,7 +69,7 @@ filters: Filters
 }
 
 
-@topNav("tests", u) {
+@topNav("tests") {
 <h5 class="mt-3 mb-3">A/B tests</h5>
 <div class="row" id="top-panel">
   <div class="col-8">
@@ -111,11 +114,11 @@ filters: Filters
       </div>
     </form>
   </div>
-  @if(u.managing(features).nonEmpty || u.has(CreateNewFeature) ) {
+  @if(env.currentUser.managing(features).nonEmpty || env.currentUser.has(CreateNewFeature) ) {
   <div class="col-4 d-flex flex-row-reverse">
 
     <div class="card" id="create-test-window" style="width: 22rem;">
-      <form action="@routes.tests/new" method="get">
+      <form action="@env.routes.tests/new" method="get">
 
         <div class="card-body">
           <a data-toggle="collapse"
@@ -123,7 +126,7 @@ filters: Filters
             <h5 class="card-title">Create Test</h5>
           </a>
           <div class="collapse" id="collapseNewTest">
-            @if(u.has(CreateNewFeature)) {
+            @if(env.currentUser.has(CreateNewFeature)) {
             <div class="form-row">
 
               <div class="form-group col-sm">
@@ -135,12 +138,12 @@ filters: Filters
             </div>
             }
 
-            @if(u.managing(features).nonEmpty) {
+            @if(env.currentUser.managing(features).nonEmpty) {
             <div class="form-row">
               <div class="form-group col-sm">
                 <label for="featuresSelect">Or for an existing feature</label>
                 <select id="featuresSelect" name="feature" class="form-control form-filter">
-                  @for(feature <- u.managing(features).sortBy(_.name)) {
+                  @for(feature <- env.currentUser.managing(features).sortBy(_.name)) {
                   <option value="@feature.name">@feature.name</option>
                   }
                 </select>

@@ -1,15 +1,16 @@
-@import com.iheart.thomas.admin.User
-@import com.iheart.thomas.http4s.ReverseRoutes
+
+@import com.iheart.thomas.http4s.UIEnv
 @import _root_.play.twirl.api.Html
 @import com.iheart.thomas.admin.Authorization._
 
-@(title: String, currentUser: User)(content: Html)(implicit routes: ReverseRoutes)
+@(title: String)(content: Html)(implicit env: UIEnv)
 
 
 @main(title){
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
-  <a class="navbar-brand" href="@routes.tests">
+  <a class="navbar-brand" href="@env.routes.tests">
     <img src="https://iheartradio.github.io/thomas/img/thomas-the-tank-engine.png" width="30px">
+    @env.siteName
   </a>
   <button class="navbar-toggler" type="button" data-toggle="collapse"
           data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
@@ -23,19 +24,19 @@
 
       </li>
       <li class="nav-item active">
-        <a class="nav-link" href="@routes.tests">A/B Tests<span class="sr-only">(current)</span></a>
+        <a class="nav-link" href="@env.routes.tests">A/B Tests<span class="sr-only">(current)</span></a>
       </li>
       <li class="nav-item active">
-        <a class="nav-link" href="@routes.analysis">Analysis<span class="sr-only">(current)</span></a>
+        <a class="nav-link" href="@env.routes.analysis">Analysis<span class="sr-only">(current)</span></a>
       </li>
-      @if(currentUser.has(ManageUsers)) {
+      @if(env.currentUser.has(ManageUsers)) {
       <li class="nav-item active">
-        <a class="nav-link" href="@routes.users">Users<span class="sr-only">(current)</span></a>
+        <a class="nav-link" href="@env.routes.users">Users<span class="sr-only">(current)</span></a>
       </li>
       }
-      @if(currentUser.has(ManageBackground)) {
+      @if(env.currentUser.has(ManageBackground)) {
       <li class="nav-item active">
-        <a class="nav-link" href="@routes.background">Background<span class="sr-only">(current)</span></a>
+        <a class="nav-link" href="@env.routes.background">Background<span class="sr-only">(current)</span></a>
       </li>
       }
       <li class="nav-item">
@@ -43,9 +44,11 @@
       </li>
 
     </ul>
+
     <div class="inline">
-      Welcome <b>@currentUser.username</b>. <a href="@routes.logout">Logout</a>
+      Welcome <b>@env.currentUser.username</b>. <a href="@env.routes.logout">Logout</a>
     </div>
+
   </div>
 </nav>
 

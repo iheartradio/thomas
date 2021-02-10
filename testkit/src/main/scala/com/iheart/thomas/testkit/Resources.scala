@@ -2,7 +2,6 @@ package com.iheart.thomas
 package testkit
 
 import java.time.Instant
-
 import cats.effect.{IO, Resource}
 import cats.implicits._
 import com.iheart.thomas.abtest.AbtestAlg
@@ -17,8 +16,10 @@ import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.{dynamo, mongo}
 import com.stripe.rainier.sampler.{RNG, Sampler}
 import com.typesafe.config.ConfigFactory
-import lihua.dynamo.testkit.LocalDynamo
 import _root_.play.api.libs.json.Json
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
+import com.iheart.thomas.http4s.AuthImp
+import com.iheart.thomas.http4s.auth.AuthenticationAlg
 import dynamo.DynamoFormats._
 
 import scala.concurrent.duration._
@@ -48,19 +49,13 @@ object Resources {
         }
     }
 
+  val tables =
+    dynamo.BanditsDAOs.tables ++ dynamo.AdminDAOs.tables ++ dynamo.AnalysisDAOs.tables
+
   lazy val localDynamoR =
     LocalDynamo
       .clientWithTables[IO](
-        dynamo.BanditsDAOs.banditStateTableName -> Seq(dynamo.BanditsDAOs.banditKey),
-        dynamo.BanditsDAOs.banditSettingsTableName -> Seq(
-          dynamo.BanditsDAOs.banditKey
-        ),
-        dynamo.AdminDAOs.authTableName -> Seq(dynamo.AdminDAOs.authKey),
-        dynamo.AdminDAOs.userTableName -> Seq(dynamo.AdminDAOs.userKey),
-        dynamo.AdminDAOs.streamJobTableName -> Seq(dynamo.AdminDAOs.streamJobKey),
-        dynamo.AnalysisDAOs.conversionKPITableName -> Seq(
-          dynamo.AnalysisDAOs.conversionKPIKey
-        )
+        tables.map(_.map(Seq(_))): _*
       )
 
   lazy val dynamoDAOS: Resource[
@@ -104,5 +99,23 @@ object Resources {
             )
           }
       }
+
+  def authAlg(
+      implicit dc: DynamoDbAsyncClient
+    ): Resource[IO, AuthenticationAlg[IO, AuthImp]] =
+    Resource.liftF(AuthenticationAlg.default[IO](sys.env("THOMAS_ADMIN_KEY")))
+
+  def abtestAlg(
+      implicit logger: EventLogger[IO] = EventLogger.noop[IO],
+      nowF: IO[Instant] = defaultNowF
+    ): Resource[
+    IO,
+    AbtestAlg[IO]
+  ] =
+    mangoDAOs.flatMap { daos =>
+      implicit val (abtestDAO, featureDAO, kpiDAO) = daos
+      lazy val refreshPeriod = 0.seconds
+      AbtestAlg.defaultResource[IO](refreshPeriod)
+    }
 
 }

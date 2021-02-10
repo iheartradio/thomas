@@ -3,7 +3,6 @@ package http4s
 package abtest
 
 import java.time.OffsetDateTime
-
 import cats.data.Validated.Valid
 import cats.effect.{Async, Concurrent, Resource, Timer}
 import cats.implicits._
@@ -35,16 +34,19 @@ import scala.concurrent.ExecutionContext
 import admin.Authorization._
 import cats.Functor
 import TimeUtil._
+import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 
 class AbtestManagementUI[F[_]: Async: Timer](
     alg: AbtestAlg[F],
     authAlg: AuthenticationAlg[F, AuthImp]
-  )(implicit reverseRoutes: ReverseRoutes)
+  )(implicit cfg: AdminUIConfig)
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
 
   import AbtestManagementUI.Decoders._
   import tsec.authentication._
+
+  implicit val reverseRoutes: ReverseRoutes = ReverseRoutes.apply
 
   private def displayError(e: Throwable): String =
     e match {
@@ -97,7 +99,7 @@ class AbtestManagementUI[F[_]: Async: Timer](
             testData.sortBy(_._2.last.data.start).reverse
         }
 
-        Ok(index(u, sorted, features, filters))
+        Ok(index(sorted, features, filters)(UIEnv(u)))
       }.flatten
 
     def showFeature(
@@ -110,13 +112,12 @@ class AbtestManagementUI[F[_]: Async: Timer](
         allUsers <- authAlg.allUsers
         r <- Ok(
           featureForm(
-            u,
             feature,
             tests.size,
             msg.flatMap(_.left.toOption),
             msg.flatMap(_.right.toOption),
             (allUsers.map(_.username).toSet -- feature.developers.toSet).toList
-          )
+          )(UIEnv(u))
         )
       } yield r
     }
@@ -152,13 +153,12 @@ class AbtestManagementUI[F[_]: Async: Timer](
 
       case GET -> Root / "tests" / "new" :? featureReq(fn) asAuthed u =>
         u.canAddTest(fn) *>
-          Ok(newTest(u, fn, None))
+          Ok(newTest(fn, None)(UIEnv(u)))
 
       case GET -> Root / "tests" / testId / "new_revision" asAuthed u =>
         get(testId).flatMap(test =>
           u.canEdit(test) *> Ok(
             newRevision(
-              u,
               test,
               Some(
                 test.data.toSpec.copy(
@@ -166,7 +166,7 @@ class AbtestManagementUI[F[_]: Async: Timer](
                   end = None
                 )
               )
-            )
+            )(UIEnv(u))
           )
         )
 
@@ -200,7 +200,7 @@ class AbtestManagementUI[F[_]: Async: Timer](
           se.request
             .as[SpecForm]
             .redeemWith(
-              e => BadRequest(editTest(u, fromTest, Some(displayError(e)))),
+              e => BadRequest(editTest(fromTest, Some(displayError(e)))(UIEnv(u))),
               _.toAbtestSpec[F](u, fromTest.data.feature).flatMap { spec =>
                 u.canEdit(fromTest) *>
                   (if (fromTest.data.end.fold(true)(_.isAfter(spec.startI)))
@@ -210,7 +210,9 @@ class AbtestManagementUI[F[_]: Async: Timer](
                     .handleErrorWith(e =>
                       get(testId).flatMap { t =>
                         BadRequest(
-                          newRevision(u, fromTest, Some(spec), Some(displayError(e)))
+                          newRevision(fromTest, Some(spec), Some(displayError(e)))(
+                            UIEnv(u)
+                          )
                         )
                       }
                     )
@@ -221,7 +223,7 @@ class AbtestManagementUI[F[_]: Async: Timer](
       case GET -> Root / "tests" / testId / "edit" asAuthed u =>
         getTestInfo(testId).flatMap { ti =>
           u.canEdit(ti.test) *> Ok(
-            editTest(u, test = ti.test, followUpO = ti.followUpO)
+            editTest(test = ti.test, followUpO = ti.followUpO)(UIEnv(u))
           )
         }
 
@@ -243,7 +245,7 @@ class AbtestManagementUI[F[_]: Async: Timer](
               .redeemWith(
                 e =>
                   get(testId).flatMap { t =>
-                    BadRequest(editTest(u, t, Some(displayError(e))))
+                    BadRequest(editTest(t, Some(displayError(e)))(UIEnv(u)))
                   },
                 _.toAbtestSpec[F](u, test.data.feature).flatMap { spec =>
                   alg
@@ -254,7 +256,7 @@ class AbtestManagementUI[F[_]: Async: Timer](
                     .flatMap(redirectToTest)
                     .handleErrorWith(e =>
                       BadRequest(
-                        editTest(u, test, Some(displayError(e)), Some(spec))
+                        editTest(test, Some(displayError(e)), Some(spec))(UIEnv(u))
                       )
                     )
                 }
@@ -277,7 +279,7 @@ class AbtestManagementUI[F[_]: Async: Timer](
                   )
                   .handleErrorWith { e =>
                     BadRequest(
-                      newTest(u, feature, Some(spec), Some(displayError(e)))
+                      newTest(feature, Some(spec), Some(displayError(e)))(UIEnv(u))
                     )
                   }
             }
@@ -305,12 +307,11 @@ class AbtestManagementUI[F[_]: Async: Timer](
           feature <- alg.getFeature(ti.test.data.feature)
           r <- Ok(
             showTest(
-              u,
               ti.test,
               ti.followUpO,
               feature,
               ti.isShuffled
-            )
+            )(UIEnv(u))
           )
         } yield r
     }
@@ -361,7 +362,7 @@ object AbtestManagementUI {
       cfgResourceName: Option[String] = None
     )(implicit F: Concurrent[F],
       ex: ExecutionContext,
-      rr: ReverseRoutes,
+      cfg: AdminUIConfig,
       authAlg: AuthenticationAlg[F, AuthImp]
     ): Resource[F, AbtestManagementUI[F]] = {
     MongoResources
@@ -373,7 +374,7 @@ object AbtestManagementUI {
       cfg: Config
     )(implicit F: Concurrent[F],
       ex: ExecutionContext,
-      rr: ReverseRoutes,
+      acfg: AdminUIConfig,
       authAlg: AuthenticationAlg[F, AuthImp]
     ): Resource[F, AbtestManagementUI[F]] = {
     MongoResources.abtestAlg[F](cfg).map(new AbtestManagementUI(_, authAlg))

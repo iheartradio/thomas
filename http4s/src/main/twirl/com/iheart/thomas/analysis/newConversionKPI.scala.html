@@ -1,24 +1,21 @@
 @import com.iheart.thomas.html._
-@import com.iheart.thomas.admin.User
-@import com.iheart.thomas.http4s.ReverseRoutes
 
-@(
-u: User,
-successMsg: Option[String] = None
-)(implicit routes: ReverseRoutes)
+@import com.iheart.thomas.http4s.UIEnv
 
-@topNav("New Conversion KPI", u) {
+@(successMsg: Option[String] = None)(implicit env: UIEnv)
+
+@topNav("New Conversion KPI") {
 
 <form action="../conversionKPIs" method="post">
 
-    @conversionKPIForm(None, u, successMsg)
+    @conversionKPIForm(None, successMsg)
 
     <div class="row d-flex flex-row-reverse mt-5">
         <div class="mr-4">
             <button type="submit" class="btn btn-primary">
                 Create
             </button>
-            <a href="@routes.analysis" role="button" class="btn btn-warning ml-2">Never Mind</a>
+            <a href="@env.routes.analysis" role="button" class="btn btn-warning ml-2">Never Mind</a>
         </div>
     </div>
 

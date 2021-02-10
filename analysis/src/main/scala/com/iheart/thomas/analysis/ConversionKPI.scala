@@ -1,5 +1,9 @@
 package com.iheart.thomas.analysis
 import MessageQuery._
+import cats.{FlatMap, MonadThrow, UnorderedFoldable}
+import cats.implicits._
+
+import scala.util.control.NoStackTrace
 
 case class ConversionKPI(
     name: KPIName,
@@ -18,12 +22,11 @@ case class BetaModel(
     )
 
   def accumulativeUpdate(
-      converted: Long,
-      init: Long
+      c: Conversions
     ): BetaModel = {
     copy(
-      alphaPrior = alphaPrior + converted.toDouble,
-      betaPrior = betaPrior + init.toDouble - converted.toDouble
+      alphaPrior = alphaPrior + c.converted.toDouble,
+      betaPrior = betaPrior + c.total.toDouble - c.converted.toDouble
     )
   }
 }
@@ -34,15 +37,31 @@ case class ConversionMessageQuery(
 
 case class MessageQuery(
     description: Option[String],
-    criteria: List[(FieldName, FieldValue)])
+    criteria: List[Criteria])
+
+case class Criteria(
+    fieldName: FieldName,
+    matchingValue: FieldValue)
 
 object MessageQuery {
   type FieldName = String
   type FieldValue = String
 }
 
-trait ConversionKPIDAO[F[_]] {
-  def insert(conversionKPI: ConversionKPI): F[ConversionKPI]
+trait ConversionKPIAlg[F[_]] {
+
+  def create(
+      kpi: ConversionKPI
+    )(implicit F: MonadThrow[F]
+    ): F[ConversionKPI] =
+    if (!kpi.name.n.matches("[-_.A-Za-z0-9\\s]+"))
+      F.raiseError(InvalidKPIName)
+    else if (kpi.model.betaPrior < 0 || kpi.model.alphaPrior < 0)
+      F.raiseError(InvalidModelPrior)
+    else
+      insert(kpi)
+
+  protected def insert(conversionKPI: ConversionKPI): F[ConversionKPI]
 
   def update(conversionKPI: ConversionKPI): F[ConversionKPI]
 
@@ -55,8 +74,29 @@ trait ConversionKPIDAO[F[_]] {
   def get(name: KPIName): F[ConversionKPI]
 
   def updateModel(
+      name: KPIName
+    )(update: BetaModel => BetaModel
+    )(implicit F: FlatMap[F]
+    ): F[ConversionKPI] =
+    get(name).flatMap { kpi =>
+      setModel(name, update(kpi.model))
+    }
+
+  def updateModel[C[_]: UnorderedFoldable](
+      name: KPIName,
+      events: C[ConversionEvent]
+    )(implicit F: FlatMap[F]
+    ): F[ConversionKPI] =
+    updateModel(name) { m =>
+      m.accumulativeUpdate(Conversions(events))
+    }
+
+  def setModel(
       name: KPIName,
       model: BetaModel
     ): F[ConversionKPI]
 
 }
+
+case object InvalidKPIName extends RuntimeException with NoStackTrace
+case object InvalidModelPrior extends RuntimeException with NoStackTrace

@@ -3,6 +3,7 @@ package com.iheart.thomas.stream
 import cats.effect.{IO, Resource}
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.implicits._
+import com.iheart.thomas.TimeUtil.epochDay
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.dynamo.AdminDAOs
 import com.iheart.thomas.stream.JobSpec.UpdateKPIPrior
@@ -10,7 +11,7 @@ import com.iheart.thomas.testkit.MapBasedDAOs
 import com.iheart.thomas.testkit.Resources.localDynamoR
 import org.scalatest.matchers.should.Matchers
 
-import java.time.{Instant, LocalDateTime}
+import java.time.{Instant, LocalDate, LocalDateTime, OffsetDateTime, ZoneOffset}
 
 abstract class JobDAOSuite(daoR: Resource[IO, JobDAO[IO]])
     extends AsyncIOSpec
@@ -51,18 +52,28 @@ abstract class JobDAOSuite(daoR: Resource[IO, JobDAO[IO]])
         .asserting(_ should be(empty))
     }
 
+    "update started" in {
+      val job = Job(jobSpec)
+      daoR
+        .use { dao =>
+          dao.insertO(job).flatMap { j =>
+            dao.setStarted(j.get, epochDay)
+          }
+        }
+        .asserting(_.started shouldBe Some(epochDay))
+    }
+
     "update checkedOut successfully when the job is unchecked yet" in {
-      val newTimeStamp = Instant.now
       daoR
         .use { dao =>
           for {
             job <- dao.insertO(Job(jobSpec))
-            jobUpdated <- dao.updateCheckedOut(job.get, newTimeStamp)
+            jobUpdated <- dao.updateCheckedOut(job.get, epochDay)
           } yield jobUpdated
         }
         .asserting(
-          _.flatMap(_.checkedOut.map(_.toEpochMilli)) shouldBe Some(
-            newTimeStamp.toEpochMilli //data stored in dynamo lost some precision
+          _.flatMap(_.checkedOut) shouldBe Some(
+            epochDay
           )
         )
     }
