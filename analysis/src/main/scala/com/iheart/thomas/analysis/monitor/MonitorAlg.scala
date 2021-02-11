@@ -44,14 +44,14 @@ object MonitorAlg {
     new MonitorAlg[F] {
       implicit val rng = RNG.default
       implicit val sc = SamplerConfig.default
-
+      val evaluator = KPIEvaluator[F, BetaModel, Conversions]
       def evaluate(
           state: ExperimentKPIState[Conversions]
         ): F[Map[ArmName, Probability]] =
         for {
           kpi <- cKPIAlg.get(state.key.kpi)
           r <-
-            KPIEvaluation[F, BetaModel, Conversions]
+            evaluator
               .evaluate(
                 kpi.model,
                 state.armsStateMap
@@ -62,12 +62,14 @@ object MonitorAlg {
           feature: FeatureName,
           kpi: KPIName
         )(implicit dao: ExperimentKPIStateDAO[F, R]
-        ): F[ExperimentKPIState[R]] =
-        TimeUtil
-          .now[F]
-          .flatMap(now =>
-            dao.upsert(ExperimentKPIState[R](Key(feature, kpi), Nil, now))
-          )
+        ): F[ExperimentKPIState[R]] = {
+        val key = Key(feature, kpi)
+        dao.ensure(key)(
+          TimeUtil
+            .now[F]
+            .map(now => ExperimentKPIState[R](key, Nil, now))
+        )
+      }
 
       def initConversion(
           feature: FeatureName,

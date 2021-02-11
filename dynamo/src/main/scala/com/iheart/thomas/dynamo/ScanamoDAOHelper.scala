@@ -125,6 +125,14 @@ abstract class ScanamoDAOHelperStringFormatKey[F[_], A: DynamoFormat, K](
       )
     )
 
+  def ensure(
+      k: K
+    )(ifEmpty: => F[A]
+    ): F[A] =
+    find(k).flatMap(
+      _.fold(ifEmpty.flatMap(insert))(_.pure[F])
+    )
+
   def find(k: K): F[Option[A]] =
     toFOption(sc.exec(table.get(keyName === stringKey(k))))
 

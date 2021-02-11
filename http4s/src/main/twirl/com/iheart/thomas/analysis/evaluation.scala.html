@@ -1,0 +1,28 @@
+@import com.iheart.thomas.analysis._
+@import com.iheart.thomas.html._
+@import com.iheart.thomas._
+
+@import com.iheart.thomas.http4s.{UIEnv, Formatters}, Formatters._
+
+
+@(
+feature: FeatureName,
+kpi: KPIName,
+evaluation: Map[ArmName, Probability]
+)(implicit env: UIEnv)
+
+@topNav(s"Analytics Of $kpi on A/B test $feature") {
+    <h4>Analytics of <span class="text-secondary">@kpi</span> for <span class="text-primary">@feature</span></h4>
+    @if(evaluation.isEmpty) {
+        <h4 class="text-warning mt-5 mb-4">
+        There is no data yet.
+        </h4>
+    } else {
+       @for(e <- evaluation) {
+          <div>
+              @e._1
+              @formatPercentage(e._2.p)
+          </div>
+       }
+   }
+}

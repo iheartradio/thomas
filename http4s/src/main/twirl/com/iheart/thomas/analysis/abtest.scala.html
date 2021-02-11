@@ -11,7 +11,7 @@ monitors: Vector[MonitorInfo[Conversions]],
 kpis: Seq[KPIName]
 )(implicit env: UIEnv)
 
-@topNav(s"Analysis Of A/B test on ${feature}") {
+@topNav(s"Monitors on A/B test ${feature}") {
 <div class="row mt-3">
     <h4>Analytics for <span class="text-primary">@feature</span></h4>
     <div class="list-group w-100">
@@ -37,6 +37,7 @@ kpis: Seq[KPIName]
                                 </div>
                              }
                         </div>
+                        <a role="button" href="monitors/@monitor.kpi/evaluate" class="btn btn-primary">Evaluate</a>
                     }
                 </div>
                 <div class="col-3 text-sm-right">

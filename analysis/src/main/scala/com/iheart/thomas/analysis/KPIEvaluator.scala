@@ -7,7 +7,7 @@ import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import cats.implicits._
 import com.stripe.rainier.core.Beta
 
-trait KPIEvaluation[F[_], Model, Measurement] {
+trait KPIEvaluator[F[_], Model, Measurement] {
   def evaluate(
       model: Model,
       measurements: Map[ArmName, Measurement]
@@ -35,30 +35,30 @@ trait KPIEvaluation[F[_], Model, Measurement] {
     ): F[NumericGroupResult] = compare((baseline, model), (results, model))
 }
 
-object KPIEvaluation {
+object KPIEvaluator {
   def apply[F[_], Model, Measurement](
-      implicit inst: KPIEvaluation[F, Model, Measurement]
-    ): KPIEvaluation[F, Model, Measurement] = inst
+      implicit inst: KPIEvaluator[F, Model, Measurement]
+    ): KPIEvaluator[F, Model, Measurement] = inst
 
   implicit def betaBayesianInstance[F[_]: Applicative](
       implicit
       sampler: SamplerConfig,
       rng: RNG
-    ): KPIEvaluation[F, BetaModel, Conversions] =
-    new BayesianKPIEvaluation[F, BetaModel, Conversions] {
+    ): KPIEvaluator[F, BetaModel, Conversions] =
+    new BayesianKPIEvaluator[F, BetaModel, Conversions] {
       protected def sampleIndicator(
           b: BetaModel,
           data: Conversions
         ) =
-        BayesianKPIEvaluation.sample(b, data)
+        BayesianKPIEvaluator.sample(b, data)
     }
 
-  abstract class BayesianKPIEvaluation[F[_], Model, Measurement](
+  abstract class BayesianKPIEvaluator[F[_], Model, Measurement](
       implicit
       sampler: SamplerConfig,
       rng: RNG,
       F: Applicative[F])
-      extends KPIEvaluation[F, Model, Measurement] {
+      extends KPIEvaluator[F, Model, Measurement] {
 
     protected def sampleIndicator(
         k: Model,
@@ -108,7 +108,7 @@ object KPIEvaluation {
         }
   }
 
-  object BayesianKPIEvaluation {
+  object BayesianKPIEvaluator {
     def sample(
         model: BetaModel,
         data: Conversions
