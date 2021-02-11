@@ -19,7 +19,7 @@ trait RewardAnalytics[F[_], R] {
 object RewardAnalytics {
   implicit def metricDataConversions[F[_]: FlatMap](
       implicit kpiAPI: KPIModelApi[F],
-      assessmentAlg: BasicAssessmentAlg[
+      assessmentAlg: KPIEvaluation[
         F,
         BetaKPIModel,
         Conversions
@@ -46,7 +46,7 @@ object RewardAnalytics {
                 }
                 .getOrElse(kpi)
 
-            assessmentAlg.assessOptimumGroup(
+            assessmentAlg.evaluate(
               r.map {
                 case (armName, conversions) =>
                   (armName, (conversions, getPrior(armName)))

@@ -2,22 +2,19 @@ package com.iheart.thomas
 package analysis
 
 import java.time.Instant
-
 import cats.MonadError
 import com.iheart.thomas.abtest.json.play.Formats.j
-import com.iheart.thomas.analysis.AssessmentAlg.{
-  BayesianAssessmentAlg,
-  BayesianBasicAssessmentAlg
-}
+import com.iheart.thomas.analysis.AssessmentAlg.BayesianAssessmentAlg
 import com.iheart.thomas.analysis.DistributionSpec.{Normal, Uniform}
 import com.stripe.rainier.compute.Real
 import com.stripe.rainier.core._
-import com.stripe.rainier.sampler.{RNG, Sampler}
+import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import io.estatico.newtype.Coercible
 import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
 import _root_.play.api.libs.json._
 import cats.effect.Sync
 import cats.implicits._
+import com.iheart.thomas.analysis.KPIEvaluation.BayesianKPIEvaluation
 
 sealed trait KPIModel extends Serializable with Product {
   def name: KPIName
@@ -67,7 +64,7 @@ object BetaKPIModel {
 
   implicit def betaInstances[F[_]](
       implicit
-      sampler: Sampler,
+      sampler: SamplerConfig,
       rng: RNG,
       B: Measurable[F, Conversions, BetaKPIModel],
       F: MonadError[F, Throwable]
@@ -96,11 +93,11 @@ object BetaKPIModel {
 
   implicit def basicAssessmentAlg[F[_]](
       implicit
-      sampler: Sampler,
+      sampler: SamplerConfig,
       rng: RNG,
       F: Sync[F]
-    ): BasicAssessmentAlg[F, BetaKPIModel, Conversions] =
-    new BayesianBasicAssessmentAlg[F, BetaKPIModel, Conversions] {
+    ): KPIEvaluation[F, BetaKPIModel, Conversions] =
+    new BayesianKPIEvaluation[F, BetaKPIModel, Conversions] {
       protected def sampleIndicator(
           b: BetaKPIModel,
           data: Conversions
@@ -125,7 +122,7 @@ object LogNormalKPIModel {
 
   implicit def logNormalInstances[F[_]](
       implicit
-      sampler: Sampler = Sampler.default,
+      sampler: SamplerConfig = SamplerConfig.default,
       rng: RNG = RNG.default,
       K: Measurable[F, Measurements, LogNormalKPIModel],
       F: MonadError[F, Throwable]

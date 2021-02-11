@@ -12,6 +12,7 @@ import com.typesafe.config.Config
 import fs2._
 import pureconfig.ConfigSource
 
+import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
@@ -92,16 +93,10 @@ object JobAlg {
           .flatMap { cfg =>
             def jobPipe(job: Job): F[Pipe[F, Message, Unit]] = {
 
-              val checkJobComplete = {
+              def checkJobComplete(until: Instant) = {
                 Stream
                   .fixedDelay(cfg.jobCheckFrequency)
-                  .evalMap(_ =>
-                    job.spec match {
-                      case UpdateKPIPrior(_, until) => until.passed
-                      case MonitorTest(_, _, until) => until.passed
-                      case RunBandit(_)             => ???
-                    }
-                  )
+                  .evalMap(_ => until.passed)
                   .evalTap { completed =>
                     if (completed) stop(job.key)
                     else F.unit
@@ -124,7 +119,7 @@ object JobAlg {
                         { (input: Stream[F, Message]) =>
                           input
                             .evalMapFilter(m => convParser.parseConversion(m, query))
-                            .interruptWhen(checkJobComplete)
+                            .interruptWhen(checkJobComplete(until))
                             .chunkMin(cfg.minChunkSize)
                             .evalMap { chunk =>
                               cKpiAlg.updateModel(
@@ -141,22 +136,23 @@ object JobAlg {
                     .map {
                       query =>
                         { (input: Stream[F, Message]) =>
-                          input
-                            .evalMapFilter { m =>
-                              armParser.parseArm(m, feature).flatMap { armO =>
-                                armO.flatTraverse { arm =>
-                                  convParser
-                                    .parseConversion(m, query)
-                                    .map(_.map((arm, _)))
+                          Stream.eval(monitorAlg.initConversion(feature, kpiName)) *>
+                            input
+                              .evalMapFilter { m =>
+                                armParser.parseArm(m, feature).flatMap { armO =>
+                                  armO.flatTraverse { arm =>
+                                    convParser
+                                      .parseConversion(m, query)
+                                      .map(_.map((arm, _)))
+                                  }
                                 }
                               }
-                            }
-                            .interruptWhen(checkJobComplete)
-                            .chunkMin(cfg.minChunkSize)
-                            .evalMap { chunk =>
-                              monitorAlg.updateState(Key(feature, kpiName), chunk)
-                            }
-                            .void
+                              .interruptWhen(checkJobComplete(expiration))
+                              .chunkMin(cfg.minChunkSize)
+                              .evalMap { chunk =>
+                                monitorAlg.updateState(Key(feature, kpiName), chunk)
+                              }
+                              .void
                         }
 
                     }

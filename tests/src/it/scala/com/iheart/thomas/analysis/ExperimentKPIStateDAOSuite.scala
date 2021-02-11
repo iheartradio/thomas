@@ -14,6 +14,7 @@ import com.iheart.thomas.dynamo.AnalysisDAOs
 import com.iheart.thomas.testkit.MapBasedDAOs
 import com.iheart.thomas.testkit.Resources.localDynamoR
 
+import java.time.Instant
 import concurrent.duration._
 
 abstract class ExperimentKPIStateDAOSuite(
@@ -25,7 +26,9 @@ abstract class ExperimentKPIStateDAOSuite(
     "insert State correctly" in {
       daoR
         .use { implicit dao =>
-          MonitorAlg[IO].initConversion("feature1", KPIName("kpi1"))
+          dao.upsert(
+            ExperimentKPIState(Key("feature1", KPIName("kpi1")), Nil, Instant.now)
+          )
         }
         .asserting(_.key shouldBe Key("feature1", KPIName("kpi1")))
     }
@@ -34,7 +37,9 @@ abstract class ExperimentKPIStateDAOSuite(
       daoR
         .use { implicit dao =>
           for {
-            init <- MonitorAlg[IO].initConversion("feature1", KPIName("kpi1"))
+            init <- dao.upsert(
+              ExperimentKPIState(Key("feature1", KPIName("kpi1")), Nil, Instant.now)
+            )
             _ <- IO.sleep(100.millis)
             updated <- dao.updateState(Key("feature1", KPIName("kpi1"))) { _ =>
               List(ArmState("A", Conversions(1, 4), None))

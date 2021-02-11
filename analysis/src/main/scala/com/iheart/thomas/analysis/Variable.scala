@@ -3,8 +3,9 @@ package analysis
 
 import cats.Apply
 import com.stripe.rainier.core.{Model, ToGenerator}
-import com.stripe.rainier.sampler.{RNG, Sampler}
+import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import cats.implicits._
+
 case class Variable[A](
     v: A,
     model: Option[Model]) {
@@ -12,7 +13,7 @@ case class Variable[A](
   def predict[U](
       nChains: Int = 4
     )(implicit
-      sampler: Sampler,
+      sampler: SamplerConfig,
       g: ToGenerator[A, U],
       rng: RNG
     ): List[U] =
@@ -37,10 +38,11 @@ object Variable {
       model: Model
     ): Variable[A] = Variable(a, Some(model))
 
-  implicit def applyInstance: Apply[Variable] = new Apply[Variable] {
-    override def ap[A, B](ff: Variable[A => B])(fa: Variable[A]): Variable[B] =
-      ff.map2(fa)((f, b) => f(b))
+  implicit def applyInstance: Apply[Variable] =
+    new Apply[Variable] {
+      override def ap[A, B](ff: Variable[A => B])(fa: Variable[A]): Variable[B] =
+        ff.map2(fa)((f, b) => f(b))
 
-    override def map[A, B](fa: Variable[A])(f: A => B): Variable[B] = fa.map(f)
-  }
+      override def map[A, B](fa: Variable[A])(f: A => B): Variable[B] = fa.map(f)
+    }
 }

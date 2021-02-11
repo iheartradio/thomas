@@ -53,7 +53,7 @@ object TestMessageKafkaProducer extends IOApp {
       |   "page_shown": "front_page",
       |   
       |   "treatment-groups": {
-      |      "feature1" : "$gn1",
+      |      "A_Feature" : "$gn1",
       |      "feature2" : "$gn2"    
       |    }
       |     
@@ -68,10 +68,9 @@ object TestMessageKafkaProducer extends IOApp {
       |{ 
       |   "click": "front_page_recommendation",
       |   "treatment-groups": {
-      |      "feature1" : "$gn1",
+      |      "A_Feature" : "$gn1",
       |      "feature2" : "$gn2"    
       |    }
-      |        |
       |}
       |""".stripMargin
 

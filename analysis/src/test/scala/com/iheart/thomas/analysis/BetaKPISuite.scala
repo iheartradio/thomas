@@ -4,7 +4,7 @@ import java.time.Instant
 
 import com.iheart.thomas.GroupName
 import com.iheart.thomas.abtest.model.Abtest
-import com.stripe.rainier.sampler.{RNG, Sampler}
+import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import org.scalatest.matchers.should.Matchers
 import cats.implicits._
 import cats.effect.testing.scalatest.AsyncIOSpec
@@ -12,16 +12,16 @@ import cats.effect.IO
 
 class BetaKPISuite extends AsyncIOSpec with Matchers {
   implicit val rng = RNG.default
-  implicit val sampler = Sampler.default
+  implicit val sampler = SamplerConfig.default
 
   val mockAb: Abtest = null
-  val alg: BasicAssessmentAlg[IO, BetaKPIModel, Conversions] =
+  val alg: KPIEvaluation[IO, BetaKPIModel, Conversions] =
     BetaKPIModel.basicAssessmentAlg[IO]
 
   "BetaKPI Assessment Alg" - {
     "can evaluation optimal group distribution" in {
       alg
-        .assessOptimumGroup(
+        .evaluate(
           BetaKPIModel("test", 200d, 300d),
           Map(
             "A" -> Conversions(200L, 300L),

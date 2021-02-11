@@ -2,10 +2,11 @@ package com.iheart.thomas
 package analysis
 package monitor
 
-import cats.{FlatMap, Foldable}
+import cats.{Foldable, Monad}
 import cats.effect.Timer
 import cats.implicits._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
+import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 
 trait MonitorAlg[F[_]] {
 
@@ -21,17 +22,41 @@ trait MonitorAlg[F[_]] {
 
   def getConversion(key: Key): F[Option[ExperimentKPIState[Conversions]]]
 
+  def getConversions(
+      feature: FeatureName,
+      kpis: Seq[KPIName]
+    ): F[Vector[ExperimentKPIState[Conversions]]]
+
+  def evaluate(
+      state: ExperimentKPIState[Conversions]
+    ): F[Map[ArmName, Probability]]
 }
 
 object MonitorAlg {
 
   def apply[F[_]](implicit inst: MonitorAlg[F]): MonitorAlg[F] = inst
 
-  implicit def default[F[_]: FlatMap](
+  implicit def default[F[_]: Monad](
       implicit cStateDAO: ExperimentKPIStateDAO[F, Conversions],
+      cKPIAlg: ConversionKPIAlg[F],
       T: Timer[F]
     ): MonitorAlg[F] =
     new MonitorAlg[F] {
+      implicit val rng = RNG.default
+      implicit val sc = SamplerConfig.default
+
+      def evaluate(
+          state: ExperimentKPIState[Conversions]
+        ): F[Map[ArmName, Probability]] =
+        for {
+          kpi <- cKPIAlg.get(state.key.kpi)
+          r <-
+            KPIEvaluation[F, BetaModel, Conversions]
+              .evaluate(
+                kpi.model,
+                state.armsStateMap
+              )
+        } yield r
 
       private def init[R](
           feature: FeatureName,
@@ -41,7 +66,7 @@ object MonitorAlg {
         TimeUtil
           .now[F]
           .flatMap(now =>
-            dao.insert(ExperimentKPIState[R](Key(feature, kpi), Nil, now))
+            dao.upsert(ExperimentKPIState[R](Key(feature, kpi), Nil, now))
           )
 
       def initConversion(
@@ -79,5 +104,14 @@ object MonitorAlg {
 
       def getConversion(key: Key): F[Option[ExperimentKPIState[Conversions]]] =
         cStateDAO.find(key)
+
+      def getConversions(
+          feature: FeatureName,
+          kpis: Seq[KPIName]
+        ): F[Vector[ExperimentKPIState[Conversions]]] =
+        kpis.toVector.traverseFilter { kpi =>
+          getConversion(Key(feature, kpi))
+        }
+
     }
 }
