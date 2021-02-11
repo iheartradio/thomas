@@ -13,6 +13,7 @@ kpis: Seq[KPIName]
 
 @topNav(s"Analysis Of A/B test on ${feature}") {
 <div class="row mt-3">
+    <h4>Analytics for <span class="text-primary">@feature</span></h4>
     <div class="list-group w-100">
         @for(monitor <- monitors) {
 
@@ -28,11 +29,11 @@ kpis: Seq[KPIName]
                     @for(state <- monitor.state) {
                         <div class="d-flex mt-2">
                             @for(arm <- state.arms) {
-                                <div class="mr-3 text-sm">
-                                    <h6>Group <span class="text-primary">@arm.name</span> </h6>
-                                    <div class="fs-6">Total: <b>@arm.kpiStats.total</b></div>
-                                    <div class="fs-6">Converted: <b>@arm.kpiStats.converted</b></div>
-                                    <div class="fs-6">Rate: <b>@formatPercentage(arm.kpiStats.rate)</b></div>
+                                <div class="mr-3">
+                                    <h6>Group <span class="text-secondary">@arm.name</span> </h6>
+                                    <div class="fs-6"><span class="text-muted">Total:</span> @arm.kpiStats.total</div>
+                                    <div class="fs-6"><span class="text-muted">Converted:</span> @arm.kpiStats.converted</div>
+                                    <div class="fs-6"><span class="text-muted">Rate:</span> @formatPercentage(arm.kpiStats.rate)</div>
                                 </div>
                              }
                         </div>
