@@ -35,6 +35,7 @@ import tsec.passwordhashers.jca.BCrypt
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.typelevel.jawn.ast.JValue
 import ThrowableExtension._
+import com.iheart.thomas.tracking.EventLogger
 
 class AdminUI[F[_]: MonadThrow](
     abtestManagementUI: AbtestManagementUI[F],
@@ -94,7 +95,7 @@ object AdminUI {
     ConfigSource.fromConfig(cfg).at("thomas.admin-ui").loadF[F, AdminUIConfig]
   }
 
-  def resource[F[_]: ConcurrentEffect: Timer: Logger: ContextShift](
+  def resource[F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger](
       implicit dc: DynamoDbAsyncClient,
       cfg: AdminUIConfig,
       config: Config,
@@ -131,8 +132,9 @@ object AdminUI {
     }
   }
 
-  def resourceFromDynamo[F[_]: ConcurrentEffect: Timer: Logger: ContextShift](
-      implicit
+  def resourceFromDynamo[
+      F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger
+    ](implicit
       cfg: Config,
       adminUIConfig: AdminUIConfig,
       ec: ExecutionContext,
@@ -145,8 +147,9 @@ object AdminUI {
   /**
     * Provides a server that serves the Admin UI
     */
-  def serverResourceAutoLoadConfig[F[_]: ConcurrentEffect: Timer: ContextShift](
-      implicit dc: DynamoDbAsyncClient,
+  def serverResourceAutoLoadConfig[
+      F[_]: ConcurrentEffect: Timer: ContextShift: EventLogger
+    ](implicit dc: DynamoDbAsyncClient,
       executionContext: ExecutionContext,
       ap: ArmParser[F, JValue]
     ): Resource[F, ExitCode] = {
@@ -160,7 +163,7 @@ object AdminUI {
   /**
     * Provides a server that serves the Admin UI
     */
-  def serverResource[F[_]: ConcurrentEffect: Timer: ContextShift](
+  def serverResource[F[_]: ConcurrentEffect: Timer: ContextShift: EventLogger](
       implicit
       adminCfg: AdminUIConfig,
       config: Config,

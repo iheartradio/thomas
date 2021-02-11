@@ -3,7 +3,6 @@ package bandit.bayesian
 
 import java.time.temporal.ChronoUnit
 import java.time.{OffsetDateTime, ZoneOffset}
-
 import cats.NonEmptyParallel
 import cats.effect.Timer
 import cats.implicits._
@@ -11,13 +10,14 @@ import com.iheart.thomas.TimeUtil._
 import com.iheart.thomas.abtest.model.Abtest.Specialization
 import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group, GroupSize}
 import com.iheart.thomas.analysis.Probability
-
-import com.iheart.thomas.bandit.tracking.Event.BanditPolicyUpdate.Reallocated
-import com.iheart.thomas.bandit.tracking.{Event, EventLogger}
+import com.iheart.thomas.bandit.tracking.BanditEvent.BanditPolicyUpdate.Reallocated
+import com.iheart.thomas.bandit.tracking.BanditEvent
 import com.iheart.thomas.bandit.{AbtestNotFound, BanditSpec, RewardState}
 import com.iheart.thomas.{FeatureName, GroupName, abtest}
 import lihua.Entity
 import cats.MonadThrow
+import com.iheart.thomas.tracking.EventLogger
+
 import scala.annotation.tailrec
 
 /**
@@ -99,7 +99,7 @@ object BayesianMABAlg {
                   )
                 }.pure[F]
               )
-          _ <- log(Event.BanditKPIUpdate.Updated(updated))
+          _ <- log(BanditEvent.BanditKPIUpdate.Updated(updated))
         } yield updated
       }
 
@@ -185,7 +185,7 @@ object BayesianMABAlg {
       }
 
       def updatePolicy(feature: FeatureName): F[Bandit] = {
-        import Event.BanditPolicyUpdate._
+        import BanditEvent.BanditPolicyUpdate._
 
         def resizeAbtest(bandit: Bandit) = {
 

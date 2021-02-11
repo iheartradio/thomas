@@ -4,6 +4,8 @@ package example
 import cats.effect._
 import com.iheart.thomas.http4s.AdminUI
 import com.iheart.thomas.http4s.abtest.AbtestService
+import com.iheart.thomas.tracking.EventLogger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import testkit.LocalDynamo
 import org.http4s.server.blaze._
 
@@ -24,6 +26,7 @@ object ExampleAbtestServerApp extends IOApp {
 
 object ExampleAbtestAdminUIApp extends IOApp {
   import com.iheart.thomas.testkit.ExampleArmParse._
+  implicit val logger = EventLogger.catsLogger(Slf4jLogger.getLogger[IO])
 
   def run(args: List[String]): IO[ExitCode] = {
     LocalDynamo

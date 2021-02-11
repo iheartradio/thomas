@@ -1,7 +1,8 @@
 @import com.iheart.thomas.stream.Job
 @import com.iheart.thomas.html._
 
-@import com.iheart.thomas.http4s.UIEnv
+@import com.iheart.thomas.http4s.{UIEnv, Formatters}, Formatters._
+
 
 @(jobs: Vector[Job])(implicit env: UIEnv)
 
@@ -33,7 +34,7 @@
                         <small><span class="font-weight-light ml-3">
                     Started at: </span>
                             <span class="font-weight-heavy">
-                           @started
+                           @formatDate(started)
                         </span>
                         </small>
                     </div>
@@ -43,7 +44,7 @@
                     <small><span class="font-weight-light ml-3">
                     Last Check: </span>
                         <span class="font-weight-heavy">
-                           @checkedOut
+                           @formatDate(checkedOut)
                         </span>
                     </small>
                     </div>

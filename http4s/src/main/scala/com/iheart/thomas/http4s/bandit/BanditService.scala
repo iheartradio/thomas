@@ -21,7 +21,6 @@ import org.http4s.play._
 import com.iheart.thomas.bandit.Formats._
 import lihua.mongo.JsonFormats._
 import com.iheart.thomas.analysis.{KPIModel, KPIModelApi}
-import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.dynamo.ClientConfig
 import com.typesafe.config.Config
 import _root_.play.api.libs.json._
@@ -31,6 +30,7 @@ import org.http4s.server.Router
 import scala.concurrent.ExecutionContext
 import _root_.play.api.libs.json.Json.toJson
 import cats.NonEmptyParallel
+import com.iheart.thomas.tracking.EventLogger
 
 class BanditService[F[_]: Async: Timer] private (
     apiAlg: ConversionBMABAlg[F],

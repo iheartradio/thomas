@@ -3,11 +3,12 @@ package com.iheart.thomas.stream
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
 import com.iheart.thomas.{FeatureName, TimeUtil}
-import TimeUtil._
+import TimeUtil.InstantOps
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
 import com.iheart.thomas.analysis.monitor.MonitorAlg
 import com.iheart.thomas.analysis.{ConversionKPIAlg, ConversionMessageQuery, KPIName}
 import com.iheart.thomas.stream.JobSpec.{MonitorTest, RunBandit, UpdateKPIPrior}
+import com.iheart.thomas.tracking.EventLogger
 import com.typesafe.config.Config
 import fs2._
 import pureconfig.ConfigSource
@@ -69,6 +70,7 @@ object JobAlg {
       monitorAlg: MonitorAlg[F],
       convParser: ConversionParser[F, Message],
       config: Config,
+      logger: EventLogger[F],
       messageSubscriber: MessageSubscriber[F, Message]
     ): JobAlg[F] =
     new JobAlg[F] {
@@ -165,7 +167,17 @@ object JobAlg {
               Stream
                 .fixedDelay[F](cfg.jobCheckFrequency)
                 .evalMap(_ =>
-                  dao.all.map(_.filter(_.checkedOut.isEmpty))
+                  TimeUtil.now[F].flatMap { now =>
+                    dao.all.map(_.filter { j =>
+                      j.checkedOut.fold(true)(lastCheckedOut =>
+                        now.isAfter(
+                          lastCheckedOut.plusDuration(
+                            cfg.jobCheckFrequency * cfg.jobObsoleteCount
+                          )
+                        )
+                      )
+                    })
+                  }
                 ) //todo: be resilient against DB error with logging.
 
             val runningJobs = availableJobs
@@ -217,9 +229,11 @@ object JobAlg {
 /**
   *
   * @param jobCheckFrequency how often it checks new available jobs or running jobs being stoped.
+  * @param jobObsoleteCount the threshold over which times a job misses being checkedOut will be count as obsolete and available for worker to pick up.
   */
 case class JobRunnerConfig(
     jobCheckFrequency: FiniteDuration,
+    jobObsoleteCount: Long,
     minChunkSize: Int)
 
 object JobRunnerConfig {

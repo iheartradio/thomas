@@ -2,7 +2,6 @@ package com.iheart.thomas
 package bandit
 
 import java.time.{Instant, OffsetDateTime}
-
 import cats.data.EitherT
 import cats.MonadError
 import cats.effect.{IO, Resource}
@@ -27,8 +26,8 @@ import _root_.play.api.libs.json.{JsObject, Json}
 import cats.implicits._
 import com.iheart.thomas.abtest.model.Abtest.Specialization.MultiArmBandit
 import com.iheart.thomas.abtest.model.{AbtestSpec, Group}
-import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.testkit.Resources.timer
+import com.iheart.thomas.tracking.EventLogger
 import com.stripe.rainier.sampler.RNG
 
 import concurrent.duration._

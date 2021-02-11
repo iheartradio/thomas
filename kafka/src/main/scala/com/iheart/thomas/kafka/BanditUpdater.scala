@@ -9,8 +9,9 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.analysis.ConversionEvent
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
-import com.iheart.thomas.bandit.tracking.{Event, EventLogger}
+import com.iheart.thomas.bandit.tracking.BanditEvent
 import com.iheart.thomas.stream.ConversionBanditUpdater
+import com.iheart.thomas.tracking.EventLogger
 import fs2.concurrent.SignallingRef
 import fs2.kafka.{AutoOffsetReset, ConsumerSettings, Deserializer, KafkaConsumer}
 import fs2.{Pipe, Stream}
@@ -93,7 +94,7 @@ object BanditUpdater {
                     .withBootstrapServers(cfg.kafka.kafkaServers)
                     .withGroupId(cfg.kafka.groupId)
 
-                Stream.eval(log(Event.BanditKPIUpdate.UpdateStreamStarted)) ++
+                Stream.eval(log(BanditEvent.BanditKPIUpdate.UpdateStreamStarted)) ++
                   KafkaConsumer
                     .stream[F]
                     .using(consumerSettings)
@@ -117,7 +118,9 @@ object BanditUpdater {
           )
 
         val consumer: Stream[F, Unit] = mainStream.handleErrorWith { e =>
-          Stream.eval(log(Event.BanditKPIUpdate.Error(e))) ++ autoRestartAfterError
+          Stream.eval(
+            log(BanditEvent.BanditKPIUpdate.Error(e))
+          ) ++ autoRestartAfterError
         }
 
         def pauseResume(pause: Boolean): F[Unit] =

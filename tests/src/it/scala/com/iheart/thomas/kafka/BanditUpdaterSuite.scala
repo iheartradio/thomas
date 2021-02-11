@@ -2,17 +2,14 @@ package com.iheart.thomas
 package kafka
 
 import java.time.OffsetDateTime
-
 import cats.effect.{ContextShift, IO, Sync, Timer}
 import cats.implicits._
 import com.iheart.thomas.analysis._
 import com.iheart.thomas.bandit.{ArmSpec, BanditSpec}
-
 import com.iheart.thomas.bandit.bayesian.{ArmState, BanditSettings}
-import com.iheart.thomas.bandit.tracking.EventLogger
-
 import com.iheart.thomas.stream.ConversionBanditUpdater
 import com.iheart.thomas.testkit.Resources
+import com.iheart.thomas.tracking.EventLogger
 import fs2.Stream
 import fs2.kafka._
 import net.manub.embeddedkafka.{EmbeddedKafka, EmbeddedKafkaConfig}

@@ -17,7 +17,7 @@ import com.iheart.thomas.bandit.bayesian.{
   BayesianMABAlg,
   ConversionBandit
 }
-import com.iheart.thomas.bandit.tracking.EventLogger
+import com.iheart.thomas.tracking.EventLogger
 import lihua.{Entity, EntityId}
 
 import concurrent.duration._
