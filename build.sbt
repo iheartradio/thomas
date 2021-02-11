@@ -144,6 +144,7 @@ lazy val core = project
       "mouse",
       "henkan-convert",
       "lihua-play-json",
+      "log4cats-core",
       "pureconfig-cats-effect",
       "pureconfig-generic"
     ),

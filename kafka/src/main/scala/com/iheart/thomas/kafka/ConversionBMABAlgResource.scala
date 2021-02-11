@@ -2,14 +2,13 @@ package com.iheart.thomas
 package kafka
 
 import java.time.Instant
-
 import cats.NonEmptyParallel
 import cats.effect._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.analysis.Conversions
 import com.iheart.thomas.bandit.bayesian.{BanditSettings, ConversionBMABAlg}
-import com.iheart.thomas.bandit.tracking.EventLogger
+import com.iheart.thomas.tracking.EventLogger
 import com.iheart.thomas.{dynamo, mongo}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import com.typesafe.config.Config

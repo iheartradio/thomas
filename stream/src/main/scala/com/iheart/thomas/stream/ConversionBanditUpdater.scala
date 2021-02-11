@@ -4,13 +4,12 @@ package stream
 import cats.effect.ConcurrentEffect
 import fs2.{Pipe, Stream}
 import com.iheart.thomas.FeatureName
-import com.iheart.thomas.analysis.{Conversions, KPIName, ConversionEvent}
+import com.iheart.thomas.analysis.{ConversionEvent, Conversions, KPIName}
 import cats.implicits._
-
 import com.iheart.thomas.bandit.bayesian._
-
-import com.iheart.thomas.bandit.tracking.{Event, EventLogger}
+import com.iheart.thomas.bandit.tracking.BanditEvent
 import cats.effect.Timer
+import com.iheart.thomas.tracking.EventLogger
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -55,7 +54,7 @@ object ConversionBanditUpdater {
       .mapFilter(_._2)
       .evalTap(b =>
         log(
-          Event.BanditKPIUpdate
+          BanditEvent.BanditKPIUpdate
             .NewSetOfRunningBanditsDetected(b.map(_.feature))
         )
       )

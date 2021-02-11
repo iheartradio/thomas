@@ -12,7 +12,6 @@ import com.iheart.thomas.bandit.bayesian.{
   ConversionBMABAlg,
   StateDAO
 }
-import com.iheart.thomas.bandit.tracking.EventLogger
 import com.iheart.thomas.{dynamo, mongo}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import com.typesafe.config.ConfigFactory
@@ -20,6 +19,7 @@ import _root_.play.api.libs.json.Json
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.http4s.AuthImp
 import com.iheart.thomas.http4s.auth.AuthenticationAlg
+import com.iheart.thomas.tracking.EventLogger
 import dynamo.DynamoFormats._
 
 import scala.concurrent.duration._
