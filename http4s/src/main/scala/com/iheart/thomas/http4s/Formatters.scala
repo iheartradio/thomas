@@ -11,6 +11,8 @@ object Formatters {
   val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z")
   val dateTimeFormatterShort = DateTimeFormatter.ofPattern("MMM dd HH:mm")
 
+  def formatPercentage(d: Double): String = f"${d * 100}%.2f%%"
+
   def formatDate(date: OffsetDateTime): String =
     formatDate(date.toInstant)
 

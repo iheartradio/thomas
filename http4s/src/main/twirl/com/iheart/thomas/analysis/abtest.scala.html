@@ -3,7 +3,7 @@
 @import com.iheart.thomas.http4s.analysis.UI.MonitorInfo
 @import com.iheart.thomas._
 
-@import com.iheart.thomas.http4s.UIEnv
+@import com.iheart.thomas.http4s.{UIEnv, Formatters}, Formatters._
 
 @(
 feature: FeatureName,
@@ -22,17 +22,17 @@ kpis: Seq[KPIName]
                     <div>
                         Monitoring
                         <span class="mb-1 h5 font-weight-light text-success">@monitor.kpi</span>
-                        <small>until @monitor.job.spec.until</small>
+                        <small>until @formatDate(monitor.job.spec.until)</small>
                     </div>
 
                     @for(state <- monitor.state) {
-                        <div class="d-flex">
+                        <div class="d-flex mt-2">
                             @for(arm <- state.arms) {
-                                <div>
-                                    <h5>Group @arm.name </h5>
-                                    <b>Total: @arm.kpiStats.total</b>
-                                    <b>Converted: @arm.kpiStats.converted</b>
-                                    <b>Rate: @arm.kpiStats.rate</b>
+                                <div class="mr-3 text-sm">
+                                    <h6>Group <span class="text-primary">@arm.name</span> </h6>
+                                    <div class="fs-6">Total: <b>@arm.kpiStats.total</b></div>
+                                    <div class="fs-6">Converted: <b>@arm.kpiStats.converted</b></div>
+                                    <div class="fs-6">Rate: <b>@formatPercentage(arm.kpiStats.rate)</b></div>
                                 </div>
                              }
                         </div>
@@ -43,7 +43,7 @@ kpis: Seq[KPIName]
                         <small><span class="font-weight-light ml-3">
                         Started at: </span>
                             <span class="font-weight-heavy">
-                               @started
+                               @formatDate(started)
                             </span>
                         </small>
                     }
