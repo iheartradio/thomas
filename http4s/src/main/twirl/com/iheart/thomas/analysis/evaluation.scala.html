@@ -3,7 +3,7 @@
 @import com.iheart.thomas._
 
 @import com.iheart.thomas.http4s.{UIEnv, Formatters}, Formatters._
-
+@import play.twirl.api.Html
 
 @(
 feature: FeatureName,
@@ -15,14 +15,44 @@ evaluation: Map[ArmName, Probability]
     <h4>Analytics of <span class="text-secondary">@kpi</span> for <span class="text-primary">@feature</span></h4>
     @if(evaluation.isEmpty) {
         <h4 class="text-warning mt-5 mb-4">
-        There is no data yet.
+        There is no optimalPieData yet.
         </h4>
     } else {
+    <div class="row">
+     <div id="optimum-chart" class="col-4">
+       <div id="optimum-pie"></div>
+       <div class="text-center w-100">
+
        @for(e <- evaluation) {
+
           <div>
-              @e._1
+              <span class="text-primary">@e._1</span>:
               @formatPercentage(e._2.p)
           </div>
        }
+
+      </div>
+    </div>
+</div>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+    <script type="text/javascript">
+
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(drawChart);
+
+    function drawChart() {
+      var optimalPieData = google.visualization.arrayToDataTable([
+      ['Group', 'Probability to be the optimal one'],
+        @Html(evaluation.map(e => s"['${e._1}', ${e._2.p}]").mkString(","))
+      ]);
+
+      var options = {'title':'Optimum Group Probabilities'};
+
+      var chart = new google.visualization.PieChart(document.getElementById('optimum-pie'));
+      chart.draw(optimalPieData, options);
+    }
+    </script>
+
    }
 }
