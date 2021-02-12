@@ -12,7 +12,7 @@ trait KPIEvaluator[F[_], Model, Measurement] {
       model: Model,
       measurements: Map[ArmName, Measurement],
       benchmark: Option[(ArmName, Measurement)]
-    ): F[Map[ArmName, Evaluation]]
+    ): F[List[Evaluation]]
 
   /**
     *
@@ -36,6 +36,7 @@ trait KPIEvaluator[F[_], Model, Measurement] {
 }
 
 case class Evaluation(
+    name: ArmName,
     probabilityBeingOptimal: Probability,
     resultAgainstBenchmark: Option[BenchmarkResult])
 
@@ -74,7 +75,7 @@ object KPIEvaluator {
         model: Model,
         measurements: Map[ArmName, Measurement],
         benchmarkO: Option[(ArmName, Measurement)]
-      ): F[Map[ArmName, Evaluation]] =
+      ): F[List[Evaluation]] =
       for {
         probabilities <- evaluate(measurements.mapValues((_, model)))
         r <-
@@ -82,16 +83,18 @@ object KPIEvaluator {
             .traverse {
               case (armName, probability) =>
                 benchmarkO
-                  .traverse {
-                    case (benchmarkName, benchmarkMeasurement) =>
+                  .traverseFilter {
+                    case (benchmarkName, benchmarkMeasurement)
+                        if benchmarkName != armName =>
                       compare(
-                        (measurements.get(armName).get, model),
-                        (benchmarkMeasurement, model)
-                      ).map(BenchmarkResult(_, benchmarkName))
+                        (benchmarkMeasurement, model),
+                        (measurements.get(armName).get, model)
+                      ).map(r => Option(BenchmarkResult(r, benchmarkName)))
+                    case _ => none[BenchmarkResult].pure[F]
                   }
-                  .map(brO => (armName, Evaluation(probability, brO)))
+                  .map(brO => Evaluation(armName, probability, brO))
             }
-      } yield r.toMap
+      } yield r
 
     def compare(
         baseline: (Measurement, Model),

@@ -30,7 +30,7 @@ trait MonitorAlg[F[_]] {
   def evaluate(
       state: ExperimentKPIState[Conversions],
       benchmarkArm: Option[ArmName]
-    ): F[Map[ArmName, Evaluation]]
+    ): F[List[Evaluation]]
 
 }
 
@@ -50,7 +50,7 @@ object MonitorAlg {
       def evaluate(
           state: ExperimentKPIState[Conversions],
           benchmarkArm: Option[ArmName]
-        ): F[Map[ArmName, Evaluation]] =
+        ): F[List[Evaluation]] =
         for {
           kpi <- cKPIAlg.get(state.key.kpi)
           r <-

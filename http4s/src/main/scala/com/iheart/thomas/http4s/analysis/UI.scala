@@ -98,7 +98,7 @@ class UI[F[_]: Async](
       monitorAlg.getConversion(Key(feature, KPIName(kpi))).flatMap { stateO =>
         stateO.traverse(monitorAlg.evaluate(_, caO)).flatMap { evaluationO =>
           Ok(
-            evaluation(feature, KPIName(kpi), evaluationO.getOrElse(Map.empty))(
+            evaluation(feature, KPIName(kpi), evaluationO.toList.flatten)(
               UIEnv(u)
             )
           )

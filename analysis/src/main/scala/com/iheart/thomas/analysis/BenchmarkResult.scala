@@ -4,7 +4,7 @@ import io.estatico.newtype.ops._
 
 case class BenchmarkResult(
     rawSample: Samples[Diff],
-    banchmark: ArmName) {
+    benchmarkArm: ArmName) {
 
   lazy val sorted = rawSample.sorted
   def findMinimum(threshold: Diff): KPIDouble =
