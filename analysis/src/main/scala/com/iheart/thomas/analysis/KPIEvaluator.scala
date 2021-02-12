@@ -1,6 +1,6 @@
 package com.iheart.thomas.analysis
 
-import cats.Applicative
+import cats.Monad
 import cats.data.NonEmptyList
 import com.iheart.thomas.{ArmName, GroupName}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
@@ -10,9 +10,9 @@ import com.stripe.rainier.core.Beta
 trait KPIEvaluator[F[_], Model, Measurement] {
   def evaluate(
       model: Model,
-      measurements: Map[ArmName, Measurement]
-    ): F[Map[ArmName, Probability]] =
-    evaluate(measurements.mapValues((_, model)))
+      measurements: Map[ArmName, Measurement],
+      benchmark: Option[(ArmName, Measurement)]
+    ): F[Map[ArmName, Evaluation]]
 
   /**
     *
@@ -26,21 +26,26 @@ trait KPIEvaluator[F[_], Model, Measurement] {
   def compare(
       baseline: (Measurement, Model),
       results: (Measurement, Model)
-    ): F[NumericGroupResult]
+    ): F[Samples[Diff]]
 
   def compare(
       model: Model,
       baseline: Measurement,
       results: Measurement
-    ): F[NumericGroupResult] = compare((baseline, model), (results, model))
+    ): F[Samples[Diff]] = compare((baseline, model), (results, model))
 }
 
+case class Evaluation(
+    probabilityBeingOptimal: Probability,
+    resultAgainstBenchmark: Option[BenchmarkResult])
+
 object KPIEvaluator {
+
   def apply[F[_], Model, Measurement](
       implicit inst: KPIEvaluator[F, Model, Measurement]
     ): KPIEvaluator[F, Model, Measurement] = inst
 
-  implicit def betaBayesianInstance[F[_]: Applicative](
+  implicit def betaBayesianInstance[F[_]: Monad](
       implicit
       sampler: SamplerConfig,
       rng: RNG
@@ -57,7 +62,7 @@ object KPIEvaluator {
       implicit
       sampler: SamplerConfig,
       rng: RNG,
-      F: Applicative[F])
+      F: Monad[F])
       extends KPIEvaluator[F, Model, Measurement] {
 
     protected def sampleIndicator(
@@ -65,16 +70,39 @@ object KPIEvaluator {
         data: Measurement
       ): Indicator
 
+    def evaluate(
+        model: Model,
+        measurements: Map[ArmName, Measurement],
+        benchmarkO: Option[(ArmName, Measurement)]
+      ): F[Map[ArmName, Evaluation]] =
+      for {
+        probabilities <- evaluate(measurements.mapValues((_, model)))
+        r <-
+          probabilities.toList
+            .traverse {
+              case (armName, probability) =>
+                benchmarkO
+                  .traverse {
+                    case (benchmarkName, benchmarkMeasurement) =>
+                      compare(
+                        (measurements.get(armName).get, model),
+                        (benchmarkMeasurement, model)
+                      ).map(BenchmarkResult(_, benchmarkName))
+                  }
+                  .map(brO => (armName, Evaluation(probability, brO)))
+            }
+      } yield r.toMap
+
     def compare(
         baseline: (Measurement, Model),
         results: (Measurement, Model)
-      ): F[NumericGroupResult] = {
+      ): F[Samples[Diff]] = {
       val improvement =
         sampleIndicator(results._2, results._1)
           .map2(sampleIndicator(baseline._2, baseline._1))(_ - _)
           .predict()
 
-      NumericGroupResult(improvement).pure[F]
+      improvement.pure[F]
     }
 
     def evaluate(

@@ -6,7 +6,7 @@ import com.cibo.evilplot.geometry.{Drawable, Text}
 import com.cibo.evilplot.plot._
 import com.cibo.evilplot.plot.aesthetics.DefaultTheme._
 import com.iheart.thomas.GroupName
-import com.iheart.thomas.analysis.NumericGroupResult
+import com.iheart.thomas.analysis.BenchmarkResult
 import scalaview.Utils._
 
 object PlotUtils {
@@ -26,7 +26,7 @@ object PlotUtils {
   }
 
   def plot(
-      gr: NumericGroupResult,
+      gr: BenchmarkResult,
       gn: GroupName,
       bins: Int = 50,
       filterOutlier: Option[Double] = None

@@ -28,8 +28,10 @@ trait MonitorAlg[F[_]] {
     ): F[Vector[ExperimentKPIState[Conversions]]]
 
   def evaluate(
-      state: ExperimentKPIState[Conversions]
-    ): F[Map[ArmName, Probability]]
+      state: ExperimentKPIState[Conversions],
+      benchmarkArm: Option[ArmName]
+    ): F[Map[ArmName, Evaluation]]
+
 }
 
 object MonitorAlg {
@@ -46,15 +48,17 @@ object MonitorAlg {
       implicit val sc = SamplerConfig.default
       val evaluator = KPIEvaluator[F, BetaModel, Conversions]
       def evaluate(
-          state: ExperimentKPIState[Conversions]
-        ): F[Map[ArmName, Probability]] =
+          state: ExperimentKPIState[Conversions],
+          benchmarkArm: Option[ArmName]
+        ): F[Map[ArmName, Evaluation]] =
         for {
           kpi <- cKPIAlg.get(state.key.kpi)
           r <-
             evaluator
               .evaluate(
                 kpi.model,
-                state.armsStateMap
+                state.armsStateMap,
+                benchmarkArm.flatMap(ba => state.armsStateMap.get(ba).map((ba, _)))
               )
         } yield r
 

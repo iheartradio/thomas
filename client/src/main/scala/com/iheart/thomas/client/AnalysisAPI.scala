@@ -27,7 +27,7 @@ trait AnalysisAPI[F[_], K <: KPIModel] {
       baseline: GroupName,
       start: Option[Instant] = None,
       end: Option[Instant] = None
-    ): F[Map[GroupName, NumericGroupResult]]
+    ): F[Map[GroupName, BenchmarkResult]]
 
   def updateOrInitKPI(
       name: KPIName,
@@ -78,7 +78,7 @@ object AnalysisAPI {
           baseline: GroupName,
           start: Option[Instant] = None,
           end: Option[Instant] = None
-        ): F[Map[GroupName, NumericGroupResult]] =
+        ): F[Map[GroupName, BenchmarkResult]] =
         for {
           kpi <- client.getKPI(kpi.n).flatMap(validateKPIType)
           abtestO <- client.test(feature, start)

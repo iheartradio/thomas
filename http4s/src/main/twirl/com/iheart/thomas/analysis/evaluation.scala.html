@@ -8,51 +8,72 @@
 @(
 feature: FeatureName,
 kpi: KPIName,
-evaluation: Map[ArmName, Probability]
+evaluation: Map[ArmName, Evaluation]
 )(implicit env: UIEnv)
 
 @topNav(s"Analytics Of $kpi on A/B test $feature") {
-    <h4>Analytics of <span class="text-secondary">@kpi</span> for <span class="text-primary">@feature</span></h4>
-    @if(evaluation.isEmpty) {
-        <h4 class="text-warning mt-5 mb-4">
+<h4 class="mt-5">Analytics of <span class="text-secondary">@kpi</span> for <span class="text-primary">@feature</span>
+</h4>
+@if(evaluation.isEmpty) {
+    <h4 class="text-warning mt-5 mb-4">
         There is no optimalPieData yet.
-        </h4>
-    } else {
+    </h4>
+} else {
     <div class="row">
-     <div id="optimum-chart" class="col-4">
-       <div id="optimum-pie"></div>
-       <div class="text-center w-100">
+        <div id="optimum-chart" class="col-4">
+            <div id="optimum-pie"></div>
+            <div class="text-center w-100">
 
-       @for(e <- evaluation) {
+                @for(e <- evaluation) {
+                <div>
+                    <span class="text-primary">@e._1</span>:
+                    @formatPercentage(e._2.probabilityBeingOptimal.p)
+                </div>
+                }
 
-          <div>
-              <span class="text-primary">@e._1</span>:
-              @formatPercentage(e._2.p)
-          </div>
-       }
+            </div>
 
-      </div>
+        </div>
+        <div class="col-8">
+            <form action="" method="get" class="form-inline">
+                <div class="form-group mx-sm-3">
+                    <label for="controlSelect" class="sr-only">Select a Control to start monitoring</label>
+                    <select id="controlSelect" name="controlArm" class="form-control form-filter" required>
+                        <option value="" disabled selected hidden>
+                            Select a group as benchmark
+                        </option>
+                        @for(a <- evaluation.keys) {
+                        <option value="@a">@a</option>
+                        }
+                    </select>
+                </div>
+                <button class="btn btn-primary" type="submit">
+                    Compare
+                </button>
+            </form>
+
+        </div>
     </div>
-</div>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
     <script type="text/javascript">
 
-    google.charts.load('current', {'packages':['corechart']});
-    google.charts.setOnLoadCallback(drawChart);
+        google.charts.load('current', {'packages':['corechart']});
+        google.charts.setOnLoadCallback(drawChart);
 
-    function drawChart() {
-      var optimalPieData = google.visualization.arrayToDataTable([
-      ['Group', 'Probability to be the optimal one'],
-        @Html(evaluation.map(e => s"['${e._1}', ${e._2.p}]").mkString(","))
-      ]);
+        function drawChart() {
+          var optimalPieData = google.visualization.arrayToDataTable([
+          ['Group', 'Probability to be the optimal one'],
+            @Html(evaluation.map(e => s"['${e._1}', ${e._2.probabilityBeingOptimal.p}]").mkString(","))
+          ]);
 
-      var options = {'title':'Optimum Group Probabilities'};
+          var options = {'title':'Optimum Group Probabilities'};
 
-      var chart = new google.visualization.PieChart(document.getElementById('optimum-pie'));
-      chart.draw(optimalPieData, options);
-    }
+          var chart = new google.visualization.PieChart(document.getElementById('optimum-pie'));
+          chart.draw(optimalPieData, options);
+        }
+
     </script>
 
-   }
+}
 }

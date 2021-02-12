@@ -9,6 +9,9 @@ object `package` {
   @newsubtype case class KPIDouble(d: Double)
   @newsubtype case class KPIName(n: String)
 
+  type Diff = Double
+  type Samples[A] = List[A]
+
   object KPIName {
     implicit def fromString(n: String): KPIName = KPIName(n)
   }

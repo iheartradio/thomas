@@ -27,10 +27,12 @@ import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.http4s.analysis.UI.{
   MonitorInfo,
   StartMonitorRequest,
-  UpdateKPIRequest
+  UpdateKPIRequest,
+  controlArm
 }
 import com.iheart.thomas.stream.{JobAlg, JobInfo}
 import com.iheart.thomas.stream.JobSpec.{MonitorTest, UpdateKPIPrior}
+import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import tsec.authentication._
 
 import java.time.{Instant, OffsetDateTime}
@@ -90,9 +92,11 @@ class UI[F[_]: Async](
             s"Stopped monitoring $feature on $kpi"
           )
         )
-    case GET -> `rootPath` / "abtests" / feature / "monitors" / kpi / "evaluate" asAuthed (u) =>
+    case GET -> `rootPath` / "abtests" / feature / "monitors" / kpi / "evaluate" :? controlArm(
+          caO
+        ) asAuthed (u) =>
       monitorAlg.getConversion(Key(feature, KPIName(kpi))).flatMap { stateO =>
-        stateO.traverse(monitorAlg.evaluate(_)).flatMap { evaluationO =>
+        stateO.traverse(monitorAlg.evaluate(_, caO)).flatMap { evaluationO =>
           Ok(
             evaluation(feature, KPIName(kpi), evaluationO.getOrElse(Map.empty))(
               UIEnv(u)
@@ -178,7 +182,7 @@ class UI[F[_]: Async](
 }
 
 object UI {
-
+  object controlArm extends OptionalQueryParamDecoderMatcher[GroupName]("controlArm")
   case class UpdateKPIRequest(until: OffsetDateTime)
   case class StartMonitorRequest(
       kpi: KPIName,
