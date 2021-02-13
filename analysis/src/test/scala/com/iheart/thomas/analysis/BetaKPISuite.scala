@@ -33,10 +33,8 @@ class BetaKPISuite extends AsyncIOSpec with Matchers {
         )
         .asserting { dist =>
           dist
-            .mapValues(_.probabilityBeingOptimal)
-            .toList
-            .sortBy(_._2.p)
-            .map(_._1) shouldBe List("A", "D", "B", "C")
+            .sortBy(_.probabilityBeingOptimal.p)
+            .map(_.name) shouldBe List("A", "D", "B", "C")
         }
 
     }
