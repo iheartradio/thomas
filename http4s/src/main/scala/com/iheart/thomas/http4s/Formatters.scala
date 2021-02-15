@@ -10,6 +10,7 @@ import _root_.play.api.libs.json.{Json, Writes}
 object Formatters {
   val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z")
   val dateTimeFormatterShort = DateTimeFormatter.ofPattern("MMM dd HH:mm")
+  val dateTimeFormatterMid = DateTimeFormatter.ofPattern("M/d/yy HH:mm")
 
   def formatPercentage(d: Double): String = f"${d * 100}%.2f%%"
 

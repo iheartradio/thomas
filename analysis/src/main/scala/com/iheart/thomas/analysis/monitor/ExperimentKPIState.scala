@@ -54,6 +54,7 @@ trait ExperimentKPIStateDAO[F[_], R] {
     ): F[ExperimentKPIState[R]]
 
   def get(key: Key): F[ExperimentKPIState[R]]
+  def all: F[Vector[ExperimentKPIState[R]]]
   def find(key: Key): F[Option[ExperimentKPIState[R]]]
   def updateState(
       key: Key

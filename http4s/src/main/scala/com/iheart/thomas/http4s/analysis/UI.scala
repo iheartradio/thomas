@@ -92,13 +92,13 @@ class UI[F[_]: Async](
             s"Stopped monitoring $feature on $kpi"
           )
         )
-    case GET -> `rootPath` / "abtests" / feature / "monitors" / kpi / "evaluate" :? controlArm(
+    case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "evaluate" :? controlArm(
           caO
         ) asAuthed (u) =>
       monitorAlg.getConversion(Key(feature, KPIName(kpi))).flatMap { stateO =>
         stateO.traverse(monitorAlg.evaluate(_, caO)).flatMap { evaluationO =>
           Ok(
-            evaluation(feature, KPIName(kpi), evaluationO.toList.flatten)(
+            evaluation(feature, KPIName(kpi), evaluationO.toList.flatten, stateO)(
               UIEnv(u)
             )
           )

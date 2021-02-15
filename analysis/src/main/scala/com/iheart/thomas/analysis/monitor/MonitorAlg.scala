@@ -27,6 +27,8 @@ trait MonitorAlg[F[_]] {
       kpis: Seq[KPIName]
     ): F[Vector[ExperimentKPIState[Conversions]]]
 
+  def allConversions: F[Vector[ExperimentKPIState[Conversions]]]
+
   def evaluate(
       state: ExperimentKPIState[Conversions],
       benchmarkArm: Option[ArmName]
@@ -110,6 +112,8 @@ object MonitorAlg {
 
       def getConversion(key: Key): F[Option[ExperimentKPIState[Conversions]]] =
         cStateDAO.find(key)
+
+      def allConversions: F[Vector[ExperimentKPIState[Conversions]]] = cStateDAO.all
 
       def getConversions(
           feature: FeatureName,

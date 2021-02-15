@@ -1,25 +1,30 @@
 @import com.iheart.thomas.analysis._
 @import com.iheart.thomas.html._
 @import com.iheart.thomas._
-
+@import com.iheart.thomas.analysis.monitor._
 @import com.iheart.thomas.http4s.{UIEnv, Formatters}, Formatters._
 @import play.twirl.api.Html
 
 @(
 feature: FeatureName,
 kpi: KPIName,
-evaluation: List[Evaluation]
+evaluation: List[Evaluation],
+stateO: Option[ExperimentKPIState[Conversions]]
 )(implicit env: UIEnv)
 
 @topNav(s"Analytics Of $kpi on A/B test $feature") {
-<h4 class="mt-5 mb-3">Analytics of <span class="text-secondary">@kpi</span> for <span class="text-primary">@feature</span>
-</h4>
+
+
+@for(state <- stateO ){
+  @conversionState(state, false)
+}
+
 @if(evaluation.isEmpty) {
     <h4 class="text-warning mt-5 mb-4">
         There is no @kpi data yet.
     </h4>
 } else {
-    <div class="row">
+    <div class="row mt-5">
         <div id="optimum-chart" class="col-4">
             <div id="optimum-pie"></div>
             <div class="text-center w-100">
@@ -57,6 +62,14 @@ evaluation: List[Evaluation]
                     <div class="mt-3">
                         <div id="histogram-@e._2"></div>
                     </div>
+                   <div class="mt-3">
+                       Benefit Range*: <b>@formatPercentage(-br.riskOfNotUsing)</b> &mdash; <b>@formatPercentage(br.riskOfUsing)</b>
+                       ( Median: <b>@formatPercentage(br.medianEffect)</b> )
+                   </div>
+            <div>
+                <small><b>*</b>  95% confidence on boundaries</small>
+            </div>
+
                 }
             }
 
@@ -89,7 +102,10 @@ evaluation: List[Evaluation]
                   var histoOption_@e._2 = {
                     title: "@e._1.name against benchmark @br.benchmarkArm",
                     legend: { position: 'none' },
-
+                    hAxis: {
+                        title: 'Percentage difference',
+                        format: '##.##%'
+                    },
                     chartArea: { width: 405 },
                     bar: { gap: 0 },
 

@@ -13,42 +13,33 @@ kpis: Seq[KPIName]
 
 @topNav(s"Monitors on A/B test ${feature}") {
 <div class="row mt-3">
-    <h4>Analytics for <span class="text-primary">@feature</span></h4>
+    <h4>Monitors for <span class="text-primary">@feature</span></h4>
     <div class="list-group w-100">
         @for(monitor <- monitors) {
 
         <div class="list-group-item">
-            <div class="row">
-                <div class="col-8">
-                    <div>
-                        Monitoring
-                        <span class="mb-1 h5 font-weight-light text-success">@monitor.kpi</span>
-                        <small>until @formatDate(monitor.job.spec.until)</small>
-                    </div>
 
-                    @for(state <- monitor.state) {
-                        <div class="d-flex mt-2">
-                            @for(arm <- state.arms) {
-                                <div class="mr-3">
-                                    <h6>Group <span class="text-secondary">@arm.name</span> </h6>
-                                    <div class="fs-6"><span class="text-muted">Total:</span> @arm.kpiStats.total</div>
-                                    <div class="fs-6"><span class="text-muted">Converted:</span> @arm.kpiStats.converted</div>
-                                    <div class="fs-6"><span class="text-muted">Rate:</span> @formatPercentage(arm.kpiStats.rate)</div>
-                                </div>
-                             }
-                        </div>
-                        <a role="button" href="monitors/@monitor.kpi/evaluate" class="btn btn-primary">Evaluate</a>
-                    }
+            <div class="row">
+                <div class="col-12 mt-2">
+                @for(state <- monitor.state) {
+                    @conversionState(state)
+                }
                 </div>
-                <div class="col-3 text-sm-right">
+            </div>
+            <div class="row">
+                <div class="col-7">
                     @for(started <- monitor.job.started) {
-                        <small><span class="font-weight-light ml-3">
+                    <small><span class="font-weight-light ml-3">
                         Started at: </span>
-                            <span class="font-weight-heavy">
-                               @formatDate(started)
+                        <span class="font-weight-heavy">
+                               @formatDate(started, dateTimeFormatterMid)
                             </span>
-                        </small>
+                    </small>
                     }
+
+                </div>
+                <div class="col-4 text-sm-right">
+                    <small>Expires at @formatDate(monitor.job.spec.until, dateTimeFormatterMid)</small>
                 </div>
                 <div class="col-1">
                     <a href="monitors/@monitor.kpi/stop"
@@ -60,8 +51,9 @@ kpis: Seq[KPIName]
                 </div>
 
             </div>
+            }
         </div>
-        }
+
 
     </div>
 </div>
