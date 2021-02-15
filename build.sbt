@@ -24,7 +24,7 @@ lazy val libs = {
     .addJVM(name = "decline",               version = "1.3.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
     .addJVM(name = "evilplot",              version = "0.8.0",  org = "com.cibo")
-    .addJVM(name = "fs2-kafka",             version = "1.3.1",  org = "com.github.fd4s")
+    .addJVM(name = "fs2-kafka",             version = "1.4.0",  org = "com.github.fd4s")
     .addModule("http4s", "http4s-twirl")
     .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
     .add(   name = "jawn",                  version = "1.0.0",  org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
