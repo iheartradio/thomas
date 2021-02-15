@@ -28,7 +28,7 @@ abstract class ExperimentKPIStateDAOSuite(
       daoR
         .use { implicit dao =>
           dao.ensure(key)(
-            IO.pure(ExperimentKPIState(key, Nil, Instant.now))
+            IO.pure(ExperimentKPIState(key, Nil, Instant.now, Instant.now))
           )
         }
         .asserting(_.key shouldBe key)
@@ -39,7 +39,7 @@ abstract class ExperimentKPIStateDAOSuite(
         .use { implicit dao =>
           for {
             init <- dao.ensure(key)(
-              ExperimentKPIState(key, Nil, Instant.now).pure[IO]
+              ExperimentKPIState(key, Nil, Instant.now, Instant.now).pure[IO]
             )
             _ <- IO.sleep(100.millis)
             updated <- dao.updateState(key) { _ =>
