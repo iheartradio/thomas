@@ -1,0 +1,85 @@
+@import com.iheart.thomas.analysis._
+@import com.iheart.thomas.analysis.monitor._
+@import com.iheart.thomas.html._
+
+@import com.iheart.thomas.http4s.UIEnv
+
+@(
+states: Vector[ExperimentKPIState[Conversions]],
+kpis: Vector[ConversionKPI]
+)(implicit env: UIEnv)
+
+
+@topNav("Analytics") {
+<div class="row">
+    <div class="col-7">
+        <div class="row mt-5">
+            <span class="h4">Monitored A/B tests</span>
+        </div>
+        @for(state <- states) {
+          @conversionState(state)
+        }
+
+    </div>
+    <div class="col-5">
+        <div class="row mt-5">
+            <span class="h4">Conversion KPIs</span>
+        </div>
+        <div class="row mt-3">
+            <div class="list-group w-100">
+                @for(kpi <- kpis) {
+
+                <div class="list-group-item">
+                    <div class="row">
+                        <div class="col-8">
+                            <div>
+                                <a href="./conversionKPIs/@kpi.name">
+                                    <span class="mb-1 h5 font-weight-light text-success">@kpi.name</span>
+                                </a>
+                            </div>
+                            <div class="mt-1">
+                                @kpi.description
+                            </div>
+                        </div>
+
+                        <div class="col-3 text-sm-right">
+
+                            <small><span class="font-weight-light ml-3">
+              Author: </span>
+                                <span class="font-weight-heavy">
+                        @kpi.author
+
+                        </span>
+                            </small>
+                        </div>
+                        <div class="col-1">
+                            <a href="./conversionKPIs/@kpi.name/delete"
+                               role="button" class="btn ml-2"
+                               onclick="return confirm('Please confirm you want to remove @kpi.name?')">
+                                <i class="far fa-trash-alt"></i>
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+                }
+
+            </div>
+        </div>
+
+        <div class="row d-flex flex-row-reverse mt-5">
+            <div class="mr-4">
+                <a href="./conversionKPI/new">
+                    <button type="link" class="btn btn-primary">
+                        New Conversion KPI
+                    </button>
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+
+</div>
+
+}

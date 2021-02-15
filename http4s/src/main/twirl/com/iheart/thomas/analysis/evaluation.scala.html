@@ -15,15 +15,20 @@ stateO: Option[ExperimentKPIState[Conversions]]
 @topNav(s"Analytics Of $kpi on A/B test $feature") {
 
 
-@for(state <- stateO ){
-  @conversionState(state, false)
-}
 
 @if(evaluation.isEmpty) {
     <h4 class="text-warning mt-5 mb-4">
         There is no @kpi data yet.
     </h4>
 } else {
+    <div class="row mt-5">
+        <div class="col-12">
+        @for(state <- stateO ){
+        @conversionState(state, false)
+        }
+        </div>
+
+    </div>
     <div class="row mt-5">
         <div id="optimum-chart" class="col-4">
             <div id="optimum-pie"></div>

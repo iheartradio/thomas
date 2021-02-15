@@ -51,10 +51,13 @@ class UI[F[_]: Async](
   val rootPath = Root / "analysis"
 
   val readonlyRoutes = roleBasedService(admin.Authorization.readableRoles) {
-    case GET -> `rootPath` / "conversionKPIs" asAuthed (u) =>
-      convKpiAlg.all.flatMap { kpis =>
-        Ok(conversionKPIs(kpis)(UIEnv(u)))
-      }
+
+    case GET -> `rootPath` / "" asAuthed (u) =>
+      for {
+        states <- monitorAlg.allConversions
+        kpis <- convKpiAlg.all
+        r <- Ok(index(states, kpis)(UIEnv(u)))
+      } yield r
   }
 
   val abtestRoutes = roleBasedService(admin.Authorization.analysisManagerRoles) {
