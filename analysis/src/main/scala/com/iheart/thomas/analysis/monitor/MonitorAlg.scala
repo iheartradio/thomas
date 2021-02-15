@@ -22,6 +22,8 @@ trait MonitorAlg[F[_]] {
 
   def getConversion(key: Key): F[Option[ExperimentKPIState[Conversions]]]
 
+  def resetConversion(key: Key): F[ExperimentKPIState[Conversions]]
+
   def getConversions(
       feature: FeatureName,
       kpis: Seq[KPIName]
@@ -64,23 +66,29 @@ object MonitorAlg {
               )
         } yield r
 
+      def resetConversion(key: Key) = reset[Conversions](key)
+
+      private def reset[R](
+          key: Key
+        )(implicit dao: ExperimentKPIStateDAO[F, R]
+        ): F[ExperimentKPIState[R]] =
+        dao.remove(key) *> init(key)
+
       private def init[R](
-          feature: FeatureName,
-          kpi: KPIName
+          key: Key
         )(implicit dao: ExperimentKPIStateDAO[F, R]
         ): F[ExperimentKPIState[R]] = {
-        val key = Key(feature, kpi)
         dao.ensure(key)(
           TimeUtil
             .now[F]
-            .map(now => ExperimentKPIState[R](key, Nil, now))
+            .map(now => ExperimentKPIState[R](key, Nil, now, now))
         )
       }
 
       def initConversion(
           feature: FeatureName,
           kpi: KPIName
-        ): F[ExperimentKPIState[Conversions]] = init[Conversions](feature, kpi)
+        ): F[ExperimentKPIState[Conversions]] = init[Conversions](Key(feature, kpi))
 
       def updateState[C[_]: Foldable](
           key: ExperimentKPIState.Key,

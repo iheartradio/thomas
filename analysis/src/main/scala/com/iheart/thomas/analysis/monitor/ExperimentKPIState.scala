@@ -12,7 +12,8 @@ import java.time.Instant
 case class ExperimentKPIState[R](
     key: Key,
     arms: List[ArmState[R]],
-    lastUpdated: Instant) {
+    lastUpdated: Instant,
+    start: Instant) {
 
   def armsStateMap: Map[ArmName, R] =
     arms.map(as => (as.name, as.kpiStats)).toMap
@@ -54,6 +55,7 @@ trait ExperimentKPIStateDAO[F[_], R] {
     ): F[ExperimentKPIState[R]]
 
   def get(key: Key): F[ExperimentKPIState[R]]
+  def remove(key: Key): F[Unit]
   def all: F[Vector[ExperimentKPIState[R]]]
   def find(key: Key): F[Option[ExperimentKPIState[R]]]
   def updateState(

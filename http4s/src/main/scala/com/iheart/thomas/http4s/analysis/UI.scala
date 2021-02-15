@@ -108,6 +108,15 @@ class UI[F[_]: Async](
         }
       }
 
+    case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "reset" asAuthed (u) =>
+      monitorAlg.resetConversion(Key(feature, KPIName(kpi))) *>
+        Ok(
+          redirect(
+            reverseRoutes.analysisOf(feature),
+            s"State for $kpi has been reset"
+          )
+        )
+
   }
 
   val kpiManagementRoutes =

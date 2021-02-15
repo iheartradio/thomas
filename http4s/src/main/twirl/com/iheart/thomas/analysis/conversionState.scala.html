@@ -4,16 +4,17 @@
 
 @(
 state: ExperimentKPIState[Conversions],
-showEvaluationLink: Boolean = true
+showCommands: Boolean = true
 )(implicit env: UIEnv)
 
 <div class="card">
     <div class="card-header">
-       Summary for <a class="text-primary" href=@env.routes.analysisOf(state.key.feature)
+       KPI stats for <a class="text-primary" href=@env.routes.analysisOf(state.key.feature)
     >@state.key.feature</a> on <a href=@env.routes.convKpi(state.key.kpi) class="text-secondary">@state.key.kpi</a>
+        from @dateTimeMid(state.start) to @dateTimeMid(state.lastUpdated)
     </div>
     <div class="card-body">
-
+        @if(state.arms.nonEmpty){
         <div class="d-flex mt-2">
             @for(arm <- state.arms) {
             <div class="mr-3">
@@ -23,14 +24,25 @@ showEvaluationLink: Boolean = true
                 <div class="fs-6"><span class="text-muted">Rate:</span> @formatPercentage(arm.kpiStats.rate)</div>
             </div>
             }
-            @if(showEvaluationLink) {
+            @if(showCommands) {
             <div><a href="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/evaluate"
                     class="text-primary" title="Detailed Evaluation">
                 <i class="far fa-chart-bar" ></i>
                 Evaluation</a>
+                <a href="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/reset"
+                    class="text-warning ml-3" title="Reset the state"
+                   onclick="return confirm('Please confirm you want reset @state.key.kpi stats for @tate.key.feature ')"
+                >
+                <i class="far fa-trash-alt" ></i>
+                Reset</a>
             </div>
             }
         </div>
+        } else {
+
+          <h5 class="text-warning">There is no data collected yet.</h5>
+        }
+
 
     </div>
 </div>

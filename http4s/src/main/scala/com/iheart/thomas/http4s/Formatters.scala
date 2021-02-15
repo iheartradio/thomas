@@ -17,6 +17,9 @@ object Formatters {
   def formatDate(date: OffsetDateTime): String =
     formatDate(date.toInstant)
 
+  def dateTimeMid(instant: Instant): String =
+    formatDate(instant, dateTimeFormatterMid)
+
   def formatDate(
       date: Instant,
       formatter: DateTimeFormatter = dateTimeFormatter
