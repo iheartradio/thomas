@@ -58,6 +58,10 @@ addCommandAlias(
   "validate",
   s";clean;test;tests/IntegrationTest/test"
 )
+addCommandAlias(
+  "quickValidate",
+  s";thomas/test;tests/IntegrationTest/compile"
+)
 addCommandAlias("it", s"tests/IntegrationTest/test")
 addCommandAlias(
   "injectDevData",
