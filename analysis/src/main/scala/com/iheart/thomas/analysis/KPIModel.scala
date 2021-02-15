@@ -14,7 +14,7 @@ import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
 import _root_.play.api.libs.json._
 import cats.effect.Sync
 import cats.implicits._
-import com.iheart.thomas.analysis.KPIEvaluation.BayesianKPIEvaluation
+import com.iheart.thomas.analysis.KPIEvaluator.BayesianKPIEvaluator
 
 sealed trait KPIModel extends Serializable with Product {
   def name: KPIName
@@ -96,8 +96,8 @@ object BetaKPIModel {
       sampler: SamplerConfig,
       rng: RNG,
       F: Sync[F]
-    ): KPIEvaluation[F, BetaKPIModel, Conversions] =
-    new BayesianKPIEvaluation[F, BetaKPIModel, Conversions] {
+    ): KPIEvaluator[F, BetaKPIModel, Conversions] =
+    new BayesianKPIEvaluator[F, BetaKPIModel, Conversions] {
       protected def sampleIndicator(
           b: BetaKPIModel,
           data: Conversions

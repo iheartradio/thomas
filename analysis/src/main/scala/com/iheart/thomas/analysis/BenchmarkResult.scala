@@ -1,10 +1,13 @@
 package com.iheart.thomas.analysis
+import com.iheart.thomas.ArmName
 import io.estatico.newtype.ops._
 
-case class NumericGroupResult(rawSample: List[Double]) {
+case class BenchmarkResult(
+    rawSample: Samples[Diff],
+    benchmarkArm: ArmName) {
 
   lazy val sorted = rawSample.sorted
-  def findMinimum(threshold: Double): KPIDouble =
+  def findMinimum(threshold: Diff): KPIDouble =
     KPIDouble(sorted.take((sorted.size.toDouble * (1.0 - threshold)).toInt).last)
 
   lazy val indicatorSample = rawSample.coerce[List[KPIDouble]]

@@ -66,6 +66,14 @@ object MapBasedDAOs {
         newA: A
       ): F[Option[A]] =
       F.delay(if (map.replace(keyOf(newA), old, newA)) newA.some else None)
+
+    def ensure(
+        k: K
+      )(ifEmpty: => F[A]
+      ): F[A] =
+      find(k).flatMap(
+        _.fold(ifEmpty.flatMap(insert))(_.pure[F])
+      )
   }
 
   def streamJobDAO[F[_]: Sync]: JobDAO[F] =

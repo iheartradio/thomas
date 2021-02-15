@@ -23,25 +23,26 @@ abstract class ExperimentKPIStateDAOSuite(
     with Matchers {
 
   "ExperimentKPIStateDAO" - {
+    val key = Key("feature1", KPIName("kpi1"))
     "insert State correctly" in {
       daoR
         .use { implicit dao =>
-          dao.upsert(
-            ExperimentKPIState(Key("feature1", KPIName("kpi1")), Nil, Instant.now)
+          dao.ensure(key)(
+            IO.pure(ExperimentKPIState(key, Nil, Instant.now))
           )
         }
-        .asserting(_.key shouldBe Key("feature1", KPIName("kpi1")))
+        .asserting(_.key shouldBe key)
     }
 
     "update state with updated time stamp" in {
       daoR
         .use { implicit dao =>
           for {
-            init <- dao.upsert(
-              ExperimentKPIState(Key("feature1", KPIName("kpi1")), Nil, Instant.now)
+            init <- dao.ensure(key)(
+              ExperimentKPIState(key, Nil, Instant.now).pure[IO]
             )
             _ <- IO.sleep(100.millis)
-            updated <- dao.updateState(Key("feature1", KPIName("kpi1"))) { _ =>
+            updated <- dao.updateState(key) { _ =>
               List(ArmState("A", Conversions(1, 4), None))
             }
           } yield (init, updated)

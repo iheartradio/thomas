@@ -27,10 +27,12 @@ import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.http4s.analysis.UI.{
   MonitorInfo,
   StartMonitorRequest,
-  UpdateKPIRequest
+  UpdateKPIRequest,
+  controlArm
 }
 import com.iheart.thomas.stream.{JobAlg, JobInfo}
 import com.iheart.thomas.stream.JobSpec.{MonitorTest, UpdateKPIPrior}
+import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import tsec.authentication._
 
 import java.time.{Instant, OffsetDateTime}
@@ -49,10 +51,13 @@ class UI[F[_]: Async](
   val rootPath = Root / "analysis"
 
   val readonlyRoutes = roleBasedService(admin.Authorization.readableRoles) {
-    case GET -> `rootPath` / "conversionKPIs" asAuthed (u) =>
-      convKpiAlg.all.flatMap { kpis =>
-        Ok(conversionKPIs(kpis)(UIEnv(u)))
-      }
+
+    case GET -> `rootPath` / "" asAuthed (u) =>
+      for {
+        states <- monitorAlg.allConversions
+        kpis <- convKpiAlg.all
+        r <- Ok(index(states, kpis)(UIEnv(u)))
+      } yield r
   }
 
   val abtestRoutes = roleBasedService(admin.Authorization.analysisManagerRoles) {
@@ -90,6 +95,18 @@ class UI[F[_]: Async](
             s"Stopped monitoring $feature on $kpi"
           )
         )
+    case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "evaluate" :? controlArm(
+          caO
+        ) asAuthed (u) =>
+      monitorAlg.getConversion(Key(feature, KPIName(kpi))).flatMap { stateO =>
+        stateO.traverse(monitorAlg.evaluate(_, caO)).flatMap { evaluationO =>
+          Ok(
+            evaluation(feature, KPIName(kpi), evaluationO.toList.flatten, stateO)(
+              UIEnv(u)
+            )
+          )
+        }
+      }
 
   }
 
@@ -168,7 +185,7 @@ class UI[F[_]: Async](
 }
 
 object UI {
-
+  object controlArm extends OptionalQueryParamDecoderMatcher[GroupName]("controlArm")
   case class UpdateKPIRequest(until: OffsetDateTime)
   case class StartMonitorRequest(
       kpi: KPIName,

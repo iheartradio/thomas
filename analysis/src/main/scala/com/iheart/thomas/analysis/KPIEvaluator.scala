@@ -1,18 +1,18 @@
 package com.iheart.thomas.analysis
 
-import cats.Applicative
+import cats.Monad
 import cats.data.NonEmptyList
 import com.iheart.thomas.{ArmName, GroupName}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import cats.implicits._
 import com.stripe.rainier.core.Beta
 
-trait KPIEvaluation[F[_], Model, Measurement] {
+trait KPIEvaluator[F[_], Model, Measurement] {
   def evaluate(
       model: Model,
-      measurements: Map[ArmName, Measurement]
-    ): F[Map[ArmName, Probability]] =
-    evaluate(measurements.mapValues((_, model)))
+      measurements: Map[ArmName, Measurement],
+      benchmark: Option[(ArmName, Measurement)]
+    ): F[List[Evaluation]]
 
   /**
     *
@@ -26,55 +26,86 @@ trait KPIEvaluation[F[_], Model, Measurement] {
   def compare(
       baseline: (Measurement, Model),
       results: (Measurement, Model)
-    ): F[NumericGroupResult]
+    ): F[Samples[Diff]]
 
   def compare(
       model: Model,
       baseline: Measurement,
       results: Measurement
-    ): F[NumericGroupResult] = compare((baseline, model), (results, model))
+    ): F[Samples[Diff]] = compare((baseline, model), (results, model))
 }
 
-object KPIEvaluation {
-  def apply[F[_], Model, Measurement](
-      implicit inst: KPIEvaluation[F, Model, Measurement]
-    ): KPIEvaluation[F, Model, Measurement] = inst
+case class Evaluation(
+    name: ArmName,
+    probabilityBeingOptimal: Probability,
+    resultAgainstBenchmark: Option[BenchmarkResult])
 
-  implicit def betaBayesianInstance[F[_]: Applicative](
+object KPIEvaluator {
+
+  def apply[F[_], Model, Measurement](
+      implicit inst: KPIEvaluator[F, Model, Measurement]
+    ): KPIEvaluator[F, Model, Measurement] = inst
+
+  implicit def betaBayesianInstance[F[_]: Monad](
       implicit
       sampler: SamplerConfig,
       rng: RNG
-    ): KPIEvaluation[F, BetaModel, Conversions] =
-    new BayesianKPIEvaluation[F, BetaModel, Conversions] {
+    ): KPIEvaluator[F, BetaModel, Conversions] =
+    new BayesianKPIEvaluator[F, BetaModel, Conversions] {
       protected def sampleIndicator(
           b: BetaModel,
           data: Conversions
         ) =
-        BayesianKPIEvaluation.sample(b, data)
+        BayesianKPIEvaluator.sample(b, data)
     }
 
-  abstract class BayesianKPIEvaluation[F[_], Model, Measurement](
+  abstract class BayesianKPIEvaluator[F[_], Model, Measurement](
       implicit
       sampler: SamplerConfig,
       rng: RNG,
-      F: Applicative[F])
-      extends KPIEvaluation[F, Model, Measurement] {
+      F: Monad[F])
+      extends KPIEvaluator[F, Model, Measurement] {
 
     protected def sampleIndicator(
         k: Model,
         data: Measurement
       ): Indicator
 
+    def evaluate(
+        model: Model,
+        measurements: Map[ArmName, Measurement],
+        benchmarkO: Option[(ArmName, Measurement)]
+      ): F[List[Evaluation]] =
+      for {
+        probabilities <- evaluate(measurements.mapValues((_, model)))
+        r <-
+          probabilities.toList
+            .traverse {
+              case (armName, probability) =>
+                benchmarkO
+                  .traverseFilter {
+                    case (benchmarkName, benchmarkMeasurement)
+                        if benchmarkName != armName =>
+                      compare(
+                        (benchmarkMeasurement, model),
+                        (measurements.get(armName).get, model)
+                      ).map(r => Option(BenchmarkResult(r, benchmarkName)))
+                    case _ => none[BenchmarkResult].pure[F]
+                  }
+                  .map(brO => Evaluation(armName, probability, brO))
+            }
+      } yield r
+
     def compare(
         baseline: (Measurement, Model),
         results: (Measurement, Model)
-      ): F[NumericGroupResult] = {
+      ): F[Samples[Diff]] = {
       val improvement =
         sampleIndicator(results._2, results._1)
           .map2(sampleIndicator(baseline._2, baseline._1))(_ - _)
           .predict()
 
-      NumericGroupResult(improvement).pure[F]
+      improvement.pure[F]
     }
 
     def evaluate(
@@ -108,7 +139,7 @@ object KPIEvaluation {
         }
   }
 
-  object BayesianKPIEvaluation {
+  object BayesianKPIEvaluator {
     def sample(
         model: BetaModel,
         data: Conversions

@@ -48,9 +48,13 @@ object ExperimentKPIState {
 
 trait ExperimentKPIStateDAO[F[_], R] {
 
-  private[analysis] def upsert(s: ExperimentKPIState[R]): F[ExperimentKPIState[R]]
+  private[analysis] def ensure(
+      key: Key
+    )(s: => F[ExperimentKPIState[R]]
+    ): F[ExperimentKPIState[R]]
 
   def get(key: Key): F[ExperimentKPIState[R]]
+  def all: F[Vector[ExperimentKPIState[R]]]
   def find(key: Key): F[Option[ExperimentKPIState[R]]]
   def updateState(
       key: Key

@@ -27,9 +27,13 @@ trait MonitorAlg[F[_]] {
       kpis: Seq[KPIName]
     ): F[Vector[ExperimentKPIState[Conversions]]]
 
+  def allConversions: F[Vector[ExperimentKPIState[Conversions]]]
+
   def evaluate(
-      state: ExperimentKPIState[Conversions]
-    ): F[Map[ArmName, Probability]]
+      state: ExperimentKPIState[Conversions],
+      benchmarkArm: Option[ArmName]
+    ): F[List[Evaluation]]
+
 }
 
 object MonitorAlg {
@@ -44,17 +48,19 @@ object MonitorAlg {
     new MonitorAlg[F] {
       implicit val rng = RNG.default
       implicit val sc = SamplerConfig.default
-
+      val evaluator = KPIEvaluator[F, BetaModel, Conversions]
       def evaluate(
-          state: ExperimentKPIState[Conversions]
-        ): F[Map[ArmName, Probability]] =
+          state: ExperimentKPIState[Conversions],
+          benchmarkArm: Option[ArmName]
+        ): F[List[Evaluation]] =
         for {
           kpi <- cKPIAlg.get(state.key.kpi)
           r <-
-            KPIEvaluation[F, BetaModel, Conversions]
+            evaluator
               .evaluate(
                 kpi.model,
-                state.armsStateMap
+                state.armsStateMap,
+                benchmarkArm.flatMap(ba => state.armsStateMap.get(ba).map((ba, _)))
               )
         } yield r
 
@@ -62,12 +68,14 @@ object MonitorAlg {
           feature: FeatureName,
           kpi: KPIName
         )(implicit dao: ExperimentKPIStateDAO[F, R]
-        ): F[ExperimentKPIState[R]] =
-        TimeUtil
-          .now[F]
-          .flatMap(now =>
-            dao.upsert(ExperimentKPIState[R](Key(feature, kpi), Nil, now))
-          )
+        ): F[ExperimentKPIState[R]] = {
+        val key = Key(feature, kpi)
+        dao.ensure(key)(
+          TimeUtil
+            .now[F]
+            .map(now => ExperimentKPIState[R](key, Nil, now))
+        )
+      }
 
       def initConversion(
           feature: FeatureName,
@@ -104,6 +112,8 @@ object MonitorAlg {
 
       def getConversion(key: Key): F[Option[ExperimentKPIState[Conversions]]] =
         cStateDAO.find(key)
+
+      def allConversions: F[Vector[ExperimentKPIState[Conversions]]] = cStateDAO.all
 
       def getConversions(
           feature: FeatureName,

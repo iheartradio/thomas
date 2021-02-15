@@ -17,7 +17,7 @@ trait AssessmentAlg[F[_], K] {
       baselineGroup: GroupName,
       start: Option[Instant] = None,
       end: Option[Instant] = None
-    ): F[Map[GroupName, NumericGroupResult]]
+    ): F[Map[GroupName, BenchmarkResult]]
 
 }
 
@@ -46,7 +46,7 @@ trait KPISyntax {
         baselineGroup: GroupName,
         start: Option[Instant] = None,
         end: Option[Instant] = None
-      ): F[Map[GroupName, NumericGroupResult]] =
+      ): F[Map[GroupName, BenchmarkResult]] =
       K.assess(k, abtest, baselineGroup, start, end)
   }
 
@@ -93,7 +93,7 @@ object AssessmentAlg {
         baselineGroup: GroupName,
         start: Option[Instant] = None,
         end: Option[Instant] = None
-      ): F[Map[GroupName, NumericGroupResult]] = {
+      ): F[Map[GroupName, BenchmarkResult]] = {
 
       for {
         allMeasurement <- K.measureAbtest(k, abtest, start, end)
@@ -111,7 +111,7 @@ object AssessmentAlg {
                 .map2(sampleIndicator(k, baselineMeasurements))(_ - _)
                 .predict()
 
-            (gn, NumericGroupResult(improvement))
+            (gn, BenchmarkResult(improvement, baselineGroup))
         }
       }
     }

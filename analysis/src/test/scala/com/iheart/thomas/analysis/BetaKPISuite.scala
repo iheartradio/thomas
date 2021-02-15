@@ -15,23 +15,26 @@ class BetaKPISuite extends AsyncIOSpec with Matchers {
   implicit val sampler = SamplerConfig.default
 
   val mockAb: Abtest = null
-  val alg: KPIEvaluation[IO, BetaKPIModel, Conversions] =
-    BetaKPIModel.basicAssessmentAlg[IO]
+  val alg: KPIEvaluator[IO, BetaModel, Conversions] =
+    implicitly
 
   "BetaKPI Assessment Alg" - {
     "can evaluation optimal group distribution" in {
       alg
         .evaluate(
-          BetaKPIModel("test", 200d, 300d),
+          BetaModel(200d, 300d),
           Map(
             "A" -> Conversions(200L, 300L),
             "B" -> Conversions(250L, 300L),
             "C" -> Conversions(265L, 300L),
             "D" -> Conversions(230L, 300L)
-          )
+          ),
+          None
         )
         .asserting { dist =>
-          dist.toList.sortBy(_._2.p).map(_._1) shouldBe List("A", "D", "B", "C")
+          dist
+            .sortBy(_.probabilityBeingOptimal.p)
+            .map(_.name) shouldBe List("A", "D", "B", "C")
         }
 
     }
