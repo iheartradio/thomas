@@ -21,9 +21,13 @@ object JobSpec {
       kpiName: KPIName,
       until: Instant)
       extends JobSpec {
-    val key = "Update_KPI_Prior_For_" + kpiName.n
+    val key = UpdateKPIPrior.keyOf(kpiName)
     val description =
       s"Update the prior for KPI $kpiName using ongoing data until $until"
+  }
+
+  object UpdateKPIPrior {
+    def keyOf(kpiName: KPIName) = "Update_KPI_Prior_For_" + kpiName.n
   }
 
   case class MonitorTest(
