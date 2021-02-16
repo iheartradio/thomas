@@ -21,6 +21,6 @@ object `package` {
 
   type ConversionEvent = Boolean
   val Converted = true
-  val Viewed = false
+  val Initiated = false
 
 }

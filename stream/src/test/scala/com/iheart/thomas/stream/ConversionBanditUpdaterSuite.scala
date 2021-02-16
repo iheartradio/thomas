@@ -27,12 +27,12 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
     "count conversions per arm" in {
       val input = Stream.fromIterator[IO](
         List(
-          "A" -> Viewed,
-          "B" -> Viewed,
+          "A" -> Initiated,
+          "B" -> Initiated,
           "B" -> Converted,
           "A" -> Converted,
-          "B" -> Viewed,
-          "B" -> Viewed
+          "B" -> Initiated,
+          "B" -> Initiated
         ).iterator
       )
       ConversionBanditUpdater

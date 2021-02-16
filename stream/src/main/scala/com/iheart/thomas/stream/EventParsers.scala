@@ -7,6 +7,7 @@ import cats.implicits._
 import org.typelevel.jawn.ast.{JNull, JValue}
 
 import scala.annotation.implicitNotFound
+import scala.util.matching.Regex
 
 @implicitNotFound(
   "Need to provide a parse that can parse group name (or arm name) out of ${Message} of event "
@@ -35,7 +36,7 @@ object ConversionParser {
         ): F[Option[ConversionEvent]] = {
         import JValueSyntax._
         if (json.filterAnd(query.initMessage.criteria: _*).nonNull)
-          Viewed.some.pure[F]
+          Initiated.some.pure[F]
         else if (json.filterAnd(query.convertedMessage.criteria: _*).nonNull)
           Converted.some.pure[F]
         else none[ConversionEvent].pure[F]
@@ -54,12 +55,14 @@ object JValueSyntax {
 
     def filter(
         path: String,
-        value: String
+        regex: Regex
       ): JValue =
-      getPath(path).getString.filter(_ == value).as(jv).getOrElse(JNull)
+      getPath(path).getString
+        .filter(s => regex.findFirstMatchIn(s).isDefined)
+        .as(jv)
+        .getOrElse(JNull)
 
     def filterAnd(crit: Criteria*): JValue =
-      crit.foldLeft(jv)((m, c) => m.filter(c.fieldName, c.matchingValue))
-
+      crit.foldLeft(jv)((m, c) => m.filter(c.fieldName, c.regex))
   }
 }

@@ -22,9 +22,9 @@ showNameField: Boolean = true
 
     <div class="col-md d-flex flex-row">
         <div class="form-group w-100">
-            <input name="messageQuery.@{queryName}.criteria[].matchingValue" class="form-control"
+            <input name="messageQuery.@{queryName}.criteria[].matchingRegex" class="form-control"
                    type="text"
-                   @oo.map(o=> s"value=${o.matchingValue}") />
+                   @oo.map(o=> s"value=${o.matchingRegex}") />
         </div>
         <div class="text-center">
             <button class="btn btn-link delete-criteria remove-item mt-1 ml-1"
@@ -59,7 +59,7 @@ showNameField: Boolean = true
 
         <div class="col-md">
             <div class="form-group">
-                <label>Field Value</label>
+                <label>Matching Regex</label>
             </div>
         </div>
     </div>

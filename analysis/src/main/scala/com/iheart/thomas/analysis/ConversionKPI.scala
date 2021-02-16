@@ -4,6 +4,7 @@ import cats.{FlatMap, MonadThrow, UnorderedFoldable}
 import cats.implicits._
 
 import scala.util.control.NoStackTrace
+import scala.util.matching.Regex
 
 case class ConversionKPI(
     name: KPIName,
@@ -41,11 +42,13 @@ case class MessageQuery(
 
 case class Criteria(
     fieldName: FieldName,
-    matchingValue: FieldValue)
+    matchingRegex: FieldRegex) {
+  lazy val regex: Regex = new Regex(matchingRegex)
+}
 
 object MessageQuery {
   type FieldName = String
-  type FieldValue = String
+  type FieldRegex = String
 }
 
 trait ConversionKPIAlg[F[_]] {
