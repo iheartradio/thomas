@@ -23,7 +23,7 @@ trait ConversionParser[F[_], Message] {
   def parseConversion(
       m: Message,
       conversionMessageQuery: ConversionMessageQuery
-    ): F[Option[ConversionEvent]]
+    ): F[List[ConversionEvent]]
 }
 
 object ConversionParser {
@@ -33,13 +33,16 @@ object ConversionParser {
       def parseConversion(
           json: JValue,
           query: ConversionMessageQuery
-        ): F[Option[ConversionEvent]] = {
+        ): F[List[ConversionEvent]] = {
         import JValueSyntax._
-        if (json.filterAnd(query.initMessage.criteria: _*).nonNull)
-          Initiated.some.pure[F]
-        else if (json.filterAnd(query.convertedMessage.criteria: _*).nonNull)
-          Converted.some.pure[F]
-        else none[ConversionEvent].pure[F]
+        ((if (json.filterAnd(query.initMessage.criteria: _*).nonNull)
+            List(Initiated)
+          else
+            Nil) ++
+          (if (json.filterAnd(query.convertedMessage.criteria: _*).nonNull)
+             Converted.some
+           else
+             Nil)).pure[F]
       }
 
     }
