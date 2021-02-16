@@ -46,16 +46,17 @@ abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
       frequency: FiniteDuration,
       obsoleteCount: Int = 10
     ): Config = ConfigFactory.parseString(s"""
-                                                                    |thomas {
-                                                                    |  stream {
-                                                                    |    job {
-                                                                    |      job-check-frequency: $frequency
-                                                                    |      job-obsolete-count: $obsoleteCount
-                                                                    |      min-chunk-size: 2
-                                                                    |    }
-                                                                    |  }
-                                                                    |}
-                                                                    |""".stripMargin)
+      |thomas {
+      |  stream {
+      |    job {
+      |      job-check-frequency: $frequency
+      |      job-obsolete-count: $obsoleteCount
+      |      max-chunk-size: 2
+      |      job-process-frequency: $frequency
+      |    }
+      |  }
+      |}
+      |""".stripMargin)
 
   val cfg: Config = cfg(50.millis)
 

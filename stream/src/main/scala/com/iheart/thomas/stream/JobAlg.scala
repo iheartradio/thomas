@@ -95,16 +95,6 @@ object JobAlg {
           .flatMap { cfg =>
             def jobPipe(job: Job): F[Pipe[F, Message, Unit]] = {
 
-              def checkJobComplete(until: Instant) = {
-                Stream
-                  .fixedDelay(cfg.jobCheckFrequency)
-                  .evalMap(_ => until.passed)
-                  .evalTap { completed =>
-                    if (completed) stop(job.key)
-                    else F.unit
-                  }
-              }
-
               def kpiQuery(name: KPIName): F[ConversionMessageQuery] =
                 cKpiAlg
                   .get(name)
@@ -112,6 +102,20 @@ object JobAlg {
                     kpi.messageQuery
                       .liftTo[F](CannotUpdateKPIWithoutQuery(name))
                   }
+
+              def chunkPipe[A](until: Instant): Pipe[F, A, Chunk[A]] =
+                (input: Stream[F, A]) => {
+                  val checkJobComplete = Stream
+                    .fixedDelay(cfg.jobCheckFrequency)
+                    .evalMap(_ => until.passed)
+                    .evalTap { completed =>
+                      if (completed) stop(job.key)
+                      else F.unit
+                    }
+                  input
+                    .interruptWhen(checkJobComplete)
+                    .groupWithin(cfg.maxChunkSize, cfg.jobProcessFrequency)
+                }
 
               job.spec match {
                 case UpdateKPIPrior(kpiName, until) =>
@@ -121,8 +125,7 @@ object JobAlg {
                         { (input: Stream[F, Message]) =>
                           input
                             .evalMapFilter(m => convParser.parseConversion(m, query))
-                            .interruptWhen(checkJobComplete(until))
-                            .chunkMin(cfg.minChunkSize)
+                            .through(chunkPipe(until))
                             .evalMap { chunk =>
                               cKpiAlg.updateModel(
                                 kpiName,
@@ -149,8 +152,7 @@ object JobAlg {
                                   }
                                 }
                               }
-                              .interruptWhen(checkJobComplete(expiration))
-                              .chunkMin(cfg.minChunkSize)
+                              .through(chunkPipe(expiration))
                               .evalMap { chunk =>
                                 monitorAlg.updateState(Key(feature, kpiName), chunk)
                               }
@@ -229,12 +231,15 @@ object JobAlg {
 /**
   *
   * @param jobCheckFrequency how often it checks new available jobs or running jobs being stoped.
+  * @param jobProcessFrequency how often it does the task of a job.
   * @param jobObsoleteCount the threshold over which times a job misses being checkedOut will be count as obsolete and available for worker to pick up.
+  * @param maxChunkSize when messages accumulate over maxChunkSize, they will be processed for the job.
   */
 case class JobRunnerConfig(
     jobCheckFrequency: FiniteDuration,
     jobObsoleteCount: Long,
-    minChunkSize: Int)
+    maxChunkSize: Int,
+    jobProcessFrequency: FiniteDuration)
 
 object JobRunnerConfig {
   def fromConfig[F[_]: Sync](cfg: Config): F[JobRunnerConfig] = {
