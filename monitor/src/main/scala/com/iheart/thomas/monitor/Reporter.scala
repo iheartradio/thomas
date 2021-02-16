@@ -10,7 +10,7 @@ import cats.implicits._
   * @tparam F
   */
 trait Reporter[F[_]] {
-  def report(event: Event): F[Fiber[F, Unit]]
+  def report(event: MonitorEvent): F[Fiber[F, Unit]]
 
 }
 
@@ -20,18 +20,17 @@ object Reporter {
       logger: Logger[F]
     )(implicit F: Concurrent[F]
     ): Reporter[F] =
-    (event: Event) =>
+    (event: MonitorEvent) =>
       F.start {
         (event.status match {
-          case Event.Status.error => logger.error(event.toString)
-          case _                  => F.unit
+          case MonitorEvent.Status.error => logger.error(event.toString)
+          case _                         => F.unit
         }) *>
-          client.send(event)(
-            e =>
-              logger.error(
-                s"Failed to report $event due to " +
-                  e.toString
-              )
+          client.send(event)(e =>
+            logger.error(
+              s"Failed to report $event due to " +
+                e.toString
+            )
           )
       }
 }
