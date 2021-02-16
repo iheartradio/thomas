@@ -35,7 +35,10 @@ class AbtestConcurrencySuite extends AsyncIOSpec with Matchers {
             val ab = fakeAb(1, 2)
             val ab2 = fakeAb(3, 7, feature = ab.feature)
             alg.create(ab, false) >>
-              (alg.create(ab2, false).attempt, alg.create(ab2, false).attempt).parTupled
+              (
+                alg.create(ab2, false).attempt,
+                alg.create(ab2, false).attempt
+              ).parTupled
                 .as(ab.feature)
           }
           .sequence >>= { features =>
@@ -54,7 +57,10 @@ class AbtestConcurrencySuite extends AsyncIOSpec with Matchers {
             val ab = fakeAb(1, 5)
             val ab2 = fakeAb(3, 7, feature = ab.feature).copy(name = "new version")
             alg.create(ab, false) >>
-              (alg.create(ab2, true).attempt, alg.create(ab2, true).attempt).parTupled
+              (
+                alg.create(ab2, true).attempt,
+                alg.create(ab2, true).attempt
+              ).parTupled
                 .as(ab.feature)
           }
           .sequence >>= { features =>
@@ -76,7 +82,7 @@ class AbtestConcurrencySuite extends AsyncIOSpec with Matchers {
             val ab2 = fakeAb(3, 6, feature = ab.feature)
             val ab3 = fakeAb(8, 9, feature = ab.feature)
             alg.create(ab, false) >>
-              (alg.continue(ab2).attempt, alg.continue(ab2).attempt).parTupled
+              (alg.continue(ab2).attempt, alg.continue(ab3).attempt).parTupled
                 .as(ab.feature)
           }
           .sequence >>= { features =>
