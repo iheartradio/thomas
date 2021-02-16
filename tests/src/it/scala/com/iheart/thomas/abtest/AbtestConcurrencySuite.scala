@@ -89,6 +89,16 @@ class AbtestConcurrencySuite extends AsyncIOSpec with Matchers {
           features.traverse { feature =>
             alg
               .getTestsByFeature(feature)
+              .flatTap { ts =>
+                if (ts.size > 2) {
+                  IO.delay(
+                    fail(
+                      "Results in more than one tests: starts: " + ts
+                        .map(_.data.start)
+                    )
+                  )
+                } else IO.unit
+              }
               .map(_.size)
           }
         }
