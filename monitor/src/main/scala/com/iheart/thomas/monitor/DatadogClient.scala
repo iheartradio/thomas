@@ -27,7 +27,7 @@ class DatadogClient[F[_]](
   implicit def jsObjectEncoder: EntityEncoder[F, JsObject] =
     jsonEncoder[F].narrow
 
-  def send(e: Event)(errorHandler: Throwable => F[Unit]): F[Unit] = {
+  def send(e: MonitorEvent)(errorHandler: Throwable => F[Unit]): F[Unit] = {
     F.start(
         c.successful(
             POST(

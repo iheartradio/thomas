@@ -3,16 +3,16 @@ package monitor
 
 import play.api.libs.json._
 
-case class Event(
+case class MonitorEvent(
     title: String,
     text: String,
     status: Status.Status,
     tags: List[String])
 
-object Event {
+object MonitorEvent {
   type Status = Status.Status
   val Status = com.iheart.thomas.monitor.Status
-  implicit val format: Writes[Event] = Json.writes[Event]
+  implicit val format: Writes[MonitorEvent] = Json.writes[MonitorEvent]
 }
 
 private[monitor] object Status extends Enumeration {
