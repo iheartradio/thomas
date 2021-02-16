@@ -213,7 +213,7 @@ object UI {
 
     implicit val criteriaQueryDecoder: FormDataDecoder[Criteria] = (
       field[String]("fieldName"),
-      field[String]("matchingValue")
+      field[String]("matchingRegex")
     ).mapN(Criteria.apply)
 
     implicit val messageQueryDecoder: FormDataDecoder[MessageQuery] = (
