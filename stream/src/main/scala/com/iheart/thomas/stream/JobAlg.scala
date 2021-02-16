@@ -4,6 +4,7 @@ import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
 import com.iheart.thomas.{FeatureName, TimeUtil}
 import TimeUtil.InstantOps
+import cats.Functor
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
 import com.iheart.thomas.analysis.monitor.MonitorAlg
 import com.iheart.thomas.analysis.{ConversionKPIAlg, ConversionMessageQuery, KPIName}
@@ -38,6 +39,12 @@ trait JobAlg[F[_]] {
   def findInfo[JS <: JobSpec: ClassTag](
       condition: JS => Boolean
     ): F[Vector[JobInfo[JS]]]
+
+  def findInfo[JS <: JobSpec: ClassTag](
+      key: String
+    )(implicit F: Functor[F]
+    ): F[Option[JobInfo[JS]]] =
+    findInfo[JS]((_: JS).key == key).map(_.headOption)
 
   def monitors(feature: FeatureName): F[Vector[JobInfo[MonitorTest]]] =
     findInfo((m: MonitorTest) => m.feature == feature)

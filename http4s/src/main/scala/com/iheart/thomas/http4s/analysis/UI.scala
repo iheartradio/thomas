@@ -35,7 +35,7 @@ import com.iheart.thomas.stream.JobSpec.{MonitorTest, UpdateKPIPrior}
 import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import tsec.authentication._
 
-import java.time.{Instant, OffsetDateTime}
+import java.time.OffsetDateTime
 
 class UI[F[_]: Async](
     implicit
@@ -129,8 +129,9 @@ class UI[F[_]: Async](
           ko.fold(
             NotFound(s"Cannot find the Conversion KPI under the name $kpiName")
           ) { k =>
-            jobAlg.find(UpdateKPIPrior(kpiName, Instant.MIN)).flatMap { jobO =>
-              Ok(editConversionKPI(k, jobO)(UIEnv(u)))
+            jobAlg.findInfo[UpdateKPIPrior](UpdateKPIPrior.keyOf(kpiName)).flatMap {
+              jobO =>
+                Ok(editConversionKPI(k, jobO)(UIEnv(u)))
             }
           }
         }
@@ -180,7 +181,7 @@ class UI[F[_]: Async](
             )(j =>
               Ok(
                 redirect(
-                  reverseRoutes.analysis + "/" + kpiName,
+                  reverseRoutes.convKpi(KPIName(kpiName)),
                   s"Scheduled a background process to update the prior using ongoing data. "
                 )
               )

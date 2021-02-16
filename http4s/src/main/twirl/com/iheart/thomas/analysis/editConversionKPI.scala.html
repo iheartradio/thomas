@@ -1,13 +1,14 @@
 @import com.iheart.thomas.analysis._
-@import com.iheart.thomas.stream._
+@import com.iheart.thomas.stream._, JobSpec._
 @import com.iheart.thomas.stream.html._
 @import com.iheart.thomas.html._
 
-@import com.iheart.thomas.http4s.UIEnv
+@import com.iheart.thomas.http4s.{UIEnv, Formatters}, Formatters._
+
 
 @(
 kpi: ConversionKPI,
-runningJobO: Option[Job],
+runningJobO: Option[JobInfo[UpdateKPIPrior]],
 successMsg: Option[String] = None
 )(implicit env: UIEnv)
 
@@ -59,9 +60,9 @@ successMsg: Option[String] = None
                 } else {
                     @for(job <- runningJobO) {
                         <span class="h5 font-weight-light text-success">
-                          @job.spec.description
+                          Updating using ongoing data until @dateTimeMid(job.spec.until)
                         </span>
-                        @jobStatusBadge(job)
+                        @jobStatusBadge(job.started)
 
                     }
                 }

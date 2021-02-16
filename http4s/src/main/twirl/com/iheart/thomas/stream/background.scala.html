@@ -21,7 +21,7 @@
                     <div>
 
                         <span class="mb-1 h5 font-weight-light text-success">@job.key</span>
-                        @jobStatusBadge(job)
+                        @jobStatusBadge(job.started)
                     </div>
                     <div class="mt-1">
                         @job.spec.description
@@ -29,16 +29,7 @@
                 </div>
 
                 <div class="col-4 text-sm-right">
-                    @for(started <- job.started) {
-                    <div>
-                        <small><span class="font-weight-light ml-3">
-                    Started at: </span>
-                            <span class="font-weight-heavy">
-                           @formatDate(started)
-                        </span>
-                        </small>
-                    </div>
-                    }
+
                    @for(checkedOut <- job.checkedOut) {
                     <div>
                     <small><span class="font-weight-light ml-3">

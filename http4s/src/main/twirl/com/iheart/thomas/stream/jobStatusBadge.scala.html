@@ -1,13 +1,18 @@
-@import com.iheart.thomas.stream.Job
+@import java.time.Instant
+@import com.iheart.thomas.http4s.Formatters._
 
-@(job: Job)
+@(startedO: Option[Instant])
 
-@if(job.checkedOut.isEmpty) {
+@if(startedO.isEmpty) {
 <span class="badge  badge-secondary">
-                                Scheduled
-                            </span>
-} else {
-<span class="badge  badge-success">
-                              Running
-                            </span>
+    Scheduled
+</span>
 }
+
+@for(started <- startedO) {
+
+<span class="badge  badge-success">
+   Started @dateTimeMid(started)
+</span>
+}
+
