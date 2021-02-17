@@ -68,7 +68,7 @@ stateO: Option[ExperimentKPIState[Conversions]]
                         <div id="histogram-@e._2"></div>
                     </div>
                    <div class="mt-3">
-                       Benefit Range*: <b>@formatPercentage(-br.riskOfNotUsing)</b> &mdash; <b>@formatPercentage(br.riskOfUsing)</b>
+                       Benefit Range*: <b>@formatPercentage(br.riskOfUsing)</b> &mdash; <b>@formatPercentage(-br.riskOfNotUsing)</b>
                        ( Median: <b>@formatPercentage(br.medianEffect)</b> )
                    </div>
             <div>
@@ -111,7 +111,10 @@ stateO: Option[ExperimentKPIState[Conversions]]
                         title: 'Percentage difference',
                         format: '##.##%'
                     },
-                    chartArea: { width: 405 },
+                    chartArea: {
+                        width: 600,
+                    },
+                    height: 400,
                     bar: { gap: 0 },
 
                     histogram: {

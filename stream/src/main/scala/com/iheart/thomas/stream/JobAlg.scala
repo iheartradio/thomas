@@ -122,6 +122,7 @@ object JobAlg {
                   input
                     .interruptWhen(checkJobComplete)
                     .groupWithin(cfg.maxChunkSize, cfg.jobProcessFrequency)
+
                 }
 
               job.spec match {
@@ -131,12 +132,13 @@ object JobAlg {
                       query =>
                         { (input: Stream[F, Message]) =>
                           input
-                            .evalMapFilter(m => convParser.parseConversion(m, query))
+                            .evalMap(m => convParser.parseConversion(m, query))
+                            .filter(_.nonEmpty)
                             .through(chunkPipe(until))
                             .evalMap { chunk =>
                               cKpiAlg.updateModel(
                                 kpiName,
-                                chunk
+                                chunk.toList.flatten
                               )
                             }
                             .void
@@ -150,18 +152,22 @@ object JobAlg {
                         { (input: Stream[F, Message]) =>
                           Stream.eval(monitorAlg.initConversion(feature, kpiName)) *>
                             input
-                              .evalMapFilter { m =>
+                              .evalMap { m =>
                                 armParser.parseArm(m, feature).flatMap { armO =>
-                                  armO.flatTraverse { arm =>
+                                  armO.toList.flatTraverse { arm =>
                                     convParser
                                       .parseConversion(m, query)
                                       .map(_.map((arm, _)))
                                   }
                                 }
                               }
+                              .filter(_.nonEmpty)
                               .through(chunkPipe(expiration))
                               .evalMap { chunk =>
-                                monitorAlg.updateState(Key(feature, kpiName), chunk)
+                                monitorAlg.updateState(
+                                  Key(feature, kpiName),
+                                  chunk.toList.flatten
+                                )
                               }
                               .void
                         }
@@ -226,7 +232,12 @@ object JobAlg {
               Stream
                 .eval(jobs.traverse(j => jobPipe(j)))
                 .flatMap { pipes =>
-                  messageSubscriber.subscribe
+                  (if (cfg.logEveryMessage)
+                     messageSubscriber.subscribe
+                       .flatTap(m =>
+                         Stream.eval(logger(JobEvent.MessageReceived(m)))
+                       )
+                   else messageSubscriber.subscribe)
                     .broadcastTo(pipes: _*)
                 }
             }
@@ -246,7 +257,8 @@ case class JobRunnerConfig(
     jobCheckFrequency: FiniteDuration,
     jobObsoleteCount: Long,
     maxChunkSize: Int,
-    jobProcessFrequency: FiniteDuration)
+    jobProcessFrequency: FiniteDuration,
+    logEveryMessage: Boolean = false)
 
 object JobRunnerConfig {
   def fromConfig[F[_]: Sync](cfg: Config): F[JobRunnerConfig] = {
