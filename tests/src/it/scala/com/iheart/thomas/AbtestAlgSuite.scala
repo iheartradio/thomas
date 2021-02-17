@@ -2,7 +2,6 @@ package com.iheart.thomas
 
 import java.time.{Instant, OffsetDateTime}
 import java.util.concurrent.atomic.AtomicLong
-
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.iheart.thomas.abtest.{AssignGroups, TestsData, model}
@@ -13,7 +12,11 @@ import com.iheart.thomas.abtest.Error.{
   ConflictTest
 }
 import com.iheart.thomas.abtest.model.UserMetaCriterion.{ExactMatch, VersionRange}
-import com.iheart.thomas.abtest.model.{UserGroupQuery, UserMetaCriterion}
+import com.iheart.thomas.abtest.model.{
+  EligibilityControlFilter,
+  UserGroupQuery,
+  UserMetaCriterion
+}
 import com.iheart.thomas.testkit.Factory.{now, _}
 import org.scalatest.matchers.should.Matchers
 import cats.implicits._
@@ -42,14 +45,15 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
                 ),
                 false
               )
-              tryUpdate <- alg
-                .updateTest(
-                  init._id,
-                  init.data.toSpec.copy(
-                    groups = init.data.groups.map(g => g.copy(size = g.size * 0.5))
+              tryUpdate <-
+                alg
+                  .updateTest(
+                    init._id,
+                    init.data.toSpec.copy(
+                      groups = init.data.groups.map(g => g.copy(size = g.size * 0.5))
+                    )
                   )
-                )
-                .attempt
+                  .attempt
 
             } yield tryUpdate
           }
@@ -73,14 +77,16 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
                 ),
                 false
               )
-              tryUpdate <- alg
-                .updateTest(
-                  init._id,
-                  init.data.toSpec.copy(
-                    end = Some(init.data.end.get.plusSeconds(12).toOffsetDateTimeUTC)
+              tryUpdate <-
+                alg
+                  .updateTest(
+                    init._id,
+                    init.data.toSpec.copy(
+                      end =
+                        Some(init.data.end.get.plusSeconds(12).toOffsetDateTimeUTC)
+                    )
                   )
-                )
-                .attempt
+                  .attempt
 
             } yield tryUpdate
           }
@@ -100,14 +106,15 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
                 fakeAb(3, 4).copy(feature = init.data.feature),
                 false
               )
-              tryUpdate <- alg
-                .updateTest(
-                  second._id,
-                  second.data.toSpec.copy(
-                    start = init.data.end.get.minusSeconds(12).toOffsetDateTimeUTC
+              tryUpdate <-
+                alg
+                  .updateTest(
+                    second._id,
+                    second.data.toSpec.copy(
+                      start = init.data.end.get.minusSeconds(12).toOffsetDateTimeUTC
+                    )
                   )
-                )
-                .attempt
+                  .attempt
 
             } yield tryUpdate
           }
@@ -187,7 +194,7 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
                   Some("random"),
                   at = anHourLater,
                   meta = Map("did" -> "aaa"),
-                  eligibilityInfoIncluded = false
+                  eligibilityControlFilter = EligibilityControlFilter.Off
                 )
               )
             } yield (r, t)
@@ -218,7 +225,7 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
                   UserGroupQuery(
                     Some("random"),
                     at = anHourLater,
-                    eligibilityInfoIncluded = false
+                    eligibilityControlFilter = EligibilityControlFilter.Off
                   ),
                   1.day
                 )
@@ -289,16 +296,17 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
                 fakeAb(end = 0),
                 false
               )
-              r <- alg
-                .updateUserMetaCriteria(
-                  t._id,
-                  Some(UserMetaCriterion.and(ExactMatch("did", "bbb"))),
-                  true
-                )
-                .as("fail")
-                .recover {
-                  case CannotUpdateExpiredTest(_) => "success"
-                }
+              r <-
+                alg
+                  .updateUserMetaCriteria(
+                    t._id,
+                    Some(UserMetaCriterion.and(ExactMatch("did", "bbb"))),
+                    true
+                  )
+                  .as("fail")
+                  .recover {
+                    case CannotUpdateExpiredTest(_) => "success"
+                  }
 
             } yield r
           }

@@ -206,7 +206,7 @@ package model {
     * @param tags
     * @param meta
     * @param features
-    * @param eligibilityInfoIncluded indicate whether eligibility information is included.
+    * @param eligibilityControlFilter indicate whether to include tests with eligibility control
     */
   case class UserGroupQuery(
       userId: Option[UserId],
@@ -214,8 +214,17 @@ package model {
       tags: List[Tag] = Nil,
       meta: UserMeta = Map(),
       features: List[FeatureName] = Nil,
-      eligibilityInfoIncluded: Boolean = true)
+      eligibilityControlFilter: EligibilityControlFilter =
+        EligibilityControlFilter.All)
 
+  sealed trait EligibilityControlFilter
+  object EligibilityControlFilter {
+    case object Off
+        extends EligibilityControlFilter //only includes tests that has no eligibility control
+    case object All extends EligibilityControlFilter //includes all tests
+    case object On
+        extends EligibilityControlFilter //only includes tests that has eligibility control
+  }
   case class UserInfo(
       userId: Option[UserId],
       meta: UserMeta = Map())

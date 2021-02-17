@@ -45,27 +45,29 @@ object Formats {
     def readFieldValue(
         f: MetaFieldName,
         obj: JsObject
-      ): JsResult[UserMetaCriterion] = obj.fields match {
-      case Seq(("%regex", JsString(r))) => JsSuccess(RegexMatch(f, r))
-      case Seq(("%gt", JsNumber(r)))    => JsSuccess(Greater(f, r.doubleValue()))
-      case Seq(("%ge", JsNumber(r)))    => JsSuccess(GreaterOrEqual(f, r.doubleValue()))
-      case Seq(("%lt", JsNumber(r)))    => JsSuccess(Less(f, r.doubleValue()))
-      case Seq(("%le", JsNumber(r)))    => JsSuccess(LessOrEqual(f, r.doubleValue()))
-      case Seq(("%in", JsArray(seq))) =>
-        seq.toList
-          .traverse {
-            case JsString(str) => JsSuccess(str)
-            case j             => JsError(s"Invalid %in expression in $f: %j")
-          }
-          .map(s => InMatch(f, s.toSet))
-      case Seq(("%versionStart", JsString(start))) =>
-        JsSuccess(VersionRange(f, start))
+      ): JsResult[UserMetaCriterion] =
+      obj.fields match {
+        case Seq(("%regex", JsString(r))) => JsSuccess(RegexMatch(f, r))
+        case Seq(("%gt", JsNumber(r)))    => JsSuccess(Greater(f, r.doubleValue()))
+        case Seq(("%ge", JsNumber(r))) =>
+          JsSuccess(GreaterOrEqual(f, r.doubleValue()))
+        case Seq(("%lt", JsNumber(r))) => JsSuccess(Less(f, r.doubleValue()))
+        case Seq(("%le", JsNumber(r))) => JsSuccess(LessOrEqual(f, r.doubleValue()))
+        case Seq(("%in", JsArray(seq))) =>
+          seq.toList
+            .traverse {
+              case JsString(str) => JsSuccess(str)
+              case j             => JsError(s"Invalid %in expression in $f: %j")
+            }
+            .map(s => InMatch(f, s.toSet))
+        case Seq(("%versionStart", JsString(start))) =>
+          JsSuccess(VersionRange(f, start))
 
-      case Seq(("%versionRange", JsArray(Seq(JsString(start), JsString(end))))) =>
-        JsSuccess(VersionRange(f, start, Some(end)))
-      case j =>
-        JsError(JsPath \ f, s"Invalid JSON %j for user meta criteria for field %f")
-    }
+        case Seq(("%versionRange", JsArray(Seq(JsString(start), JsString(end))))) =>
+          JsSuccess(VersionRange(f, start, Some(end)))
+        case j =>
+          JsError(JsPath \ f, s"Invalid JSON %j for user meta criteria for field %f")
+      }
 
     def readSets(jv: JsValue): JsResult[Set[UserMetaCriterion]] = {
       def readFields(fields: List[(String, JsValue)]) =
@@ -136,6 +138,14 @@ object Formats {
   implicit val abtestFormat = j.format[Abtest]
   implicit val abtestSpecFormat = j.format[AbtestSpec]
   implicit val featureFormat = j.format[Feature]
+
+  implicit val jEligibilityControlFilter: Format[EligibilityControlFilter] =
+    stringADTFormat(
+      EligibilityControlFilter.Off,
+      EligibilityControlFilter.On,
+      EligibilityControlFilter.All
+    )
+
   implicit val userGroupQueryFormat =
     j.format[UserGroupQuery]
   implicit val userGroupQueryResultFormat =

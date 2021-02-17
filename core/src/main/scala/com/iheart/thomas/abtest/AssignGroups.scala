@@ -58,7 +58,10 @@ object AssignGroups {
         tests.data
           .traverseFilter {
             case (test, feature) =>
-              if (test.data.hasEligibilityControl && !query.eligibilityInfoIncluded)
+              if (
+                test.data.hasEligibilityControl &&
+                query.eligibilityControlFilter == EligibilityControlFilter.Off
+              )
                 F.pure(
                   Option((feature.name, MissingEligibilityInfo: AssignmentResult))
                 )
