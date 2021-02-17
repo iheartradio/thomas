@@ -58,22 +58,26 @@ object AssignGroups {
         tests.data
           .traverseFilter {
             case (test, feature) =>
-              if (test.data.hasEligibilityControl && !query.eligibilityInfoIncluded)
-                F.pure(
-                  Option((feature.name, MissingEligibilityInfo: AssignmentResult))
-                )
-              else
-                assign[F](test.data, feature, query).map(
-                  _.map(gn =>
-                    (
-                      feature.name,
-                      AssignmentWithMeta(
-                        gn,
-                        test.data.getGroupMetas.get(gn)
-                      ): AssignmentResult
+              (
+                test.data.hasEligibilityControl,
+                query.eligibilityControlFilter
+              ) match {
+                case (true, EligibilityControlFilter.Off) |
+                    (false, EligibilityControlFilter.On) =>
+                  F.pure(none[(FeatureName, AssignmentResult)])
+                case _ =>
+                  assign[F](test.data, feature, query).map(
+                    _.map(gn =>
+                      (
+                        feature.name,
+                        AssignmentResult(
+                          gn,
+                          test.data.getGroupMetas.get(gn)
+                        )
+                      )
                     )
                   )
-                )
+              }
           }
           .map(_.toMap)
       } else
@@ -98,22 +102,10 @@ object AssignGroups {
         .fold("")(_.toString())}, querying time: $targetTime,  tolerance: $tolerance "
   }
 
-  sealed trait AssignmentResult extends Serializable with Product
-
-  case object MissingEligibilityInfo extends AssignmentResult
-
-  case class AssignmentWithMeta(
+  case class AssignmentResult(
       groupName: GroupName,
       meta: Option[GroupMeta])
-      extends AssignmentResult
 
-  object AssignmentResult {
-    val missingInfo = MissingEligibilityInfo
-    def withMeta(
-        groupName: GroupName,
-        m: Option[GroupMeta]
-      ) = AssignmentWithMeta(groupName, m)
-  }
 }
 
 case class TestsData(

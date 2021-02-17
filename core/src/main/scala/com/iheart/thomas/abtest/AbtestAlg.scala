@@ -15,7 +15,7 @@ import cats.tagless.FunctorK
 import com.iheart.thomas.TimeUtil
 import Error._
 import cats.effect.{Concurrent, Resource, Timer}
-import com.iheart.thomas.abtest.AssignGroups.{AssignmentResult, AssignmentWithMeta}
+import com.iheart.thomas.abtest.AssignGroups.AssignmentResult
 import model.Abtest.{Specialization, Status}
 import model._
 import lihua._
@@ -556,7 +556,7 @@ final class DefaultAbtestAlg[F[_]](
       getGroupAssignmentsOfWithAt(query).map {
         case (groupAssignments, at) =>
           val metas = groupAssignments.collect {
-            case (fn, AssignmentWithMeta(gn, Some(meta))) => fn -> meta
+            case (fn, AssignmentResult(_, Some(meta))) => fn -> meta
           }
           UserGroupQueryResult(
             at,
@@ -733,7 +733,7 @@ final class DefaultAbtestAlg[F[_]](
       assignments: Map[FeatureName, AssignmentResult]
     ): Map[FeatureName, GroupName] =
     assignments.toList.collect {
-      case (k, AssignmentWithMeta(groupName, _)) => (k, groupName)
+      case (k, AssignmentResult(groupName, _)) => (k, groupName)
     }.toMap
 
   private def getGroupAssignmentsOf(

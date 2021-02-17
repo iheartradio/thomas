@@ -10,16 +10,17 @@ import com.iheart.thomas.client.AbtestClient
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{col, udf}
 import cats.implicits._
-import com.iheart.thomas.abtest.AssignGroups.AssignmentWithMeta
+import com.iheart.thomas.abtest.AssignGroups.AssignmentResult
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
 
 class Assigner(data: TestsData) extends Serializable {
 
-  def assignUdf(feature: FeatureName) = udf { (userId: String) =>
-    assign(feature, userId).getOrElse(null)
-  }
+  def assignUdf(feature: FeatureName) =
+    udf { (userId: String) =>
+      assign(feature, userId).getOrElse(null)
+    }
 
   def assign(
       feature: FeatureName,
@@ -35,7 +36,7 @@ class Assigner(data: TestsData) extends Serializable {
       .unsafeRunSync
       .get(feature)
       .collect {
-        case AssignmentWithMeta(groupName, _) => groupName
+        case AssignmentResult(groupName, _) => groupName
       }
   }
 
