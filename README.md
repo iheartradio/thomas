@@ -2,7 +2,7 @@
 # Thomas - a new A/B test library
 
 
-[![Build Status](https://travis-ci.org/iheartradio/thomas.svg?branch=master)](https://travis-ci.org/iheartradio/thomas)
+[![Build](https://github.com/iheartradio/thomas/workflows/Continuous%20Integration/badge.svg)](https://github.com/iheartradio/thomas/actions?query=workflow%3A%22Continuous+Integration%22)
 [![Gitter](https://badges.gitter.im/iheartradio/thomas.svg)](https://gitter.im/iheartradio/thomas?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 
