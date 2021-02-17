@@ -44,6 +44,30 @@ class AssignmentSuite extends AsyncIOSpec with Matchers {
       }
     }
 
+    "get groups excluding the tests filtered by eligibility control filter" in {
+      val test1 = fakeAb
+      val test2 =
+        fakeAb(userMetaCriteria =
+          Some(UserMetaCriterion.and(UserMetaCriterion.ExactMatch("foo", "bar")))
+        )
+      withAlg { alg =>
+        for {
+          test1 <- alg.create(test1)
+          test2 <- alg.create(test2)
+          retrieved <- alg.getGroupsWithMeta(
+            q(
+              randomUserId,
+              tomorrow,
+              Map("foo" -> "bar"),
+              eligibilityControlFilter = EligibilityControlFilter.On
+            )
+          )
+        } yield {
+          retrieved.groups.keys.toList shouldBe List(test2.data.feature)
+        }
+      }
+    }
+
     "get groups for the indefinite test the user is in " in {
       val userId: UserId = randomUserId
       withAlg { alg =>
@@ -238,11 +262,12 @@ class AssignmentSuite extends AsyncIOSpec with Matchers {
             _ <- alg.create(fakeAb(segRanges = List(GroupRange(0, 0.3))))
             ab <- alg.create(fakeAb(segRanges = List(GroupRange(0, 0.3))))
 
-            userAssignments <- List
-              .fill(500) {
-                alg.getGroupsWithMeta(q(randomUserId, at = Some(ab.data.start)))
-              }
-              .sequence
+            userAssignments <-
+              List
+                .fill(500) {
+                  alg.getGroupsWithMeta(q(randomUserId, at = Some(ab.data.start)))
+                }
+                .sequence
           } yield {
             userAssignments.map(_.groups.size).toSet shouldBe Set(0, 2)
             val countOfUsersInTests = userAssignments.count(_.groups.size == 2)
@@ -257,11 +282,12 @@ class AssignmentSuite extends AsyncIOSpec with Matchers {
             _ <- alg.create(fakeAb(segRanges = List(GroupRange(0, 0.3))))
             ab <- alg.create(fakeAb(segRanges = List(GroupRange(0.30001, 0.5))))
 
-            userAssignments <- List
-              .fill(500) {
-                alg.getGroupsWithMeta(q(randomUserId, at = Some(ab.data.start)))
-              }
-              .sequence
+            userAssignments <-
+              List
+                .fill(500) {
+                  alg.getGroupsWithMeta(q(randomUserId, at = Some(ab.data.start)))
+                }
+                .sequence
           } yield {
             userAssignments.map(_.groups.size).toSet shouldBe Set(0, 1)
             val countOfUsersInTests =

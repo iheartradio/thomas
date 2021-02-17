@@ -23,23 +23,21 @@ trait EligibilityControl[F[_]] {
     ): F[Boolean]
 
   def and(that: EligibilityControl[F])(implicit F: Monad[F]): EligibilityControl[F] =
-    EligibilityControl[F](
-      (userInfo: UserGroupQuery, test: Abtest) =>
-        eligible(userInfo, test).flatMap { a =>
-          if (a) {
-            that.eligible(userInfo, test)
-          } else false.pure[F]
-        }
+    EligibilityControl[F]((userInfo: UserGroupQuery, test: Abtest) =>
+      eligible(userInfo, test).flatMap { a =>
+        if (a) {
+          that.eligible(userInfo, test)
+        } else false.pure[F]
+      }
     )
 
   def or(that: EligibilityControl[F])(implicit F: Monad[F]): EligibilityControl[F] =
-    EligibilityControl[F](
-      (userInfo: UserGroupQuery, test: Abtest) =>
-        eligible(userInfo, test).flatMap { a =>
-          if (!a) {
-            that.eligible(userInfo, test)
-          } else true.pure[F]
-        }
+    EligibilityControl[F]((userInfo: UserGroupQuery, test: Abtest) =>
+      eligible(userInfo, test).flatMap { a =>
+        if (!a) {
+          that.eligible(userInfo, test)
+        } else true.pure[F]
+      }
     )
 }
 
@@ -81,33 +79,30 @@ private[thomas] sealed abstract class EligibilityControlInstances0
     byTestEligibilityType or (byUserEligibilityInfoAvailability and byUserMeta and byRequiredTags)
 
   lazy val byTestEligibilityType: EligibilityControl[Id] =
-    abtest.EligibilityControl[Id](
-      (_, test) => !test.hasEligibilityControl
-    )
+    abtest.EligibilityControl[Id]((_, test) => !test.hasEligibilityControl)
+
   lazy val byUserEligibilityInfoAvailability: EligibilityControl[Id] =
-    abtest.EligibilityControl[Id](
-      (u, _) => u.eligibilityInfoIncluded
+    abtest.EligibilityControl[Id]((u, _) =>
+      u.eligibilityControlFilter != EligibilityControlFilter.Off
     )
 
   lazy val byUserMeta: EligibilityControl[Id] =
-    abtest.EligibilityControl[Id](
-      (query, test) => test.userMetaCriteria.fold(true)(_.eligible(query.meta))
+    abtest.EligibilityControl[Id]((query, test) =>
+      test.userMetaCriteria.fold(true)(_.eligible(query.meta))
     )
 
   lazy val byRequiredTags: EligibilityControl[Id] =
-    abtest.EligibilityControl[Id](
-      (query: UserGroupQuery, test: Abtest) =>
-        test.requiredTags.forall(query.tags.contains)
+    abtest.EligibilityControl[Id]((query: UserGroupQuery, test: Abtest) =>
+      test.requiredTags.forall(query.tags.contains)
     )
 
   lazy val byTestEffectiveRange: EligibilityControl[Id] =
-    abtest.EligibilityControl[Id](
-      (query: UserGroupQuery, test: Abtest) =>
-        test.statusAsOf(query.at.getOrElse(OffsetDateTime.now)) === InProgress
+    abtest.EligibilityControl[Id]((query: UserGroupQuery, test: Abtest) =>
+      test.statusAsOf(query.at.getOrElse(OffsetDateTime.now)) === InProgress
     )
 
-  lazy val bySegRanges: EligibilityControl[Id] = abtest.EligibilityControl[Id](
-    (query: UserGroupQuery, test: Abtest) =>
+  lazy val bySegRanges: EligibilityControl[Id] =
+    abtest.EligibilityControl[Id]((query: UserGroupQuery, test: Abtest) =>
       if (test.segmentRanges.isEmpty) true
       else
         test.segmentRanges.exists { range =>
@@ -115,7 +110,7 @@ private[thomas] sealed abstract class EligibilityControlInstances0
             range.contains(Bucketing.md5Double(id))
           }
         }
-  )
+    )
 
 }
 
@@ -124,8 +119,6 @@ private[thomas] sealed abstract class EligibilityControlInstances1 {
   implicit def fromIdEControl[F[_]: Applicative](
       implicit idec: EligibilityControl[Id]
     ): EligibilityControl[F] =
-    EligibilityControl[F](
-      (u, t) => idec.eligible(u, t).pure[F]
-    )
+    EligibilityControl[F]((u, t) => idec.eligible(u, t).pure[F])
 
 }

@@ -30,18 +30,19 @@ object TestUtils {
       userMetaCriteria: UserMetaCriteria = None,
       segRanges: List[GroupRange] = Nil,
       requiredTags: List[Tag] = Nil
-    ): AbtestSpec = AbtestSpec(
-    name = "test",
-    author = "kai",
-    feature = feature,
-    start = OffsetDateTime.now.plusDays(start.toLong),
-    end = Some(OffsetDateTime.now.plusDays(end.toLong)),
-    groups = groups,
-    alternativeIdName = alternativeIdName,
-    userMetaCriteria = userMetaCriteria,
-    segmentRanges = segRanges,
-    requiredTags = requiredTags
-  )
+    ): AbtestSpec =
+    AbtestSpec(
+      name = "test",
+      author = "kai",
+      feature = feature,
+      start = OffsetDateTime.now.plusDays(start.toLong),
+      end = Some(OffsetDateTime.now.plusDays(end.toLong)),
+      groups = groups,
+      alternativeIdName = alternativeIdName,
+      userMetaCriteria = userMetaCriteria,
+      segmentRanges = segRanges,
+      requiredTags = requiredTags
+    )
 
   def randomUserId = Random.alphanumeric.take(10).mkString
 
@@ -69,7 +70,14 @@ object TestUtils {
   def q(
       userId: UserId,
       at: Option[OffsetDateTime] = None,
-      meta: UserMeta = Map()
+      meta: UserMeta = Map(),
+      eligibilityControlFilter: EligibilityControlFilter =
+        EligibilityControlFilter.All
     ) =
-    UserGroupQuery(Some(userId), at = at, meta = meta)
+    UserGroupQuery(
+      Some(userId),
+      at = at,
+      meta = meta,
+      eligibilityControlFilter = eligibilityControlFilter
+    )
 }
