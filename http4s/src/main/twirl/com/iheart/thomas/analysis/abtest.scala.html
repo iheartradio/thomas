@@ -12,51 +12,50 @@ kpis: Seq[KPIName]
 )(implicit env: UIEnv)
 
 @topNav(s"Monitors on A/B test ${feature}") {
-<div class="row mt-3">
-    <h4>Monitors for <span class="text-primary">@feature</span></h4>
-    <div class="list-group w-100">
-        @for(monitor <- monitors) {
 
-        <div class="list-group-item">
+    <div class="row mt-3">
+        <h4>Monitors for <span class="text-primary">@feature</span></h4>
+        <div class="list-group w-100">
+            @for(monitor <- monitors) {
 
-            <div class="row">
-                <div class="col-12 mt-2">
-                @for(state <- monitor.state) {
-                    @conversionState(state)
-                }
+                <div class="list-group-item">
+
+                    <div class="row">
+                        <div class="col-12 mt-2">
+                        @for(state <- monitor.state) {
+                            @conversionState(state)
+                        }
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-7">
+                            @for(started <- monitor.job.started) {
+                            <small><span class="font-weight-light ml-3">
+                                Started at: </span>
+                                <span class="font-weight-heavy">
+                                       @formatDate(started, dateTimeFormatterMid)
+                                    </span>
+                            </small>
+                            }
+
+                        </div>
+                        <div class="col-4 text-sm-right">
+                            <small>Expires at @formatDate(monitor.job.spec.until, dateTimeFormatterMid)</small>
+                        </div>
+                        <div class="col-1">
+                            <a href="monitors/@monitor.kpi/stop"
+                               onclick="return confirm('Are you sure you would like to stop monitoring @monitor.kpi for this @feature?');"
+                               role="button">
+                                <i class="far fa-stop-circle" title="stop this monitor"></i>
+                            </a>
+
+                        </div>
+
+                    </div>
                 </div>
-            </div>
-            <div class="row">
-                <div class="col-7">
-                    @for(started <- monitor.job.started) {
-                    <small><span class="font-weight-light ml-3">
-                        Started at: </span>
-                        <span class="font-weight-heavy">
-                               @formatDate(started, dateTimeFormatterMid)
-                            </span>
-                    </small>
-                    }
-
-                </div>
-                <div class="col-4 text-sm-right">
-                    <small>Expires at @formatDate(monitor.job.spec.until, dateTimeFormatterMid)</small>
-                </div>
-                <div class="col-1">
-                    <a href="monitors/@monitor.kpi/stop"
-                       onclick="return confirm('Are you sure you would like to stop monitoring @monitor.kpi for this @feature?');"
-                       role="button">
-                        <i class="far fa-stop-circle" title="stop this monitor"></i>
-                    </a>
-
-                </div>
-
-            </div>
             }
         </div>
-
-
     </div>
-</div>
 
 
 
