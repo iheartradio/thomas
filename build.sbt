@@ -385,7 +385,7 @@ lazy val commonSettings = addCompilerPlugins(
   "kind-projector"
 ) ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
   organization := "com.iheart",
-  scalaVersion := "2.12.13",
+  scalaVersion := "2.12.12",
   parallelExecution in Test := false,
   releaseCrossBuild := false,
   crossScalaVersions := Seq(scalaVersion.value),
