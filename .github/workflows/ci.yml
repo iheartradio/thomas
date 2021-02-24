@@ -17,7 +17,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         scala: [2.12.12]
-        java: [adopt@11]
+        java: [adopt@1.11]
 
     runs-on: ${{ matrix.os }}
     steps:
