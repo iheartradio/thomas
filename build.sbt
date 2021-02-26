@@ -372,7 +372,6 @@ lazy val tests = project
   )
 
 lazy val noPublishing = Seq(skip in publish := true)
-lazy val defaultScalaVer = libs.vers("scalac_2.12")
 
 lazy val developerKai = Developer(
   "Kailuo Wang",
@@ -386,7 +385,7 @@ lazy val commonSettings = addCompilerPlugins(
   "kind-projector"
 ) ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
   organization := "com.iheart",
-  scalaVersion := defaultScalaVer,
+  scalaVersion := "2.12.12",
   parallelExecution in Test := false,
   releaseCrossBuild := false,
   crossScalaVersions := Seq(scalaVersion.value),
