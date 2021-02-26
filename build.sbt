@@ -15,7 +15,6 @@ lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 // format: off
 lazy val libs = {
   org.typelevel.libraries
-    .addJVM(name = "akka-slf4j",            version = "2.6.10",  org = "com.typesafe.akka")
     .addJVM(name = "breeze",                version = "1.1",    org ="org.scalanlp", "breeze", "breeze-viz")
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
     .add(   name = "cats-testkit-scalatest",version = "2.1.2",  org = org.typelevel.typeLevelOrg)
@@ -274,7 +273,7 @@ lazy val kafka = project
   .settings(rootSettings)
   .settings(
     libs
-      .dependencies("fs2-kafka", "log4cats-slf4j", "logback-classic", "akka-slf4j"),
+      .dependencies("fs2-kafka", "log4cats-slf4j", "logback-classic"),
     libs.testDependencies("cats-effect-testing-scalatest")
   )
 
@@ -367,7 +366,6 @@ lazy val tests = project
     noPublishSettings,
     libs.dependency("cats-effect-testing-scalatest", Some(IntegrationTest.name)),
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
-    libs.dependency("akka-slf4j", Some(IntegrationTest.name)),
     libs.dependency("embedded-kafka", Some(IntegrationTest.name))
   )
 
