@@ -1,7 +1,6 @@
 package com.iheart.thomas.abtest
 
 import java.time.{Instant, OffsetDateTime}
-
 import cats.effect.testing.scalatest.AsyncIOSpec
 import TestUtils.{fakeAb, _}
 import cats.data.NonEmptyList
@@ -11,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 import concurrent.duration._
 import cats.implicits._
 import com.iheart.thomas.{FeatureName, UserId}
-import com.iheart.thomas.abtest.model.{Abtest, UserGroupQuery}
+import com.iheart.thomas.abtest.model.{Abtest, Group, UserGroupQuery}
 import play.api.libs.json.Json
 
 class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
@@ -533,7 +532,9 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
     "new group meta" - {
       "reserve group metas on round trips" in {
         val metas = Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
-        val initSpec = fakeAb().copy(groupMetas = metas)
+        val initSpec = fakeAb(groups =
+          List(Group("A", 0.5, metas.get("A")), Group("B", 0.5, metas.get("B")))
+        )
 
         withAlg { alg =>
           for {
@@ -545,14 +546,12 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
             )
             continueRetried <- alg.getTest(continue._id)
           } yield {
-            init.data.groupMetaMap shouldBe metas
-            retried.data.groupMetaMap shouldBe metas
+            init.data.getGroupMetas shouldBe metas
+            retried.data.getGroupMetas shouldBe metas
 
             continueRetried._id should not be (init._id)
 
-            continueRetried.data.groupMetas shouldBe Map()
-
-            continueRetried.data.groupMetaMap shouldBe metas
+            continueRetried.data.getGroupMetas shouldBe metas
 
           }
 

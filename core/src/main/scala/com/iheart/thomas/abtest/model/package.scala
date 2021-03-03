@@ -56,7 +56,6 @@ package model {
       userMetaCriteria: UserMetaCriteria = None,
       salt: Option[String] = None,
       segmentRanges: List[GroupRange] = Nil,
-      groupMetas: GroupMetas = Map(), //todo: legacy data, migrate data into Group
       specialization: Option[Abtest.Specialization] = None) {
 
     val hasEligibilityControl: Boolean =
@@ -91,9 +90,7 @@ package model {
       alternativeIdName.fold(ui.userId)(ui.meta.get)
 
     def getGroupMetas: GroupMetas =
-      groupMetas ++ groupMetaMap
-
-    def groupMetaMap = groups.mapFilter(g => g.meta.map((g.name, _))).toMap
+      groups.mapFilter(g => g.meta.map((g.name, _))).toMap
 
     def toSpec: AbtestSpec =
       this
@@ -101,9 +98,7 @@ package model {
         .set(
           start = start.toOffsetDateTimeSystemDefault,
           end = end.map(_.toOffsetDateTimeSystemDefault),
-          groups =
-            groups.map(g => g.copy(meta = g.meta orElse groupMetas.get(g.name))),
-          groupMetas = groupMetaMap
+          groups = groups.map(g => g.copy(meta = g.meta))
         )
   }
 
@@ -134,8 +129,7 @@ package model {
       userMetaCriteria: UserMetaCriteria = None,
       reshuffle: Boolean = false,
       segmentRanges: List[GroupRange] = Nil,
-      specialization: Option[Abtest.Specialization] = None,
-      groupMetas: GroupMetas = Map()) { //todo: legacy data, migrate data into Group
+      specialization: Option[Abtest.Specialization] = None) {
 
     val startI = start.toInstant
     val endI = end.map(_.toInstant)

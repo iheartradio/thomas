@@ -44,8 +44,7 @@ object Factory extends IOApp {
       alternativeIdName = alternativeIdName,
       userMetaCriteria = userMetaCriteria,
       segmentRanges = segRanges,
-      requiredTags = requiredTags,
-      groupMetas = Map()
+      requiredTags = requiredTags
     )
 
   def insertDevelopmentData: IO[Unit] = {

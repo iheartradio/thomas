@@ -527,13 +527,11 @@ final class DefaultAbtestAlg[F[_]](
               group.copy(
                 meta =
                   if (metas.nonEmpty)
-                    metas.get(group.name) orElse group.meta orElse test.groupMetas
-                      .get(group.name)
+                    metas.get(group.name) orElse group.meta
                   else
                     None
               )
-            },
-            groupMetas = Map()
+            }
           )
         )
       }
@@ -545,8 +543,7 @@ final class DefaultAbtestAlg[F[_]](
     updateAbtestTrivial(testId, auto) { test =>
       test
         .copy(
-          groups = test.groups.map(_.copy(meta = None)),
-          groupMetas = Map()
+          groups = test.groups.map(_.copy(meta = None))
         )
         .pure[F]
     }
@@ -757,7 +754,6 @@ final class DefaultAbtestAlg[F[_]](
       spec.groups.map { group =>
         group.copy(
           meta = group.meta orElse
-            spec.groupMetas.get(group.name) orElse
             basedOn.flatMap(
               _.data.getGroupMetas.get(group.name)
             ) //ensures that by default spec doesn't remove group Meta
@@ -777,8 +773,7 @@ final class DefaultAbtestAlg[F[_]](
         ),
         salt =
           (if (spec.reshuffle) Option(newSalt)
-           else basedOn.flatMap(_.data.salt)),
-        groupMetas = Map.empty[String, GroupMeta]
+           else basedOn.flatMap(_.data.salt))
       )
 
   }
