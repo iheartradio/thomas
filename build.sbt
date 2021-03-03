@@ -60,7 +60,7 @@ addCommandAlias(
 )
 addCommandAlias(
   "quickValidate",
-  s";thomas/test;tests/IntegrationTest/compile"
+  s";thomas/test;thomas/IntegrationTest/compile"
 )
 addCommandAlias("it", s"tests/IntegrationTest/test")
 addCommandAlias(
