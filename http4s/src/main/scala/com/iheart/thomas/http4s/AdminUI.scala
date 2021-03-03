@@ -26,13 +26,13 @@ import cats.MonadThrow
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.kafka.JsonMessageSubscriber
 import com.iheart.thomas.stream.{ArmParser, JobAlg}
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 
 import scala.concurrent.ExecutionContext
 import org.http4s.twirl._
 import tsec.authentication.Authenticator
 import tsec.passwordhashers.jca.BCrypt
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.typelevel.jawn.ast.JValue
 import ThrowableExtension._
 import com.iheart.thomas.tracking.EventLogger

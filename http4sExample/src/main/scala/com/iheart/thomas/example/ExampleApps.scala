@@ -5,7 +5,7 @@ import cats.effect._
 import com.iheart.thomas.http4s.AdminUI
 import com.iheart.thomas.http4s.abtest.AbtestService
 import com.iheart.thomas.tracking.EventLogger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import testkit.LocalDynamo
 import org.http4s.server.blaze._
 

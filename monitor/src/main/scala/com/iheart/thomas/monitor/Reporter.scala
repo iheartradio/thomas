@@ -1,7 +1,7 @@
 package com.iheart.thomas.monitor
 
 import cats.effect.{Concurrent, Fiber}
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import cats.implicits._
 
 /**
