@@ -38,7 +38,7 @@ jobs:
           docker_version: 20.10
 
       - name: Start infrastructure using docker compose
-        run: cd dependencies && docker-compose up -d
+        run: docker-compose up -d
 
       - name: Cache sbt
         uses: actions/cache@v2

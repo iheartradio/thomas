@@ -14,9 +14,7 @@ Thomas runs on mongodb, dynamodb. It uses kafka for consuming analytics events.
 
 You can run all of these deps using docker compose
 ```bash
-
-cd dependencies
-docker compose up -d
+docker-compose up -d
 ```
 
 
