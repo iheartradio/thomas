@@ -1,5 +1,6 @@
 import com.typesafe.sbt.SbtGit.git
 import microsites._
+import scala.sys.process._
 import sbtassembly.AssemblyPlugin.defaultUniversalScript
 val apache2 = "Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")
 
@@ -56,7 +57,7 @@ lazy val libs = {
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias(
   "validate",
-  s";clean;test;tests/IntegrationTest/test"
+  s";clean;tests/testServicesUp;test;tests/IntegrationTest/test;tests/testServicesDown"
 )
 addCommandAlias(
   "quickValidate",
@@ -71,6 +72,10 @@ addCommandAlias(
   "publishDevDataKafka",
   s"testkit/runMain com.iheart.thomas.testkit.TestMessageKafkaProducer 60"
 )
+
+lazy val testServicesUp = taskKey[Unit]("Start up external test dependency services")
+lazy val testServicesDown =
+  taskKey[Unit]("Shutdown external test dependency services")
 
 lazy val thomas = project
   .in(file("."))
@@ -362,6 +367,8 @@ lazy val tests = project
   .configs(IntegrationTest)
   .settings(rootSettings)
   .settings(
+    testServicesUp := { "docker-compose --env-file ./.env.test up -d" ! },
+    testServicesDown := { "docker-compose --env-file ./.env.test down" ! },
     Defaults.itSettings,
     parallelExecution in IntegrationTest := false,
     noPublishSettings,

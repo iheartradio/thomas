@@ -49,7 +49,7 @@ object Factory extends IOApp {
 
   def insertDevelopmentData: IO[Unit] = {
     LocalDynamo
-      .client[IO]
+      .client[IO]()
       .flatMap { implicit l =>
         implicit val ex = executionContext
         for {

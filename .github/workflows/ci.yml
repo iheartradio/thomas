@@ -37,9 +37,6 @@ jobs:
           docker_channel: stable
           docker_version: 20.10
 
-      - name: Start infrastructure using docker compose
-        run: docker-compose up -d
-
       - name: Cache sbt
         uses: actions/cache@v2
         with:

@@ -12,9 +12,9 @@ import software.amazon.awssdk.services.dynamodb.model.{
 }
 
 object LocalDynamo extends ScanamoManagement {
-  def client[F[_]](implicit F: Sync[F]) =
+  def client[F[_]](port: Int = 8042)(implicit F: Sync[F]) =
     Resource.make {
-      F.delay(LocalDynamoDB.client())
+      F.delay(LocalDynamoDB.client(port))
     } { client =>
       F.delay(client.close())
     }
@@ -23,7 +23,7 @@ object LocalDynamo extends ScanamoManagement {
       tables: (String, Seq[(String, ScalarAttributeType)])*
     )(implicit F: Concurrent[F]
     ) =
-    client[F].flatTap { client =>
+    client[F](8043).flatTap { client =>
       Resource.make {
         tables.toList.parTraverse {
           case (tableName, keyAttributes) =>
