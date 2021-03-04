@@ -57,15 +57,21 @@ lazy val libs = {
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias(
   "validate",
-  s";clean;tests/testServicesUp;test;tests/IntegrationTest/test;tests/testServicesDown"
+  s";clean;tests/dependencyServicesUp;test;tests/IntegrationTest/test;tests/dependencyServicesDown"
 )
 addCommandAlias(
   "quickValidate",
   s";thomas/test;thomas/IntegrationTest/compile"
 )
 addCommandAlias("it", s"tests/IntegrationTest/test")
+
 addCommandAlias(
-  "injectDevData",
+  "itOnly",
+  s"tests/IntegrationTest/testOnly"
+)
+
+addCommandAlias(
+  "ingestDevData",
   s"testkit/runMain com.iheart.thomas.testkit.Factory"
 )
 addCommandAlias(
@@ -73,8 +79,9 @@ addCommandAlias(
   s"testkit/runMain com.iheart.thomas.testkit.TestMessageKafkaProducer 60"
 )
 
-lazy val testServicesUp = taskKey[Unit]("Start up external test dependency services")
-lazy val testServicesDown =
+lazy val dependencyServicesUp =
+  taskKey[Unit]("Start up external test dependency services")
+lazy val dependencyServicesDown =
   taskKey[Unit]("Shutdown external test dependency services")
 
 lazy val thomas = project
@@ -327,6 +334,8 @@ lazy val http4sExample = project
   .settings(
     name := "thomas-http4s-example",
     rootSettings,
+    dependencyServicesUp := dockerCompose(upOrDown = true),
+    dependencyServicesDown := dockerCompose(upOrDown = false),
     noPublishSettings,
     mainClass in reStart := Some(
       "com.iheart.thomas.example.ExampleAbtestAdminUIApp"
@@ -367,8 +376,8 @@ lazy val tests = project
   .configs(IntegrationTest)
   .settings(rootSettings)
   .settings(
-    testServicesUp := { "docker-compose --env-file ./.env.test up -d" ! },
-    testServicesDown := { "docker-compose --env-file ./.env.test down" ! },
+    dependencyServicesUp := dockerCompose(upOrDown = true, ".test"),
+    dependencyServicesDown := dockerCompose(upOrDown = false, ".test"),
     Defaults.itSettings,
     parallelExecution in IntegrationTest := false,
     noPublishSettings,
@@ -377,6 +386,14 @@ lazy val tests = project
     libs.dependency("akka-slf4j", Some(IntegrationTest.name)),
     libs.dependency("embedded-kafka", Some(IntegrationTest.name))
   )
+
+def dockerCompose(
+    upOrDown: Boolean,
+    env: String = ""
+  ) = {
+  val upCommand = if (upOrDown) "up -d" else "down"
+  s"docker-compose --env-file ./.env$env $upCommand" !
+}
 
 lazy val noPublishing = Seq(skip in publish := true)
 

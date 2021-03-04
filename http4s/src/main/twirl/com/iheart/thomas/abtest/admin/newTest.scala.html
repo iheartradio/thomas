@@ -2,19 +2,40 @@
 @import com.iheart.thomas.FeatureName
 @import com.iheart.thomas.http4s.UIEnv
 @import com.iheart.thomas.html._
-
+@import com.iheart.thomas.http4s.Formatters._
+@import lihua._
 @(
 feature: FeatureName,
 draft: Option[AbtestSpec],
-errorMsg: Option[String] = None)(implicit env: UIEnv)
+errorMsg: Option[String] = None,
+followUpCandidateO: Option[Entity[Abtest]] = None
+)(implicit env: UIEnv)
+
 
 @topNav("Create New Test") {
-<form action="@env.routes.features/@feature/tests" method="post">
-  <div class="mt-4 mb-4">
-    <span class="h5">Creating a new A/B Test for </span>
-    <span class="h4 text-primary" title="This is feature name for the test.">
+
+<div class="mt-4 mb-4">
+  <span class="h5">Creating a new A/B Test for </span>
+  <span class="h4 text-primary" title="This is feature name for the test.">
       @featureTestsLink(feature)</span>
-  </div>
+</div>
+@if(followUpCandidateO.nonEmpty && draft.isEmpty) {
+  @for(followUp <- followUpCandidateO) {
+    <div class="alert alert-primary mt-5 p-5 text-center" role="alert">
+      <h5 class="mb-4">
+        The last test for this feature is
+        <a class="text-primary" href="@followUp._id">@followUp.data.name</a>.
+        <small>(starts at @dateTimeMid(followUp.data.start))</small>
+      </h5>
+        <a href="@followUp._id/new_revision" class="btn btn-primary mr-1" role="button">
+            Inherit from it</a> or
+        <a href="new?feature=@feature&scratch=true"
+           class="btn btn-warning ml-1" role="button">Start From Scratch </a>
+    </div>
+  }
+} else {
+
+<form action="@env.routes.features/@feature/tests" method="post">
   @testForm(feature, draft, errorMsg)
   <div class="row d-flex flex-row-reverse mt-5">
     <div class="mr-4">
@@ -23,4 +44,5 @@ errorMsg: Option[String] = None)(implicit env: UIEnv)
     </div>
   </div>
 </form>
+}
 }

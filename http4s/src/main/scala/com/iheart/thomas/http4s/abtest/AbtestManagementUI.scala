@@ -88,7 +88,10 @@ class AbtestManagementUI[F[_]: Async: Timer](
             .groupBy(_.data.feature)
             .map {
               case (fn, tests) =>
-                (features.find(_.name == fn).get, tests.sortBy(_.data.start).toList)
+                (
+                  features.find(_.name == fn).get,
+                  tests.sortBy(_.data.start).toList.reverse
+                )
             }
             .toList
 
@@ -97,9 +100,9 @@ class AbtestManagementUI[F[_]: Async: Timer](
             testData.sortBy(_._1.name.toLowerCase)
           case OrderBy.Recent =>
             testData
-              .sortBy(_._2.last.data.start)
+              .sortBy(_._2.head.data.start)
               .reverse
-              .map(_.map(_.sortBy(_.data.start).reverse))
+
         }
 
         Ok(index(sorted, features, filters)(UIEnv(u)))
@@ -154,9 +157,17 @@ class AbtestManagementUI[F[_]: Async: Timer](
 
     roleBasedService(admin.Authorization.testManagerRoles) {
 
-      case GET -> Root / "tests" / "new" :? featureReq(fn) asAuthed u =>
+      case GET -> Root / "tests" / "new" :? featureReq(fn) +& scratchConfirmed(
+            so
+          ) asAuthed u =>
         u.canAddTest(fn) *>
-          Ok(newTest(fn, None)(UIEnv(u)))
+          (if (so.getOrElse(false))
+             none[Entity[Abtest]].pure[F]
+           else
+             alg.getLatestTestByFeature(fn))
+            .flatMap { followUpCandidate =>
+              Ok(newTest(fn, None, None, followUpCandidate)(UIEnv(u)))
+            }
 
       case GET -> Root / "tests" / testId / "new_revision" asAuthed u =>
         get(testId).flatMap(test =>
@@ -394,6 +405,8 @@ object AbtestManagementUI {
 
     object feature extends OptionalQueryParamDecoderMatcher[FeatureName]("feature")
     object featureReq extends QueryParamDecoderMatcher[FeatureName]("feature")
+    object scratchConfirmed
+        extends OptionalQueryParamDecoderMatcher[Boolean]("scratch")
     object orderBy extends OptionalQueryParamDecoderMatcher[OrderBy]("orderBy")
 
     implicit val userMetaCriteriaQueryParamDecoder

@@ -62,7 +62,7 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
     * @return tests for this feature in chronological descending order
     */
   def getTestsByFeature(feature: FeatureName): F[Vector[Entity[Abtest]]]
-
+  def getLatestTestByFeature(feature: FeatureName): F[Option[Entity[Abtest]]]
   def continue(spec: AbtestSpec): F[Entity[Abtest]]
 
   def getAllFeatureNames: F[List[FeatureName]]
@@ -343,11 +343,12 @@ final class DefaultAbtestAlg[F[_]](
       )
 
   def getTestByFeature(feature: FeatureName): F[Entity[Abtest]] =
-    getTestsByFeature(feature)
-      .ensure(
-        Error.NotFound(s"No tests found under $feature")
-      )(_.nonEmpty)
-      .map(_.head)
+    getLatestTestByFeature(feature).flatMap(
+      _.liftTo[F](Error.NotFound(s"No tests found under $feature"))
+    )
+
+  def getLatestTestByFeature(feature: FeatureName): F[Option[Entity[Abtest]]] =
+    getTestsByFeature(feature).map(_.headOption)
 
   def getTestByFeature(
       feature: FeatureName,
@@ -526,10 +527,7 @@ final class DefaultAbtestAlg[F[_]](
             groups = test.groups.map { group =>
               group.copy(
                 meta =
-                  if (metas.nonEmpty)
-                    metas.get(group.name) orElse group.meta
-                  else
-                    None
+                  metas.get(group.name) orElse group.meta
               )
             }
           )
@@ -750,21 +748,11 @@ final class DefaultAbtestAlg[F[_]](
       spec: AbtestSpec,
       basedOn: Option[Entity[Abtest]]
     ): Abtest = {
-    val groupsWithLegacyMeta: List[model.Group] =
-      spec.groups.map { group =>
-        group.copy(
-          meta = group.meta orElse
-            basedOn.flatMap(
-              _.data.getGroupMetas.get(group.name)
-            ) //ensures that by default spec doesn't remove group Meta
-        )
-      }
     spec
       .to[Abtest]
       .set(
         start = spec.startI,
         end = spec.endI,
-        groups = groupsWithLegacyMeta,
         ranges = Bucketing.newRanges(
           spec.groups,
           basedOn
