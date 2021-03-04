@@ -465,25 +465,7 @@ class AssignmentSuite extends AsyncIOSpec with Matchers {
         }
       }
 
-      "subsequent tests inherits meta settings" in {
-        withAlg { alg =>
-          for {
-            ab <- alg.create(fakeAb(1, 20))
-            _ <- alg.addGroupMetas(
-              ab._id,
-              Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b")),
-              false
-            )
-
-            subSequent <- alg.create(fakeAb(21, 25, feature = ab.data.feature))
-            rg <- alg.getGroupsWithMeta(q(randomUserId, Some(subSequent.data.start)))
-          } yield {
-            rg.metas.contains(subSequent.data.feature) shouldBe true
-          }
-        }
-      }
-
-      "subsequent test from spec inherits meta settings when new spec has empty meta" in {
+      "subsequent test from spec remove meta settings when new spec has empty meta" in {
         val metas = Map("A" -> Json.obj("ff" -> "a"), "B" -> Json.obj("ff" -> "b"))
 
         withAlg { alg =>
@@ -502,7 +484,7 @@ class AssignmentSuite extends AsyncIOSpec with Matchers {
             subSequent <- alg.create(fakeAb(21, 25, feature = ab.data.feature))
 
           } yield {
-            subSequent.data.getGroupMetas shouldBe metas
+            subSequent.data.getGroupMetas should be(empty)
           }
         }
 
