@@ -4,9 +4,17 @@
 @import com.iheart.thomas.http4s.UIEnv
 
 @(allUsers: Vector[User],
+msgO: Option[String]
 )(implicit env: UIEnv)
 
 @topNav("All Users") {
+
+@for(msg <- msgO) {
+<div id="error-msg" class="alert alert-warning" role="alert">
+    @msg
+</div>
+}
+
 <div class="row">
     <div class="col-3"></div>
     <div class="col-6">
@@ -15,6 +23,7 @@
             <tr>
                 <th scope="col">Username</th>
                 <th scope="col">Role</th>
+                <th scope="col">Reset Password</th>
             </tr>
             </thead>
             <tbody>
@@ -35,6 +44,11 @@
                             }
                         </select>
 
+                    </form>
+                </td>
+                <td>
+                    <form action="@env.routes.users/@user.username/reset-pass" method="post">
+                       <button type="submit" class="btn btn-link">Generate Password Reset Link</button>
                     </form>
                 </td>
             </tr>

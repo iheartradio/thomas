@@ -13,6 +13,7 @@ import org.http4s.twirl._
 import cats.implicits._
 import org.http4s.headers.Location
 import cats.MonadThrow
+import org.http4s.dsl.impl.Responses
 
 trait AuthedEndpointsUtils[F[_], Auth] {
   self: Http4sDsl[F] =>

@@ -17,6 +17,7 @@ import FormDataDecoder._
 import tsec.passwordhashers.jca.BCrypt
 import UI.roleFormatter
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
+import org.http4s.headers.Location
 
 import scala.util.control.NoStackTrace
 
@@ -34,13 +35,23 @@ class UI[F[_]: Async, Auth](
   val authedService = roleBasedService(Seq(Role.Admin)) {
     case GET -> Root / "users" asAuthed u =>
       alg.allUsers.flatMap { allUsers =>
-        Ok(html.users(allUsers)(UIEnv(u)))
+        Ok(html.users(allUsers, None)(UIEnv(u)))
       }
     case req @ POST -> Root / "users" / username / "role" asAuthed _ =>
       for {
         role <- req.request.as[Role]
-        _ <- alg.update(username, None, Some(role))
+        _ <- alg.updateRole(username, Some(role))
         r <- redirectTo(reverseRoutes.users)
+      } yield r
+
+    case req @ POST -> Root / "users" / username / "reset-pass" asAuthed _ =>
+      for {
+        token <- alg.generateResetToken(username)
+        allUsers <- alg.allUsers
+        r <- SeeOther(
+          Location(Uri.unsafeFromString(reverseRoutes.users)),
+          html.users(allUsers, Some("Reset password link http://"))
+        )
       } yield r
 
   } <+> roleBasedService(Roles.values) {
