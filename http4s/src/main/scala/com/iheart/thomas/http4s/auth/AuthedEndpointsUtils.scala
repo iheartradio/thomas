@@ -2,18 +2,15 @@ package com.iheart.thomas
 package http4s
 package auth
 
-import cats.{Applicative, Monad}
 import cats.data.{Kleisli, OptionT}
+import cats.implicits._
+import cats.{Applicative, Monad, MonadThrow}
 import com.iheart.thomas.admin.{Role, User}
-import org.http4s.{HttpRoutes, Request, Response, Uri}
 import org.http4s.dsl.Http4sDsl
+import org.http4s.twirl._
+import org.http4s.{HttpRoutes, Request, Response}
 import tsec.authentication.{SecuredRequest, TSecAuthService, TSecMiddleware}
 import tsec.authorization.{AuthGroup, AuthorizationInfo, BasicRBAC}
-import org.http4s.twirl._
-import cats.implicits._
-import org.http4s.headers.Location
-import cats.MonadThrow
-import org.http4s.dsl.impl.Responses
 
 trait AuthedEndpointsUtils[F[_], Auth] {
   self: Http4sDsl[F] =>
@@ -37,16 +34,6 @@ trait AuthedEndpointsUtils[F[_], Auth] {
     ): AuthorizationInfo[F, Role, User] =
     (u: User) => F.pure(u.role)
 
-  def redirectTo(uri: Uri)(implicit F: Applicative[F]) =
-    SeeOther(
-      Location(uri)
-    )
-
-  def redirectTo(location: String)(implicit F: Applicative[F]) =
-    SeeOther(
-      Location(Uri.unsafeFromString(location))
-    )
-
   def liftService(
       service: AuthService
     )(implicit authenticator: Authenticator,
@@ -55,7 +42,8 @@ trait AuthedEndpointsUtils[F[_], Auth] {
     ): HttpRoutes[F] = {
     val middleWare = TSecMiddleware(
       Kleisli(authenticator.extractAndValidate),
-      (req: Request[F]) => redirectTo(reverseRoutes.login(req.uri.renderString))
+      (req: Request[F]) =>
+        SeeOther(reverseRoutes.login(req.uri.renderString).location)
     )
     middleWare(service)
   }

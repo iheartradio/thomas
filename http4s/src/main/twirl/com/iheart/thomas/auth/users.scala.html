@@ -29,7 +29,7 @@ msgO: Option[String]
             <tbody>
             @for(user <- allUsers.sortBy(_.username)) {
             <tr>
-                <td>@user.username</td>
+                <td class="pt-3">@user.username</td>
                 <td>
                     <form action="@env.routes.users/@user.username/role" method="post">
 
@@ -46,10 +46,9 @@ msgO: Option[String]
 
                     </form>
                 </td>
-                <td>
-                    <form action="@env.routes.users/@user.username/reset-pass" method="post">
-                       <button type="submit" class="btn btn-link">Generate Password Reset Link</button>
-                    </form>
+                <td class="pt-3">
+                    <a href="@env.routes.users/@user.username/reset-pass-link" >Generate Password Reset Link</a>
+
                 </td>
             </tr>
             }

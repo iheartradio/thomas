@@ -165,7 +165,7 @@ object AuthenticationAlg {
             user.resetToken.fold(false)(_.value === token)
           )
           _ <- F.unit.ensure(TokenExpired)(_ =>
-            user.resetToken.fold(false)(_.expires.isBefore(now))
+            user.resetToken.fold(false)(_.expires.isAfter(now))
           )
           newHash <- hashPassword(newPass, AuthError.PasswordTooWeak(user.username))
           r <- userDAO.update(user.copy(resetToken = None, hash = newHash))

@@ -66,7 +66,7 @@ class AbtestManagementUI[F[_]: Async: Timer](
   def redirectToTest(
       test: Entity[Abtest]
     ) =
-    redirectTo(testUrl(test))
+    SeeOther(testUrl(test).location)
 
   val routes = {
 
@@ -287,8 +287,8 @@ class AbtestManagementUI[F[_]: Async: Timer](
                 alg
                   .create(spec, false)
                   .flatMap(test =>
-                    redirectTo(
-                      testUrl(test)
+                    SeeOther(
+                      testUrl(test).location
                     )
                   )
                   .handleErrorWith { e =>

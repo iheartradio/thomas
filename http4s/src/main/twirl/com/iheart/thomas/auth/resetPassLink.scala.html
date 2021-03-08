@@ -1,0 +1,20 @@
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.http4s.UIEnv
+
+@(username: String, link: String
+)(implicit env: UIEnv)
+
+@topNav("Reset Password Link") {
+<div id="error-msg" class="alert alert-success mt-5" role="alert">
+    Reset password link generated for user <span class="text-secondary">@username</span>:
+    <div class="mt-2 mb-2 text-primary" >
+    <a href="@link">@link</a>
+    </div>
+    Copy it securely @username for resetting her or his password. </br>
+    <small>This link expires in 24 hours.</small>
+</div>
+
+<button type="submit" class="btn btn-primary" onclick="window.history.back()">Go Back</button>
+
+
+}
