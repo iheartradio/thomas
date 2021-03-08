@@ -2,19 +2,22 @@ package com.iheart.thomas
 package http4s
 package auth
 
-import cats.effect.Concurrent
+import cats.effect.{Concurrent, Timer}
 import com.iheart.thomas.dynamo
-import com.iheart.thomas.admin.{Role, User, UserDAO}
+import com.iheart.thomas.admin.{PassResetToken, Role, User, UserDAO}
 import tsec.authentication.Authenticator
 import tsec.passwordhashers.{PasswordHash, PasswordHasher}
 import cats.implicits._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.http4s.auth.AuthError._
 import org.http4s.Response
-import tsec.common.Verified
+import tsec.common.{SecureRandomIdGenerator, Verified}
 import tsec.passwordhashers.jca.BCrypt
 import cats.MonadThrow
+
 import scala.util.control.NoStackTrace
+import TimeUtil._
+import concurrent.duration._
 trait AuthenticationAlg[F[_], Auth] {
 
   def login(
@@ -29,9 +32,8 @@ trait AuthenticationAlg[F[_], Auth] {
       role: Role
     ): F[User]
 
-  def update(
+  def updateRole(
       username: Username,
-      passwordO: Option[String],
       roleO: Option[Role]
     ): F[User]
 
@@ -39,19 +41,33 @@ trait AuthenticationAlg[F[_], Auth] {
 
   def logout(token: Token[Auth]): F[Unit]
   def allUsers: F[Vector[User]]
+
+  def generateResetToken(
+      username: Username
+    )(implicit T: Timer[F]
+    ): F[PassResetToken]
+
+  def resetPass(
+      newPass: String,
+      token: String,
+      username: Username
+    )(implicit T: Timer[F]
+    ): F[User]
 }
 
 object AuthenticationAlg {
 
-  implicit def apply[F[_]: MonadThrow, C, Auth](
+  implicit def apply[F[_], C, Auth](
       implicit userDAO: UserDAO[F],
       cryptService: PasswordHasher[F, C],
-      auth: Authenticator[F, String, User, Token[Auth]]
+      auth: Authenticator[F, String, User, Token[Auth]],
+      F: MonadThrow[F]
     ): AuthenticationAlg[F, Auth] =
     new AuthenticationAlg[F, Auth] {
       def logout(token: Token[Auth]): F[Unit] = {
         auth.discard(token).void
       }
+
       def login(
           username: Username,
           password: String,
@@ -74,19 +90,25 @@ object AuthenticationAlg {
           role: Role
         ): F[User] = {
         userDAO.find(username).ensure(UserAlreadyExist(username))(_.isEmpty) *>
-          password
-            .pure[F]
-            .ensure(AuthError.PasswordTooWeak(username))(_.length > 5) *>
-          cryptService
-            .hashpw(password)
+          hashPassword(password, AuthError.PasswordTooWeak(username))
             .flatMap { h =>
               userDAO.insert(User(username, h, role))
             }
       }
 
-      def update(
+      private def hashPassword(
+          password: String,
+          toThrow: AuthError
+        ): F[String] =
+        password
+          .pure[F]
+          .ensure(toThrow)(_.length > 5) *>
+          cryptService
+            .hashpw(password)
+            .widen
+
+      def updateRole(
           username: Username,
-          passwordO: Option[String],
           roleO: Option[Role]
         ): F[User] =
         for {
@@ -100,11 +122,9 @@ object AuthenticationAlg {
                 .void
             else ().pure[F]
           }
-          hO <- passwordO.traverse(cryptService.hashpw)
           update =
             user
               .copy(
-                hash = hO.getOrElse(user.hash),
                 role = roleO.getOrElse(user.role)
               )
           u <- userDAO.update(update)
@@ -113,6 +133,43 @@ object AuthenticationAlg {
       def remove(username: Username): F[Unit] = userDAO.remove(username)
 
       def allUsers: F[Vector[User]] = userDAO.all
+
+      def generateResetToken(
+          username: Username
+        )(implicit T: Timer[F]
+        ): F[PassResetToken] =
+        for {
+          now <- TimeUtil.now[F]
+          token = PassResetToken(
+            SecureRandomIdGenerator(32).generate,
+            now.plusDuration(24.hours)
+          )
+          user <- userDAO.get(username)
+          _ <-
+            userDAO
+              .update(
+                user.copy(resetToken = Some(token))
+              )
+        } yield token
+
+      def resetPass(
+          newPass: String,
+          token: String,
+          username: Username
+        )(implicit T: Timer[F]
+        ): F[User] =
+        for {
+          user <- userDAO.get(username)
+          now <- TimeUtil.now[F]
+          _ <- F.unit.ensure(InvalidToken)(_ =>
+            user.resetToken.fold(false)(_.value === token)
+          )
+          _ <- F.unit.ensure(TokenExpired)(_ =>
+            user.resetToken.fold(false)(_.expires.isAfter(now))
+          )
+          newHash <- hashPassword(newPass, AuthError.PasswordTooWeak(user.username))
+          r <- userDAO.update(user.copy(resetToken = None, hash = newHash))
+        } yield r
     }
 
   /**
@@ -137,5 +194,7 @@ object AuthError {
   case class UserAlreadyExist(username: String) extends AuthError
   case class PasswordTooWeak(username: String) extends AuthError
   case object IncorrectPassword extends AuthError
+  case object InvalidToken extends AuthError
+  case object TokenExpired extends AuthError
   case object MustHaveAtLeastOneAdmin extends AuthError
 }

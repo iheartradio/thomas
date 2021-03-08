@@ -3,7 +3,7 @@ package com.iheart.thomas.http4s.auth
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.iheart.thomas.admin.Role
-import com.iheart.thomas.http4s.auth.AuthError.IncorrectPassword
+import com.iheart.thomas.http4s.auth.AuthError.{IncorrectPassword, InvalidToken}
 import com.iheart.thomas.testkit.Resources
 import org.http4s.Status
 import org.http4s.dsl.Http4sDsl
@@ -45,6 +45,42 @@ class AuthenticationAlgSuite extends AsyncIOSpec with Matchers with Http4sDsl[IO
             alg.login("tom", "wrongpassword", _ => Ok("logged In"))
         }
         .assertThrows[IncorrectPassword.type]
+    }
+
+    "reset password success" in {
+      algR
+        .use { alg =>
+          alg.register("tom", "password1", Role.Admin) *>
+            (for {
+              token <- alg.generateResetToken("tom")
+              _ <- alg.resetPass("password2", token.value, "tom")
+              login <-
+                alg.login("tom", "password2", _ => Ok("logged in with new pass"))
+            } yield login)
+        }
+        .asserting(_.status shouldBe Status.Ok)
+    }
+
+    "reset password fail on incorrect token" in {
+      algR
+        .use { alg =>
+          alg.register("tom", "password1", Role.Admin) *>
+            alg.generateResetToken("tom") *>
+            alg.resetPass("password2", "wrong_token", "tom")
+        }
+        .assertThrows[InvalidToken.type]
+    }
+    "reset password fail on reusing token" in {
+      algR
+        .use { alg =>
+          alg.register("tom", "password1", Role.Admin) *>
+            (for {
+              token <- alg.generateResetToken("tom")
+              _ <- alg.resetPass("password2", token.value, "tom")
+              _ <- alg.resetPass("password3", token.value, "tom")
+            } yield ())
+        }
+        .assertThrows[InvalidToken.type]
     }
   }
 }

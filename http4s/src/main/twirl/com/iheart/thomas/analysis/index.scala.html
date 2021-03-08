@@ -1,6 +1,7 @@
 @import com.iheart.thomas.analysis._
 @import com.iheart.thomas.analysis.monitor._
 @import com.iheart.thomas.html._
+@import com.iheart.thomas.admin.Authorization._
 
 @import com.iheart.thomas.http4s.UIEnv
 
@@ -53,11 +54,13 @@ kpis: Vector[ConversionKPI]
                             </small>
                         </div>
                         <div class="col-1">
+                            @if(env.currentUser.has(ManageAnalysis)) {
                             <a href="./conversionKPIs/@kpi.name/delete"
                                role="button" class="btn ml-2"
                                onclick="return confirm('Please confirm you want to remove @kpi.name?')">
                                 <i class="far fa-trash-alt"></i>
                             </a>
+                            }
                         </div>
 
                     </div>
