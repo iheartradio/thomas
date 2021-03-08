@@ -27,7 +27,7 @@ lazy val libs = {
     .addJVM(name = "evilplot",              version = "0.8.0",  org = "com.cibo")
     .addJVM(name = "fs2-kafka",             version = "1.4.1",  org = "com.github.fd4s")
     .addModule("http4s", "http4s-twirl")
-    .addJVM(name = "henkan-convert",        version = "0.6.4",  org ="com.kailuowang")
+    .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .add(   name = "jawn",                  version = "1.0.0",  org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
     .addJVM(name = "lihua",                 version = "0.36",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-play-json")
     .addJVM(name = "log4cats",              version = "1.2.0",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
