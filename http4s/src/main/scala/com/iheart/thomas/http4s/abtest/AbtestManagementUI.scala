@@ -24,6 +24,7 @@ import org.http4s.{FormDataDecoder, QueryParamDecoder}
 import org.http4s.FormDataDecoder._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.dsl.impl.{
+  FlagQueryParamMatcher,
   OptionalQueryParamDecoderMatcher,
   QueryParamDecoderMatcher
 }
@@ -158,10 +159,10 @@ class AbtestManagementUI[F[_]: Async: Timer](
     roleBasedService(admin.Authorization.testManagerRoles) {
 
       case GET -> Root / "tests" / "new" :? featureReq(fn) +& scratchConfirmed(
-            so
+            scratch
           ) asAuthed u =>
         u.canAddTest(fn) *>
-          (if (so.getOrElse(false))
+          (if (scratch)
              none[Entity[Abtest]].pure[F]
            else
              alg.getLatestTestByFeature(fn))
@@ -405,8 +406,8 @@ object AbtestManagementUI {
 
     object feature extends OptionalQueryParamDecoderMatcher[FeatureName]("feature")
     object featureReq extends QueryParamDecoderMatcher[FeatureName]("feature")
-    object scratchConfirmed
-        extends OptionalQueryParamDecoderMatcher[Boolean]("scratch")
+    object scratchConfirmed extends FlagQueryParamMatcher[Boolean]("scratch")
+
     object orderBy extends OptionalQueryParamDecoderMatcher[OrderBy]("orderBy")
 
     implicit val userMetaCriteriaQueryParamDecoder
