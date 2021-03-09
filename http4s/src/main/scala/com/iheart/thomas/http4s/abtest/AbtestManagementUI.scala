@@ -406,7 +406,7 @@ object AbtestManagementUI {
 
     object feature extends OptionalQueryParamDecoderMatcher[FeatureName]("feature")
     object featureReq extends QueryParamDecoderMatcher[FeatureName]("feature")
-    object scratchConfirmed extends FlagQueryParamMatcher[Boolean]("scratch")
+    object scratchConfirmed extends FlagQueryParamMatcher("scratch")
 
     object orderBy extends OptionalQueryParamDecoderMatcher[OrderBy]("orderBy")
 
