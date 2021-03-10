@@ -69,20 +69,30 @@ object Formats {
           JsError(JsPath \ f, s"Invalid JSON %j for user meta criteria for field %f")
       }
 
-    def readSets(jv: JsValue): JsResult[Set[UserMetaCriterion]] = {
+    def readSets(jvs: JsValue): JsResult[Set[UserMetaCriterion]] = {
+
+      def readField(field: (String, JsValue)): JsResult[UserMetaCriterion] =
+        field match {
+          case (f, JsString(s))        => JsSuccess(ExactMatch(f, s))
+          case ("%not", obj: JsObject) => readSingleObj(obj).map(Not(_))
+          case ("%or", jv)             => readSets(jv).map(Or(_))
+          case ("%and", jv)            => readSets(jv).map(And(_))
+          case (f, obj: JsObject)      => readFieldValue(f, obj)
+          case (f, j) =>
+            JsError(s"Invalid JSON $j for user meta criteria at field $f")
+        }
+      def readSingleObj(job: JsObject): JsResult[UserMetaCriterion] =
+        if (job.fields.length != 1)
+          JsError(s"Only one field expected. Received ${job.keys.mkString(",")}")
+        else readField(job.fields.head)
+
       def readFields(fields: List[(String, JsValue)]) =
         fields
-          .map {
-            case (f, JsString(s))   => JsSuccess(ExactMatch(f, s))
-            case ("%or", jv)        => readSets(jv).map(Or(_))
-            case ("%and", jv)       => readSets(jv).map(And(_))
-            case (f, obj: JsObject) => readFieldValue(f, obj)
-            case (f, j) =>
-              JsError(s"Invalid JSON $j for user meta criteria at field $f")
-          }
+          .map(readField)
           .sequence
           .map(_.toSet)
-      jv match {
+
+      jvs match {
         case jo: JsObject => readFields(jo.fields.toList)
         case ja: JsArray =>
           ja.value.toList
@@ -116,15 +126,20 @@ object Formats {
         fieldCriterion.field -> value
       }
 
+      def writeCrit(criterion: UserMetaCriterion): (String, JsValue) =
+        criterion match {
+          case And(crit) =>
+            s"%and" -> writeSets(crit)
+          case Not(crit) =>
+            s"%not" -> JsObject(Seq(writeCrit(crit)))
+          case Or(crit) =>
+            s"%or" -> writeSets(crit)
+          case fc: FieldCriterion => writeField(fc)
+        }
+
       JsArray(
         criteria.toSeq
-          .map {
-            case And(crit) =>
-              s"%and" -> writeSets(crit)
-            case Or(crit) =>
-              s"%or" -> writeSets(crit)
-            case fc: FieldCriterion => writeField(fc)
-          }
+          .map(writeCrit)
           .map(p => JsObject(Seq(p)))
       )
     }

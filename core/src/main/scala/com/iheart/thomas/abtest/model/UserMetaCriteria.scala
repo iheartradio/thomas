@@ -104,6 +104,10 @@ object UserMetaCriterion {
       criteria.exists(_.eligible(userMeta))
   }
 
+  case class Not(inner: UserMetaCriterion) extends UserMetaCriterion {
+    def eligible(userMeta: UserMeta): Boolean = !inner.eligible(userMeta)
+  }
+
   case class And(criteria: Set[UserMetaCriterion]) extends UserMetaCriterion {
 
     def eligible(userMeta: UserMeta): Boolean =
