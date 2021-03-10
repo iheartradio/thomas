@@ -164,6 +164,18 @@ class UserMetaCriterionSuite extends AnyFreeSpec with Matchers {
       }
     }
 
+    "Not" - {
+      "returns false if matches" in {
+        Not(ExactMatch("f", "ABC"))
+          .eligible(Map("f" -> "ABC")) shouldBe false
+      }
+
+      "returns true if not match" in {
+        Not(ExactMatch("f", "XBY"))
+          .eligible(Map("f" -> "ABC")) shouldBe true
+      }
+    }
+
     "Or" - {
       "returns true if either is true" in {
         or(ExactMatch("f", "ABC"), RegexMatch("f", "BCD"))
