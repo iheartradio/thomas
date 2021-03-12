@@ -65,7 +65,7 @@ stateO: Option[ExperimentKPIState[Conversions]]
             </form>
             @for(e <- evaluation.toList.zipWithIndex) {
                 @for(br <- e._1.resultAgainstBenchmark) {
-                    <div class="mb-4">
+                    <div class="mb-5 mt-1">
                         <div class="mt-3">
                             <div id="histogram-@e._2"></div>
                         </div>

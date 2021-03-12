@@ -28,13 +28,13 @@ showCommands: Boolean = true
             @if(showCommands) {
                 <div class="text-end"><a href="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/evaluate"
                                           class="text-primary" title="Detailed Evaluation">
-                    <i class="far fa-chart-bar" ></i>
+                    <i class="bi bi-graph-up" ></i>
                     Evaluation</a>
                     <a href="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/reset"
                        class="text-warning ml-3" title="Reset the state"
                        onclick="return confirm('Please confirm you want reset @state.key.kpi stats for @state.key.feature ')"
                     >
-                        <i class="far fa-trash-alt" ></i>
+                        <i class="bi bi-trash" ></i>
                         Reset</a>
                 </div>
             }

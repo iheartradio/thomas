@@ -41,7 +41,7 @@ isShuffled: Boolean = false
     <div class="text-center">
       <button class="btn btn-link remove-item remove-item mt-4 ml-3 size-change"
               type="button" onclick="thomas.removeParentItem(this, '.abtest-group')" title="Remove Group">
-        <i class="far fa-trash-alt"></i>
+        <i class="bi bi-trash"></i>
       </button>
     </div>
 
@@ -76,7 +76,7 @@ isShuffled: Boolean = false
   <div class="text-center">
     <button class="btn btn-link remove-item mt-4 ml-3"
             type="button" onclick="thomas.removeParentItem(this, '.range-item')" title="Remove Range">
-      <i class="far fa-trash-alt"></i>
+      <i class="bi bi-trash"></i>
     </button>
   </div>
 </div>
@@ -171,7 +171,7 @@ isShuffled: Boolean = false
             <a target="_blank"
                 title="Criteria for filtering user by user meta. Click to see more documentation."
                 href="https://iheartradio.github.io/thomas/FAQ.html#how-to-manage-user-eligibility">
-              <i class="far fa-question-circle"></i>
+              <i class="bi bi-question-circle"></i>
             </a>
             <textarea name="userMetaCriteria" class="form-control" id="testUserMetaCriteria">@draft.flatMap(_.userMetaCriteria).map(formatJSON(_))
             </textarea>
