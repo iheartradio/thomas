@@ -52,7 +52,7 @@ devCandidates: List[Username] = Nil)(implicit env: UIEnv)
 
 }
 
-@topNav("Feature " + feature.name){
+@topNav("Feature " + feature.name, "A/B Tests"){
 
 <div class="mb-3 mt-3">
     <span class="h4">Feature <span class="text-success">@feature.name</span></span>
@@ -90,7 +90,7 @@ devCandidates: List[Username] = Nil)(implicit env: UIEnv)
                     </div>
                     <div class="card-body">
                         <div class="form-group">
-                            <label for="descriptionInput">Description</label>
+                            <label class="form-label" for="descriptionInput">Description</label>
                             <textarea name="description"
                                       class="form-control"
                                       id="descriptionInput"
@@ -163,7 +163,7 @@ devCandidates: List[Username] = Nil)(implicit env: UIEnv)
                                            }
 
                                     />
-                                    <label for="overrideEligibilityCB" class="small">ALLOW OVERRIDES TO TAKE PRECEDENCE
+                                    <label class="form-label" for="overrideEligibilityCB" class="small">ALLOW OVERRIDES TO TAKE PRECEDENCE
                                         OVER ELIGIBILITY
                                         CONTROL</label>
                                 </div>
@@ -195,7 +195,7 @@ devCandidates: List[Username] = Nil)(implicit env: UIEnv)
                             @overrideItem(None)
                         </div>
 
-                        <div class="row float-right">
+                        <div class="text-end mt-2">
                             <button type="button" id="btn-new-override"
                                     onclick="thomas.appendItem('#new-override','#overrides')"
                                     class="btn btn-secondary">New Override
@@ -211,7 +211,7 @@ devCandidates: List[Username] = Nil)(implicit env: UIEnv)
                         <div class="row">
                             <div class="col-md">
                                 <div class="form-group">
-                                    <label for="batchOverrides">Json to batch add overrides. Format {"user_id" :
+                                    <label class="form-label" for="batchOverrides">Json to batch add overrides. Format {"user_id" :
                                         "group_name"} </label>
                                     <textarea name="batchOverrides" class="form-control" id="batchOverrides" type="text"
                                     ></textarea>
@@ -228,7 +228,7 @@ devCandidates: List[Username] = Nil)(implicit env: UIEnv)
     </div>
 
     @if(env.currentUser.has(ManageTestSettings(feature)) || env.currentUser.has(ManageFeature(feature))){
-    <div class="row d-flex flex-row-reverse mt-5">
+    <div class="row text-end mt-5">
         <div class="mr-4">
             <button type="submit" class="btn btn-primary">
                 Update

@@ -3,7 +3,23 @@
 @import _root_.play.twirl.api.Html
 @import com.iheart.thomas.admin.Authorization._
 
-@(title: String)(content: Html)(implicit env: UIEnv)
+@(title: String, active: String)(content: Html)(implicit env: UIEnv)
+
+
+@navItem(name: String, link: String) = {
+<li class="nav-item
+     @if(active == name) {
+       active
+     }
+     ">
+  <a class="nav-link
+     @if(active == name) {
+       active
+     }
+     "
+     href="@link">@name</a>
+</li>
+}
 
 
 @main(title){
@@ -12,39 +28,27 @@
     <img src="https://iheartradio.github.io/thomas/img/thomas-the-tank-engine.png" width="30px">
     @env.siteName
   </a>
-  <button class="navbar-toggler" type="button" data-toggle="collapse"
-          data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+  <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
           aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
 
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
-    <ul class="navbar-nav mr-auto">
-      <li class="nav-item active">
-
-      </li>
-      <li class="nav-item active">
-        <a class="nav-link" href="@env.routes.tests">A/B Tests<span class="sr-only">(current)</span></a>
-      </li>
-      <li class="nav-item active">
-        <a class="nav-link" href="@env.routes.analysis">Analysis<span class="sr-only">(current)</span></a>
-      </li>
+    <ul class="navbar-nav me-auto mb-lg-0">
+      @navItem("A/B Tests", env.routes.tests)
+      @navItem("Analysis", env.routes.analysis)
       @if(env.currentUser.has(ManageUsers)) {
-      <li class="nav-item active">
-        <a class="nav-link" href="@env.routes.users">Users<span class="sr-only">(current)</span></a>
-      </li>
+        @navItem("Users", env.routes.users)
       }
       @if(env.currentUser.has(ManageBackground)) {
-      <li class="nav-item active">
-        <a class="nav-link" href="@env.routes.background">Background<span class="sr-only">(current)</span></a>
-      </li>
+        @navItem("Background", env.routes.background)
       }
       <li class="nav-item">
         <a class="nav-link" target="_blank" href="https://iheartradio.github.io/thomas/">Docs</a>
       </li>
 
     </ul>
-
     <div class="inline">
       Welcome <b>@env.currentUser.username</b>. <a href="@env.routes.logout">Logout</a>
     </div>

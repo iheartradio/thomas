@@ -9,7 +9,7 @@ fromTest: Entity[Abtest],
 draft: Option[AbtestSpec],
 errorMsg: Option[String] = None)(implicit env: UIEnv)
 
-@topNav("Create A New Test") {
+@topNav("Create A New Test", "A/B Tests") {
 <form action="./new_revision" method="post">
   <div class="mt-4 mb-4">
     <span class="h5">Creating an A/B Test to follow
@@ -20,7 +20,7 @@ errorMsg: Option[String] = None)(implicit env: UIEnv)
       @featureTestsLink(fromTest.data.feature)</span>
   </div>
   @testForm(fromTest.data.feature, draft, errorMsg)
-  <div class="row d-flex flex-row-reverse mt-5">
+  <div class="row text-end mt-5">
     <div class="mr-4">
       <button type="submit" class="btn btn-primary"
          onclick="return confirm('The test @fromTest.data.name (@fromTest._id) will be terminated, if not already end, at the scheduled start time of this new revision. Do you want to proceed?')"

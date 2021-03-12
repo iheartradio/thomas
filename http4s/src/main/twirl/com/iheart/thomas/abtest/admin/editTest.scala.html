@@ -10,7 +10,7 @@ errMessage: Option[String] = None,
 spec: Option[AbtestSpec] = None,
 followUpO: Option[Entity[Abtest]] = None)(implicit env: UIEnv)
 
-@topNav("A/B Test for feature " + test.data.feature) {
+@topNav("A/B Test for feature " + test.data.feature, "A/B Tests") {
 
 <form action="@env.routes.tests/@test._id" method="post">
 
@@ -23,7 +23,7 @@ followUpO: Option[Entity[Abtest]] = None)(implicit env: UIEnv)
   </div>
   @testForm(test.data.feature, spec.orElse(Some(test.data.toSpec)), errMessage, false, followUpO.isEmpty)
 
-  <div class="row d-flex flex-row-reverse mt-5">
+  <div class="row text-end mt-5">
     <div class="mr-4">
       <button type="submit" class="btn btn-primary">
         Submit Change

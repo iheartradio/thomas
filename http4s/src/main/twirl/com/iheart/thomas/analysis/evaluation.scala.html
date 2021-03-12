@@ -12,7 +12,7 @@ evaluation: List[Evaluation],
 stateO: Option[ExperimentKPIState[Conversions]]
 )(implicit env: UIEnv)
 
-@topNav(s"Analytics Of $kpi on A/B test $feature") {
+@topNav(s"Analytics Of $kpi on A/B test $feature", "Analysis") {
 
 
 
@@ -46,34 +46,37 @@ stateO: Option[ExperimentKPIState[Conversions]]
         </div>
         <div class="col-8">
 
-            <form action="" method="get" class="form-inline">
-                <div class="form-group mx-sm-3">
-                    <label for="controlSelect" class="sr-only">Select a benchmark</label>
+            <form action="" method="get" class="row g-3">
+                <div class="col-auto">
                     <select id="controlSelect" name="controlArm" class="form-control form-filter" required>
                         <option value="" disabled selected hidden>
                             Select a group as benchmark
                         </option>
                         @for(a <- evaluation.map(_.name)) {
-                        <option value="@a">@a</option>
+                            <option value="@a">@a</option>
                         }
                     </select>
                 </div>
-                <button class="btn btn-primary" type="submit">
-                    Compare
-                </button>
+                <div class="col-auto">
+                    <button class="btn btn-primary" type="submit">
+                        Compare
+                    </button>
+                </div>
             </form>
             @for(e <- evaluation.toList.zipWithIndex) {
                 @for(br <- e._1.resultAgainstBenchmark) {
-                    <div class="mt-3">
-                        <div id="histogram-@e._2"></div>
+                    <div class="mb-4">
+                        <div class="mt-3">
+                            <div id="histogram-@e._2"></div>
+                        </div>
+                        <div class="mt-3">
+                           Benefit Range*: <b>@formatPercentage(br.riskOfUsing)</b> &mdash; <b>@formatPercentage(-br.riskOfNotUsing)</b>
+                           ( Median: <b>@formatPercentage(br.medianEffect)</b> )
+                        </div>
+                        <div>
+                            <small><b>*</b>  95% confidence on boundaries</small>
+                        </div>
                     </div>
-                   <div class="mt-3">
-                       Benefit Range*: <b>@formatPercentage(br.riskOfUsing)</b> &mdash; <b>@formatPercentage(-br.riskOfNotUsing)</b>
-                       ( Median: <b>@formatPercentage(br.medianEffect)</b> )
-                   </div>
-            <div>
-                <small><b>*</b>  95% confidence on boundaries</small>
-            </div>
 
                 }
             }

@@ -42,7 +42,7 @@ showNameField: Boolean = true
 @messageQuery(mqO: Option[MessageQuery], queryName: String) = {
 <div class="query-description">
     <div class="form-group">
-        <label for="@{queryName}-description-input">Description</label>
+        <label class="form-label" for="@{queryName}-description-input">Description</label>
         <textarea name="messageQuery.@{queryName}.description"
                   class="form-control" cols="1"
                   id="@{queryName}-description-input"
@@ -73,7 +73,7 @@ showNameField: Boolean = true
     @criteriaItem(None, queryName)
 </div>
 
-<div class="row float-right">
+<div class="text-end mt-2">
     <button type="button" id="btn-@{queryName}-new-criteria"
             onclick="thomas.appendItem('#@{queryName}-new-criteria','#@{queryName}-criteria')"
             class="btn btn-secondary">New Criteria
@@ -103,7 +103,7 @@ showNameField: Boolean = true
             <div class="card-body">
                 @if( showNameField ) {
                 <div class="form-group">
-                    <label for="nameInput">Name</label>
+                    <label class="form-label" for="nameInput">Name</label>
                     <input name="name"
                            required
                            class="form-control"
@@ -119,7 +119,7 @@ showNameField: Boolean = true
                 }
 
                 <div class="form-group">
-                    <label for="descriptionInput">Description</label>
+                    <label class="form-label" for="descriptionInput">Description</label>
                     <textarea name="description"
                               class="form-control"
                               id="descriptionInput"
@@ -137,7 +137,7 @@ showNameField: Boolean = true
             </div>
             <div class="card-body">
                 <div class="form-group">
-                    <label for="alphaPriorInput">Alpha Prior</label>
+                    <label class="form-label" for="alphaPriorInput">Alpha Prior</label>
                     <input name="model.alphaPrior"
                            class="form-control"
                            id="alphaPriorInput"
@@ -148,7 +148,7 @@ showNameField: Boolean = true
                     />
                 </div>
                 <div class="form-group">
-                    <label for="betaPriorInput">Beta Prior</label>
+                    <label class="form-label" for="betaPriorInput">Beta Prior</label>
                     <input name="model.betaPrior"
                            class="form-control"
                            id="betaPriorInput"

@@ -14,7 +14,7 @@ isShuffled: Boolean = false
 
 @group(group: Option[Group]) = {
 
-<div class="row abtest-group">
+<div class="row abtest-group mb-3">
   <div class="col-3">
     <div class="form-group">
       <input name="groups[].name" class="form-control size-change"
@@ -56,7 +56,7 @@ isShuffled: Boolean = false
   <div class="row w-100">
     <div class="col-md">
       <div class="form-group">
-        <label for="testGroupRangeStart">Start</label>
+        <label class="form-label" for="testGroupRangeStart">Start</label>
         <input name="segmentRanges[].start" class="form-control"
                id="testGroupRangeStart" type="number"
                value="@rg.map(_.start)"
@@ -65,7 +65,7 @@ isShuffled: Boolean = false
     </div>
     <div class="col-md">
       <div class="form-group">
-        <label for="testGroupRangeEnd">End</label>
+        <label class="form-label" for="testGroupRangeEnd">End</label>
         <input name="segmentRanges[].end" class="form-control"
                id="testGroupRangeEnd" type="number"
                value="@rg.map(_.end)"
@@ -96,17 +96,17 @@ isShuffled: Boolean = false
         </div>
         <div class="card-body">
           <div class="form-group">
-            <label for="testName">Name</label>
+            <label class="form-label" for="testName">Name</label>
             <input name="name" class="form-control" required id="testName" type="text"
                    value="@draft.map(_.name)"/>
           </div>
           <div class="row">
             <div class="col-md">
               <div class="form-group">
-                <label for="testStart">Start</label>
+                <label class="form-label" for="testStart">Start</label>
                 @if(!readonly) {
                   <input class="ml-3" type="checkbox" id="immediateStart">
-                  <label for="immediateStart">Immediately</label>
+                  <label class="form-label" for="immediateStart">Immediately</label>
                 }
                 <input name="start" class="form-control" id="testStart" type="text"
                        value="@draft.map(_.start).map(formatDate)"/>
@@ -114,7 +114,7 @@ isShuffled: Boolean = false
             </div>
             <div class="col-md">
               <div class="form-group">
-                <label for="testEnd">End</label>
+                <label class="form-label" for="testEnd">End</label>
                 <input name="end" class="form-control" id="testEnd" type="text"
                        value="@draft.flatMap(_.end).map(formatDate)"/>
               </div>
@@ -135,7 +135,7 @@ isShuffled: Boolean = false
                        value="true"
                        @if(draft.map(_.reshuffle).getOrElse(false)) { checked }
                 />
-                <label for="testReshuffle">Reshuffle users from previous test</label>
+                <label class="form-label" for="testReshuffle">Reshuffle users from previous test</label>
               </div>
               } else if(isShuffled) {
                 <div class="mr-3 text-warning pb-2">
@@ -144,7 +144,7 @@ isShuffled: Boolean = false
               }
 
               <div class="form-group">
-                <label for="testAlternativeIdName">Alternative Id meta field name</label>
+                <label class="form-label" for="testAlternativeIdName">Alternative Id meta field name</label>
                 <input name="alternativeIdName" class="form-control" id="testAlternativeIdName" type="text"
                        value="@draft.map(_.alternativeIdName)"/>
               </div>
@@ -161,13 +161,13 @@ isShuffled: Boolean = false
         </div>
         <div class="card-body">
           <div class="form-group">
-            <label for="testRequiredTags">Tags</label>
+            <label class="form-label" for="testRequiredTags">Tags</label>
             <input name="requiredTags" class="form-control" id="testRequiredTags" type="text"
                    value="@draft.map(_.requiredTags.mkString(" , "))"/>
           </div>
 
           <div class="form-group">
-            <label for="testUserMetaCriteria">User Meta Criteria</label>
+            <label class="form-label" for="testUserMetaCriteria">User Meta Criteria</label>
             <a target="_blank"
                 title="Criteria for filtering user by user meta. Click to see more documentation."
                 href="https://iheartradio.github.io/thomas/FAQ.html#how-to-manage-user-eligibility">
@@ -217,21 +217,21 @@ isShuffled: Boolean = false
             <div class="row abtest-group-header">
               <div class="col-3">
                 <div class="form-group">
-                  <label for="testGroupName">Group Name</label>
+                  <label class="form-label" for="testGroupName">Group Name</label>
 
                 </div>
               </div>
 
               <div class="col-2">
                 <div class="form-group">
-                  <label for="testGroupSize">Size</label>
+                  <label class="form-label" for="testGroupSize">Size</label>
                 </div>
               </div>
 
               <div class="col-7">
 
                 <div class="form-group w-100">
-                  <label for="testGroupMeta">Meta</label>
+                  <label class="form-label" for="testGroupMeta">Meta</label>
                 </div>
               </div>
             </div>

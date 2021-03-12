@@ -11,14 +11,16 @@ kpis: Vector[ConversionKPI]
 )(implicit env: UIEnv)
 
 
-@topNav("Analytics") {
+@topNav("Analysis", "Analysis") {
 <div class="row">
     <div class="col-7">
         <div class="row mt-5">
             <span class="h4">Monitored A/B tests</span>
         </div>
         @for(state <- states) {
+        <div class="mb-3">
           @conversionState(state)
+        </div>
         }
 
     </div>
@@ -70,7 +72,7 @@ kpis: Vector[ConversionKPI]
             </div>
         </div>
 
-        <div class="row d-flex flex-row-reverse mt-5">
+        <div class="row text-end mt-5">
             <div class="mr-4">
                 <a href="./conversionKPI/new">
                     <button type="link" class="btn btn-primary">

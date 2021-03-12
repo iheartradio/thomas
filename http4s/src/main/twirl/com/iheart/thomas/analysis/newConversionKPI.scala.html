@@ -4,13 +4,13 @@
 
 @(successMsg: Option[String] = None)(implicit env: UIEnv)
 
-@topNav("New Conversion KPI") {
+@topNav("New Conversion KPI", "Analysis") {
 
 <form action="../conversionKPIs" method="post">
 
     @conversionKPIForm(None, successMsg)
 
-    <div class="row d-flex flex-row-reverse mt-5">
+    <div class="row text-end mt-5">
         <div class="mr-4">
             <button type="submit" class="btn btn-primary">
                 Create

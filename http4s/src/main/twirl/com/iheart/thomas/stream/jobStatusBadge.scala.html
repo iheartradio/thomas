@@ -4,14 +4,14 @@
 @(startedO: Option[Instant])
 
 @if(startedO.isEmpty) {
-<span class="badge  badge-secondary">
+<span class="badge  bg-secondary">
     Scheduled
 </span>
 }
 
 @for(started <- startedO) {
 
-<span class="badge  badge-success">
+<span class="badge  bg-success">
    Started @dateTimeMid(started)
 </span>
 }

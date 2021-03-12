@@ -12,7 +12,7 @@ followUpCandidateO: Option[Entity[Abtest]] = None
 )(implicit env: UIEnv)
 
 
-@topNav("Create New Test") {
+@topNav("Create New Test", "A/B Tests") {
 
 <div class="mt-4 mb-4">
   <span class="h5">Creating a new A/B Test for </span>
@@ -37,7 +37,7 @@ followUpCandidateO: Option[Entity[Abtest]] = None
 
 <form action="@env.routes.features/@feature/tests" method="post">
   @testForm(feature, draft, errorMsg)
-  <div class="row d-flex flex-row-reverse mt-5">
+  <div class="row text-end mt-5">
     <div class="mr-4">
       <button type="submit" class="btn btn-primary">Submit</button>
       <button type="button" class="btn btn-warning ml-2" onclick="history.back()">Cancel</button>

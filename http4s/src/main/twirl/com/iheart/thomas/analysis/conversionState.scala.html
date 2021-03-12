@@ -15,29 +15,29 @@ showCommands: Boolean = true
     </div>
     <div class="card-body">
         @if(state.arms.nonEmpty){
-        <div class="d-flex mt-2">
-            @for(arm <- state.arms) {
-            <div class="mr-3">
-                <h6>Group <span class="text-secondary">@arm.name</span> </h6>
-                <div class="fs-6"><span class="text-muted">Total:</span> @arm.kpiStats.total</div>
-                <div class="fs-6"><span class="text-muted">Converted:</span> @arm.kpiStats.converted</div>
-                <div class="fs-6"><span class="text-muted">Rate:</span> @formatPercentage(arm.kpiStats.rate)</div>
+            <div class="d-flex mt-2 flex-wrap">
+                @for(arm <- state.arms) {
+                    <div class="mr-1 p-3">
+                        <h6>Group <span class="text-secondary">@arm.name</span> </h6>
+                        <div class="fs-6"><span class="text-muted">Total:</span> @arm.kpiStats.total</div>
+                        <div class="fs-6"><span class="text-muted">Converted:</span> @arm.kpiStats.converted</div>
+                        <div class="fs-6"><span class="text-muted">Rate:</span> @formatPercentage(arm.kpiStats.rate)</div>
+                    </div>
+                }
             </div>
-            }
             @if(showCommands) {
-            <div><a href="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/evaluate"
-                    class="text-primary" title="Detailed Evaluation">
-                <i class="far fa-chart-bar" ></i>
-                Evaluation</a>
-                <a href="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/reset"
-                    class="text-warning ml-3" title="Reset the state"
-                   onclick="return confirm('Please confirm you want reset @state.key.kpi stats for @state.key.feature ')"
-                >
-                <i class="far fa-trash-alt" ></i>
-                Reset</a>
-            </div>
+                <div class="text-end"><a href="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/evaluate"
+                                          class="text-primary" title="Detailed Evaluation">
+                    <i class="far fa-chart-bar" ></i>
+                    Evaluation</a>
+                    <a href="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/reset"
+                       class="text-warning ml-3" title="Reset the state"
+                       onclick="return confirm('Please confirm you want reset @state.key.kpi stats for @state.key.feature ')"
+                    >
+                        <i class="far fa-trash-alt" ></i>
+                        Reset</a>
+                </div>
             }
-        </div>
         } else {
 
           <h5 class="text-warning">There is no data collected yet.</h5>
