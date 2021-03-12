@@ -2,7 +2,7 @@
 @import com.iheart.thomas.http4s.UIEnv
 @import _root_.play.twirl.api.Html
 @import com.iheart.thomas.admin.Authorization._
-
+@import com.iheart.thomas.BuildInfo
 @(title: String, active: String)(content: Html)(implicit env: UIEnv)
 
 
@@ -24,7 +24,7 @@
 
 @main(title){
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
-  <a class="navbar-brand" href="@env.routes.tests">
+  <a class="navbar-brand" href="@env.routes.tests" title="Thomas Ver: @BuildInfo.version">
     <img src="https://iheartradio.github.io/thomas/img/thomas-the-tank-engine.png" width="30px">
     @env.siteName
   </a>
