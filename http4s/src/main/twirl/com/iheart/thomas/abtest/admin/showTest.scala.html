@@ -16,7 +16,7 @@ isShuffled: Boolean
 )(implicit env: UIEnv)
 
 
-@topNav("A/B Test for feature " + test.data.feature) {
+@topNav("A/B Test for feature " + test.data.feature, "A/B Tests") {
 
 
 <form action="#" method="post">
@@ -25,7 +25,7 @@ isShuffled: Boolean
         <span class="h4 text-primary" title="This is feature name for the test.">
     @featureTestsLink(test.data.feature)
   </span>
-        <span class="badge ml-3 mb-3 badge-@formatStatus(test)._2">
+        <span class="badge ml-3 mb-3 bg-@formatStatus(test)._2">
               @formatStatus(test)._1
             </span>
 
@@ -37,7 +37,7 @@ isShuffled: Boolean
 
 </form>
 
-<div class="row d-flex flex-row-reverse mt-5">
+<div class="row text-end mt-5">
     @if(env.currentUser.has(ManageFeature(feature))) {
     <div class="mr-4">
         @if(followUpO.isEmpty) {

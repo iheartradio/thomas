@@ -11,14 +11,14 @@ monitors: Vector[MonitorInfo[Conversions]],
 kpis: Seq[KPIName]
 )(implicit env: UIEnv)
 
-@topNav(s"Monitors on A/B test ${feature}") {
+@topNav(s"Monitors on A/B test ${feature}", "Analysis") {
 
     <div class="row mt-3">
         <h4>Monitors for <span class="text-primary">@feature</span></h4>
         <div class="list-group w-100">
             @for(monitor <- monitors) {
 
-                <div class="list-group-item">
+                <div class="list-group-item p-3">
 
                     <div class="row">
                         <div class="col-12 mt-2">
@@ -27,8 +27,8 @@ kpis: Seq[KPIName]
                         }
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-7">
+                    <div class="row mt-2">
+                        <div class="col-auto">
                             @for(started <- monitor.job.started) {
                             <small><span class="font-weight-light ml-3">
                                 Started at: </span>
@@ -39,14 +39,14 @@ kpis: Seq[KPIName]
                             }
 
                         </div>
-                        <div class="col-4 text-sm-right">
+                        <div class="col-auto me-auto">
                             <small>Expires at @formatDate(monitor.job.spec.until, dateTimeFormatterMid)</small>
                         </div>
-                        <div class="col-1">
+                        <div class="col-auto">
                             <a href="monitors/@monitor.kpi/stop"
                                onclick="return confirm('Are you sure you would like to stop monitoring @monitor.kpi for this @feature?');"
                                role="button">
-                                <i class="far fa-stop-circle" title="stop this monitor"></i>
+                                <i class="bi bi-stop-circle" title="stop this monitor"></i>
                             </a>
 
                         </div>
@@ -69,7 +69,7 @@ kpis: Seq[KPIName]
 
 <form action="monitors" method="post" class="form-inline">
     <div class="form-group mx-sm-3">
-        <label for="kpisSelect" class="sr-only">Select a KPI to start monitoring</label>
+        <label class="form-label" for="kpisSelect" class="sr-only">Select a KPI to start monitoring</label>
         <select id="kpisSelect" name="kpi" class="form-control form-filter" required>
             <option value="" disabled selected hidden>
                 Select a KPI to start monitoring
@@ -81,7 +81,7 @@ kpis: Seq[KPIName]
     </div>
 
     <div class="form-group mx-sm-3">
-        <label for="monitor-until" class="sr-only">Expires</label>
+        <label class="form-label" for="monitor-until" class="sr-only">Expires</label>
         <input name="until"
                required
                class="form-control"

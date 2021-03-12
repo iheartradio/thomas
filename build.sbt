@@ -1,5 +1,6 @@
 import com.typesafe.sbt.SbtGit.git
 import microsites._
+
 import scala.sys.process._
 import sbtassembly.AssemblyPlugin.defaultUniversalScript
 val apache2 = "Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.html")
@@ -121,7 +122,6 @@ lazy val client = project
 
 lazy val cli = project
   .dependsOn(client)
-  .enablePlugins(BuildInfoPlugin)
   .settings(
     name := "thomas-cli",
     rootSettings,
@@ -135,8 +135,6 @@ lazy val cli = project
     assemblyOutputPath in assembly := file(
       s"release/thomas-cli_${version.value}.jar"
     ),
-    buildInfoKeys := BuildInfoKey.ofN(name, version),
-    buildInfoPackage := "com.iheart.thomas",
     assemblyMergeStrategy in assembly := {
       case "module-info.class" => MergeStrategy.discard
       case x =>
@@ -146,6 +144,7 @@ lazy val cli = project
   )
 
 lazy val core = project
+  .enablePlugins(BuildInfoPlugin)
   .settings(
     name := "thomas-core",
     rootSettings,
@@ -418,7 +417,9 @@ lazy val commonSettings = addCompilerPlugins(
   scalacOptions in (Test, compile) ~= lessStrictScalaChecks,
   scalacOptions in (IntegrationTest, compile) ~= lessStrictScalaChecks,
   scalacOptions += s"-Xlint:-package-object-classes",
-  testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
+  testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
+  buildInfoKeys := BuildInfoKey.ofN(name, version),
+  buildInfoPackage := "com.iheart.thomas"
 )
 
 lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =
