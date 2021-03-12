@@ -122,7 +122,6 @@ lazy val client = project
 
 lazy val cli = project
   .dependsOn(client)
-  .enablePlugins(BuildInfoPlugin)
   .settings(
     name := "thomas-cli",
     rootSettings,
@@ -145,6 +144,7 @@ lazy val cli = project
   )
 
 lazy val core = project
+  .enablePlugins(BuildInfoPlugin)
   .settings(
     name := "thomas-core",
     rootSettings,
@@ -300,7 +300,6 @@ lazy val spark = project
 
 lazy val http4s = project
   .dependsOn(kafka)
-  .enablePlugins(BuildInfoPlugin)
   .enablePlugins(SbtTwirl)
   .settings(name := "thomas-http4s")
   .settings(rootSettings)
