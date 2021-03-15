@@ -30,9 +30,9 @@ kpis: Seq[KPIName]
                     <div class="row mt-2">
                         <div class="col-auto">
                             @for(started <- monitor.job.started) {
-                            <small><span class="font-weight-light ml-3">
+                            <small><span class="fw-light ml-3">
                                 Started at: </span>
-                                <span class="font-weight-heavy">
+                                <span class="fw-heavy">
                                        @formatDate(started, dateTimeFormatterMid)
                                     </span>
                             </small>
@@ -67,8 +67,8 @@ kpis: Seq[KPIName]
 
 @if(kpis.nonEmpty) {
 
-<form action="monitors" method="post" class="form-inline">
-    <div class="form-group mx-sm-3">
+<form action="monitors" method="post" class="row row-cols-lg-auto g-3 align-items-center">
+    <div class="col-12">
         <label class="form-label" for="kpisSelect" class="sr-only">Select a KPI to start monitoring</label>
         <select id="kpisSelect" name="kpi" class="form-control form-filter" required>
             <option value="" disabled selected hidden>
@@ -80,7 +80,7 @@ kpis: Seq[KPIName]
         </select>
     </div>
 
-    <div class="form-group mx-sm-3">
+    <div class="col-12">
         <label class="form-label" for="monitor-until" class="sr-only">Expires</label>
         <input name="until"
                required
@@ -91,9 +91,11 @@ kpis: Seq[KPIName]
                style="width:210px"
         />
     </div>
-    <button class="btn btn-primary" type="submit">
-        Start Monitor
-    </button>
+    <div class="col-12">
+        <button class="btn btn-primary" type="submit">
+            Start Monitor
+        </button>
+    </div>
 </form>
 
 

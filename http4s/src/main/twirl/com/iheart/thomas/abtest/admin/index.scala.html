@@ -20,15 +20,15 @@ filters: Filters
 <div class="list-group-item list-group-item-secondary mt-2">
     <div class="row">
         <div class="col-auto">
-            <span class="font-weight-light h6">Feature</span>
+            <span class="fw-light h6">Feature</span>
             <a href="./features/@feature.name">
-                <span class="font-weight-heavy h4 text-primary">@feature.name</span>
+                <span class="fw-heavy h4 text-primary">@feature.name</span>
             </a>
         </div>
         <div class="col-auto me-auto pt-1">
-            <small><span class="font-weight-light ml-3">
+            <small><span class="fw-light ml-3">
               Developers: </span>
-                <span class="font-weight-heavy"> @feature.developers.mkString(", ") </span>
+                <span class="fw-heavy"> @feature.developers.mkString(", ") </span>
             </small>
         </div>
         <div class="col-auto pt-1">
@@ -44,7 +44,7 @@ filters: Filters
     <div class="row">
         <div class="col-auto me-auto">
 
-            <span class="mb-1 h5 font-weight-light text-success">@test.data.name</span>
+            <span class="mb-1 h5 fw-light text-success">@test.data.name</span>
             <span class="badge ml-3 bg-@formatStatus(test)._2">
               @formatStatus(test)._1
             </span>
@@ -52,14 +52,14 @@ filters: Filters
 
         <div class="col-auto">
             <small>
-                <span class="font-weight-heavy"></span>
+                <span class="fw-heavy"></span>
                 @formatDate(test.data.start, dateTimeFormatterShort)
                 -
                 @test.data.end.map(formatDate(_, dateTimeFormatterShort)).getOrElse("Indefinitely")
             </small>
-            <small><span class="font-weight-light ml-3">
+            <small><span class="fw-light ml-3">
               Author: </span>
-                <span class="font-weight-heavy"> @test.data.author</span>
+                <span class="fw-heavy"> @test.data.author</span>
             </small>
         </div>
 
