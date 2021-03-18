@@ -33,7 +33,8 @@ trait MonitorAlg[F[_]] {
 
   def evaluate(
       state: ExperimentKPIState[Conversions],
-      benchmarkArm: Option[ArmName]
+      benchmarkArm: Option[ArmName],
+      includedArms: Option[Seq[ArmName]] = None
     ): F[List[Evaluation]]
 
 }
@@ -53,18 +54,22 @@ object MonitorAlg {
       val evaluator = KPIEvaluator[F, BetaModel, Conversions]
       def evaluate(
           state: ExperimentKPIState[Conversions],
-          benchmarkArm: Option[ArmName]
-        ): F[List[Evaluation]] =
+          benchmarkArm: Option[ArmName],
+          includedArms: Option[Seq[ArmName]] = None
+        ): F[List[Evaluation]] = {
         for {
           kpi <- cKPIAlg.get(state.key.kpi)
           r <-
             evaluator
               .evaluate(
                 kpi.model,
-                state.armsStateMap,
+                includedArms.fold(state.armsStateMap) { arms =>
+                  state.armsStateMap.filterKeys(arms.toSet ++ benchmarkArm.toSet)
+                },
                 benchmarkArm.flatMap(ba => state.armsStateMap.get(ba).map((ba, _)))
               )
         } yield r
+      }
 
       def resetConversion(key: Key) = reset[Conversions](key)
 
