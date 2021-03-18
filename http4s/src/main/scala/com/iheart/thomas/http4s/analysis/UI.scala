@@ -28,11 +28,15 @@ import com.iheart.thomas.http4s.analysis.UI.{
   MonitorInfo,
   StartMonitorRequest,
   UpdateKPIRequest,
-  controlArm
+  controlArm,
+  includedArms
 }
 import com.iheart.thomas.stream.{JobAlg, JobInfo}
 import com.iheart.thomas.stream.JobSpec.{MonitorTest, UpdateKPIPrior}
-import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
+import org.http4s.dsl.impl.{
+  OptionalMultiQueryParamDecoderMatcher,
+  OptionalQueryParamDecoderMatcher
+}
 import tsec.authentication._
 
 import java.time.OffsetDateTime
@@ -97,15 +101,23 @@ class UI[F[_]: Async](
         )
     case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "evaluate" :? controlArm(
           caO
-        ) asAuthed (u) =>
+        ) +& includedArms(arms) asAuthed (u) =>
       monitorAlg.getConversion(Key(feature, KPIName(kpi))).flatMap { stateO =>
-        stateO.traverse(monitorAlg.evaluate(_, caO)).flatMap { evaluationO =>
-          Ok(
-            evaluation(feature, KPIName(kpi), evaluationO.toList.flatten, stateO)(
-              UIEnv(u)
+        stateO
+          .traverse(monitorAlg.evaluate(_, caO, arms.toOption.filter(_.nonEmpty)))
+          .flatMap { evaluationO =>
+            Ok(
+              evaluation(
+                feature,
+                KPIName(kpi),
+                evaluationO.toList.flatten,
+                stateO,
+                arms.toList.flatten.toSet
+              )(
+                UIEnv(u)
+              )
             )
-          )
-        }
+          }
       }
 
     case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "reset" asAuthed (u) =>
@@ -196,6 +208,10 @@ class UI[F[_]: Async](
 
 object UI {
   object controlArm extends OptionalQueryParamDecoderMatcher[GroupName]("controlArm")
+
+  object includedArms
+      extends OptionalMultiQueryParamDecoderMatcher[GroupName]("includedArms")
+
   case class UpdateKPIRequest(until: OffsetDateTime)
   case class StartMonitorRequest(
       kpi: KPIName,

@@ -1,10 +1,12 @@
+@import com.iheart.thomas.ArmName
 @import com.iheart.thomas.analysis._
 @import com.iheart.thomas.analysis.monitor._
 @import com.iheart.thomas.http4s.{UIEnv, Formatters}, Formatters._
 
 @(
 state: ExperimentKPIState[Conversions],
-showCommands: Boolean = true
+showCommands: Boolean = true,
+includedArms: Set[ArmName] = Set.empty
 )(implicit env: UIEnv)
 
 <div class="card">
@@ -15,10 +17,24 @@ showCommands: Boolean = true
     </div>
     <div class="card-body">
         @if(state.arms.nonEmpty){
+            @if(showCommands) {
+            <form action="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/evaluate" >
+            }
             <div class="d-flex mt-2 flex-wrap">
-                @for(arm <- state.arms) {
-                    <div class="mr-1 p-3">
-                        <h6>Group <span class="text-secondary">@arm.name</span> </h6>
+                @for(arm <- state.arms.sortBy(_.name)) {
+                    <div class="mr-1 p-3 form-check form-check-inline">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               id="includeGroupCB@arm.name.hashCode"
+                               name="includedArms"
+                               title="Include in evaluation"
+                               @if((arm.kpiStats.total > 100 && includedArms.isEmpty) || includedArms.contains(arm.name)) {
+                                 checked
+                               }
+                               value="@arm.name">
+                        <label class="form-check-label" for="includeGroupCB@arm.name.hashCode">
+                            <h6>Group <span class="text-secondary">@arm.name</span> </h6>
+                        </label>
                         <div class="fs-6"><span class="text-muted">Total:</span> @arm.kpiStats.total</div>
                         <div class="fs-6"><span class="text-muted">Converted:</span> @arm.kpiStats.converted</div>
                         <div class="fs-6"><span class="text-muted">Rate:</span> @formatPercentage(arm.kpiStats.rate)</div>
@@ -26,18 +42,19 @@ showCommands: Boolean = true
                 }
             </div>
             @if(showCommands) {
-                <div class="text-end"><a href="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/evaluate"
-                                          class="text-primary" title="Detailed Evaluation">
-                    <i class="bi bi-graph-up" ></i>
-                    Evaluation</a>
+                <div class="text-end">
+                    <button class="btn btn-primary mr-3" title="Detailed Evaluation" type="submit">
+                    <i class="bi bi-graph-up" ></i> Evaluate</button>
                     <a href="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/reset"
-                       class="text-warning ml-3" title="Reset the state"
+                       class="btn btn-warning" title="Reset the state" role="button"
                        onclick="return confirm('Please confirm you want reset @state.key.kpi stats for @state.key.feature ')"
                     >
                         <i class="bi bi-trash" ></i>
                         Reset</a>
                 </div>
+            </form>
             }
+
         } else {
 
           <h5 class="text-warning">There is no data collected yet.</h5>

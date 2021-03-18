@@ -9,7 +9,8 @@
 feature: FeatureName,
 kpi: KPIName,
 evaluation: List[Evaluation],
-stateO: Option[ExperimentKPIState[Conversions]]
+stateO: Option[ExperimentKPIState[Conversions]],
+includedArms: Set[ArmName]
 )(implicit env: UIEnv)
 
 @topNav(s"Analytics Of $kpi on A/B test $feature", "Analysis") {
@@ -24,7 +25,7 @@ stateO: Option[ExperimentKPIState[Conversions]]
     <div class="row mt-5">
         <div class="col-12">
         @for(state <- stateO ){
-        @conversionState(state, false)
+        @conversionState(state, true, includedArms)
         }
         </div>
 
@@ -47,6 +48,9 @@ stateO: Option[ExperimentKPIState[Conversions]]
         <div class="col-8">
 
             <form action="" method="get" class="row g-3">
+                @for(arm <- includedArms) {
+                  <input type="hidden" name="includedArms" value="@arm" />
+                }
                 <div class="col-auto">
                     <select id="controlSelect" name="controlArm" class="form-control form-filter" required>
                         <option value="" disabled selected hidden>
