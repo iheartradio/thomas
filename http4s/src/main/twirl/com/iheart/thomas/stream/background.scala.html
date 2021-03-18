@@ -20,7 +20,7 @@
                 <div class="col-7 me-auto">
                     <div>
 
-                        <span class="mb-1 h5 font-weight-light text-success">@job.key</span>
+                        <span class="mb-1 h5 fw-light text-success">@job.key</span>
                         @jobStatusBadge(job.started)
                     </div>
                     <div class="mt-1">
@@ -32,9 +32,9 @@
 
                    @for(checkedOut <- job.checkedOut) {
                     <div>
-                    <small><span class="font-weight-light ml-3">
+                    <small><span class="fw-light ml-3">
                     Last Check: </span>
-                        <span class="font-weight-heavy">
+                        <span class="fw-heavy">
                            @formatDate(checkedOut)
                         </span>
                     </small>

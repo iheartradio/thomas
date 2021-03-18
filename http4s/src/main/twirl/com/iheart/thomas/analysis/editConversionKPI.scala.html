@@ -59,7 +59,7 @@ successMsg: Option[String] = None
                 </form>
                 } else {
                     @for(job <- runningJobO) {
-                        <span class="h5 font-weight-light text-success">
+                        <span class="h5 fw-light text-success">
                           Updating using ongoing data until @dateTimeMid(job.spec.until)
                         </span>
                         @jobStatusBadge(job.started)
