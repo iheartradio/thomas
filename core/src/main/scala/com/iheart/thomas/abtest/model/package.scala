@@ -9,7 +9,7 @@ package abtest
 import java.time.OffsetDateTime
 
 import cats.implicits._
-import _root_.play.api.libs.json.JsObject
+import play.api.libs.json.JsObject
 import lihua.EntityId
 import java.time.Instant
 import henkan.convert.Syntax._
