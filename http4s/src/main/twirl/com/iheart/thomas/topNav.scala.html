@@ -37,6 +37,7 @@
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
     <ul class="navbar-nav me-auto mb-lg-0">
       @navItem("A/B Tests", env.routes.tests)
+      @navItem("Assignments", env.routes.assignments)
       @navItem("Analysis", env.routes.analysis)
       @if(env.currentUser.has(ManageUsers)) {
         @navItem("Users", env.routes.users)

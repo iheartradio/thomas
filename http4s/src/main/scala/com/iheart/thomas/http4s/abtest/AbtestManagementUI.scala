@@ -316,6 +316,16 @@ class AbtestManagementUI[F[_]: Async: Timer](
       case GET -> Root / "features" / feature asAuthed u =>
         alg.getFeature(feature).flatMap(showFeature(u, _))
 
+      case GET -> Root / "assignments" asAuthed u =>
+        Ok(assignments(None)(UIEnv(u)))
+
+      case req @ POST -> Root / "assignments" asAuthed u =>
+        for {
+          query <- req.request.as[UserGroupQuery]
+          result <- alg.getGroupsWithMeta(query)
+          r <- Ok(assignments(Some((query, result)))(UIEnv(u)))
+        } yield r
+
       case GET -> Root / "tests" / testId asAuthed u =>
         for {
           ti <- getTestInfo(testId)
@@ -474,6 +484,16 @@ object AbtestManagementUI {
       }
     }
 
+    implicit val userGroupQueryFormDecoder: FormDataDecoder[UserGroupQuery] = {
+      implicit val mapQPD = mapQueryParamDecoder
+      (
+        fieldOptional[UserId]("userId"),
+        fieldOptional[OffsetDateTime]("at"),
+        tags("tags"),
+        fieldEither[Map[String, String]]("meta").default(Map.empty)
+      ).mapN(UserGroupQuery(_, _, _, _)).sanitized
+    }
+
     implicit val abtestSpecFormDecoder: FormDataDecoder[SpecForm] =
       (
         field[TestName]("name"),
@@ -488,7 +508,7 @@ object AbtestManagementUI {
       ).mapN(SpecForm.apply).sanitized
 
     implicit val FeatureFormDecoder: FormDataDecoder[Feature] = {
-      implicit val mapQPD = jsonEntityQueryParamDecoder[Map[String, String]]
+      implicit val mapQPD = mapQueryParamDecoder
 
       (
         field[FeatureName]("name"),
