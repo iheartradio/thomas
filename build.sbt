@@ -13,34 +13,34 @@ val gh = GitHubSettings(
 )
 
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
-
+val reactiveMongoVer = "1.0.0"
 // format: off
 lazy val libs = {
   org.typelevel.libraries
-    .addJVM(name = "akka-slf4j",            version = "2.6.10",  org = "com.typesafe.akka")
+    .addJVM(name = "akka-slf4j",            version = "2.6.14",  org = "com.typesafe.akka")
     .addJVM(name = "breeze",                version = "1.1",    org ="org.scalanlp", "breeze", "breeze-viz")
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
-    .add(   name = "cats-testkit-scalatest",version = "2.1.2",  org = org.typelevel.typeLevelOrg)
+    .add(   name = "cats-testkit-scalatest",version = "2.1.3",  org = org.typelevel.typeLevelOrg)
     .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
     .add(   name = "cats-retry",            version = "2.1.0",  org = "com.github.cb372")
-    .addJVM(name = "decline",               version = "1.4.0",  org = "com.monovore")
+    .addJVM(name = "decline",               version = "2.0.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
     .addJVM(name = "evilplot",              version = "0.8.0",  org = "com.cibo")
     .addJVM(name = "fs2-kafka",             version = "1.4.1",  org = "com.github.fd4s")
     .addModule("http4s", "http4s-twirl")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .add(   name = "jawn",                  version = "1.0.0",  org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
-    .addJVM(name = "lihua",                 version = "0.36",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-play-json")
-    .addJVM(name = "log4cats",              version = "1.2.2",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
+    .addJVM(name = "log4cats",              version = "1.2.0",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
     .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
     .addJVM(name = "mau",                   version = "0.2.2",  org = "com.kailuowang")
     .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
-    .add(   name = "play",                  version = "2.8.3",  org = "com.typesafe.play")
-    .add(   name = "play-json",             version = "2.8.3",  org = "com.typesafe.play")
+    .add(   name = "play-json",             version = "2.7.4",  org = "com.typesafe.play")
     .addJVM(name = "play-json-derived-codecs", version = "7.0.0", org = "org.julienrf")
     .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
     .addJVM(name = "rainier",               version = "0.3.3",  org ="com.stripe", "rainier-core", "rainier-cats")
+    .addJVM(name = "reactivemongo",         version = reactiveMongoVer, org = "org.reactivemongo", "reactivemongo", "reactivemongo-bson-api", "reactivemongo-iteratees" )
+    .addJVM(name = "reactivemongo-play-json-compat", version = reactiveMongoVer + "-play27", org = "org.reactivemongo")
     .addJVM(name = "scala-java8-compat",    version = "0.9.1",  org = "org.scala-lang.modules")
     .addJVM(name = "scala-view",            version = "0.5",    org = "com.github.darrenjw")
     .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
@@ -48,7 +48,7 @@ lazy val libs = {
     .addJVM(name = "scanamo",               version = "1.0.0-M15", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
     .add(   name = "spark",                 version = "2.4.5",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
-    .addJVM(name = "tsec",                  version = "0.2.1",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s")
+    .addJVM(name = "tsec",                  version = "0.2.1",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
     .add   (name = "enumeratum",            version = "1.6.1",  org = "com.beachape" )
     .add(   name = "jawn-ast",              version = "1.0.0",  org = org.typelevel.typeLevelOrg)
 
@@ -63,6 +63,20 @@ addCommandAlias(
 addCommandAlias(
   "quickValidate",
   s";thomas/test;thomas/IntegrationTest/compile"
+)
+addCommandAlias(
+  "it",
+  s";thomas/test;tests/IntegrationTest/test"
+)
+
+addCommandAlias(
+  "switchToIT",
+  s";http4sExample/dependencyServicesDown;tests/dependencyServicesUp;"
+)
+
+addCommandAlias(
+  "switchToDev",
+  s";tests/dependencyServicesDown;http4sExample/dependencyServicesUp;"
 )
 addCommandAlias("it", s"tests/IntegrationTest/test")
 
@@ -91,6 +105,8 @@ lazy val thomas = project
     plot,
     client,
     bandit,
+    lihua,
+    lihuaMongo,
     tests,
     http4s,
     http4sExample,
@@ -127,23 +143,24 @@ lazy val cli = project
     rootSettings,
     libs.dependencies("decline", "logback-classic"),
     releasePublishArtifactsAction := {
-      (assembly in assembly).value
+      (assembly / assembly).value
       releasePublishArtifactsAction.value
     },
-    assemblyOption in assembly := (assemblyOption in assembly).value
+    assembly / assemblyOption := (assembly / assemblyOption).value
       .copy(prependShellScript = Some(defaultUniversalScript(shebang = false))),
-    assemblyOutputPath in assembly := file(
+    assembly / assemblyOutputPath := file(
       s"release/thomas-cli_${version.value}.jar"
     ),
-    assemblyMergeStrategy in assembly := {
+    assembly / assemblyMergeStrategy := {
       case "module-info.class" => MergeStrategy.discard
       case x =>
-        val oldStrategy = (assemblyMergeStrategy in assembly).value
+        val oldStrategy = (assembly / assemblyMergeStrategy).value
         oldStrategy(x)
     }
   )
 
 lazy val core = project
+  .dependsOn(lihua)
   .enablePlugins(BuildInfoPlugin)
   .settings(
     name := "thomas-core",
@@ -154,16 +171,52 @@ lazy val core = project
       "cats-core",
       "monocle-macro",
       "monocle-core",
-      "lihua-core",
       "mau",
       "mouse",
       "henkan-convert",
-      "lihua-play-json",
       "log4cats-core",
       "pureconfig-cats-effect",
       "pureconfig-generic"
     ),
-    simulacrumSettings(libs)
+    simulacrumSettings(libs),
+    buildInfoKeys := BuildInfoKey.ofN(name, version),
+    buildInfoPackage := "com.iheart.thomas"
+  )
+
+lazy val lihua = project.settings(
+  name := "thomas-lihua",
+  rootSettings,
+  taglessSettings,
+  libs.dependencies(
+    "newtype",
+    "play-json"
+  )
+)
+
+lazy val lihuaMongo = project
+  .dependsOn(lihua)
+  .settings(
+    name := "thomas-lihua-mongo",
+    rootSettings,
+    taglessSettings,
+    libs.dependencies(),
+    libs.dependency("simulacrum", Some("provided")),
+    libs.dependencies(
+      "cats-effect",
+      "reactivemongo",
+      "reactivemongo-bson-api",
+      "reactivemongo-iteratees",
+      "reactivemongo-play-json-compat",
+      "newtype",
+      "play-json",
+      "cats-core",
+      "tsec-cipher-jca"
+    ),
+    libraryDependencies ++= Seq(
+      "com.iheart" %% "ficus" % "1.4.7",
+      "org.log4s" %% "log4s" % "1.8.2"
+    ),
+    scalacOptions += "-deprecation:false" //disabled due to the deprecation of reactivemongo-play-json while the new api isn't stable enough
   )
 
 lazy val bandit = project
@@ -240,12 +293,9 @@ lazy val docs = project
   )
 
 lazy val mongo = project
-  .dependsOn(core, bandit)
+  .dependsOn(core, bandit, lihuaMongo)
   .settings(name := "thomas-mongo")
   .settings(rootSettings)
-  .settings(
-    libs.dependencies("lihua-mongo", "lihua-crypt")
-  )
 
 lazy val dynamo = project
   .dependsOn(bandit, stream)
@@ -336,7 +386,7 @@ lazy val http4sExample = project
     dependencyServicesUp := dockerCompose(upOrDown = true),
     dependencyServicesDown := dockerCompose(upOrDown = false),
     noPublishSettings,
-    mainClass in reStart := Some(
+    reStart / mainClass := Some(
       "com.iheart.thomas.example.ExampleAbtestAdminUIApp"
     )
   )
@@ -378,7 +428,8 @@ lazy val tests = project
     dependencyServicesUp := dockerCompose(upOrDown = true, ".test"),
     dependencyServicesDown := dockerCompose(upOrDown = false, ".test"),
     Defaults.itSettings,
-    parallelExecution in IntegrationTest := false,
+    IntegrationTest / parallelExecution := false,
+    IntegrationTest / compile / scalacOptions ~= lessStrictScalaChecks,
     noPublishSettings,
     libs.dependency("cats-effect-testing-scalatest", Some(IntegrationTest.name)),
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
@@ -394,7 +445,7 @@ def dockerCompose(
   s"docker-compose --env-file ./.env$env $upCommand" !
 }
 
-lazy val noPublishing = Seq(skip in publish := true)
+lazy val noPublishing = Seq(publish / skip := true)
 
 lazy val developerKai = Developer(
   "Kailuo Wang",
@@ -409,17 +460,14 @@ lazy val commonSettings = addCompilerPlugins(
 ) ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := "2.12.12",
-  parallelExecution in Test := false,
+  Test / parallelExecution := false,
   releaseCrossBuild := false,
   crossScalaVersions := Seq(scalaVersion.value),
   developers := List(developerKai),
-  scalacOptions in (Compile, console) ~= lessStrictScalaChecks,
-  scalacOptions in (Test, compile) ~= lessStrictScalaChecks,
-  scalacOptions in (IntegrationTest, compile) ~= lessStrictScalaChecks,
+  Compile / console / scalacOptions ~= lessStrictScalaChecks,
+  Test / compile / scalacOptions ~= lessStrictScalaChecks,
   scalacOptions += s"-Xlint:-package-object-classes",
-  testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
-  buildInfoKeys := BuildInfoKey.ofN(name, version),
-  buildInfoPackage := "com.iheart.thomas"
+  Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
 )
 
 lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =

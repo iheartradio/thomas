@@ -4,8 +4,8 @@ package stream
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.implicits._
+import com.iheart.thomas.analysis.bayesian.models._
 import com.iheart.thomas.analysis.{
-  BetaModel,
   ConversionKPI,
   ConversionKPIAlg,
   ConversionMessageQuery,

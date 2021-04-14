@@ -4,7 +4,7 @@ import cats.effect.{Async, Concurrent, Timer}
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
-import com.iheart.thomas.analysis._
+import com.iheart.thomas.analysis._, bayesian.models._
 import com.iheart.thomas.dynamo.DynamoFormats._
 import org.scanamo.DynamoFormat
 import org.scanamo.syntax._
@@ -34,7 +34,7 @@ object AnalysisDAOs extends ScanamoManagement {
     ): F[Unit] =
     ensureTables(tables, readCapacity, writeCapacity)
 
-  implicit def conversionKPIDAO[F[_]: Async](
+  implicit def conversionKPIAlg[F[_]: Async](
       implicit dynamoClient: DynamoDbAsyncClient
     ): ConversionKPIAlg[F] =
     new ScanamoDAOHelperStringLikeKey[F, ConversionKPI, KPIName](

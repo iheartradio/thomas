@@ -2,7 +2,6 @@ package com.iheart.thomas
 package http4s
 
 import java.time.{OffsetDateTime, ZonedDateTime}
-
 import _root_.play.api.libs.json.{JsObject, Json, Reads}
 import cats.data.NonEmptyList
 import cats.implicits._
@@ -13,9 +12,9 @@ import org.http4s.{
   QueryParamDecoder,
   QueryParameterValue
 }
-
 import io.estatico.newtype.Coercible
 import io.estatico.newtype.ops._
+
 import scala.util.Try
 
 trait CommonQueryParamDecoders {
@@ -57,6 +56,9 @@ trait CommonQueryParamDecoders {
 
   implicit val jsObjectQueryParamDecoder: QueryParamDecoder[JsObject] =
     jsonEntityQueryParamDecoder
+
+  def mapQueryParamDecoder: QueryParamDecoder[Map[String, String]] =
+    jsonEntityQueryParamDecoder[Map[String, String]]
 }
 
 trait CommonFormDecoders extends CommonQueryParamDecoders {

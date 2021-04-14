@@ -1,0 +1,88 @@
+@import com.iheart.thomas.abtest.model._
+@import com.iheart.thomas.http4s.UIEnv
+@import com.iheart.thomas.html._
+
+@import play.api.libs.json._
+@import  com.iheart.thomas.http4s.Formatters._
+
+
+@(r: Option[(UserGroupQuery, UserGroupQueryResult)])(implicit env: UIEnv)
+
+@topNav("Test Assignments", "Assignments") {
+<div class="row justify-content-md-center">
+    <div class="col-md-8 col-xl-6 mt-5">
+        <form action="#" method="post">
+            <h5>Test A/B Test Assignment</h5>
+            <small>All fields optional</small>
+            <div class="form-group mt-3">
+                <label class="form-label" for="userId">User Id</label>
+                <input name="userId" class="form-control"
+                       id="userId" value="@r.map(_._1.userId)" />
+            </div>
+            <div class="form-group mt-3">
+                <label class="form-label" for="tags">Tags</label>
+                <input name="tags" class="form-control"
+                       id="tags" value="@r.map(_._1.tags.mkString(", "))" />
+            </div>
+            <div class="form-group mt-3">
+                <label class="form-label" for="userMeta">User Meta</label>
+                <textarea name="meta" class="form-control" id="userMeta" rows="3">@r.map(_._1.meta).map(Json.toJson(_))</textarea>
+            </div>
+
+            <div class="form-group mt-3">
+                <label class="form-label" for="at">As Of</label>
+                <input name="at" class="form-control" id="at" type="text"
+                  value="@r.flatMap(_._1.at).map(formatDate(_))"
+                />
+            </div>
+            <div class="mt-4 text-center">
+                <button type="submit" class="btn btn-primary">Get Assignments</button>
+            </div>
+        </form>
+        @for(result <- r.map(_._2)){
+           <h5 class="mt-5">Assignments</h5>
+            <small>
+                At: @formatDate(result.at)
+            </small>
+            <div>
+                <table class="table">
+                    <thead>
+                      <th>
+                         Feature
+                      </th>
+                      <th>
+                         Group Assigned
+                      </th>
+                      <th>
+                         Group Meta
+                      </th>
+                    </thead>
+                    <tbody>
+                    @for( ga <- result.groups.toList) {
+                        <tr>
+                            <td>@ga._1</td>
+                            <td>@ga._2</td>
+                            <td>@result.metas.get(ga._1)</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+
+        }
+    </div>
+</div>
+
+<script>
+
+
+$(document).ready(function() {
+  var pickerSettings =  {
+    'format': 'Y-m-d H:i:s T'
+  };
+
+  $('#at').datetimepicker(pickerSettings);
+});
+
+</script>
+}

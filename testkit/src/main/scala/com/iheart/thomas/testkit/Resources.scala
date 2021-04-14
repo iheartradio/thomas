@@ -5,17 +5,12 @@ import java.time.Instant
 import cats.effect.{IO, Resource}
 import cats.implicits._
 import com.iheart.thomas.abtest.AbtestAlg
-import com.iheart.thomas.analysis.{Conversions, KPIModelApi}
-import com.iheart.thomas.bandit.bayesian.{
-  BanditSettings,
-  BanditSettingsDAO,
-  ConversionBMABAlg,
-  StateDAO
-}
+import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
 import com.iheart.thomas.{dynamo, mongo}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import com.typesafe.config.ConfigFactory
 import _root_.play.api.libs.json.Json
+import com.iheart.thomas.analysis.ConversionKPIAlg
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.http4s.AuthImp
 import com.iheart.thomas.http4s.auth.AuthenticationAlg
@@ -23,6 +18,8 @@ import com.iheart.thomas.tracking.EventLogger
 import dynamo.DynamoFormats._
 
 import scala.concurrent.duration._
+import dynamo.AnalysisDAOs._
+import dynamo.BanditsDAOs._
 
 object Resources {
 
@@ -41,8 +38,8 @@ object Resources {
           case daos =>
             Resource
               .make(IO.pure(daos)) {
-                case (abtestDAO, featureDAO, kpiDAO) =>
-                  List(abtestDAO, featureDAO, kpiDAO)
+                case (abtestDAO, featureDAO) =>
+                  List(abtestDAO, featureDAO)
                     .traverse(_.removeAll(Json.obj()))
                     .void
               }
@@ -58,18 +55,6 @@ object Resources {
         tables.map(_.map(Seq(_))): _*
       )
 
-  lazy val dynamoDAOS: Resource[
-    IO,
-    (StateDAO[IO, Conversions], BanditSettingsDAO[IO, BanditSettings.Conversion])
-  ] =
-    localDynamoR
-      .map { implicit client =>
-        (
-          dynamo.BanditsDAOs.banditState[IO, Conversions],
-          dynamo.BanditsDAOs.banditSettings[IO, BanditSettings.Conversion]
-        )
-      }
-
   /**
     * An ConversionAPI resource that cleans up after
     */
@@ -78,26 +63,22 @@ object Resources {
       nowF: IO[Instant] = defaultNowF
     ): Resource[
     IO,
-    (ConversionBMABAlg[IO], KPIModelApi[IO], AbtestAlg[IO])
+    (ConversionBMABAlg[IO], AbtestAlg[IO], ConversionKPIAlg[IO])
   ] =
-    (mangoDAOs, dynamoDAOS).tupled
-      .flatMap {
-        case (daos, (sd, ssd)) =>
-          implicit val (abtestDAO, featureDAO, kpiDAO) = daos
-          lazy val refreshPeriod = 0.seconds
-          implicit val isd = sd
-          implicit val issd = ssd
+    (mangoDAOs, localDynamoR).tupled
+      .flatMap { deps =>
+        implicit val ((abtestDAO, featureDAO), dynamoDb) = deps
+        lazy val refreshPeriod = 0.seconds
+        AbtestAlg.defaultResource[IO](refreshPeriod).map { implicit abtestAlg =>
+          implicit val ss = SamplerConfig.default
+          implicit val rng = RNG.default
 
-          AbtestAlg.defaultResource[IO](refreshPeriod).map { implicit abtestAlg =>
-            implicit val ss = SamplerConfig.default
-            implicit val rng = RNG.default
-
-            (
-              implicitly,
-              implicitly,
-              abtestAlg
-            )
-          }
+          (
+            implicitly,
+            abtestAlg,
+            implicitly
+          )
+        }
       }
 
   def authAlg(
@@ -113,7 +94,7 @@ object Resources {
     AbtestAlg[IO]
   ] =
     mangoDAOs.flatMap { daos =>
-      implicit val (abtestDAO, featureDAO, kpiDAO) = daos
+      implicit val (abtestDAO, featureDAO) = daos
       lazy val refreshPeriod = 0.seconds
       AbtestAlg.defaultResource[IO](refreshPeriod)
     }

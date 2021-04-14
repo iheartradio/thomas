@@ -20,7 +20,6 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.play._
 import com.iheart.thomas.bandit.Formats._
 import lihua.mongo.JsonFormats._
-import com.iheart.thomas.analysis.{KPIModel, KPIModelApi}
 import com.iheart.thomas.dynamo.ClientConfig
 import com.typesafe.config.Config
 import _root_.play.api.libs.json._
@@ -34,7 +33,6 @@ import com.iheart.thomas.tracking.EventLogger
 
 class BanditService[F[_]: Async: Timer] private (
     apiAlg: ConversionBMABAlg[F],
-    kpiDistApi: KPIModelApi[F],
     banditUpdater: BanditUpdater[F]
   )(implicit log: EventLogger[F])
     extends Http4sDsl[F] {
@@ -47,9 +45,7 @@ class BanditService[F[_]: Async: Timer] private (
   def routes =
     Router(
       "/bandits" -> HttpRoutes
-        .of[F](managementRoutes orElse updaterRoutes),
-      "/kpiModels" -> HttpRoutes
-        .of[F](kpiModelsRoutes)
+        .of[F](managementRoutes orElse updaterRoutes)
     )
 
   private def updaterRoutes = {
@@ -66,18 +62,6 @@ class BanditService[F[_]: Async: Timer] private (
       banditUpdater
         .pauseResume(true) *>
         Ok("conversions update are paused now")
-
-  }: PartialRoutes
-
-  private def kpiModelsRoutes = {
-    case GET -> Root =>
-      kpiDistApi.getAll
-
-    case GET -> Root / kpiName =>
-      kpiDistApi.get(kpiName)
-
-    case req @ POST -> Root =>
-      req.as[KPIModel].flatMap(kpiDistApi.upsert _)
 
   }: PartialRoutes
 
@@ -174,12 +158,10 @@ object BanditService {
     )(implicit ex: ExecutionContext,
       amazonClient: DynamoDbAsyncClient
     ): Resource[F, BanditService[F]] = {
-    import mongo.extracKPIDistDAO
     ConversionBMABAlgResource[F].evalMap { implicit conversionBMAB =>
       BanditUpdater.create[F](buConfig).map { bu =>
         new BanditService[F](
           conversionBMAB,
-          KPIModelApi.default[F],
           bu
         )
       }

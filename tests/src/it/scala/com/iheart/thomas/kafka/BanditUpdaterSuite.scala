@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 import cats.effect.{ContextShift, IO, Sync, Timer}
 import cats.implicits._
 import com.iheart.thomas.analysis._
+import com.iheart.thomas.analysis.bayesian.models.BetaModel
 import com.iheart.thomas.bandit.{ArmSpec, BanditSpec}
 import com.iheart.thomas.bandit.bayesian.{ArmState, BanditSettings}
 import com.iheart.thomas.stream.ConversionBanditUpdater
@@ -17,7 +18,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.StringSerializer
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
-
+import dynamo.AnalysisDAOs._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
@@ -55,35 +56,37 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
       }
     }
 
-  val kpi = BetaKPIModel(
-    "test kpi",
-    alphaPrior = 1000,
-    betaPrior = 100000
+  val kpi = ConversionKPI(
+    KPIName("test kpi"),
+    "kai",
+    None,
+    BetaModel(alphaPrior = 1000, betaPrior = 100000),
+    None
   )
-
   implicit val logger = EventLogger.noop[IO]
 
   val updaterResource =
     Resources.mangoDAOs.flatMap { implicit daos =>
       Resources.localDynamoR
         .flatMap { implicit dynamoClient =>
-          BanditUpdater.resource[IO, (FeatureName, ArmName, ConversionEvent)](
-            cfg = BanditUpdater.Config(
-              restartOnErrorAfter = None,
-              allowedBanditsStaleness = 100.milliseconds,
-              kafka = KafkaConfig(
-                server,
-                topic,
-                "test-bandits"
-              )
-            ),
-            toEvent
-          )
+          BanditUpdater
+            .resource[IO, (FeatureName, ArmName, ConversionEvent)](
+              cfg = BanditUpdater.Config(
+                restartOnErrorAfter = None,
+                allowedBanditsStaleness = 100.milliseconds,
+                kafka = KafkaConfig(
+                  server,
+                  topic,
+                  "test-bandits"
+                )
+              ),
+              toEvent
+            )
+            .evalTap { _ =>
+              conversionKPIAlg[IO].create(kpi)
+            }
         }
-        .evalTap { _ =>
-          implicit val kpiDAO = daos._3
-          KPIModelApi.default.upsert(kpi)
-        }
+
     }
 
   def spec(

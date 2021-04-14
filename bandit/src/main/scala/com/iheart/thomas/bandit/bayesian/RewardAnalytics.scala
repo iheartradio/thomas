@@ -4,6 +4,7 @@ package bandit.bayesian
 import cats.FlatMap
 import cats.implicits._
 import com.iheart.thomas.analysis._
+import com.iheart.thomas.analysis.bayesian.models.BetaModel
 
 trait RewardAnalytics[F[_], R] {
   def sampleSize(r: R): Long
@@ -12,16 +13,16 @@ trait RewardAnalytics[F[_], R] {
       r: Map[ArmName, R],
       historical: Option[Map[ArmName, R]]
     ): F[Map[ArmName, Probability]]
-  def validateKPI(kpiName: KPIName): F[KPIModel]
+  def validateKPI(kpiName: KPIName): F[Unit]
 
 }
 
 object RewardAnalytics {
   implicit def metricDataConversions[F[_]: FlatMap](
-      implicit kpiAPI: KPIModelApi[F],
-      assessmentAlg: KPIEvaluator[
+      implicit kpiAlg: ConversionKPIAlg[F],
+      evaluator: KPIEvaluator[
         F,
-        BetaKPIModel,
+        BetaModel,
         Conversions
       ]
     ): RewardAnalytics[F, Conversions] =
@@ -33,8 +34,8 @@ object RewardAnalytics {
           r: Map[ArmName, Conversions],
           historical: Option[Map[ArmName, Conversions]]
         ): F[Map[ArmName, Probability]] =
-        kpiAPI
-          .getSpecific[BetaKPIModel](
+        kpiAlg
+          .get(
             kpiName
           )
           .flatMap { kpi =>
@@ -42,11 +43,11 @@ object RewardAnalytics {
               historical
                 .flatMap { le =>
                   le.get(armName)
-                    .map(rs => kpi.updateFrom(rs))
+                    .map(rs => kpi.model.updateFrom(rs))
                 }
-                .getOrElse(kpi)
+                .getOrElse(kpi.model)
 
-            assessmentAlg.evaluate(
+            evaluator.evaluate(
               r.map {
                 case (armName, conversions) =>
                   (armName, (conversions, getPrior(armName)))
@@ -55,8 +56,8 @@ object RewardAnalytics {
 
           }
 
-      def validateKPI(kpiName: KPIName): F[KPIModel] =
-        kpiAPI.getSpecific[BetaKPIModel](kpiName).widen
+      def validateKPI(kpiName: KPIName): F[Unit] =
+        kpiAlg.get(kpiName).void
 
     }
 }

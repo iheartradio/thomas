@@ -18,7 +18,7 @@ object MongoResources extends ConfigResource {
     ): Resource[F, AbtestAlg[F]] = {
 
     import thomas.mongo.idSelector
-    implicit val (abtestDAO, featureDAO, _) = daos
+    implicit val (abtestDAO, featureDAO) = daos
     val refreshPeriod =
       cfg.getDuration("thomas.abtest.get-groups.ttl").toScala
     AbtestAlg.defaultResource[F](refreshPeriod)

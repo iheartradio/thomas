@@ -65,7 +65,7 @@ object TestUtils {
     offsetDateTime.map(fromOffsetDateTimeToInstant)
 
   def withAlg[A](f: AbtestAlg[F] => F[A]): F[A] =
-    testkit.Resources.apis.map(_._3).use(f)
+    testkit.Resources.apis.map(_._2).use(f)
 
   def q(
       userId: UserId,

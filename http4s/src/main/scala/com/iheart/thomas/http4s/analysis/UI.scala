@@ -4,7 +4,7 @@ package analysis
 
 import cats.effect.Async
 import com.iheart.thomas.analysis.{
-  BetaModel,
+  bayesian,
   ConversionKPI,
   ConversionKPIAlg,
   ConversionMessageQuery,
@@ -12,6 +12,7 @@ import com.iheart.thomas.analysis.{
   KPIName,
   MessageQuery
 }
+import bayesian.models._
 import com.iheart.thomas.http4s.{AuthImp, ReverseRoutes}
 import com.iheart.thomas.http4s.auth.{AuthedEndpointsUtils, AuthenticationAlg}
 import org.http4s.dsl.Http4sDsl
