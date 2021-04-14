@@ -1,21 +1,22 @@
-package com.iheart.thomas
-package analysis
-
-import java.time.Instant
-import java.time.temporal.ChronoUnit
+package com.iheart.thomas.analysis.bayesian.models.fit
 
 import cats.implicits._
+import com.iheart.thomas.GroupName
 import com.iheart.thomas.abtest.model.Abtest
 import com.iheart.thomas.analysis.DistributionSpec.{Normal, Uniform}
+import com.iheart.thomas.analysis.`package`.Measurements
 import com.iheart.thomas.analysis.implicits._
-import com.stripe.rainier.core.{LogNormal, Model}
+import com.iheart.thomas.analysis.{KPIName, Measurable}
+import com.stripe.rainier.core.LogNormal
 import com.stripe.rainier.sampler._
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import scala.util.Random
 
-class LogNormalKPIModelSuite extends AnyFunSuiteLike with Matchers {
+class LogNormalFitSuite extends AnyFunSuiteLike with Matchers {
   implicit val rng = RNG.default
   implicit val sampler = SamplerConfig.default //.copy(iterations = 10000)
 
@@ -23,17 +24,17 @@ class LogNormalKPIModelSuite extends AnyFunSuiteLike with Matchers {
   def mock(
       abTestData: Map[GroupName, Measurements] = Map(),
       historical: Measurements = Nil
-    ): Measurable[F, Measurements, LogNormalKPIModel] =
-    new Measurable[F, Measurements, LogNormalKPIModel] {
+    ): Measurable[F, Measurements, LogNormalFit] =
+    new Measurable[F, Measurements, LogNormalFit] {
       def measureAbtest(
-          kmodel: LogNormalKPIModel,
+          kmodel: LogNormalFit,
           abtest: Abtest,
           start: Option[Instant] = None,
           end: Option[Instant] = None
         ): F[Map[GroupName, Measurements]] =
         abTestData.asRight
       def measureHistory(
-          k: LogNormalKPIModel,
+          k: LogNormalFit,
           start: Instant,
           end: Instant
         ): F[Measurements] = historical.asRight
@@ -63,8 +64,7 @@ class LogNormalKPIModelSuite extends AnyFunSuiteLike with Matchers {
 
     implicit val measurable = mock(data)
 
-    val resultEither = LogNormalKPIModel(
-      KPIName("test"),
+    val resultEither = LogNormalFit(
       Normal(location, 0.3),
       Uniform(0, scale * 3)
     ).assess(mockAb, "B")
@@ -97,8 +97,7 @@ class LogNormalKPIModelSuite extends AnyFunSuiteLike with Matchers {
       )
     )
 
-    val resultEither = LogNormalKPIModel(
-      KPIName("test"),
+    val resultEither = LogNormalFit(
       Normal(0.5, 0.1),
       Uniform(0, 5)
     ).assess(mockAb, "A")
@@ -113,32 +112,6 @@ class LogNormalKPIModelSuite extends AnyFunSuiteLike with Matchers {
 
   }
 
-//  test("Diagnostic trace") {
-//
-//    val n = 1000
-//    implicit val measurable = mock(
-//      Map(
-//        "A" -> Random.shuffle(Model.sample(Gamma(0.5, 3).latent)).take(n),
-//        "B" -> Random.shuffle(Model.sample(Gamma(0.55, 3).latent)).take(n)
-//      )
-//    )
-//    val result = LogNormalKPIModel(
-//      KPIName("test"),
-//      Normal(0.5, 0.1),
-//      Normal(3, 0.1)
-//    ).assess(mockAb, "A").right.get
-//
-//    val path = "plots/diagnosticTraceTest.png"
-//    new File(path).delete()
-//
-//    new File("plots").mkdir()
-//    result("B").trace[IO](path).unsafeRunSync()
-//
-//    new File(path).exists() shouldBe true
-//
-//    new File(path).delete()
-//  }
-
   test("updated with new prior") {
 
     implicit val measurable =
@@ -147,7 +120,7 @@ class LogNormalKPIModelSuite extends AnyFunSuiteLike with Matchers {
       )
 
     val resultEither =
-      LogNormalKPIModel(KPIName("test"), Normal(2, 12), Uniform(3, 5))
+      LogNormalFit(Normal(2, 12), Uniform(3, 5))
         .updateFromData[F](
           Instant.now.minus(1, ChronoUnit.DAYS),
           Instant.now

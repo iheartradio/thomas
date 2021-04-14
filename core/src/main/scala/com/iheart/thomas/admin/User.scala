@@ -4,10 +4,13 @@ import cats.Eq
 import com.iheart.thomas.Username
 import play.api.libs.json.{Format, Json}
 
+import java.time.Instant
+
 final case class User(
     username: Username,
     hash: String,
-    role: Role) {}
+    role: Role,
+    resetToken: Option[PassResetToken] = None) {}
 
 final case class Role(name: String)
 
@@ -42,4 +45,13 @@ trait UserDAO[F[_]] {
   def all: F[Vector[User]]
 
   def get(username: String): F[User]
+}
+
+case class PassResetToken(
+    value: String,
+    expires: Instant)
+
+object PassResetToken {
+  implicit val passResetTokenFmt: Format[PassResetToken] =
+    Json.format[PassResetToken]
 }

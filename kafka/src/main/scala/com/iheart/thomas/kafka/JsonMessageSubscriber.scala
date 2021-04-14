@@ -6,7 +6,7 @@ import com.iheart.thomas.stream.MessageSubscriber
 import com.typesafe.config.Config
 import fs2.Stream
 import fs2.kafka.{AutoOffsetReset, ConsumerSettings}
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.typelevel.jawn.ast
 import org.typelevel.jawn.ast.JValue
 

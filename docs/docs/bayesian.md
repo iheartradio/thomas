@@ -81,8 +81,8 @@ val httpServiceUrl = new HttpServiceUrlsPlay("http://localhost/internal")
 implicit val conextShift = IO.contextShift(global)
 
 Http4SAbtestClient.resource[IO](httpServiceUrl, global).use { implicit client =>
-  implicit val measurable: Measurable[IO, Measurements, LogNormalKPIModel] = null  //user needs to implement a Measurable, null used here so that code compiles 
-  val analysisAPI: AnalysisAPI[IO, LogNormalKPIModel] = implicitly
+  implicit val measurable: Measurable[IO, Measurements, LogNormalFit] = null  //user needs to implement a Measurable, null used here so that code compiles 
+  val analysisAPI: AnalysisAPI[IO, LogNormalFit] = implicitly
   //do something with analysisAPI
   IO(println("done")) 
 }.unsafeRunSync

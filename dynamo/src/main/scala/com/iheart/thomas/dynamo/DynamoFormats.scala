@@ -1,8 +1,9 @@
 package com.iheart.thomas
 package dynamo
 
-import com.iheart.thomas.admin.{AuthRecord, Role, User}
+import com.iheart.thomas.admin.{AuthRecord, PassResetToken, Role, User}
 import com.iheart.thomas.analysis._
+import com.iheart.thomas.analysis.bayesian.models._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState
 import com.iheart.thomas.bandit.bayesian._
 import com.iheart.thomas.stream._
@@ -58,6 +59,9 @@ object DynamoFormats {
 
   implicit val roleFormat: DynamoFormat[Role] =
     deriveDynamoFormat[Role]
+
+  implicit val passResetTokenFormat: DynamoFormat[PassResetToken] =
+    deriveDynamoFormat[PassResetToken]
 
   implicit val userFormat: DynamoFormat[User] =
     deriveDynamoFormat[User]

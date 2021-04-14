@@ -1,12 +1,11 @@
 package com.iheart.thomas.testkit
 
 import cats.effect.{ExitCode, IO, IOApp}
-import com.iheart.thomas.GroupName
+import com.iheart.thomas.{FeatureName, GroupName}
 import com.iheart.thomas.kafka.KafkaConfig
 import com.typesafe.config.ConfigFactory
 import fs2.kafka.{KafkaProducer, ProducerRecord, ProducerRecords, ProducerSettings}
 import fs2.Stream
-
 import concurrent.duration._
 import scala.util.{Random, Try}
 
@@ -44,42 +43,48 @@ object TestMessageKafkaProducer extends IOApp {
 
   }
 
-  def initMessage(
-      gn1: GroupName,
-      gn2: GroupName
-    ) =
+  def message(
+      eventString: String,
+      groups: Seq[(FeatureName, GroupName)]
+    ) = {
+    val groupValues = groups
+      .map {
+        case (fn, gn) =>
+          s""" "$fn" : "$gn" """
+      }
+      .mkString(""",
+          | """.stripMargin)
+
     s"""
       |{ 
-      |   "page_shown": "front_page",
+      |   $eventString,
       |   
       |   "treatment-groups": {
-      |      "A_Feature" : "$gn1",
-      |      "feature2" : "$gn2"    
+      |      $groupValues 
       |    }
       |     
       |}
       |""".stripMargin
+  }
 
-  def clickMessage(
-      gn1: GroupName,
-      gn2: GroupName
-    ) =
-    s"""
-      |{ 
-      |   "click": "front_page_recommendation",
-      |   "treatment-groups": {
-      |      "A_Feature" : "$gn1",
-      |      "feature2" : "$gn2"    
-      |    }
-      |}
-      |""".stripMargin
+  val initEvent =
+    """ "page_shown": "front_page" """
 
-  val messages =
-    Random.shuffle(
-      List.fill(10)(initMessage("A", "B")) ++
-        List.fill(13)(initMessage("B", "A")) ++
-        List.fill(4)(clickMessage("A", "B")) ++
-        List.fill(2)(clickMessage("B", "A"))
-    )
+  val clickEvent =
+    """ "click": "front_page_recommendation" """
 
+  val groups = List("A", "B", "C", "D", "E", "F", "G", "H", "J")
+  val features = List("A_Feature", "Another_Feature", "Third_Feature")
+
+  def randomFG(n: Int) =
+    List.fill(n)((Random.shuffle(features).head, Random.shuffle(groups).head))
+
+  def randomMessage(
+      n: Int,
+      event: String
+    ): List[String] =
+    List.fill(n)(message(event, randomFG(Random.nextInt(5) + 1)))
+
+  val messages: List[String] =
+    randomMessage(100, initEvent) ++ randomMessage(40, clickEvent)
 }

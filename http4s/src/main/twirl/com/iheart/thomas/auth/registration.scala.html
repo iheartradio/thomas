@@ -23,23 +23,23 @@
         }
         <form action="" method="post">
           <div class="form-group">
-            <label for="username">Username</label>
+            <label class="form-label" for="username">Username</label>
             <input name="username" class="form-control" required id="username" type="text"
                    @username.map(u => s"value=$u")
             />
           </div>
 
           <div class="form-group">
-            <label for="password">Password</label>
+            <label class="form-label" for="password">Password</label>
             <input name="password" class="form-control"  required id="password" type="password"
             />
           </div>
           <div class="form-group">
-            <label for="cfmPassword">Confirm Password</label>
+            <label class="form-label" for="cfmPassword">Confirm Password</label>
             <input name="cfmPassword" class="form-control"  required id="cfmPassword" type="password"
             />
           </div>
-          <div class="row float-right">
+          <div class="text-end mt-2">
             <button type="submit" class="btn btn-primary" >Register</button>
           </div>
         </form>

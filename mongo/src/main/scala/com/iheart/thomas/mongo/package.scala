@@ -16,7 +16,6 @@ import lihua.mongo._
 import scala.concurrent.ExecutionContext
 import cats.implicits._
 import cats.tagless.FunctorK
-import com.iheart.thomas.analysis.KPIModel
 import com.iheart.thomas.abtest.model.{Abtest, Feature}
 import lihua.mongo.DBError.UpdatedCountErrorDetail
 import _root_.play.api.libs.json.JsObject
@@ -26,11 +25,8 @@ import lihua.mongo.AsyncEntityDAO.Result
 package object mongo {
   type DAOs[F[_]] = (
       EntityDAO[F, Abtest, JsObject],
-      EntityDAO[F, Feature, JsObject],
-      EntityDAO[F, KPIModel, JsObject]
+      EntityDAO[F, Feature, JsObject]
   )
-
-  implicit def extracKPIDistDAO[F[_]](implicit daos: DAOs[F]) = daos._3
 
   private def to[
       F[_]: MonadError[*[_], Throwable]
@@ -109,8 +105,7 @@ package object mongo {
     ): F[DAOs[F]] = {
     (
       convert((new AbtestDAOFactory[F]).create),
-      convert((new FeatureDAOFactory[F]).create),
-      convert((new KPIModelDAOFactory[F]).create)
+      convert((new FeatureDAOFactory[F]).create)
     ).tupled
   }
 
@@ -141,8 +136,7 @@ package object mongo {
       .evalMap { implicit m =>
         (
           convertF((new AbtestDAOFactory[F]).create),
-          convertF((new FeatureDAOFactory[F]).create),
-          convertF((new KPIModelDAOFactory[F]).create)
+          convertF((new FeatureDAOFactory[F]).create)
         ).tupled
       }
 }

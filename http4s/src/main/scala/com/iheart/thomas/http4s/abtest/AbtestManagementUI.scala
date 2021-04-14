@@ -24,6 +24,7 @@ import org.http4s.{FormDataDecoder, QueryParamDecoder}
 import org.http4s.FormDataDecoder._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.dsl.impl.{
+  FlagQueryParamMatcher,
   OptionalQueryParamDecoderMatcher,
   QueryParamDecoderMatcher
 }
@@ -66,7 +67,7 @@ class AbtestManagementUI[F[_]: Async: Timer](
   def redirectToTest(
       test: Entity[Abtest]
     ) =
-    redirectTo(testUrl(test))
+    SeeOther(testUrl(test).location)
 
   val routes = {
 
@@ -88,7 +89,10 @@ class AbtestManagementUI[F[_]: Async: Timer](
             .groupBy(_.data.feature)
             .map {
               case (fn, tests) =>
-                (features.find(_.name == fn).get, tests.sortBy(_.data.start).toList)
+                (
+                  features.find(_.name == fn).get,
+                  tests.sortBy(_.data.start).toList.reverse
+                )
             }
             .toList
 
@@ -97,9 +101,9 @@ class AbtestManagementUI[F[_]: Async: Timer](
             testData.sortBy(_._1.name.toLowerCase)
           case OrderBy.Recent =>
             testData
-              .sortBy(_._2.last.data.start)
+              .sortBy(_._2.head.data.start)
               .reverse
-              .map(_.map(_.sortBy(_.data.start).reverse))
+
         }
 
         Ok(index(sorted, features, filters)(UIEnv(u)))
@@ -154,9 +158,17 @@ class AbtestManagementUI[F[_]: Async: Timer](
 
     roleBasedService(admin.Authorization.testManagerRoles) {
 
-      case GET -> Root / "tests" / "new" :? featureReq(fn) asAuthed u =>
+      case GET -> Root / "tests" / "new" :? featureReq(fn) +& scratchConfirmed(
+            scratch
+          ) asAuthed u =>
         u.canAddTest(fn) *>
-          Ok(newTest(fn, None)(UIEnv(u)))
+          (if (scratch)
+             none[Entity[Abtest]].pure[F]
+           else
+             alg.getLatestTestByFeature(fn))
+            .flatMap { followUpCandidate =>
+              Ok(newTest(fn, None, None, followUpCandidate)(UIEnv(u)))
+            }
 
       case GET -> Root / "tests" / testId / "new_revision" asAuthed u =>
         get(testId).flatMap(test =>
@@ -276,8 +288,8 @@ class AbtestManagementUI[F[_]: Async: Timer](
                 alg
                   .create(spec, false)
                   .flatMap(test =>
-                    redirectTo(
-                      testUrl(test)
+                    SeeOther(
+                      testUrl(test).location
                     )
                   )
                   .handleErrorWith { e =>
@@ -303,6 +315,16 @@ class AbtestManagementUI[F[_]: Async: Timer](
 
       case GET -> Root / "features" / feature asAuthed u =>
         alg.getFeature(feature).flatMap(showFeature(u, _))
+
+      case GET -> Root / "assignments" asAuthed u =>
+        Ok(assignments(None)(UIEnv(u)))
+
+      case req @ POST -> Root / "assignments" asAuthed u =>
+        for {
+          query <- req.request.as[UserGroupQuery]
+          result <- alg.getGroupsWithMeta(query)
+          r <- Ok(assignments(Some((query, result)))(UIEnv(u)))
+        } yield r
 
       case GET -> Root / "tests" / testId asAuthed u =>
         for {
@@ -394,6 +416,8 @@ object AbtestManagementUI {
 
     object feature extends OptionalQueryParamDecoderMatcher[FeatureName]("feature")
     object featureReq extends QueryParamDecoderMatcher[FeatureName]("feature")
+    object scratchConfirmed extends FlagQueryParamMatcher("scratch")
+
     object orderBy extends OptionalQueryParamDecoderMatcher[OrderBy]("orderBy")
 
     implicit val userMetaCriteriaQueryParamDecoder
@@ -460,6 +484,16 @@ object AbtestManagementUI {
       }
     }
 
+    implicit val userGroupQueryFormDecoder: FormDataDecoder[UserGroupQuery] = {
+      implicit val mapQPD = mapQueryParamDecoder
+      (
+        fieldOptional[UserId]("userId"),
+        fieldOptional[OffsetDateTime]("at"),
+        tags("tags"),
+        fieldEither[Map[String, String]]("meta").default(Map.empty)
+      ).mapN(UserGroupQuery(_, _, _, _)).sanitized
+    }
+
     implicit val abtestSpecFormDecoder: FormDataDecoder[SpecForm] =
       (
         field[TestName]("name"),
@@ -474,7 +508,7 @@ object AbtestManagementUI {
       ).mapN(SpecForm.apply).sanitized
 
     implicit val FeatureFormDecoder: FormDataDecoder[Feature] = {
-      implicit val mapQPD = jsonEntityQueryParamDecoder[Map[String, String]]
+      implicit val mapQPD = mapQueryParamDecoder
 
       (
         field[FeatureName]("name"),

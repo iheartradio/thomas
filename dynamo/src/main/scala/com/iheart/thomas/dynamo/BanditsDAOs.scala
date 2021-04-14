@@ -36,7 +36,7 @@ object BanditsDAOs extends ScanamoManagement {
     ): F[Unit] =
     ensureTables(tables, readCapacity, writeCapacity)
 
-  def banditSettings[F[_]: Async: Timer, S](
+  implicit def banditSettings[F[_]: Async: Timer, S](
       implicit dynamoClient: DynamoDbAsyncClient,
       bsformat: DynamoFormat[BanditSettings[S]]
     ): BanditSettingsDAO[F, S] =
@@ -46,7 +46,7 @@ object BanditsDAOs extends ScanamoManagement {
       dynamoClient
     ) with BanditSettingsDAO[F, S]
 
-  def banditState[F[_]: Async, R](
+  implicit def banditState[F[_]: Async, R](
       implicit dynamoClient: DynamoDbAsyncClient,
       bsformat: DynamoFormat[BanditState[R]],
       armformat: DynamoFormat[ArmState[R]],

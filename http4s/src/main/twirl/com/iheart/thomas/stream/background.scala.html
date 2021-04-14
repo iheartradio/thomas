@@ -7,7 +7,7 @@
 @(jobs: Vector[Job])(implicit env: UIEnv)
 
 
-@topNav("Background Processes") {
+@topNav("Background Processes", "Background") {
 <div class="row mt-5">
     <span class="h4">Background Processes</span>
 </div>
@@ -15,12 +15,12 @@
     <div class="list-group w-100">
         @for(job <- jobs) {
 
-        <div class="list-group-item">
+        <div class="list-group-item p-3">
             <div class="row">
-                <div class="col-7">
+                <div class="col-7 me-auto">
                     <div>
 
-                        <span class="mb-1 h5 font-weight-light text-success">@job.key</span>
+                        <span class="mb-1 h5 fw-light text-success">@job.key</span>
                         @jobStatusBadge(job.started)
                     </div>
                     <div class="mt-1">
@@ -28,13 +28,13 @@
                     </div>
                 </div>
 
-                <div class="col-4 text-sm-right">
+                <div class="col-auto">
 
                    @for(checkedOut <- job.checkedOut) {
                     <div>
-                    <small><span class="font-weight-light ml-3">
+                    <small><span class="fw-light ml-3">
                     Last Check: </span>
-                        <span class="font-weight-heavy">
+                        <span class="fw-heavy">
                            @formatDate(checkedOut)
                         </span>
                     </small>
@@ -43,11 +43,11 @@
 
 
                 </div>
-                <div class="col-1">
+                <div class="col-auto">
                     <a href="./background/@job.key/stop"
                        role="button" class="btn ml-2"
                        onclick="return confirm('Please confirm you want to stop @job.key?')">
-                        <i class="far fa-stop-circle" title="stop"></i>
+                        <i class="bi bi-stop-circle" title="stop"></i>
                     </a>
                 </div>
 

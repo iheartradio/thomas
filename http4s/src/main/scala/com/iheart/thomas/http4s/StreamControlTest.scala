@@ -38,9 +38,9 @@ object StreamControlTest extends IOApp with Http4sDsl[IO] {
     }
   }
 
-  def routes(signallingRef: SignallingRef[IO, Boolean]) = HttpRoutes.of[IO] {
-    case GET -> Root / "start" => signallingRef.set(false) >> Ok("started")
-    case GET -> Root / "stop"  => signallingRef.set(true) >> Ok("stopped")
-  }
-
+  def routes(signallingRef: SignallingRef[IO, Boolean]) =
+    HttpRoutes.of[IO] {
+      case GET -> Root / "start" => signallingRef.set(false) >> Ok("started")
+      case GET -> Root / "stop"  => signallingRef.set(true) >> Ok("stopped")
+    }
 }

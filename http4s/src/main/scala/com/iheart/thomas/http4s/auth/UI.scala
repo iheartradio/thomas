@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package http4s
 package auth
-import cats.effect.Async
+import cats.effect.{Async, Timer}
 import cats.implicits._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.admin.Role
@@ -10,7 +10,10 @@ import com.iheart.thomas.html.redirect
 import com.iheart.thomas.http4s.auth.UI.QueryParamMatchers._
 import com.iheart.thomas.http4s.auth.UI.ValidationErrors._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
+import org.http4s.dsl.impl.{
+  OptionalQueryParamDecoderMatcher,
+  QueryParamDecoderMatcher
+}
 import org.http4s.twirl._
 import org.http4s.{FormDataDecoder, HttpRoutes, ParseFailure, Uri, UrlForm}
 import FormDataDecoder._
@@ -20,7 +23,7 @@ import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 
 import scala.util.control.NoStackTrace
 
-class UI[F[_]: Async, Auth](
+class UI[F[_]: Async: Timer, Auth](
     initialAdminUsername: Option[String],
     initialRole: Role
   )(implicit alg: AuthenticationAlg[F, Auth],
@@ -34,19 +37,33 @@ class UI[F[_]: Async, Auth](
   val authedService = roleBasedService(Seq(Role.Admin)) {
     case GET -> Root / "users" asAuthed u =>
       alg.allUsers.flatMap { allUsers =>
-        Ok(html.users(allUsers)(UIEnv(u)))
+        Ok(html.users(allUsers, None)(UIEnv(u)))
       }
     case req @ POST -> Root / "users" / username / "role" asAuthed _ =>
       for {
         role <- req.request.as[Role]
-        _ <- alg.update(username, None, Some(role))
-        r <- redirectTo(reverseRoutes.users)
+        _ <- alg.updateRole(username, Some(role))
+        r <- SeeOther(reverseRoutes.users.location)
+      } yield r
+
+    case req @ GET -> Root / "users" / username / "reset-pass-link" asAuthed (u) =>
+      for {
+        token <- alg.generateResetToken(username)
+        r <- Ok(
+          html.resetPassLink(
+            username,
+            req.request.uri
+              .withPath(s"${reverseRoutes.users}/$username/reset-pass")
+              .withQueryParam("token", token.value)
+              .toString
+          )(UIEnv(u))
+        )
       } yield r
 
   } <+> roleBasedService(Roles.values) {
     case req @ GET -> Root / "logout" asAuthed _ =>
       alg.logout(req.authenticator) *>
-        redirectTo(reverseRoutes.login)
+        SeeOther(reverseRoutes.login.location)
           .map(_.removeCookie(AuthDependencies.tokenCookieName))
   }
 
@@ -54,7 +71,21 @@ class UI[F[_]: Async, Auth](
     case GET -> Root / "login" =>
       Ok(html.login())
 
-    case req @ POST -> Root / "login" :? redirectTo(to) =>
+    case GET -> Root / "users" / username / "reset-pass" :? tokenP(token) =>
+      Ok(html.resetPass(username))
+
+    case req @ POST -> Root / "users" / username / "reset-pass" :? tokenP(token) =>
+      req.as[UrlForm].flatMap { uf =>
+        val passwordO = uf.getFirst("password")
+        if (passwordO != uf.getFirst("password2"))
+          BadRequest(html.resetPass(username, Some("Passwords don't match.")))
+        else
+          alg.resetPass(passwordO.getOrElse(""), token, username) *> Ok(
+            redirect(reverseRoutes.login, "Password reset successfully")
+          )
+      }
+
+    case req @ POST -> Root / "login" :? redirectToP(to) =>
       (for {
         form <- req.as[UrlForm]
         username <- form.getFirst("username").liftTo[F](MissingUsername)
@@ -147,13 +178,14 @@ object UI extends {
     )
 
   object QueryParamMatchers {
-    object redirectTo extends OptionalQueryParamDecoderMatcher[Uri]("redirectTo")
+    object redirectToP extends OptionalQueryParamDecoderMatcher[Uri]("redirectTo")
+    object tokenP extends QueryParamDecoderMatcher[String]("token")
   }
 
   /**
     * @return
     */
-  def default[F[_]: Async](
+  def default[F[_]: Async: Timer](
       authDeps: AuthDependencies[AuthImp],
       initialAdminUsername: Option[String],
       initialRole: Role

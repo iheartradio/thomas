@@ -2,7 +2,8 @@ package com.iheart.thomas.http4s.analysis
 
 import cats.data.Chain
 import cats.data.Validated.Valid
-import com.iheart.thomas.analysis.{BetaModel, ConversionKPI, KPIName}
+import com.iheart.thomas.analysis.bayesian.models.BetaModel
+import com.iheart.thomas.analysis.{ConversionKPI, KPIName}
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 

@@ -4,7 +4,7 @@ import cats.Applicative
 import cats.effect.Sync
 
 import scala.annotation.implicitNotFound
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 @implicitNotFound(
   "Logger for tracking. Check `com.iheart.thomas.tracking.EventLogger` for options"
 )

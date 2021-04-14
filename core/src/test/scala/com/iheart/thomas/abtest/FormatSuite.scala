@@ -48,6 +48,11 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
       |     "device" : {
       |       "%in": ["iphone","ipad"]
       |     },
+      |     "%not": { 
+      |         "description" : {
+      |           "%regex" : "shabby"
+      |         }
+      |     },
       |     "%or": [
       |       { "city": "LA" },
       |       { "city": "NY" }
@@ -76,6 +81,9 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
   test("reads userMetaCriteria") {
     userMetaCriteria.criteria should contain(ExactMatch("sex", "female"))
     userMetaCriteria.criteria should contain(RegexMatch("description", "shinny"))
+    userMetaCriteria.criteria should contain(
+      Not(RegexMatch("description", "shabby"))
+    )
     userMetaCriteria.criteria should contain(Greater("age", 32d))
     userMetaCriteria.criteria should contain(
       or(ExactMatch("city", "LA"), ExactMatch("city", "NY"))

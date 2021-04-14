@@ -6,8 +6,8 @@ import cats.effect.{ExitCode, IO, IOApp, Resource}
 import java.time.OffsetDateTime
 import com.iheart.thomas.abtest.model._
 import com.iheart.thomas.admin.Role
+import com.iheart.thomas.analysis.bayesian.models._
 import com.iheart.thomas.analysis.{
-  BetaModel,
   ConversionKPI,
   ConversionMessageQuery,
   Criteria,
@@ -44,13 +44,12 @@ object Factory extends IOApp {
       alternativeIdName = alternativeIdName,
       userMetaCriteria = userMetaCriteria,
       segmentRanges = segRanges,
-      requiredTags = requiredTags,
-      groupMetas = Map()
+      requiredTags = requiredTags
     )
 
   def insertDevelopmentData: IO[Unit] = {
     LocalDynamo
-      .client[IO]
+      .client[IO]()
       .flatMap { implicit l =>
         implicit val ex = executionContext
         for {
@@ -59,7 +58,7 @@ object Factory extends IOApp {
           )
           abtestAlg <- MongoResources.abtestAlg[IO](None)
           authAlg <- Resources.authAlg
-        } yield (abtestAlg, authAlg, AnalysisDAOs.conversionKPIDAO[IO])
+        } yield (abtestAlg, authAlg, AnalysisDAOs.conversionKPIAlg[IO])
       }
       .use {
         case (abtestAlg, authAlg, cKpiAlg) =>

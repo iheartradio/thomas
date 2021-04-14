@@ -12,13 +12,13 @@ runningJobO: Option[JobInfo[UpdateKPIPrior]],
 successMsg: Option[String] = None
 )(implicit env: UIEnv)
 
-@topNav(s"Editing Conversion KPI ${kpi.name}") {
+@topNav(s"Editing Conversion KPI ${kpi.name}", "Analysis") {
 
 <form action="../conversionKPIs/@kpi.name" method="post">
 
     @conversionKPIForm(Some(kpi), successMsg, false)
 
-    <div class="row d-flex flex-row-reverse mt-5">
+    <div class="row text-end mt-5">
         <div class="mr-5">
             <button type="submit" class="btn btn-primary">
                 Update
@@ -41,7 +41,7 @@ successMsg: Option[String] = None
 
                 <form action="../conversionKPIs/@kpi.name/update-prior" method="post">
                     <div class="form-group">
-                        <label for="update-until">Collect data until</label>
+                        <label class="form-label" for="update-until">Collect data until</label>
                         <input name="until"
                                required
                                class="form-control"
@@ -49,7 +49,7 @@ successMsg: Option[String] = None
                                type="text"
                         />
                     </div>
-                    <div class="row d-flex flex-row-reverse mt-5">
+                    <div class="row text-end mt-5">
                         <div class="mr-4">
                             <button type="submit" class="btn btn-primary">
                                 Schedule Prior Update
@@ -59,7 +59,7 @@ successMsg: Option[String] = None
                 </form>
                 } else {
                     @for(job <- runningJobO) {
-                        <span class="h5 font-weight-light text-success">
+                        <span class="h5 fw-light text-success">
                           Updating using ongoing data until @dateTimeMid(job.spec.until)
                         </span>
                         @jobStatusBadge(job.started)

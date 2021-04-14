@@ -6,6 +6,7 @@ import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 
 case class ReverseRoutes(rootPath: String) {
   val tests = s"$rootPath/tests"
+  val assignments = s"$rootPath/assignments"
   val home = tests
   val features = s"$rootPath/features"
   def login(redirectTo: String): String = s"$login?redirectTo=$redirectTo"

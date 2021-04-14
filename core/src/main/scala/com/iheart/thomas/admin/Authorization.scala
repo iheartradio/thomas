@@ -21,6 +21,7 @@ object Authorization {
             atLeast(Tester)
         case ManageUsers      => user.isAdmin
         case ManageBackground => backgroundManagerRoles.contains(user.role)
+        case ManageAnalysis   => analysisManagerRoles.contains(user.role)
       }
 
     def managing(features: Seq[Feature]): Seq[Feature] =
@@ -41,6 +42,7 @@ object Authorization {
 
   case object ManageUsers extends Permission
   case object ManageBackground extends Permission
+  case object ManageAnalysis extends Permission
   case object CreateNewFeature extends Permission
 
   case class ManageFeature(feature: Feature) extends Permission
