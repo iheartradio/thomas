@@ -13,7 +13,7 @@ val gh = GitHubSettings(
 )
 
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
-val reactiveMongoVer = "1.0.0"
+val reactiveMongoVer = "1.0.3"
 // format: off
 lazy val libs = {
   org.typelevel.libraries
@@ -213,8 +213,8 @@ lazy val lihuaMongo = project
       "tsec-cipher-jca"
     ),
     libraryDependencies ++= Seq(
-      "com.iheart" %% "ficus" % "1.5.0",
-      "org.log4s" %% "log4s" % "1.8.2"
+      "com.iheart" %% "ficus" % "1.4.7",
+      "org.log4s" %% "log4s" % "1.9.0"
     ),
     scalacOptions += "-deprecation:false" //disabled due to the deprecation of reactivemongo-play-json while the new api isn't stable enough
   )
