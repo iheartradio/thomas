@@ -2,6 +2,7 @@ package com.iheart.thomas.analysis
 import MessageQuery._
 import cats.{FlatMap, MonadThrow, UnorderedFoldable}
 import cats.implicits._
+import bayesian.models.BetaModel
 
 import scala.util.control.NoStackTrace
 import scala.util.matching.Regex
@@ -12,25 +13,6 @@ case class ConversionKPI(
     description: Option[String],
     model: BetaModel,
     messageQuery: Option[ConversionMessageQuery])
-
-case class BetaModel(
-    alphaPrior: Double,
-    betaPrior: Double) {
-  def updateFrom(conversions: Conversions): BetaModel =
-    copy(
-      alphaPrior = conversions.converted + 1d,
-      betaPrior = conversions.total - conversions.converted + 1d
-    )
-
-  def accumulativeUpdate(
-      c: Conversions
-    ): BetaModel = {
-    copy(
-      alphaPrior = alphaPrior + c.converted.toDouble,
-      betaPrior = betaPrior + c.total.toDouble - c.converted.toDouble
-    )
-  }
-}
 
 case class ConversionMessageQuery(
     initMessage: MessageQuery,

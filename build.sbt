@@ -64,6 +64,20 @@ addCommandAlias(
   "quickValidate",
   s";thomas/test;thomas/IntegrationTest/compile"
 )
+addCommandAlias(
+  "it",
+  s";thomas/test;tests/IntegrationTest/test"
+)
+
+addCommandAlias(
+  "switchToIT",
+  s";http4sExample/dependencyServicesDown;tests/dependencyServicesUp;"
+)
+
+addCommandAlias(
+  "switchToDev",
+  s";tests/dependencyServicesDown;http4sExample/dependencyServicesUp;"
+)
 addCommandAlias("it", s"tests/IntegrationTest/test")
 
 addCommandAlias(

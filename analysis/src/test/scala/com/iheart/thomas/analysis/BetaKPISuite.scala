@@ -1,5 +1,7 @@
 package com.iheart.thomas.analysis
 
+import bayesian.models._
+
 import java.time.Instant
 
 import com.iheart.thomas.GroupName

@@ -3,6 +3,7 @@ package dynamo
 
 import com.iheart.thomas.admin.{AuthRecord, PassResetToken, Role, User}
 import com.iheart.thomas.analysis._
+import com.iheart.thomas.analysis.bayesian.models._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState
 import com.iheart.thomas.bandit.bayesian._
 import com.iheart.thomas.stream._

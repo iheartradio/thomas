@@ -2,6 +2,7 @@ package com.iheart.thomas.analysis
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
+import com.iheart.thomas.analysis.bayesian.models.BetaModel
 import com.iheart.thomas.dynamo.AnalysisDAOs
 import com.iheart.thomas.testkit.Resources.localDynamoR
 import org.scalatest.matchers.should.Matchers

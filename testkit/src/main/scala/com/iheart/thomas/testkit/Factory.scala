@@ -6,8 +6,8 @@ import cats.effect.{ExitCode, IO, IOApp, Resource}
 import java.time.OffsetDateTime
 import com.iheart.thomas.abtest.model._
 import com.iheart.thomas.admin.Role
+import com.iheart.thomas.analysis.bayesian.models._
 import com.iheart.thomas.analysis.{
-  BetaModel,
   ConversionKPI,
   ConversionMessageQuery,
   Criteria,
