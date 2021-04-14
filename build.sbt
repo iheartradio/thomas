@@ -30,7 +30,7 @@ lazy val libs = {
     .addModule("http4s", "http4s-twirl")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .add(   name = "jawn",                  version = "1.0.0",  org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
-    .addJVM(name = "log4cats",              version = "1.2.0",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
+    .addJVM(name = "log4cats",              version = "1.2.2",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
     .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
     .addJVM(name = "mau",                   version = "0.2.2",  org = "com.kailuowang")
