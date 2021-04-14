@@ -13,7 +13,7 @@ val gh = GitHubSettings(
 )
 
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
-
+val reactiveMongoVer = "1.0.0"
 // format: off
 lazy val libs = {
   org.typelevel.libraries
@@ -30,17 +30,17 @@ lazy val libs = {
     .addModule("http4s", "http4s-twirl")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .add(   name = "jawn",                  version = "1.0.0",  org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
-    .addJVM(name = "lihua",                 version = "0.36",   org ="com.iheart", "lihua-mongo", "lihua-cache", "lihua-crypt", "lihua-core", "lihua-play-json")
     .addJVM(name = "log4cats",              version = "1.2.0",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
     .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
     .addJVM(name = "mau",                   version = "0.2.2",  org = "com.kailuowang")
     .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
-    .add(   name = "play",                  version = "2.8.3",  org = "com.typesafe.play")
-    .add(   name = "play-json",             version = "2.8.3",  org = "com.typesafe.play")
+    .add(   name = "play-json",             version = "2.7.4",  org = "com.typesafe.play")
     .addJVM(name = "play-json-derived-codecs", version = "7.0.0", org = "org.julienrf")
     .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
     .addJVM(name = "rainier",               version = "0.3.3",  org ="com.stripe", "rainier-core", "rainier-cats")
+    .addJVM(name = "reactivemongo",         version = reactiveMongoVer, org = "org.reactivemongo", "reactivemongo", "reactivemongo-bson-api", "reactivemongo-iteratees" )
+    .addJVM(name = "reactivemongo-play-json-compat", version = reactiveMongoVer + "-play27", org = "org.reactivemongo")
     .addJVM(name = "scala-java8-compat",    version = "0.9.1",  org = "org.scala-lang.modules")
     .addJVM(name = "scala-view",            version = "0.5",    org = "com.github.darrenjw")
     .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
@@ -48,7 +48,7 @@ lazy val libs = {
     .addJVM(name = "scanamo",               version = "1.0.0-M15", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
     .add(   name = "spark",                 version = "2.4.5",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
-    .addJVM(name = "tsec",                  version = "0.2.1",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s")
+    .addJVM(name = "tsec",                  version = "0.2.1",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
     .add   (name = "enumeratum",            version = "1.6.1",  org = "com.beachape" )
     .add(   name = "jawn-ast",              version = "1.0.0",  org = org.typelevel.typeLevelOrg)
 
@@ -105,6 +105,8 @@ lazy val thomas = project
     plot,
     client,
     bandit,
+    lihua,
+    lihuaMongo,
     tests,
     http4s,
     http4sExample,
@@ -158,6 +160,7 @@ lazy val cli = project
   )
 
 lazy val core = project
+  .dependsOn(lihua)
   .enablePlugins(BuildInfoPlugin)
   .settings(
     name := "thomas-core",
@@ -168,11 +171,9 @@ lazy val core = project
       "cats-core",
       "monocle-macro",
       "monocle-core",
-      "lihua-core",
       "mau",
       "mouse",
       "henkan-convert",
-      "lihua-play-json",
       "log4cats-core",
       "pureconfig-cats-effect",
       "pureconfig-generic"
@@ -180,6 +181,42 @@ lazy val core = project
     simulacrumSettings(libs),
     buildInfoKeys := BuildInfoKey.ofN(name, version),
     buildInfoPackage := "com.iheart.thomas"
+  )
+
+lazy val lihua = project.settings(
+  name := "thomas-lihua",
+  rootSettings,
+  taglessSettings,
+  libs.dependencies(
+    "newtype",
+    "play-json"
+  )
+)
+
+lazy val lihuaMongo = project
+  .dependsOn(lihua)
+  .settings(
+    name := "thomas-lihua-mongo",
+    rootSettings,
+    taglessSettings,
+    libs.dependencies(),
+    libs.dependency("simulacrum", Some("provided")),
+    libs.dependencies(
+      "cats-effect",
+      "reactivemongo",
+      "reactivemongo-bson-api",
+      "reactivemongo-iteratees",
+      "reactivemongo-play-json-compat",
+      "newtype",
+      "play-json",
+      "cats-core",
+      "tsec-cipher-jca"
+    ),
+    libraryDependencies ++= Seq(
+      "com.iheart" %% "ficus" % "1.4.7",
+      "org.log4s" %% "log4s" % "1.8.2"
+    ),
+    scalacOptions += "-deprecation:false" //disabled due to the deprecation of reactivemongo-play-json while the new api isn't stable enough
   )
 
 lazy val bandit = project
@@ -256,12 +293,9 @@ lazy val docs = project
   )
 
 lazy val mongo = project
-  .dependsOn(core, bandit)
+  .dependsOn(core, bandit, lihuaMongo)
   .settings(name := "thomas-mongo")
   .settings(rootSettings)
-  .settings(
-    libs.dependencies("lihua-mongo", "lihua-crypt")
-  )
 
 lazy val dynamo = project
   .dependsOn(bandit, stream)
