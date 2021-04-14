@@ -213,7 +213,7 @@ lazy val lihuaMongo = project
       "tsec-cipher-jca"
     ),
     libraryDependencies ++= Seq(
-      "com.iheart" %% "ficus" % "1.4.7",
+      "com.iheart" %% "ficus" % "1.5.0",
       "org.log4s" %% "log4s" % "1.9.0"
     ),
     scalacOptions += "-deprecation:false" //disabled due to the deprecation of reactivemongo-play-json while the new api isn't stable enough
