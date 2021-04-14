@@ -64,6 +64,20 @@ addCommandAlias(
   "quickValidate",
   s";thomas/test;thomas/IntegrationTest/compile"
 )
+addCommandAlias(
+  "it",
+  s";thomas/test;tests/IntegrationTest/test"
+)
+
+addCommandAlias(
+  "switchToIT",
+  s";http4sExample/dependencyServicesDown;tests/dependencyServicesUp;"
+)
+
+addCommandAlias(
+  "switchToDev",
+  s";tests/dependencyServicesDown;http4sExample/dependencyServicesUp;"
+)
 addCommandAlias("it", s"tests/IntegrationTest/test")
 
 addCommandAlias(
@@ -127,18 +141,18 @@ lazy val cli = project
     rootSettings,
     libs.dependencies("decline", "logback-classic"),
     releasePublishArtifactsAction := {
-      (assembly in assembly).value
+      (assembly / assembly).value
       releasePublishArtifactsAction.value
     },
-    assemblyOption in assembly := (assemblyOption in assembly).value
+    assembly / assemblyOption := (assembly / assemblyOption).value
       .copy(prependShellScript = Some(defaultUniversalScript(shebang = false))),
-    assemblyOutputPath in assembly := file(
+    assembly / assemblyOutputPath := file(
       s"release/thomas-cli_${version.value}.jar"
     ),
-    assemblyMergeStrategy in assembly := {
+    assembly / assemblyMergeStrategy := {
       case "module-info.class" => MergeStrategy.discard
       case x =>
-        val oldStrategy = (assemblyMergeStrategy in assembly).value
+        val oldStrategy = (assembly / assemblyMergeStrategy).value
         oldStrategy(x)
     }
   )
@@ -163,7 +177,9 @@ lazy val core = project
       "pureconfig-cats-effect",
       "pureconfig-generic"
     ),
-    simulacrumSettings(libs)
+    simulacrumSettings(libs),
+    buildInfoKeys := BuildInfoKey.ofN(name, version),
+    buildInfoPackage := "com.iheart.thomas"
   )
 
 lazy val bandit = project
@@ -336,7 +352,7 @@ lazy val http4sExample = project
     dependencyServicesUp := dockerCompose(upOrDown = true),
     dependencyServicesDown := dockerCompose(upOrDown = false),
     noPublishSettings,
-    mainClass in reStart := Some(
+    reStart / mainClass := Some(
       "com.iheart.thomas.example.ExampleAbtestAdminUIApp"
     )
   )
@@ -378,7 +394,8 @@ lazy val tests = project
     dependencyServicesUp := dockerCompose(upOrDown = true, ".test"),
     dependencyServicesDown := dockerCompose(upOrDown = false, ".test"),
     Defaults.itSettings,
-    parallelExecution in IntegrationTest := false,
+    IntegrationTest / parallelExecution := false,
+    IntegrationTest / compile / scalacOptions ~= lessStrictScalaChecks,
     noPublishSettings,
     libs.dependency("cats-effect-testing-scalatest", Some(IntegrationTest.name)),
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
@@ -394,7 +411,7 @@ def dockerCompose(
   s"docker-compose --env-file ./.env$env $upCommand" !
 }
 
-lazy val noPublishing = Seq(skip in publish := true)
+lazy val noPublishing = Seq(publish / skip := true)
 
 lazy val developerKai = Developer(
   "Kailuo Wang",
@@ -409,17 +426,14 @@ lazy val commonSettings = addCompilerPlugins(
 ) ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := "2.12.12",
-  parallelExecution in Test := false,
+  Test / parallelExecution := false,
   releaseCrossBuild := false,
   crossScalaVersions := Seq(scalaVersion.value),
   developers := List(developerKai),
-  scalacOptions in (Compile, console) ~= lessStrictScalaChecks,
-  scalacOptions in (Test, compile) ~= lessStrictScalaChecks,
-  scalacOptions in (IntegrationTest, compile) ~= lessStrictScalaChecks,
+  Compile / console / scalacOptions ~= lessStrictScalaChecks,
+  Test / compile / scalacOptions ~= lessStrictScalaChecks,
   scalacOptions += s"-Xlint:-package-object-classes",
-  testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
-  buildInfoKeys := BuildInfoKey.ofN(name, version),
-  buildInfoPackage := "com.iheart.thomas"
+  Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
 )
 
 lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =

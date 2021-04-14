@@ -7,7 +7,11 @@ import cats.effect._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.analysis.Conversions
-import com.iheart.thomas.bandit.bayesian.{BanditSettings, ConversionBMABAlg}
+import com.iheart.thomas.bandit.bayesian.{
+  BanditSettings,
+  BayesianMABAlg,
+  ConversionBMABAlg
+}
 import com.iheart.thomas.tracking.EventLogger
 import com.iheart.thomas.{dynamo, mongo}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
@@ -29,15 +33,16 @@ object ConversionBMABAlgResource {
       dynamo.BanditsDAOs.banditState[F, Conversions]
     implicit val settingDAO =
       dynamo.BanditsDAOs.banditSettings[F, BanditSettings.Conversion]
-    implicit val (abtestDAO, featureDAO, kpiDAO) = mongoDAOs
+    implicit val (abtestDAO, featureDAO) = mongoDAOs
     lazy val refreshPeriod =
       0.seconds //No cache is needed for abtests in Conversion API
 
+    import dynamo.AnalysisDAOs._
     AbtestAlg.defaultResource[F](refreshPeriod).map { implicit abtestAlg =>
       implicit val ss = SamplerConfig.default
       implicit val rng = RNG.default
       implicit val nowF = F.delay(Instant.now)
-      implicitly
+      BayesianMABAlg[F, Conversions, BanditSettings.Conversion]
     }
   }
 

@@ -28,7 +28,7 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
   val F = MonadError[IO, Throwable]
 
   "AbtestAlg" - {
-    val algR = testkit.Resources.apis.map(_._3)
+    val algR = testkit.Resources.apis.map(_._2)
     val now = OffsetDateTime.now
 
     "update test flow" - {
@@ -154,7 +154,7 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
 
     "eligibility control" - {
 
-      val algR = testkit.Resources.apis.map(_._3)
+      val algR = testkit.Resources.apis.map(_._2)
       val now = OffsetDateTime.now
       val anHourLater = Some(now.plusHours(1))
 
@@ -250,7 +250,7 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
       "Can 'update' test from the past using auto" in {
 
         import FastNowF._
-        val algR = testkit.Resources.apis.map(_._3)
+        val algR = testkit.Resources.apis.map(_._2)
 
         algR
           .use { alg =>
@@ -283,7 +283,7 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
       "Cannot 'update' expired test from the past using auto" in {
         import FastNowF._
 
-        val algR = testkit.Resources.apis.map(_._3)
+        val algR = testkit.Resources.apis.map(_._2)
 
         algR
           .use { alg =>

@@ -6,12 +6,8 @@ import com.iheart.thomas.TimeUtil
 import com.iheart.thomas.abtest.Error.NotFound
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
-import com.iheart.thomas.analysis.{
-  BetaModel,
-  ConversionKPI,
-  ConversionKPIAlg,
-  KPIName
-}
+import com.iheart.thomas.analysis.bayesian.models._
+import com.iheart.thomas.analysis.{ConversionKPI, ConversionKPIAlg, KPIName}
 import com.iheart.thomas.stream.{Job, JobDAO}
 
 import java.time.Instant

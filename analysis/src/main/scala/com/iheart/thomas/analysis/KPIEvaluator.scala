@@ -6,6 +6,7 @@ import com.iheart.thomas.{ArmName, GroupName}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import cats.implicits._
 import com.stripe.rainier.core.Beta
+import bayesian.models._
 
 trait KPIEvaluator[F[_], Model, Measurement] {
   def evaluate(
