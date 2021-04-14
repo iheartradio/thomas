@@ -12,7 +12,6 @@ import com.iheart.thomas.abtest.model.{AbtestSpec, GroupMeta, UserGroupQuery}
 import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 import com.iheart.thomas.abtest.{AbtestAlg, Error}
 import Error.{NotFound => APINotFound}
-import com.iheart.thomas.analysis.{KPIModel, KPIModelApi}
 import com.iheart.thomas.http4s.MongoResources
 import com.iheart.thomas.{GroupName, TimeUtil, UserId, abtest}
 import com.typesafe.config.Config
@@ -31,8 +30,7 @@ import AbtestService.validationErrorMsg
 import scala.concurrent.ExecutionContext
 
 class AbtestService[F[_]: Async](
-    api: AbtestAlg[F],
-    kpiAPI: KPIModelApi[F])
+    api: AbtestAlg[F])
     extends Http4sDsl[F] {
 
   implicit val jsonObjectEncoder: EntityEncoder[F, JsObject] =
@@ -173,8 +171,6 @@ class AbtestService[F[_]: Async](
       case GET -> Root / "features" / feature / "overrides" =>
         respond(api.getOverrides(feature))
 
-      case GET -> Root / "KPIs" / name =>
-        respondOption(kpiAPI.get(name), s"No Kpi under name $name")
     }
 
   def managing =
@@ -234,13 +230,7 @@ class AbtestService[F[_]: Async](
         }
     }
 
-  def kpiManaging =
-    HttpRoutes.of[F] {
-      case req @ POST -> Root / "KPIs" =>
-        req.as[KPIModel] >>= (k => respond(kpiAPI.upsert(k)))
-    }
-
-  def internal: HttpRoutes[F] = readonly <+> managing <+> kpiManaging
+  def internal: HttpRoutes[F] = readonly <+> managing
 
 }
 
@@ -287,8 +277,7 @@ object AbtestService {
       daos <- MongoResources.dAOs(cfg)
       alg <- MongoResources.abtestAlg[F](cfg, daos)
     } yield {
-      implicit val (_, _, kpiDAO) = daos
-      new AbtestService(alg, KPIModelApi.default[F])
+      new AbtestService(alg)
     }
   }
 

@@ -34,7 +34,7 @@ object AnalysisDAOs extends ScanamoManagement {
     ): F[Unit] =
     ensureTables(tables, readCapacity, writeCapacity)
 
-  implicit def conversionKPIDAO[F[_]: Async](
+  implicit def conversionKPIAlg[F[_]: Async](
       implicit dynamoClient: DynamoDbAsyncClient
     ): ConversionKPIAlg[F] =
     new ScanamoDAOHelperStringLikeKey[F, ConversionKPI, KPIName](

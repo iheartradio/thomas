@@ -1,16 +1,12 @@
-package com.iheart.thomas.analysis
+package com.iheart.thomas.analysis.bayesian.models
 
-import bayesian.models._
-
-import java.time.Instant
-
-import com.iheart.thomas.GroupName
+import cats.effect.IO
+import cats.effect.testing.scalatest.AsyncIOSpec
+import cats.implicits._
 import com.iheart.thomas.abtest.model.Abtest
+import com.iheart.thomas.analysis.{Conversions, KPIEvaluator}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import org.scalatest.matchers.should.Matchers
-import cats.implicits._
-import cats.effect.testing.scalatest.AsyncIOSpec
-import cats.effect.IO
 
 class BetaKPISuite extends AsyncIOSpec with Matchers {
   implicit val rng = RNG.default

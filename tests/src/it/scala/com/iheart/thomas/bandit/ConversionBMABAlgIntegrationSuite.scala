@@ -7,9 +7,9 @@ import cats.MonadError
 import cats.effect.{IO, Resource}
 import com.iheart.thomas.abtest.{AbtestAlg, DefaultAbtestAlg}
 import com.iheart.thomas.analysis.{
-  BetaKPIModel,
+  ConversionKPI,
+  ConversionKPIAlg,
   Conversions,
-  KPIModelApi,
   KPIName,
   Probability
 }
@@ -26,13 +26,14 @@ import _root_.play.api.libs.json.{JsObject, Json}
 import cats.implicits._
 import com.iheart.thomas.abtest.model.Abtest.Specialization.MultiArmBandit
 import com.iheart.thomas.abtest.model.{AbtestSpec, Group}
+import com.iheart.thomas.analysis.bayesian.models.BetaModel
 import com.iheart.thomas.testkit.Resources.timer
 import com.iheart.thomas.tracking.EventLogger
 import com.stripe.rainier.sampler.RNG
 
 import concurrent.duration._
 
-class ConversionBMABAlgSuite extends ConversionBMABAlgSuiteBase {
+class ConversionBMABAlgIntegrationSuite extends ConversionBMABAlgSuiteBase {
 
   import testkit.Resources._
 
@@ -518,19 +519,22 @@ class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
   import testkit.Resources._
 
 //  implicit val logger: EventLogger[IO] = EventLogger.stdout
-  val kpi = BetaKPIModel(
-    "test kpi",
-    alphaPrior = 1000,
-    betaPrior = 100000
+  val kpi = ConversionKPI(
+    KPIName("test kpi"),
+    "kai",
+    None,
+    BetaModel(alphaPrior = 1000, betaPrior = 100000),
+    None
   )
 
   def withAPI[A](
-      f: (ConversionBMABAlg[IO], KPIModelApi[IO], AbtestAlg[IO]) => IO[A]
+      f: (ConversionBMABAlg[IO], ConversionKPIAlg[IO], AbtestAlg[IO]) => IO[A]
     ): A =
     apis
       .use {
-        case (conversionBMABAlg, kPIApi, abtestAlg) =>
-          kPIApi.upsert(kpi) >> f(conversionBMABAlg, kPIApi, abtestAlg)
+        case (conversionBMABAlg, abtestAlg, conversionKPIAlg) =>
+          conversionKPIAlg
+            .create(kpi) >> f(conversionBMABAlg, conversionKPIAlg, abtestAlg)
       }
       .unsafeRunSync()
 

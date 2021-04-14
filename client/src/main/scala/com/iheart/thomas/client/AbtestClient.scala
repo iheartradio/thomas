@@ -15,15 +15,12 @@ import lihua.Entity
 import _root_.play.api.libs.json._
 import cats.implicits._
 import com.iheart.thomas.abtest.{DataProvider, Error, TestsData}
-import com.iheart.thomas.analysis.KPIModel
 import com.iheart.thomas.abtest.json.play.Formats._
 import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NoStackTrace
 import com.iheart.thomas.client.AbtestClient.HttpServiceUrls
-import org.http4s.Status
-import org.http4s.client.UnexpectedStatus
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -31,8 +28,6 @@ trait ReadOnlyAbtestClient[F[_]] extends DataProvider[F] {
   def tests(asOf: Option[Instant] = None): F[Vector[(Entity[Abtest], Feature)]]
 
   def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]]
-
-  def getKPI(name: String): F[KPIModel]
 
   def getTest(tid: TestId): F[Entity[Abtest]]
 
@@ -75,8 +70,6 @@ trait ReadOnlyAbtestClient[F[_]] extends DataProvider[F] {
 
 trait AbtestClient[F[_]] extends ReadOnlyAbtestClient[F] {
 
-  def saveKPI(model: KPIModel): F[KPIModel]
-
   def addGroupMeta(
       tidOrFeature: Either[TestId, FeatureName],
       gm: JsObject,
@@ -106,15 +99,6 @@ class Http4SAbtestClient[F[_]: Sync](
   import Method._
 
   implicit def stringToUri(str: String) = Uri.unsafeFromString(str)
-
-  def getKPI(name: String): F[KPIModel] =
-    expect[KPIModel](GET(Uri.encode(urls.kPIs + "/" + name))).adaptError {
-      case UnexpectedStatus(status) if status == Status.NotFound =>
-        Error.NotFound("KPI " + name + " is not found")
-    }
-
-  def saveKPI(model: KPIModel): F[KPIModel] =
-    expect(POST(model, Uri.unsafeFromString(urls.kPIs)))
 
   def tests(asOf: Option[Instant] = None): F[Vector[(Entity[Abtest], Feature)]] = {
     val baseUrl: Uri = Uri.unsafeFromString(urls.tests)
@@ -211,11 +195,6 @@ object AbtestClient {
 
     def testsData: String
 
-    /**
-      * Service URL corresponding to [[analysis.KPIModelApi]].get
-      */
-    def kPIs: String
-
     def test(testId: TestId): String
 
     def groupMeta(testId: TestId): String
@@ -234,8 +213,6 @@ object AbtestClient {
     def tests: String = root + "/testsWithFeatures"
 
     def testsData: String = root + "/testsData"
-
-    def kPIs: String = root + "/KPIs"
 
     def groupMeta(testId: TestId) = root + "/tests/" + testId + "/groups/metas"
 

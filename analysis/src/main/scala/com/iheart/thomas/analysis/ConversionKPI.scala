@@ -83,5 +83,10 @@ trait ConversionKPIAlg[F[_]] {
 
 }
 
+object ConversionKPIAlg {
+
+  def apply[F[_]](implicit inst: ConversionKPIAlg[F]): ConversionKPIAlg[F] = inst
+}
+
 case object InvalidKPIName extends RuntimeException with NoStackTrace
 case object InvalidModelPrior extends RuntimeException with NoStackTrace
