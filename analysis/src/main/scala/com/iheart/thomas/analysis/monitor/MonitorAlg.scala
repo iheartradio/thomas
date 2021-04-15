@@ -3,7 +3,7 @@ package analysis
 package monitor
 import bayesian._
 import bayesian.models._
-import cats.{Foldable, Monad}
+import cats.{Foldable, Monad, UnorderedFoldable}
 import cats.effect.Timer
 import cats.implicits._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
@@ -38,6 +38,11 @@ trait MonitorAlg[F[_]] {
       includedArms: Option[Seq[ArmName]] = None
     ): F[List[Evaluation]]
 
+  def updateModel[C[_]: UnorderedFoldable](
+      name: KPIName,
+      events: C[ConversionEvent]
+    ): F[ConversionKPI]
+
 }
 
 object MonitorAlg {
@@ -46,7 +51,7 @@ object MonitorAlg {
 
   implicit def default[F[_]: Monad](
       implicit cStateDAO: ExperimentKPIStateDAO[F, Conversions],
-      cKPIAlg: ConversionKPIAlg[F],
+      cKpiRepo: KPIRepo[F, ConversionKPI],
       T: Timer[F]
     ): MonitorAlg[F] =
     new MonitorAlg[F] {
@@ -59,7 +64,7 @@ object MonitorAlg {
           includedArms: Option[Seq[ArmName]] = None
         ): F[List[Evaluation]] = {
         for {
-          kpi <- cKPIAlg.get(state.key.kpi)
+          kpi <- cKpiRepo.get(state.key.kpi)
           r <-
             evaluator
               .evaluate(
@@ -74,20 +79,20 @@ object MonitorAlg {
 
       def resetConversion(key: Key) = reset[Conversions](key)
 
-      private def reset[R](
+      private def reset[KS <: KPIStats](
           key: Key
-        )(implicit dao: ExperimentKPIStateDAO[F, R]
-        ): F[ExperimentKPIState[R]] =
+        )(implicit dao: ExperimentKPIStateDAO[F, KS]
+        ): F[ExperimentKPIState[KS]] =
         dao.remove(key) *> init(key)
 
-      private def init[R](
+      private def init[KS <: KPIStats](
           key: Key
-        )(implicit dao: ExperimentKPIStateDAO[F, R]
-        ): F[ExperimentKPIState[R]] = {
+        )(implicit dao: ExperimentKPIStateDAO[F, KS]
+        ): F[ExperimentKPIState[KS]] = {
         dao.ensure(key)(
           TimeUtil
             .now[F]
-            .map(now => ExperimentKPIState[R](key, Nil, now, now))
+            .map(now => ExperimentKPIState[KS](key, Nil, now, now))
         )
       }
 
@@ -135,6 +140,14 @@ object MonitorAlg {
         ): F[Vector[ExperimentKPIState[Conversions]]] =
         kpis.toVector.traverseFilter { kpi =>
           getConversion(Key(feature, kpi))
+        }
+
+      def updateModel[C[_]: UnorderedFoldable](
+          name: KPIName,
+          events: C[ConversionEvent]
+        ): F[ConversionKPI] =
+        cKpiRepo.update(name) { k =>
+          k.copy(model = Posterior.update(k.model, Conversions(events)))
         }
 
     }

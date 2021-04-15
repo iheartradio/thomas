@@ -1,12 +1,12 @@
-package com.iheart.thomas.analysis.bayesian.fit
+package com.iheart.thomas.analysis
+package bayesian
+package fit
 
 import cats.implicits._
 import com.iheart.thomas.GroupName
 import com.iheart.thomas.abtest.model.Abtest
-import com.iheart.thomas.analysis.DistributionSpec.{Normal, Uniform}
-import com.iheart.thomas.analysis.`package`.Measurements
-import com.iheart.thomas.analysis.implicits._
-import com.iheart.thomas.analysis.KPIName
+import DistributionSpec.{Normal, Uniform}
+import implicits._
 import com.stripe.rainier.core.LogNormal
 import com.stripe.rainier.sampler._
 import org.scalatest.funsuite.AnyFunSuiteLike
@@ -15,6 +15,7 @@ import org.scalatest.matchers.should.Matchers
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import scala.util.Random
+import LogNormalFit.Measurements
 
 class LogNormalFitSuite extends AnyFunSuiteLike with Matchers {
   implicit val rng = RNG.default

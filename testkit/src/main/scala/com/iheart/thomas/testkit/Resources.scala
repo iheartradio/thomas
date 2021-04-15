@@ -10,7 +10,7 @@ import com.iheart.thomas.{dynamo, mongo}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import com.typesafe.config.ConfigFactory
 import _root_.play.api.libs.json.Json
-import com.iheart.thomas.analysis.ConversionKPIAlg
+import com.iheart.thomas.analysis.{ConversionKPI, KPIRepo}
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.http4s.AuthImp
 import com.iheart.thomas.http4s.auth.AuthenticationAlg
@@ -63,7 +63,7 @@ object Resources {
       nowF: IO[Instant] = defaultNowF
     ): Resource[
     IO,
-    (ConversionBMABAlg[IO], AbtestAlg[IO], ConversionKPIAlg[IO])
+    (ConversionBMABAlg[IO], AbtestAlg[IO], KPIRepo[IO, ConversionKPI])
   ] =
     (mangoDAOs, localDynamoR).tupled
       .flatMap { deps =>

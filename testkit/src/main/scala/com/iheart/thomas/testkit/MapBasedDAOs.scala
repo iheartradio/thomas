@@ -6,8 +6,7 @@ import com.iheart.thomas.TimeUtil
 import com.iheart.thomas.abtest.Error.NotFound
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
-import com.iheart.thomas.analysis.bayesian.models._
-import com.iheart.thomas.analysis.{ConversionKPI, ConversionKPIAlg, KPIName}
+import com.iheart.thomas.analysis.{ConversionKPI, KPIName, KPIStats, KPIRepo}
 import com.iheart.thomas.stream.{Job, JobDAO}
 
 import java.time.Instant
@@ -87,7 +86,7 @@ object MapBasedDAOs {
 
     }
 
-  def experimentStateDAO[F[_]: Sync, R]: ExperimentKPIStateDAO[F, R] =
+  def experimentStateDAO[F[_]: Sync, R <: KPIStats]: ExperimentKPIStateDAO[F, R] =
     new MapBasedDAOs[F, ExperimentKPIState[R], Key](_.key)
       with ExperimentKPIStateDAO[F, R] {
 
@@ -108,13 +107,8 @@ object MapBasedDAOs {
         } yield r
     }
 
-  def conversionKPIAlg[F[_]](implicit F: Sync[F]): ConversionKPIAlg[F] =
-    new MapBasedDAOs[F, ConversionKPI, KPIName](_.name) with ConversionKPIAlg[F] {
-      def setModel(
-          name: KPIName,
-          model: BetaModel
-        ): F[ConversionKPI] =
-        get(name).flatMap(k => update(k.copy(model = model)))
-    }
+  def conversionKPIAlg[F[_]](implicit F: Sync[F]): KPIRepo[F, ConversionKPI] =
+    new MapBasedDAOs[F, ConversionKPI, KPIName](_.name)
+      with KPIRepo[F, ConversionKPI]
 
 }

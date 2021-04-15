@@ -5,9 +5,12 @@ import cats.UnorderedFoldable
 import cats.kernel.Monoid
 import cats.implicits._
 
+sealed trait KPIStats
+
 case class Conversions(
     converted: Long,
-    total: Long) {
+    total: Long)
+    extends KPIStats {
   def rate = converted.toDouble / total.toDouble
 
   def sampleSize: Long = total
@@ -38,3 +41,9 @@ object Conversions {
     Conversions(converted, init)
   }
 }
+
+case class PerUserSampleSummary(
+    mean: Double,
+    variance: Double,
+    count: Long)
+    extends KPIStats

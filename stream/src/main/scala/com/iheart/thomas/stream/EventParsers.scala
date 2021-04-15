@@ -1,12 +1,13 @@
 package com.iheart.thomas
 package stream
 
-import cats.Applicative
+import cats.MonadThrow
 import com.iheart.thomas.analysis._
 import cats.implicits._
 import org.typelevel.jawn.ast.{JNull, JValue}
 
 import scala.annotation.implicitNotFound
+import scala.util.control.NoStackTrace
 import scala.util.matching.Regex
 
 @implicitNotFound(
@@ -19,34 +20,41 @@ trait ArmParser[F[_], Message] {
     ): F[Option[ArmName]]
 }
 
-trait ConversionParser[F[_], Message] {
-  def parseConversion(
-      m: Message,
-      conversionMessageQuery: ConversionMessageQuery
-    ): F[List[ConversionEvent]]
+trait KpiEventParser[F[_], Message, Event] {
+  def apply(kpiName: KPIName): F[Message => F[List[Event]]]
 }
 
-object ConversionParser {
+object KpiEventParser {
 
-  implicit def jValueParser[F[_]: Applicative]: ConversionParser[F, JValue] =
-    new ConversionParser[F, JValue] {
-      def parseConversion(
-          json: JValue,
-          query: ConversionMessageQuery
-        ): F[List[ConversionEvent]] = {
-        import JValueSyntax._
-        ((if (json.filterAnd(query.initMessage.criteria: _*).nonNull)
-            List(Initiated)
-          else
-            Nil) ++
-          (if (json.filterAnd(query.convertedMessage.criteria: _*).nonNull)
-             Converted.some
-           else
-             Nil)).pure[F]
-      }
+  case class NoEventQueryForKPI(kpiName: KPIName)
+      extends RuntimeException
+      with NoStackTrace
 
-    }
+  private[stream] def parseConversionEvent(
+      json: JValue,
+      query: ConversionMessageQuery
+    ) = {
+    import JValueSyntax._
+    (if (json.filterAnd(query.initMessage.criteria: _*).nonNull)
+       List(Initiated)
+     else
+       Nil) ++
+      (if (json.filterAnd(query.convertedMessage.criteria: _*).nonNull)
+         Converted.some
+       else
+         Nil)
+  }
 
+  implicit def jValueConversionEventParser[F[_]: MonadThrow](
+      implicit kpiRepo: KPIRepo[F, ConversionKPI]
+    ): KpiEventParser[F, JValue, ConversionEvent] =
+    (kpiName: KPIName) =>
+      kpiRepo
+        .find(kpiName)
+        .flatMap(
+          _.flatMap(_.messageQuery).liftTo[F](NoEventQueryForKPI(kpiName))
+        )
+        .map(q => (json: JValue) => parseConversionEvent(json, q).pure[F])
 }
 
 object JValueSyntax {

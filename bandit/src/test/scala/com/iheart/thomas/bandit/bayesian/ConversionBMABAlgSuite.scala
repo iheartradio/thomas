@@ -2,9 +2,8 @@ package com.iheart.thomas
 package bandit.bayesian
 
 import java.time.OffsetDateTime
-
 import com.iheart.thomas.GroupName
-import com.iheart.thomas.analysis.Probability
+import com.iheart.thomas.analysis.{KPIName, Probability}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
@@ -33,7 +32,7 @@ class ConversionBMABAlgSuite
       "feature",
       "title",
       "author",
-      "kpi",
+      KPIName("kpi"),
       distSpecificSettings = BanditSettings.Conversion(1, 1)
     )
 
@@ -48,14 +47,18 @@ class ConversionBMABAlgSuite
       val totalSize = groups.foldMap(_.size)
 
       totalSize should be(
-        BigDecimal(distribution.values.toList.foldMap(_.p)) * availableSize +- precision
+        BigDecimal(
+          distribution.values.toList.foldMap(_.p)
+        ) * availableSize +- precision
       )
 
       totalSize should be <= availableSize
 
       groups
         .foreach { group =>
-          group.size shouldBe BigDecimal(distribution(group.name).p) * availableSize +- precision
+          group.size shouldBe BigDecimal(
+            distribution(group.name).p
+          ) * availableSize +- precision
 
           (group.size % precision) should be(BigDecimal(0))
 

@@ -5,9 +5,10 @@ import cats.implicits._
 import com.iheart.thomas.{FeatureName, TimeUtil}
 import TimeUtil.InstantOps
 import cats.Functor
+import com.iheart.thomas.analysis.ConversionEvent
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
 import com.iheart.thomas.analysis.monitor.MonitorAlg
-import com.iheart.thomas.analysis.{ConversionKPIAlg, ConversionMessageQuery, KPIName}
+import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.stream.JobSpec.{MonitorTest, RunBandit, UpdateKPIPrior}
 import com.iheart.thomas.tracking.EventLogger
 import com.typesafe.config.Config
@@ -72,10 +73,9 @@ object JobAlg {
       implicit F: Concurrent[F],
       timer: Timer[F],
       dao: JobDAO[F],
-      cKpiAlg: ConversionKPIAlg[F],
       armParser: ArmParser[F, Message],
       monitorAlg: MonitorAlg[F],
-      convParser: ConversionParser[F, Message],
+      convEventParser: KpiEventParser[F, Message, ConversionEvent],
       config: Config,
       logger: EventLogger[F],
       messageSubscriber: MessageSubscriber[F, Message]
@@ -102,14 +102,6 @@ object JobAlg {
           .flatMap { cfg =>
             def jobPipe(job: Job): F[Pipe[F, Message, Unit]] = {
 
-              def kpiQuery(name: KPIName): F[ConversionMessageQuery] =
-                cKpiAlg
-                  .get(name)
-                  .flatMap { kpi =>
-                    kpi.messageQuery
-                      .liftTo[F](CannotUpdateKPIWithoutQuery(name))
-                  }
-
               def chunkPipe[A](until: Instant): Pipe[F, A, Chunk[A]] =
                 (input: Stream[F, A]) => {
                   val checkJobComplete = Stream
@@ -127,16 +119,16 @@ object JobAlg {
 
               job.spec match {
                 case UpdateKPIPrior(kpiName, until) =>
-                  kpiQuery(kpiName)
+                  convEventParser(kpiName)
                     .map {
-                      query =>
+                      parser =>
                         { (input: Stream[F, Message]) =>
                           input
-                            .evalMap(m => convParser.parseConversion(m, query))
+                            .evalMap(parser)
                             .filter(_.nonEmpty)
                             .through(chunkPipe(until))
                             .evalMap { chunk =>
-                              cKpiAlg.updateModel(
+                              monitorAlg.updateModel(
                                 kpiName,
                                 chunk.toList.flatten
                               )
@@ -146,18 +138,16 @@ object JobAlg {
                     }
 
                 case MonitorTest(feature, kpiName, expiration) =>
-                  kpiQuery(kpiName)
+                  convEventParser(kpiName)
                     .map {
-                      query =>
+                      parser =>
                         { (input: Stream[F, Message]) =>
                           Stream.eval(monitorAlg.initConversion(feature, kpiName)) *>
                             input
                               .evalMap { m =>
                                 armParser.parseArm(m, feature).flatMap { armO =>
                                   armO.toList.flatTraverse { arm =>
-                                    convParser
-                                      .parseConversion(m, query)
-                                      .map(_.map((arm, _)))
+                                    parser(m).map(_.map((arm, _)))
                                   }
                                 }
                               }

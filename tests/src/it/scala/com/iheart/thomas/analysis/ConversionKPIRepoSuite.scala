@@ -7,7 +7,7 @@ import com.iheart.thomas.dynamo.AnalysisDAOs
 import com.iheart.thomas.testkit.Resources.localDynamoR
 import org.scalatest.matchers.should.Matchers
 
-class ConversionKPIAlgSuite extends AsyncIOSpec with Matchers {
+class ConversionKPIRepoSuite extends AsyncIOSpec with Matchers {
   val daoR = localDynamoR.map(implicit ld => AnalysisDAOs.conversionKPIAlg[IO])
 
   "Can insert a new KPI" in {

@@ -155,7 +155,7 @@ abstract class ScanamoDAOHelperStringFormatKey[F[_], A: DynamoFormat, K](
 
 }
 
-trait WithTimeStamp[A] {
+trait WithTimeStamp[-A] {
   def lastUpdated(a: A): Instant
 }
 

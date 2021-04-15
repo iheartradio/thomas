@@ -7,7 +7,7 @@ import cats.implicits._
 import com.iheart.thomas.analysis.bayesian.models._
 import com.iheart.thomas.analysis.{
   ConversionKPI,
-  ConversionKPIAlg,
+  KPIRepo,
   ConversionMessageQuery,
   Conversions,
   Criteria,
@@ -28,7 +28,7 @@ import com.iheart.thomas.tracking.EventLogger
 
 abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
   def withAlg[A](
-      f: (ConversionKPIAlg[IO], JobAlg[IO], PubSub[IO]) => IO[A]
+      f: (KPIRepo[IO, ConversionKPI], JobAlg[IO], PubSub[IO]) => IO[A]
     )(implicit config: Config = cfg
     ): IO[A] = {
     implicit val logger = EventLogger.noop[IO]

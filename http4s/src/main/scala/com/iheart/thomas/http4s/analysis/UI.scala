@@ -4,13 +4,14 @@ package analysis
 
 import cats.effect.Async
 import com.iheart.thomas.analysis.{
-  bayesian,
   ConversionKPI,
-  ConversionKPIAlg,
   ConversionMessageQuery,
   Criteria,
   KPIName,
-  MessageQuery
+  KPIStats,
+  KPIRepo,
+  MessageQuery,
+  bayesian
 }
 import bayesian.models._
 import com.iheart.thomas.http4s.{AuthImp, ReverseRoutes}
@@ -44,7 +45,7 @@ import java.time.OffsetDateTime
 
 class UI[F[_]: Async](
     implicit
-    convKpiAlg: ConversionKPIAlg[F],
+    convKpiAlg: KPIRepo[F, ConversionKPI],
     jobAlg: JobAlg[F],
     monitorAlg: MonitorAlg[F],
     authAlg: AuthenticationAlg[F, AuthImp],
@@ -138,19 +139,20 @@ class UI[F[_]: Async](
         Ok(newConversionKPI()(UIEnv(u)))
 
       case GET -> `rootPath` / "conversionKPIs" / kpiName asAuthed (u) =>
-        convKpiAlg.find(kpiName).flatMap { ko =>
+        convKpiAlg.find(KPIName(kpiName)).flatMap { ko =>
           ko.fold(
             NotFound(s"Cannot find the Conversion KPI under the name $kpiName")
           ) { k =>
-            jobAlg.findInfo[UpdateKPIPrior](UpdateKPIPrior.keyOf(kpiName)).flatMap {
-              jobO =>
+            jobAlg
+              .findInfo[UpdateKPIPrior](UpdateKPIPrior.keyOf(KPIName(kpiName)))
+              .flatMap { jobO =>
                 Ok(editConversionKPI(k, jobO)(UIEnv(u)))
-            }
+              }
           }
         }
 
       case GET -> `rootPath` / "conversionKPIs" / kpiName / "delete" asAuthed (_) =>
-        convKpiAlg.remove(kpiName) >>
+        convKpiAlg.remove(KPIName(kpiName)) >>
           Ok(redirect(reverseRoutes.analysis, s"$kpiName, if existed, is deleted."))
 
       case se @ POST -> `rootPath` / "conversionKPIs" asAuthed u =>
@@ -188,18 +190,20 @@ class UI[F[_]: Async](
 
       case se @ POST -> `rootPath` / "conversionKPIs" / kpiName / "update-prior" asAuthed u =>
         se.request.as[UpdateKPIRequest].flatMap { r =>
-          jobAlg.schedule(UpdateKPIPrior(kpiName, r.until.toInstant)).flatMap { jo =>
-            jo.fold(
-              BadRequest(errorMsg("It's being updated right now"))
-            )(j =>
-              Ok(
-                redirect(
-                  reverseRoutes.convKpi(KPIName(kpiName)),
-                  s"Scheduled a background process to update the prior using ongoing data. "
+          jobAlg
+            .schedule(UpdateKPIPrior(KPIName(kpiName), r.until.toInstant))
+            .flatMap { jo =>
+              jo.fold(
+                BadRequest(errorMsg("It's being updated right now"))
+              )(j =>
+                Ok(
+                  redirect(
+                    reverseRoutes.convKpi(KPIName(kpiName)),
+                    s"Scheduled a background process to update the prior using ongoing data. "
+                  )
                 )
               )
-            )
-          }
+            }
         }
     }
 
@@ -218,7 +222,7 @@ object UI {
       kpi: KPIName,
       until: OffsetDateTime)
 
-  case class MonitorInfo[R](
+  case class MonitorInfo[R <: KPIStats](
       job: JobInfo[MonitorTest],
       state: Option[ExperimentKPIState[R]]) {
     def kpi: KPIName = job.spec.kpi

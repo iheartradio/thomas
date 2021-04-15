@@ -1,13 +1,13 @@
 package com.iheart.thomas.dynamo
 
 import cats.effect.{Async, Concurrent, Timer}
-import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
+import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
-import com.iheart.thomas.analysis._, bayesian.models._
 import com.iheart.thomas.dynamo.DynamoFormats._
 import org.scanamo.DynamoFormat
 import org.scanamo.syntax._
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 
 import scala.concurrent.duration._
 
@@ -36,48 +36,38 @@ object AnalysisDAOs extends ScanamoManagement {
 
   implicit def conversionKPIAlg[F[_]: Async](
       implicit dynamoClient: DynamoDbAsyncClient
-    ): ConversionKPIAlg[F] =
+    ): KPIRepo[F, ConversionKPI] =
     new ScanamoDAOHelperStringLikeKey[F, ConversionKPI, KPIName](
       conversionKPITableName,
       conversionKPIKeyName,
       dynamoClient
-    ) with ConversionKPIAlg[F] {
-      def setModel(
-          name: KPIName,
-          model: BetaModel
-        ): F[ConversionKPI] =
-        toF(
-          sc.exec(
-            table.update(conversionKPIKeyName === name.n, set("model", model))
-          )
-        )
-    }
+    ) with KPIRepo[F, ConversionKPI]
 
-  implicit def expStateTimeStamp[R]: WithTimeStamp[ExperimentKPIState[R]] =
-    (a: ExperimentKPIState[R]) => a.lastUpdated
+  implicit def expStateTimeStamp: WithTimeStamp[ExperimentKPIState[_]] =
+    (a: ExperimentKPIState[_]) => a.lastUpdated
 
   implicit def experimentKPIStateConversionDAO[F[_]: Async](
       implicit dynamoClient: DynamoDbAsyncClient
     ): ExperimentKPIStateDAO[F, Conversions] = experimentKPIStateDAO[F, Conversions]
 
-  def experimentKPIStateDAO[F[_]: Async, R](
+  def experimentKPIStateDAO[F[_]: Async, KS <: KPIStats](
       implicit dynamoClient: DynamoDbAsyncClient,
-      asFormat: DynamoFormat[ArmState[R]],
-      sFormat: DynamoFormat[ExperimentKPIState[R]]
-    ): ExperimentKPIStateDAO[F, R] =
-    new ScanamoDAOHelperStringFormatKey[F, ExperimentKPIState[R], Key](
+      asFormat: DynamoFormat[ArmState[KS]],
+      sFormat: DynamoFormat[ExperimentKPIState[KS]]
+    ): ExperimentKPIStateDAO[F, KS] =
+    new ScanamoDAOHelperStringFormatKey[F, ExperimentKPIState[KS], Key](
       experimentKPIStateTableName,
       experimentKPIStateKeyName,
       dynamoClient
-    ) with ExperimentKPIStateDAO[F, R]
-      with AtomicUpdatable[F, ExperimentKPIState[R], Key] {
+    ) with ExperimentKPIStateDAO[F, KS]
+      with AtomicUpdatable[F, ExperimentKPIState[KS], Key] {
       protected def stringKey(k: Key) = k.toStringKey
       import retry._
       def updateState(
           key: Key
-        )(updateArms: List[ArmState[R]] => List[ArmState[R]]
+        )(updateArms: List[ArmState[KS]] => List[ArmState[KS]]
         )(implicit T: Timer[F]
-        ): F[ExperimentKPIState[R]] = {
+        ): F[ExperimentKPIState[KS]] = {
 
         atomicUpdate(key, Some(RetryPolicies.constantDelay[F](40.milliseconds))) {
           state =>

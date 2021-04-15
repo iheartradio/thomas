@@ -20,7 +20,7 @@ trait RewardAnalytics[F[_], R] {
 
 object RewardAnalytics {
   implicit def metricDataConversions[F[_]: FlatMap](
-      implicit kpiAlg: ConversionKPIAlg[F],
+      implicit kpiAlg: KPIRepo[F, ConversionKPI],
       evaluator: KPIEvaluator[
         F,
         BetaModel,

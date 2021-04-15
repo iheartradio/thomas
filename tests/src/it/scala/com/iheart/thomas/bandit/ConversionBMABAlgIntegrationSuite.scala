@@ -8,7 +8,7 @@ import cats.effect.{IO, Resource}
 import com.iheart.thomas.abtest.{AbtestAlg, DefaultAbtestAlg}
 import com.iheart.thomas.analysis.{
   ConversionKPI,
-  ConversionKPIAlg,
+  KPIRepo,
   Conversions,
   KPIName,
   Probability
@@ -520,7 +520,7 @@ class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
 
 //  implicit val logger: EventLogger[IO] = EventLogger.stdout
   val kpi = ConversionKPI(
-    KPIName("test kpi"),
+    KPIName("test_kpi"),
     "kai",
     None,
     BetaModel(alpha = 1000, beta = 100000),
@@ -528,7 +528,7 @@ class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
   )
 
   def withAPI[A](
-      f: (ConversionBMABAlg[IO], ConversionKPIAlg[IO], AbtestAlg[IO]) => IO[A]
+      f: (ConversionBMABAlg[IO], KPIRepo[IO, ConversionKPI], AbtestAlg[IO]) => IO[A]
     ): A =
     apis
       .use {
