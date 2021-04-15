@@ -6,7 +6,7 @@ import com.cibo.evilplot.geometry.{Drawable, Text}
 import com.cibo.evilplot.plot._
 import com.cibo.evilplot.plot.aesthetics.DefaultTheme._
 import com.iheart.thomas.GroupName
-import com.iheart.thomas.analysis.BenchmarkResult
+import com.iheart.thomas.analysis.bayesian.BenchmarkResult
 import scalaview.Utils._
 
 object PlotUtils {

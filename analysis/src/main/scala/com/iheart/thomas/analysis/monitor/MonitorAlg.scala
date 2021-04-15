@@ -1,6 +1,7 @@
 package com.iheart.thomas
 package analysis
 package monitor
+import bayesian._
 import bayesian.models._
 import cats.{Foldable, Monad}
 import cats.effect.Timer

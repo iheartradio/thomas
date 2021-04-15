@@ -1,10 +1,9 @@
-package com.iheart.thomas
-package analysis
+package com.iheart.thomas.analysis.bayesian
 
 import cats.Apply
+import cats.implicits._
 import com.stripe.rainier.core.{Model, ToGenerator}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
-import cats.implicits._
 
 case class Variable[A](
     v: A,

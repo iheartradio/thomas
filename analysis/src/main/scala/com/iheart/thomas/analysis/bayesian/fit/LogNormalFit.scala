@@ -1,15 +1,15 @@
-package com.iheart.thomas.analysis.bayesian.models.fit
+package com.iheart.thomas.analysis.bayesian.fit
 
 import cats.MonadError
-import com.iheart.thomas.analysis.AssessmentAlg.BayesianAssessmentAlg
+import FitAssessmentAlg.BayesianAssessmentAlg
 import com.iheart.thomas.analysis.DistributionSpec.{Normal, Uniform}
-import com.iheart.thomas.analysis.{AssessmentAlg, Measurable, UpdatableKPI, Variable}
 import com.iheart.thomas.analysis.`package`.{Indicator, Measurements}
 import com.stripe.rainier.compute.Real
 import com.stripe.rainier.core.{LogNormal, Model}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
 import cats.implicits._
+import com.iheart.thomas.analysis.bayesian.Variable
 
 import java.time.Instant
 
@@ -32,7 +32,7 @@ object LogNormalFit {
       rng: RNG = RNG.default,
       K: Measurable[F, Measurements, LogNormalFit],
       F: MonadError[F, Throwable]
-    ): AssessmentAlg[F, LogNormalFit] with UpdatableKPI[F, LogNormalFit] =
+    ): FitAssessmentAlg[F, LogNormalFit] with UpdatableKPI[F, LogNormalFit] =
     new BayesianAssessmentAlg[F, LogNormalFit, Measurements]
       with UpdatableKPI[F, LogNormalFit] {
 

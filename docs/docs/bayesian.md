@@ -73,6 +73,8 @@ import com.iheart.thomas.client._
 import com.iheart.thomas.client.AbtestClient.HttpServiceUrlsPlay
 import cats.effect.IO
 import com.iheart.thomas.analysis._
+import com.iheart.thomas.analysis.bayesian.fit.Measurable
+
 import concurrent.ExecutionContext.Implicits.global
 
 

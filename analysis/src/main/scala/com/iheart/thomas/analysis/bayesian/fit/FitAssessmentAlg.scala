@@ -1,16 +1,19 @@
-package com.iheart.thomas
-package analysis
+package com.iheart.thomas.analysis.bayesian.fit
+
+import cats.MonadError
+import cats.implicits._
+import com.iheart.thomas.GroupName
+import com.iheart.thomas.abtest.model.Abtest
+import com.iheart.thomas.analysis.`package`.Indicator
+import com.iheart.thomas.analysis.bayesian
+import com.iheart.thomas.analysis.bayesian.BenchmarkResult
+import com.stripe.rainier.core.{Generator, ToGenerator}
+import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 
 import java.time.Instant
-
-import com.iheart.thomas.abtest.model.Abtest
-import com.stripe.rainier.sampler.{RNG, SamplerConfig}
-import cats.implicits._
-
 import scala.util.control.NoStackTrace
-import cats.MonadError
-import com.stripe.rainier.core.{Generator, ToGenerator}
-trait AssessmentAlg[F[_], K] {
+
+trait FitAssessmentAlg[F[_], K] {
   def assess(
       k: K,
       abtest: Abtest,
@@ -40,7 +43,7 @@ object UpdatableKPI {
 
 trait KPISyntax {
 
-  implicit class abtestKPIOps[F[_], K](k: K)(implicit K: AssessmentAlg[F, K]) {
+  implicit class abtestKPIOps[F[_], K](k: K)(implicit K: FitAssessmentAlg[F, K]) {
     def assess(
         abtest: Abtest,
         baselineGroup: GroupName,
@@ -60,8 +63,9 @@ trait KPISyntax {
   }
 }
 
-object AssessmentAlg {
-  def apply[F[_], K](implicit ev: AssessmentAlg[F, K]): AssessmentAlg[F, K] = ev
+object FitAssessmentAlg {
+  def apply[F[_], K](implicit ev: FitAssessmentAlg[F, K]): FitAssessmentAlg[F, K] =
+    ev
 
   implicit def toGeneratorTuple[A, B, U](
       implicit tga: ToGenerator[A, A],
@@ -81,7 +85,7 @@ object AssessmentAlg {
       rng: RNG,
       K: Measurable[F, M, K],
       F: MonadError[F, Throwable])
-      extends AssessmentAlg[F, K] {
+      extends FitAssessmentAlg[F, K] {
     protected def sampleIndicator(
         k: K,
         data: M
@@ -111,7 +115,7 @@ object AssessmentAlg {
                 .map2(sampleIndicator(k, baselineMeasurements))(_ - _)
                 .predict()
 
-            (gn, BenchmarkResult(improvement, baselineGroup))
+            (gn, bayesian.BenchmarkResult(improvement, baselineGroup))
         }
       }
     }
