@@ -116,7 +116,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
         ).parJoin(2).interruptAfter(1.second).compile.drain *>
         kpiDAO
           .get(kpiA.name)
-          .asserting(_.model shouldBe kpiA.model.updateFrom(Conversions(1, 1)))
+          .asserting(_.model shouldBe BetaModel(Conversions(1, 1)))
 
     }
 
@@ -161,7 +161,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
         } yield ()).interruptAfter(2.second).compile.drain *>
         kpiDAO
           .get(kpiA.name)
-          .asserting(_.model shouldBe kpiA.model.updateFrom(Conversions(1, 1)))
+          .asserting(_.model shouldBe BetaModel(Conversions(1, 1)))
     }
 
     "remove job when completed" in withAlg { (kpiDAO, alg, pubSub) =>
@@ -208,8 +208,8 @@ class JobAlgSuite extends JobAlgSuiteBase {
         ).parJoin(4).interruptAfter(3.second).compile.drain *>
         (kpiDAO.get(kpiC.name), kpiDAO.get(kpiB.name)).tupled.asserting {
           case (kC, kB) =>
-            kB.model should be(kpiB.model.updateFrom(Conversions(0, 2)))
-            kC.model should be(kpiC.model.updateFrom(Conversions(1, 3)))
+            kB.model should be(BetaModel(Conversions(0, 2)))
+            kC.model should be(BetaModel(Conversions(1, 3)))
         }
     }
 

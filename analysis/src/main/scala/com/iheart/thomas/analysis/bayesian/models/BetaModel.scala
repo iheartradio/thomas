@@ -9,13 +9,12 @@ case class BetaModel(
       alpha = conversions.converted + 1d,
       beta = conversions.total - conversions.converted + 1d
     )
+}
 
-  def accumulativeUpdate(
-      c: Conversions
-    ): BetaModel = {
-    copy(
-      alpha = alpha + c.converted.toDouble,
-      beta = beta + c.total.toDouble - c.converted.toDouble
+object BetaModel {
+  def apply(conversions: Conversions): BetaModel =
+    BetaModel(
+      alpha = conversions.converted + 1d,
+      beta = conversions.total - conversions.converted + 1d
     )
-  }
 }

@@ -44,7 +44,7 @@ object RewardAnalytics {
               historical
                 .flatMap { le =>
                   le.get(armName)
-                    .map(rs => kpi.model.updateFrom(rs))
+                    .map(rs => BetaModel(rs))
                 }
                 .getOrElse(kpi.model)
 
