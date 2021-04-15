@@ -523,7 +523,7 @@ class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
     KPIName("test kpi"),
     "kai",
     None,
-    BetaModel(alphaPrior = 1000, betaPrior = 100000),
+    BetaModel(alpha = 1000, beta = 100000),
     None
   )
 

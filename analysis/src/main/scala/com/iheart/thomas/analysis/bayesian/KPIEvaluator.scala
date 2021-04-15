@@ -4,11 +4,8 @@ package bayesian
 
 import cats.Monad
 import cats.data.NonEmptyList
-import com.iheart.thomas.{ArmName, GroupName}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import cats.implicits._
-import com.stripe.rainier.core.Beta
-import models._
 
 trait KPIEvaluator[F[_], Model, Measurement] {
   def evaluate(
@@ -49,9 +46,16 @@ object KPIEvaluator {
       sampler: SamplerConfig,
       rng: RNG,
       F: Monad[F],
-      K: KPIIndicator[Model, Measurement]
+      M: Posterior[Model, Measurement],
+      K: KPIIndicator[Model]
     ): KPIEvaluator[F, Model, Measurement] =
     new KPIEvaluator[F, Model, Measurement] {
+
+      private def posteriorIndicator(
+          model: Model,
+          measurement: Measurement
+        ): Indicator =
+        K(M(model, measurement))
 
       def evaluate(
           model: Model,
@@ -84,12 +88,14 @@ object KPIEvaluator {
           baseline: (Measurement, Model),
           results: (Measurement, Model)
         ): F[Samples[Diff]] = {
-        val improvement =
-          K(results._2, results._1)
-            .map2(K(baseline._2, baseline._1))(_ - _)
-            .predict()
 
-        improvement.pure[F]
+        (
+          posteriorIndicator(results._2, results._1),
+          posteriorIndicator(
+            baseline._2,
+            baseline._1
+          )
+        ).mapN(_ - _).predict().pure[F]
       }
 
       def evaluate(
@@ -99,7 +105,7 @@ object KPIEvaluator {
           .fromList(allMeasurement.toList)
           .map {
             _.nonEmptyTraverse {
-              case (gn, (ms, k)) => K(k, ms).map((gn, _))
+              case (gn, (ms, k)) => posteriorIndicator(k, ms).map((gn, _))
             }
           }
           .fold(F.pure(Map.empty[GroupName, Probability])) { rvGroupResults =>
@@ -122,16 +128,5 @@ object KPIEvaluator {
             })
           }
     }
-
-  object BayesianKPIEvaluator {
-    def sample(
-        model: BetaModel,
-        data: Conversions
-      ): Indicator = {
-      val postAlpha = model.alphaPrior + data.converted
-      val postBeta = model.betaPrior + data.total - data.converted
-      Variable(Beta(postAlpha, postBeta).latent, None)
-    }
-  }
 
 }

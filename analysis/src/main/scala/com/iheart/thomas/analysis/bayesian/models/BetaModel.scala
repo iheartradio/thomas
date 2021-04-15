@@ -2,20 +2,20 @@ package com.iheart.thomas.analysis
 package bayesian.models
 
 case class BetaModel(
-    alphaPrior: Double,
-    betaPrior: Double) {
+    alpha: Double,
+    beta: Double) {
   def updateFrom(conversions: Conversions): BetaModel =
     copy(
-      alphaPrior = conversions.converted + 1d,
-      betaPrior = conversions.total - conversions.converted + 1d
+      alpha = conversions.converted + 1d,
+      beta = conversions.total - conversions.converted + 1d
     )
 
   def accumulativeUpdate(
       c: Conversions
     ): BetaModel = {
     copy(
-      alphaPrior = alphaPrior + c.converted.toDouble,
-      betaPrior = betaPrior + c.total.toDouble - c.converted.toDouble
+      alpha = alpha + c.converted.toDouble,
+      beta = beta + c.total.toDouble - c.converted.toDouble
     )
   }
 }

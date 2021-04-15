@@ -7,7 +7,7 @@ import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 
 case class Variable[A](
     v: A,
-    model: Option[Model]) {
+    model: Option[Model] = None) {
 
   def predict[U](
       nChains: Int = 4

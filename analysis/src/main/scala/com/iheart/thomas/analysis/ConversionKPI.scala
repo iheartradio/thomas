@@ -3,6 +3,7 @@ import MessageQuery._
 import cats.{FlatMap, MonadThrow, UnorderedFoldable}
 import cats.implicits._
 import bayesian.models.BetaModel
+import com.iheart.thomas.analysis.bayesian.Posterior
 
 import scala.util.control.NoStackTrace
 import scala.util.matching.Regex
@@ -41,7 +42,7 @@ trait ConversionKPIAlg[F[_]] {
     ): F[ConversionKPI] =
     if (!kpi.name.n.matches("[-_.A-Za-z0-9\\s]+"))
       F.raiseError(InvalidKPIName)
-    else if (kpi.model.betaPrior < 0 || kpi.model.alphaPrior < 0)
+    else if (kpi.model.beta < 0 || kpi.model.alpha < 0)
       F.raiseError(InvalidModelPrior)
     else
       insert(kpi)
@@ -73,7 +74,7 @@ trait ConversionKPIAlg[F[_]] {
     )(implicit F: FlatMap[F]
     ): F[ConversionKPI] =
     updateModel(name) { m =>
-      m.accumulativeUpdate(Conversions(events))
+      Posterior.update(m, Conversions(events))
     }
 
   def setModel(
