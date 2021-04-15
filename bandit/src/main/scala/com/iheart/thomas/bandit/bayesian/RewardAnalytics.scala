@@ -5,6 +5,7 @@ import cats.FlatMap
 import cats.implicits._
 import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.bayesian.models.BetaModel
+import com.iheart.thomas.analysis.bayesian._
 
 trait RewardAnalytics[F[_], R] {
   def sampleSize(r: R): Long

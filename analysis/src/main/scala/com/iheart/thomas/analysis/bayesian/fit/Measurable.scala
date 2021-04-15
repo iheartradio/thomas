@@ -1,10 +1,10 @@
-package com.iheart.thomas
-package analysis
-
-import java.time.Instant
+package com.iheart.thomas.analysis.bayesian.fit
 
 import cats.Contravariant
+import com.iheart.thomas.GroupName
 import com.iheart.thomas.abtest.model.Abtest
+
+import java.time.Instant
 
 trait Measurable[F[_], M, K] {
   def measureAbtest(

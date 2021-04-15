@@ -1,4 +1,4 @@
-package com.iheart.thomas.analysis.bayesian.models.fit
+package com.iheart.thomas.analysis.bayesian.fit
 
 import cats.implicits._
 import com.iheart.thomas.GroupName
@@ -6,7 +6,7 @@ import com.iheart.thomas.abtest.model.Abtest
 import com.iheart.thomas.analysis.DistributionSpec.{Normal, Uniform}
 import com.iheart.thomas.analysis.`package`.Measurements
 import com.iheart.thomas.analysis.implicits._
-import com.iheart.thomas.analysis.{KPIName, Measurable}
+import com.iheart.thomas.analysis.KPIName
 import com.stripe.rainier.core.LogNormal
 import com.stripe.rainier.sampler._
 import org.scalatest.funsuite.AnyFunSuiteLike

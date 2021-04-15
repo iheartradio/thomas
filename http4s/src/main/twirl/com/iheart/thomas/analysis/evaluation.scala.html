@@ -1,4 +1,5 @@
 @import com.iheart.thomas.analysis._
+@import com.iheart.thomas.analysis.bayesian._
 @import com.iheart.thomas.html._
 @import com.iheart.thomas._
 @import com.iheart.thomas.analysis.monitor._
@@ -14,7 +15,6 @@ includedArms: Set[ArmName]
 )(implicit env: UIEnv)
 
 @topNav(s"Analytics Of $kpi on A/B test $feature", "Analysis") {
-
 
 
 @if(evaluation.isEmpty) {
@@ -46,7 +46,6 @@ includedArms: Set[ArmName]
 
         </div>
         <div class="col-8">
-
             <form action="" method="get" class="row g-3">
                 @for(arm <- includedArms) {
                   <input type="hidden" name="includedArms" value="@arm" />

@@ -1,6 +1,7 @@
 package com.iheart.thomas.analysis
 package syntax
 
+import com.iheart.thomas.analysis.bayesian.fit.KPISyntax
 import com.iheart.thomas.analysis.syntax.RealSyntax.RealSyntaxOps
 import com.stripe.rainier.compute.Real
 import com.stripe.rainier.core.Model

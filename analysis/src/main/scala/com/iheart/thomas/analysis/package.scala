@@ -1,6 +1,7 @@
 package com.iheart.thomas
 package analysis
 
+import com.iheart.thomas.analysis.bayesian.Variable
 import com.stripe.rainier.compute.Real
 import io.estatico.newtype.macros.newsubtype
 
