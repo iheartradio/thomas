@@ -9,52 +9,59 @@ import cats.implicits._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 
-trait MonitorAlg[F[_]] {
+trait MonitorAlg[F[_], K <: KPI] {
+  type KS <: KPIStats
+  type KPIEvent
 
   def updateState[C[_]: Foldable](
       key: ExperimentKPIState.Key,
-      events: C[(ArmName, ConversionEvent)]
-    ): F[ExperimentKPIState[Conversions]]
+      events: C[(ArmName, KPIEvent)]
+    ): F[ExperimentKPIState[KS]]
 
-  def initConversion(
+  def initState(
       feature: FeatureName,
       kpi: KPIName
-    ): F[ExperimentKPIState[Conversions]]
+    ): F[ExperimentKPIState[KS]]
 
-  def getConversion(key: Key): F[Option[ExperimentKPIState[Conversions]]]
+  def getState(key: Key): F[Option[ExperimentKPIState[KS]]]
 
-  def resetConversion(key: Key): F[ExperimentKPIState[Conversions]]
+  def resetState(key: Key): F[ExperimentKPIState[KS]]
 
-  def getConversions(
+  def getStates(
       feature: FeatureName,
       kpis: Seq[KPIName]
-    ): F[Vector[ExperimentKPIState[Conversions]]]
+    ): F[Vector[ExperimentKPIState[KS]]]
 
-  def allConversions: F[Vector[ExperimentKPIState[Conversions]]]
+  def allStates: F[Vector[ExperimentKPIState[KS]]]
 
   def evaluate(
-      state: ExperimentKPIState[Conversions],
+      state: ExperimentKPIState[KS],
       benchmarkArm: Option[ArmName],
       includedArms: Option[Seq[ArmName]] = None
     ): F[List[Evaluation]]
 
   def updateModel[C[_]: UnorderedFoldable](
       name: KPIName,
-      events: C[ConversionEvent]
-    ): F[ConversionKPI]
+      events: C[KPIEvent]
+    ): F[K]
 
 }
 
 object MonitorAlg {
 
-  def apply[F[_]](implicit inst: MonitorAlg[F]): MonitorAlg[F] = inst
+  def apply[F[_], K <: KPI](implicit inst: MonitorAlg[F, K]): MonitorAlg[F, K] =
+    inst
 
-  implicit def default[F[_]: Monad](
+  type MonitorConversionAlg[F[_]] = MonitorAlg[F, ConversionKPI]
+
+  implicit def defaultConversions[F[_]: Monad](
       implicit cStateDAO: ExperimentKPIStateDAO[F, Conversions],
       cKpiRepo: KPIRepo[F, ConversionKPI],
       T: Timer[F]
-    ): MonitorAlg[F] =
-    new MonitorAlg[F] {
+    ): MonitorAlg[F, ConversionKPI] =
+    new MonitorAlg[F, ConversionKPI] {
+      type KS = Conversions
+      type KPIEvent = ConversionEvent
       implicit val rng = RNG.default
       implicit val sc = SamplerConfig.default
       val evaluator = KPIEvaluator[F, BetaModel, Conversions]
@@ -77,29 +84,25 @@ object MonitorAlg {
         } yield r
       }
 
-      def resetConversion(key: Key) = reset[Conversions](key)
-
-      private def reset[KS <: KPIStats](
+      def resetState(
           key: Key
-        )(implicit dao: ExperimentKPIStateDAO[F, KS]
         ): F[ExperimentKPIState[KS]] =
-        dao.remove(key) *> init(key)
+        cStateDAO.remove(key) *> init(key)
 
-      private def init[KS <: KPIStats](
+      private def init(
           key: Key
-        )(implicit dao: ExperimentKPIStateDAO[F, KS]
         ): F[ExperimentKPIState[KS]] = {
-        dao.ensure(key)(
+        cStateDAO.ensure(key)(
           TimeUtil
             .now[F]
             .map(now => ExperimentKPIState[KS](key, Nil, now, now))
         )
       }
 
-      def initConversion(
+      def initState(
           feature: FeatureName,
           kpi: KPIName
-        ): F[ExperimentKPIState[Conversions]] = init[Conversions](Key(feature, kpi))
+        ): F[ExperimentKPIState[Conversions]] = init(Key(feature, kpi))
 
       def updateState[C[_]: Foldable](
           key: ExperimentKPIState.Key,
@@ -129,17 +132,17 @@ object MonitorAlg {
         }
       }
 
-      def getConversion(key: Key): F[Option[ExperimentKPIState[Conversions]]] =
+      def getState(key: Key): F[Option[ExperimentKPIState[Conversions]]] =
         cStateDAO.find(key)
 
-      def allConversions: F[Vector[ExperimentKPIState[Conversions]]] = cStateDAO.all
+      def allStates: F[Vector[ExperimentKPIState[Conversions]]] = cStateDAO.all
 
-      def getConversions(
+      def getStates(
           feature: FeatureName,
           kpis: Seq[KPIName]
         ): F[Vector[ExperimentKPIState[Conversions]]] =
         kpis.toVector.traverseFilter { kpi =>
-          getConversion(Key(feature, kpi))
+          getState(Key(feature, kpi))
         }
 
       def updateModel[C[_]: UnorderedFoldable](

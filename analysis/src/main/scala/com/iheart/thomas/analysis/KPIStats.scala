@@ -47,3 +47,10 @@ case class PerUserSampleSummary(
     variance: Double,
     count: Long)
     extends KPIStats
+
+object PerUserSampleSummary {
+  def fromSamples(samples: PerUserSamples): PerUserSampleSummary =
+    samples.summary
+
+  def apply(samples: PerUserSamples): PerUserSampleSummary = fromSamples(samples)
+}

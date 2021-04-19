@@ -5,7 +5,7 @@ import cats.effect.{IO, Resource}
 import com.iheart.thomas.analysis.monitor.{
   ExperimentKPIState,
   ExperimentKPIStateDAO,
-  MonitorAlg
+  MonitorConversionAlg
 }
 import org.scalatest.matchers.should.Matchers
 import cats.implicits._

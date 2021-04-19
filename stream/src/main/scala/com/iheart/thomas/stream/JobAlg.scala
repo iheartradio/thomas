@@ -7,8 +7,8 @@ import TimeUtil.InstantOps
 import cats.Functor
 import com.iheart.thomas.analysis.ConversionEvent
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
-import com.iheart.thomas.analysis.monitor.MonitorAlg
 import com.iheart.thomas.analysis.KPIName
+import com.iheart.thomas.analysis.monitor.MonitorAlg.MonitorConversionAlg
 import com.iheart.thomas.stream.JobSpec.{MonitorTest, RunBandit, UpdateKPIPrior}
 import com.iheart.thomas.tracking.EventLogger
 import com.typesafe.config.Config
@@ -74,7 +74,7 @@ object JobAlg {
       timer: Timer[F],
       dao: JobDAO[F],
       armParser: ArmParser[F, Message],
-      monitorAlg: MonitorAlg[F],
+      monitorAlg: MonitorConversionAlg[F],
       convEventParser: KpiEventParser[F, Message, ConversionEvent],
       config: Config,
       logger: EventLogger[F],
@@ -142,7 +142,7 @@ object JobAlg {
                     .map {
                       parser =>
                         { (input: Stream[F, Message]) =>
-                          Stream.eval(monitorAlg.initConversion(feature, kpiName)) *>
+                          Stream.eval(monitorAlg.initState(feature, kpiName)) *>
                             input
                               .evalMap { m =>
                                 armParser.parseArm(m, feature).flatMap { armO =>

@@ -24,7 +24,7 @@ import com.iheart.thomas.html.{errorMsg, redirect}
 import org.http4s.FormDataDecoder
 import FormDataDecoder._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
-import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, MonitorAlg}
+import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, MonitorConversionAlg}
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.http4s.analysis.UI.{
   MonitorInfo,
@@ -47,7 +47,7 @@ class UI[F[_]: Async](
     implicit
     convKpiAlg: KPIRepo[F, ConversionKPI],
     jobAlg: JobAlg[F],
-    monitorAlg: MonitorAlg[F],
+    monitorAlg: MonitorConversionAlg[F],
     authAlg: AuthenticationAlg[F, AuthImp],
     aCfg: AdminUIConfig)
     extends AuthedEndpointsUtils[F, AuthImp]
@@ -60,7 +60,7 @@ class UI[F[_]: Async](
 
     case GET -> `rootPath` / "" asAuthed (u) =>
       for {
-        states <- monitorAlg.allConversions
+        states <- monitorAlg.allStates
         kpis <- convKpiAlg.all
         r <- Ok(index(states, kpis)(UIEnv(u)))
       } yield r
@@ -72,7 +72,7 @@ class UI[F[_]: Async](
       for {
         js <- jobAlg.monitors(feature)
         monitors <- js.traverse { j =>
-          monitorAlg.getConversion(Key(feature, j.spec.kpi)).map(MonitorInfo(j, _))
+          monitorAlg.getState(Key(feature, j.spec.kpi)).map(MonitorInfo(j, _))
         }
         kpis <- convKpiAlg.all
         availableKpis =
@@ -104,7 +104,7 @@ class UI[F[_]: Async](
     case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "evaluate" :? controlArm(
           caO
         ) +& includedArms(arms) asAuthed (u) =>
-      monitorAlg.getConversion(Key(feature, KPIName(kpi))).flatMap { stateO =>
+      monitorAlg.getState(Key(feature, KPIName(kpi))).flatMap { stateO =>
         stateO
           .traverse(monitorAlg.evaluate(_, caO, arms.toOption.filter(_.nonEmpty)))
           .flatMap { evaluationO =>
@@ -123,7 +123,7 @@ class UI[F[_]: Async](
       }
 
     case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "reset" asAuthed (u) =>
-      monitorAlg.resetConversion(Key(feature, KPIName(kpi))) *>
+      monitorAlg.resetState(Key(feature, KPIName(kpi))) *>
         Ok(
           redirect(
             reverseRoutes.analysisOf(feature),

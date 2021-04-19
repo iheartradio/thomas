@@ -10,10 +10,10 @@ import cats.implicits._
 import cats.effect._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
 
-class MonitorAlgSuite extends AsyncIOSpec with Matchers {
+class MonitorConversionAlgSuite extends AsyncIOSpec with Matchers {
   import dynamo.AnalysisDAOs._
 
-  val algR = localDynamoR.map(implicit ld => MonitorAlg.default[IO])
+  val algR = localDynamoR.map(implicit ld => MonitorConversionAlg.default[IO])
   "MonitorAlg" - {
 
     "update state in parallel" in {
@@ -22,14 +22,14 @@ class MonitorAlgSuite extends AsyncIOSpec with Matchers {
       algR
         .use { implicit alg =>
           for {
-            _ <- alg.initConversion(key.feature, key.kpi)
+            _ <- alg.initState(key.feature, key.kpi)
             _ <-
               List
                 .fill(20)(
                   alg.updateState(key, List("A" -> false, "A" -> false, "A" -> true))
                 )
                 .parSequence
-            updated <- alg.getConversion(key)
+            updated <- alg.getState(key)
           } yield updated
         }
         .asserting {
@@ -46,11 +46,11 @@ class MonitorAlgSuite extends AsyncIOSpec with Matchers {
       algR
         .use { implicit alg =>
           for {
-            _ <- alg.initConversion(key.feature, key.kpi)
+            _ <- alg.initState(key.feature, key.kpi)
             _ <- alg.updateState(key, List("A" -> false, "A" -> false, "A" -> true))
             _ <- alg.updateState(key, List("B" -> false, "B" -> false, "A" -> true))
 
-            updated <- alg.getConversion(key)
+            updated <- alg.getState(key)
           } yield updated
         }
         .asserting {
