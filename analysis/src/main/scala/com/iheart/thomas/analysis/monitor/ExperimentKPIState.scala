@@ -5,7 +5,9 @@ package monitor
 import com.iheart.thomas.analysis.Probability
 import cats.implicits._
 import ExperimentKPIState.{ArmState, Key}
+import cats.{Functor, MonadThrow, Applicative}
 import cats.effect.Timer
+import com.iheart.thomas.abtest.Error.NotFound
 
 import java.time.Instant
 
@@ -34,6 +36,13 @@ object ExperimentKPIState {
     def toStringKey = feature + "|" + kpi.n
   }
 
+  def init[F[_]: Timer: Functor, KS <: KPIStats](
+      key: Key
+    ): F[ExperimentKPIState[KS]] =
+    TimeUtil
+      .now[F]
+      .map(now => ExperimentKPIState[KS](key, Nil, now, now))
+
   def parseKey(string: String): Option[Key] = {
     val split = string.split('|')
     if (split.length != 2) None
@@ -43,7 +52,13 @@ object ExperimentKPIState {
   case class ArmState[+KS <: KPIStats](
       name: ArmName,
       kpiStats: KS,
-      likelihoodOptimum: Option[Probability])
+      likelihoodOptimum: Option[Probability]) {
+    def readyForEvaluation: Boolean = {
+      kpiStats match {
+        case c: Conversions => c.total > 100
+      }
+    }
+  }
 }
 
 trait ExperimentKPIStateDAO[F[_], KS <: KPIStats] {
@@ -54,12 +69,76 @@ trait ExperimentKPIStateDAO[F[_], KS <: KPIStats] {
     ): F[ExperimentKPIState[KS]]
 
   def get(key: Key): F[ExperimentKPIState[KS]]
-  def remove(key: Key): F[Unit]
   def all: F[Vector[ExperimentKPIState[KS]]]
   def find(key: Key): F[Option[ExperimentKPIState[KS]]]
-  def updateState(
+
+  def update(
       key: Key
     )(updateArms: List[ArmState[KS]] => List[ArmState[KS]]
-    )(implicit T: Timer[F]
     ): F[ExperimentKPIState[KS]]
+
+  def reset(key: Key)(implicit F: Applicative[F]): F[ExperimentKPIState[KS]] =
+    delete(key) *> init(key)
+
+  def delete(key: Key): F[Option[ExperimentKPIState[KS]]]
+
+  def init(
+      key: Key
+    ): F[ExperimentKPIState[KS]]
+}
+
+trait AllExperimentKPIStateRepo[F[_]] {
+
+  def delete(key: Key): F[Option[ExperimentKPIState[KPIStats]]]
+  def all: F[Vector[ExperimentKPIState[KPIStats]]]
+  def find(key: Key): F[Option[ExperimentKPIState[KPIStats]]]
+  def get(key: Key): F[ExperimentKPIState[KPIStats]]
+  def reset(key: Key): F[ExperimentKPIState[KPIStats]]
+}
+
+object AllExperimentKPIStateRepo {
+  implicit def default[F[_]: MonadThrow](
+      implicit cRepo: ExperimentKPIStateDAO[F, Conversions],
+      pRepo: ExperimentKPIStateDAO[F, PerUserSamplesSummary],
+      kpiRepo: AllKPIRepo[F]
+    ): AllExperimentKPIStateRepo[F] =
+    new AllExperimentKPIStateRepo[F] {
+
+      def delete(key: Key): F[Option[ExperimentKPIState[KPIStats]]] =
+        cRepo
+          .delete(key)
+          .flatMap(r =>
+            r.fold(pRepo.delete(key).widen[Option[ExperimentKPIState[KPIStats]]])(
+              _ => r.pure[F].widen
+            )
+          )
+
+      def all: F[Vector[ExperimentKPIState[KPIStats]]] =
+        for {
+          cStates <- cRepo.all
+          pStates <- pRepo.all
+        } yield (cStates.widen[ExperimentKPIState[KPIStats]] ++ pStates
+          .widen[ExperimentKPIState[KPIStats]])
+
+      def find(key: Key): F[Option[ExperimentKPIState[KPIStats]]] =
+        cRepo
+          .find(key)
+          .flatMap(r =>
+            r.fold(pRepo.find(key).widen[Option[ExperimentKPIState[KPIStats]]])(_ =>
+              r.pure[F].widen
+            )
+          )
+
+      def reset(key: Key): F[ExperimentKPIState[KPIStats]] =
+        kpiRepo.get(key.kpi).flatMap {
+          case _: ConversionKPI   => cRepo.reset(key).widen
+          case _: AccumulativeKPI => pRepo.reset(key).widen
+        }
+
+      def get(key: Key): F[ExperimentKPIState[KPIStats]] =
+        find(key).flatMap(
+          _.liftTo[F](NotFound(key.toStringKey + " is not found in DB"))
+        )
+
+    }
 }

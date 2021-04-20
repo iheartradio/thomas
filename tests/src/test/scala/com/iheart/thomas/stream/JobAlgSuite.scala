@@ -7,14 +7,14 @@ import cats.implicits._
 import com.iheart.thomas.analysis.bayesian.models._
 import com.iheart.thomas.analysis.{
   ConversionKPI,
-  KPIRepo,
   ConversionMessageQuery,
   Conversions,
   Criteria,
   KPIName,
+  KPIRepo,
   MessageQuery
 }
-import com.iheart.thomas.stream.JobSpec.UpdateKPIPrior
+import com.iheart.thomas.stream.JobSpec.{ProcessSettingsOptional, UpdateKPIPrior}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.matchers.should.Matchers
 import org.typelevel.jawn.ast.{JObject, JString, JValue}
@@ -78,7 +78,7 @@ abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
       case (k, v) =>
         k -> (JString(v): JValue)
     })
-
+  def settings(exp: Instant) = ProcessSettingsOptional(None, None, Some(exp))
 }
 
 class JobAlgSuite extends JobAlgSuiteBase {
@@ -86,7 +86,9 @@ class JobAlgSuite extends JobAlgSuiteBase {
   "JobAlg" - {
     "can schedule a job" in withAlg { (_, alg, _) =>
       (for {
-        job <- alg.schedule(UpdateKPIPrior(kpiA.name, Instant.now.plusSeconds(3)))
+        job <- alg.schedule(
+          UpdateKPIPrior(kpiA.name, settings(Instant.now.plusSeconds(3)))
+        )
         jobs <- alg.allJobs
 
       } yield (job, jobs)).asserting {
@@ -96,7 +98,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
     }
 
     "set the started time when started" in withAlg { (kpiDAO, alg, pubSub) =>
-      val spec = UpdateKPIPrior(kpiA.name, Instant.now.plusSeconds(10))
+      val spec = UpdateKPIPrior(kpiA.name, settings(Instant.now.plusSeconds(10)))
       kpiDAO.create(kpiA) *> alg.schedule(spec) *>
         alg.runStream.interruptAfter(800.millis).compile.drain *>
         alg
@@ -107,7 +109,9 @@ class JobAlgSuite extends JobAlgSuiteBase {
 
     "get can process one KPI update job" in withAlg { (kpiDAO, alg, pubSub) =>
       kpiDAO.create(kpiA) *>
-        alg.schedule(UpdateKPIPrior(kpiA.name, Instant.now.plusMillis(800))) *>
+        alg.schedule(
+          UpdateKPIPrior(kpiA.name, settings(Instant.now.plusMillis(800)))
+        ) *>
         Stream(
           alg.runStream,
           pubSub
@@ -122,7 +126,9 @@ class JobAlgSuite extends JobAlgSuiteBase {
 
     "keep checkedout timestamp updated" in withAlg { (kpiDAO, alg, _) =>
       kpiDAO.create(kpiA) *>
-        alg.schedule(UpdateKPIPrior(kpiA.name, Instant.now.plusSeconds(2))) *>
+        alg.schedule(
+          UpdateKPIPrior(kpiA.name, settings(Instant.now.plusSeconds(2)))
+        ) *>
         (for {
           start <- TimeUtil.now[IO]
           _ <-
@@ -142,7 +148,9 @@ class JobAlgSuite extends JobAlgSuiteBase {
       kpiDAO.create(kpiA) *>
         (for {
           job <- Stream.eval(
-            alg.schedule(UpdateKPIPrior(kpiA.name, Instant.now.plusSeconds(1)))
+            alg.schedule(
+              UpdateKPIPrior(kpiA.name, settings(Instant.now.plusSeconds(1)))
+            )
           )
           _ <- Stream(
             alg.runStream,
@@ -166,7 +174,9 @@ class JobAlgSuite extends JobAlgSuiteBase {
 
     "remove job when completed" in withAlg { (kpiDAO, alg, pubSub) =>
       kpiDAO.create(kpiA) *>
-        alg.schedule(UpdateKPIPrior(kpiA.name, Instant.now.plusMillis(400))) *>
+        alg.schedule(
+          UpdateKPIPrior(kpiA.name, settings(Instant.now.plusMillis(400)))
+        ) *>
         Stream(
           alg.runStream,
           pubSub
@@ -185,7 +195,9 @@ class JobAlgSuite extends JobAlgSuiteBase {
       val kpiC = kpiA.copy(name = KPIName("C"))
       val kpiB = kpiA.copy(name = KPIName("B"))
       kpiDAO.create(kpiC) *> kpiDAO.create(kpiB) *>
-        alg.schedule(UpdateKPIPrior(kpiC.name, Instant.now.plusMillis(2400))) *>
+        alg.schedule(
+          UpdateKPIPrior(kpiC.name, settings(Instant.now.plusMillis(2400)))
+        ) *>
         Stream(
           alg.runStream,
           pubSub
@@ -196,7 +208,9 @@ class JobAlgSuite extends JobAlgSuiteBase {
             .delayBy(200.milliseconds),
           Stream
             .eval(
-              alg.schedule(UpdateKPIPrior(kpiB.name, Instant.now.plusMillis(1800)))
+              alg.schedule(
+                UpdateKPIPrior(kpiB.name, settings(Instant.now.plusMillis(1800)))
+              )
             )
             .delayBy(500.milliseconds),
           pubSub
@@ -216,7 +230,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
     "can pickup abandoned job" in {
       implicit val config = cfg(50.millis, 2)
       withAlg { (kpiDAO, alg, _) =>
-        val spec = UpdateKPIPrior(kpiA.name, Instant.now.plusSeconds(1000))
+        val spec = UpdateKPIPrior(kpiA.name, settings(Instant.now.plusSeconds(1000)))
         kpiDAO.create(kpiA) *>
           alg.schedule(spec) *>
           alg.runStream.interruptAfter(500.millis).compile.drain *>
@@ -235,7 +249,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
     "do not pickup job yet obsolete" in {
       implicit val config = cfg(50.millis, 100)
       withAlg { (kpiDAO, alg, _) =>
-        val spec = UpdateKPIPrior(kpiA.name, Instant.now.plusSeconds(1000))
+        val spec = UpdateKPIPrior(kpiA.name, settings(Instant.now.plusSeconds(1000)))
         kpiDAO.create(kpiA) *>
           alg.schedule(spec) *>
           alg.runStream.interruptAfter(500.millis).compile.drain *>

@@ -3,6 +3,7 @@ package com.iheart.thomas.analysis
 import cats.data.ValidatedNel
 import cats.implicits._
 import cats.{FlatMap, MonadThrow}
+import com.iheart.thomas.abtest.Error.NotFound
 import com.iheart.thomas.analysis.KPIRepo.{InvalidKPI, validate}
 import com.iheart.thomas.analysis.bayesian.models.{BetaModel, LogNormalModel}
 
@@ -45,5 +46,38 @@ object KPIRepo {
         case ak: AccumulativeKPI =>
           LogNormalModel.validate(ak.model).void
       }
+    }
+}
+
+trait AllKPIRepo[F[_]] {
+  def all: F[Vector[KPI]]
+  def find(name: KPIName): F[Option[KPI]]
+  def get(name: KPIName): F[KPI]
+}
+
+object AllKPIRepo {
+  implicit def default[F[_]: MonadThrow](
+      implicit cRepo: KPIRepo[F, ConversionKPI],
+      aRepo: KPIRepo[F, AccumulativeKPI]
+    ): AllKPIRepo[F] =
+    new AllKPIRepo[F] {
+      def all: F[Vector[KPI]] =
+        for {
+          cs <- cRepo.all
+          as <- aRepo.all
+        } yield (cs.widen[KPI] ++ as
+          .widen[KPI])
+
+      def find(name: KPIName): F[Option[KPI]] =
+        cRepo.find(name).flatMap { r =>
+          r.fold(aRepo.find(name).widen[Option[KPI]])(_ => r.pure[F].widen)
+        }
+
+      def get(name: KPIName): F[KPI] =
+        find(name).flatMap(
+          _.liftTo[F](
+            NotFound("Cannot find KPI named " + name + " is not found in DB")
+          )
+        )
     }
 }

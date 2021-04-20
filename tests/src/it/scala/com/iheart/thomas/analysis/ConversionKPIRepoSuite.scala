@@ -8,10 +8,11 @@ import com.iheart.thomas.testkit.Resources.localDynamoR
 import org.scalatest.matchers.should.Matchers
 
 class ConversionKPIRepoSuite extends AsyncIOSpec with Matchers {
-  val daoR = localDynamoR.map(implicit ld => AnalysisDAOs.conversionKPIAlg[IO])
+  val daoR = localDynamoR.map(implicit ld => AnalysisDAOs.conversionKPIRepo[IO])
 
   "Can insert a new KPI" in {
-    val toInsert = ConversionKPI(KPIName("a"), "kai", None, BetaModel(0, 0), None)
+    val toInsert =
+      ConversionKPI(KPIName("a"), "kai", None, BetaModel(0.1, 0.1), None)
 
     daoR
       .use(

@@ -45,7 +45,10 @@ object MapBasedDAOs {
       }
 
     def remove(k: K): F[Unit] =
-      F.delay(map.remove(k)).void
+      delete(k).void
+
+    def delete(k: K): F[Option[A]] =
+      F.delay(map.remove(k))
 
     def update(a: A): F[A] =
       updateO(a).flatMap(_.liftTo[F](NotFound(s"${keyOf(a)} is not found")))
@@ -86,15 +89,17 @@ object MapBasedDAOs {
 
     }
 
-  def experimentStateDAO[F[_]: Sync, R <: KPIStats]: ExperimentKPIStateDAO[F, R] =
-    new MapBasedDAOs[F, ExperimentKPIState[R], Key](_.key)
-      with ExperimentKPIStateDAO[F, R] {
+  def experimentStateDAO[
+      F[_]: Sync: Timer,
+      KS <: KPIStats
+    ]: ExperimentKPIStateDAO[F, KS] =
+    new MapBasedDAOs[F, ExperimentKPIState[KS], Key](_.key)
+      with ExperimentKPIStateDAO[F, KS] {
 
-      def updateState(
+      def update(
           key: ExperimentKPIState.Key
-        )(updateArms: List[ArmState[R]] => List[ArmState[R]]
-        )(implicit T: Timer[F]
-        ): F[ExperimentKPIState[R]] =
+        )(updateArms: List[ArmState[KS]] => List[ArmState[KS]]
+        ): F[ExperimentKPIState[KS]] =
         for {
           now <- TimeUtil.now[F]
           s <- get(key)
@@ -105,6 +110,10 @@ object MapBasedDAOs {
             )
           )
         } yield r
+
+      def init(key: Key): F[ExperimentKPIState[KS]] =
+        ensure(key)(ExperimentKPIState.init[F, KS](key))
+
     }
 
   def conversionKPIAlg[F[_]](implicit F: Sync[F]): KPIRepo[F, ConversionKPI] =

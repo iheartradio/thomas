@@ -6,7 +6,7 @@
 @import com.iheart.thomas.http4s.UIEnv
 
 @(
-states: Vector[ExperimentKPIState[Conversions]],
+states: Vector[ExperimentKPIState[KPIStats]],
 kpis: Vector[ConversionKPI]
 )(implicit env: UIEnv)
 
@@ -19,7 +19,7 @@ kpis: Vector[ConversionKPI]
         </div>
         @for(state <- states) {
         <div class="mb-3">
-          @conversionState(state)
+          @kpiState(state)
         </div>
         }
 

@@ -13,18 +13,22 @@ import scala.concurrent.duration._
 
 object AnalysisDAOs extends ScanamoManagement {
   val conversionKPITableName = "ds-abtest-conversion-kpi"
-  val conversionKPIKeyName = "name"
-  val conversionKPIKey = ScanamoDAOHelperStringKey.keyOf(conversionKPIKeyName)
+  val accumulativeKPITableName = "ds-abtest-accumulative-kpi"
+  val kPIKeyName = "name"
+  val kPIKey = ScanamoDAOHelperStringKey.keyOf(kPIKeyName)
 
-  val experimentKPIStateTableName = "ds-abtest-experiment-kpi-state"
+  val conversionKPIStateTableName = "ds-abtest-conversion-kpi-state"
+  val perUserSamplesKPIStateTableName = "ds-abtest-per-user-samples-kpi-state"
   val experimentKPIStateKeyName = "key"
   val experimentKPIStateKey =
     ScanamoDAOHelperStringKey.keyOf(experimentKPIStateKeyName)
 
   def tables =
     List(
-      (conversionKPITableName, conversionKPIKey),
-      (experimentKPIStateTableName, experimentKPIStateKey)
+      (conversionKPITableName, kPIKey),
+      (accumulativeKPITableName, kPIKey),
+      (conversionKPIStateTableName, experimentKPIStateKey),
+      (perUserSamplesKPIStateTableName, experimentKPIStateKey)
     )
 
   def ensureAnalysisTables[F[_]: Concurrent](
@@ -34,45 +38,69 @@ object AnalysisDAOs extends ScanamoManagement {
     ): F[Unit] =
     ensureTables(tables, readCapacity, writeCapacity)
 
-  implicit def conversionKPIAlg[F[_]: Async](
+  implicit def conversionKPIRepo[F[_]: Async](
       implicit dynamoClient: DynamoDbAsyncClient
-    ): KPIRepo[F, ConversionKPI] =
-    new ScanamoDAOHelperStringLikeKey[F, ConversionKPI, KPIName](
-      conversionKPITableName,
-      conversionKPIKeyName,
+    ): KPIRepo[F, ConversionKPI] = kPIRepo[F, ConversionKPI](conversionKPITableName)
+
+  implicit def accumulativeKPIRepo[F[_]: Async](
+      implicit dynamoClient: DynamoDbAsyncClient
+    ): KPIRepo[F, AccumulativeKPI] =
+    kPIRepo[F, AccumulativeKPI](accumulativeKPITableName)
+
+  def kPIRepo[F[_]: Async, K <: KPI](
+      tableName: String
+    )(implicit dynamoClient: DynamoDbAsyncClient,
+      dynamoFormat: DynamoFormat[K]
+    ): KPIRepo[F, K] =
+    new ScanamoDAOHelperStringLikeKey[F, K, KPIName](
+      tableName,
+      kPIKeyName,
       dynamoClient
-    ) with KPIRepo[F, ConversionKPI]
+    ) with KPIRepo[F, K]
 
   implicit def expStateTimeStamp: WithTimeStamp[ExperimentKPIState[_]] =
     (a: ExperimentKPIState[_]) => a.lastUpdated
 
-  implicit def experimentKPIStateConversionDAO[F[_]: Async](
+  implicit def experimentKPIStateConversionDAO[F[_]: Async: Timer](
       implicit dynamoClient: DynamoDbAsyncClient
-    ): ExperimentKPIStateDAO[F, Conversions] = experimentKPIStateDAO[F, Conversions]
+    ): ExperimentKPIStateDAO[F, Conversions] =
+    experimentKPIStateDAO[F, Conversions](conversionKPIStateTableName)
 
-  def experimentKPIStateDAO[F[_]: Async, KS <: KPIStats](
-      implicit dynamoClient: DynamoDbAsyncClient,
-      asFormat: DynamoFormat[ArmState[KS]],
-      sFormat: DynamoFormat[ExperimentKPIState[KS]]
+  implicit def experimentKPIStatePerUserSamplesDAO[F[_]: Async: Timer](
+      implicit dynamoClient: DynamoDbAsyncClient
+    ): ExperimentKPIStateDAO[F, PerUserSamplesSummary] =
+    experimentKPIStateDAO[F, PerUserSamplesSummary](perUserSamplesKPIStateTableName)
+
+  def experimentKPIStateDAO[F[_]: Async: Timer, KS <: KPIStats](
+      tableName: String
+    )(implicit dynamoClient: DynamoDbAsyncClient,
+      dynamoFormat: DynamoFormat[ExperimentKPIState[KS]],
+      armFormat: DynamoFormat[ArmState[KS]]
     ): ExperimentKPIStateDAO[F, KS] =
     new ScanamoDAOHelperStringFormatKey[F, ExperimentKPIState[KS], Key](
-      experimentKPIStateTableName,
+      tableName,
       experimentKPIStateKeyName,
       dynamoClient
     ) with ExperimentKPIStateDAO[F, KS]
       with AtomicUpdatable[F, ExperimentKPIState[KS], Key] {
+
       protected def stringKey(k: Key) = k.toStringKey
       import retry._
-      def updateState(
+      def update(
           key: Key
         )(updateArms: List[ArmState[KS]] => List[ArmState[KS]]
-        )(implicit T: Timer[F]
         ): F[ExperimentKPIState[KS]] = {
 
         atomicUpdate(key, Some(RetryPolicies.constantDelay[F](40.milliseconds))) {
           state =>
             set("arms", updateArms(state.arms))
         }
+      }
+
+      def init(
+          key: Key
+        ): F[ExperimentKPIState[KS]] = {
+        ensure(key)(ExperimentKPIState.init[F, KS](key))
       }
 
     }

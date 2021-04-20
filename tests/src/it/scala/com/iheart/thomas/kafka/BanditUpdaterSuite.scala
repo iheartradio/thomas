@@ -83,7 +83,7 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
               toEvent
             )
             .evalTap { _ =>
-              conversionKPIAlg[IO].create(kpi)
+              conversionKPIRepo[IO].create(kpi)
             }
         }
 

@@ -15,6 +15,6 @@ class NormalSuite extends AnyFunSuiteLike with Matchers with AllSyntax {
       Model.sample(Normal(13, 4).distribution.latent)
     val fitSpec = Normal.fit(data)
     fitSpec.location shouldBe (13d +- 0.65)
-    fitSpec.scale shouldBe (4d +- 0.2)
+    fitSpec.scale shouldBe (4d +- 0.3)
   }
 }

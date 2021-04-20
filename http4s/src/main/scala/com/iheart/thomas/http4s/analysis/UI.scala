@@ -4,12 +4,13 @@ package analysis
 
 import cats.effect.Async
 import com.iheart.thomas.analysis.{
+  AllKPIRepo,
   ConversionKPI,
   ConversionMessageQuery,
   Criteria,
   KPIName,
-  KPIStats,
   KPIRepo,
+  KPIStats,
   MessageQuery,
   bayesian
 }
@@ -23,31 +24,41 @@ import com.iheart.thomas.analysis.html._
 import com.iheart.thomas.html.{errorMsg, redirect}
 import org.http4s.FormDataDecoder
 import FormDataDecoder._
+import com.iheart.thomas.analysis.bayesian.{KPIEvaluator}
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
-import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, MonitorConversionAlg}
+import com.iheart.thomas.analysis.monitor.{
+  AllExperimentKPIStateRepo,
+  ExperimentKPIState
+}
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.http4s.analysis.UI.{
   MonitorInfo,
   StartMonitorRequest,
-  UpdateKPIRequest,
   controlArm,
   includedArms
 }
 import com.iheart.thomas.stream.{JobAlg, JobInfo}
-import com.iheart.thomas.stream.JobSpec.{MonitorTest, UpdateKPIPrior}
+import com.iheart.thomas.stream.JobSpec.{
+  MonitorTest,
+  ProcessSettingsOptional,
+  UpdateKPIPrior
+}
 import org.http4s.dsl.impl.{
   OptionalMultiQueryParamDecoderMatcher,
   OptionalQueryParamDecoderMatcher
 }
 import tsec.authentication._
 
-import java.time.OffsetDateTime
+import java.time.Instant
+import scala.concurrent.duration.FiniteDuration
 
 class UI[F[_]: Async](
     implicit
     convKpiAlg: KPIRepo[F, ConversionKPI],
+    allKPIRepo: AllKPIRepo[F],
     jobAlg: JobAlg[F],
-    monitorAlg: MonitorConversionAlg[F],
+    stateRepo: AllExperimentKPIStateRepo[F],
+    kPIEvaluator: KPIEvaluator[F],
     authAlg: AuthenticationAlg[F, AuthImp],
     aCfg: AdminUIConfig)
     extends AuthedEndpointsUtils[F, AuthImp]
@@ -60,7 +71,7 @@ class UI[F[_]: Async](
 
     case GET -> `rootPath` / "" asAuthed (u) =>
       for {
-        states <- monitorAlg.allStates
+        states <- stateRepo.all
         kpis <- convKpiAlg.all
         r <- Ok(index(states, kpis)(UIEnv(u)))
       } yield r
@@ -72,11 +83,11 @@ class UI[F[_]: Async](
       for {
         js <- jobAlg.monitors(feature)
         monitors <- js.traverse { j =>
-          monitorAlg.getState(Key(feature, j.spec.kpi)).map(MonitorInfo(j, _))
+          stateRepo.find(Key(feature, j.spec.kpiName)).map(MonitorInfo(j, _))
         }
-        kpis <- convKpiAlg.all
+        kpis <- allKPIRepo.all
         availableKpis =
-          kpis.map(_.name).filter(k => js.find(_.spec.kpi == k).isEmpty)
+          kpis.map(_.name).filter(k => js.find(_.spec.kpiName == k).isEmpty)
         r <- Ok(
           abtest(feature, monitors, availableKpis)(UIEnv(u))
         )
@@ -84,7 +95,7 @@ class UI[F[_]: Async](
 
     case se @ POST -> `rootPath` / "abtests" / feature / "monitors" asAuthed (u) =>
       se.request.as[StartMonitorRequest].flatMap { r =>
-        jobAlg.schedule(MonitorTest(feature, r.kpi, r.until.toInstant)) *>
+        jobAlg.schedule(MonitorTest(feature, r.kpi, r.settings)) *>
           Ok(
             redirect(
               reverseRoutes.analysisOf(feature),
@@ -104,26 +115,26 @@ class UI[F[_]: Async](
     case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "evaluate" :? controlArm(
           caO
         ) +& includedArms(arms) asAuthed (u) =>
-      monitorAlg.getState(Key(feature, KPIName(kpi))).flatMap { stateO =>
-        stateO
-          .traverse(monitorAlg.evaluate(_, caO, arms.toOption.filter(_.nonEmpty)))
-          .flatMap { evaluationO =>
-            Ok(
-              evaluation(
-                feature,
-                KPIName(kpi),
-                evaluationO.toList.flatten,
-                stateO,
-                arms.toList.flatten.toSet
-              )(
-                UIEnv(u)
-              )
-            )
-          }
+      kPIEvaluator(
+        Key(feature, KPIName(kpi)),
+        caO,
+        arms.toOption.filter(_.nonEmpty)
+      ).flatMap { ro =>
+        Ok(
+          evaluation(
+            feature,
+            KPIName(kpi),
+            ro.map(_._1).toList.flatten,
+            ro.map(_._2),
+            arms.toList.flatten.toSet
+          )(
+            UIEnv(u)
+          )
+        )
       }
 
     case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "reset" asAuthed (u) =>
-      monitorAlg.resetState(Key(feature, KPIName(kpi))) *>
+      stateRepo.reset(Key(feature, KPIName(kpi))) *>
         Ok(
           redirect(
             reverseRoutes.analysisOf(feature),
@@ -188,10 +199,10 @@ class UI[F[_]: Async](
                   )
           )
 
-      case se @ POST -> `rootPath` / "conversionKPIs" / kpiName / "update-prior" asAuthed u =>
-        se.request.as[UpdateKPIRequest].flatMap { r =>
+      case se @ POST -> `rootPath` / "kpis" / kpiName / "update-prior" asAuthed u =>
+        se.request.as[ProcessSettingsOptional].flatMap { r =>
           jobAlg
-            .schedule(UpdateKPIPrior(KPIName(kpiName), r.until.toInstant))
+            .schedule(UpdateKPIPrior(KPIName(kpiName), r))
             .flatMap { jo =>
               jo.fold(
                 BadRequest(errorMsg("It's being updated right now"))
@@ -217,15 +228,14 @@ object UI {
   object includedArms
       extends OptionalMultiQueryParamDecoderMatcher[GroupName]("includedArms")
 
-  case class UpdateKPIRequest(until: OffsetDateTime)
   case class StartMonitorRequest(
       kpi: KPIName,
-      until: OffsetDateTime)
+      settings: ProcessSettingsOptional)
 
-  case class MonitorInfo[R <: KPIStats](
+  case class MonitorInfo(
       job: JobInfo[MonitorTest],
-      state: Option[ExperimentKPIState[R]]) {
-    def kpi: KPIName = job.spec.kpi
+      state: Option[ExperimentKPIState[KPIStats]]) {
+    def kpi: KPIName = job.spec.kpiName
   }
 
   object Decoders {
@@ -242,11 +252,14 @@ object UI {
       list[Criteria]("criteria")
     ).mapN(MessageQuery.apply)
 
-    implicit val uprDecoder: FormDataDecoder[UpdateKPIRequest] =
-      field[OffsetDateTime]("until").map(UpdateKPIRequest(_))
+    implicit val processSettingsDecoder: FormDataDecoder[ProcessSettingsOptional] = (
+      fieldOptional[FiniteDuration]("frequency"),
+      fieldOptional[Int]("eventChunkSize"),
+      fieldOptional[Instant]("expiration")
+    ).mapN(ProcessSettingsOptional.apply)
 
     implicit val smrDecoder: FormDataDecoder[StartMonitorRequest] =
-      (field[KPIName]("kpi"), field[OffsetDateTime]("until"))
+      (field[KPIName]("kpi"), nested[ProcessSettingsOptional]("settings"))
         .mapN(StartMonitorRequest.apply)
 
     implicit val conversionMessageQueryDecoder

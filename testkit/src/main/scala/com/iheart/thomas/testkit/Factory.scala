@@ -58,7 +58,7 @@ object Factory extends IOApp {
           )
           abtestAlg <- MongoResources.abtestAlg[IO](None)
           authAlg <- Resources.authAlg
-        } yield (abtestAlg, authAlg, AnalysisDAOs.conversionKPIAlg[IO])
+        } yield (abtestAlg, authAlg, AnalysisDAOs.conversionKPIRepo[IO])
       }
       .use {
         case (abtestAlg, authAlg, cKpiAlg) =>

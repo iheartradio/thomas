@@ -42,15 +42,15 @@ object Conversions {
   }
 }
 
-case class PerUserSampleSummary(
+case class PerUserSamplesSummary(
     mean: Double,
     variance: Double,
     count: Long)
     extends KPIStats
 
-object PerUserSampleSummary {
-  def fromSamples(samples: PerUserSamples): PerUserSampleSummary =
+object PerUserSamplesSummary {
+  def fromSamples(samples: PerUserSamples): PerUserSamplesSummary =
     samples.summary
 
-  def apply(samples: PerUserSamples): PerUserSampleSummary = fromSamples(samples)
+  def apply(samples: PerUserSamples): PerUserSamplesSummary = fromSamples(samples)
 }

@@ -4,7 +4,7 @@
 @import com.iheart.thomas.http4s.{UIEnv, Formatters}, Formatters._
 
 @(
-state: ExperimentKPIState[Conversions],
+state: ExperimentKPIState[KPIStats],
 showCommands: Boolean = true,
 includedArms: Set[ArmName] = Set.empty
 )(implicit env: UIEnv)
@@ -28,16 +28,22 @@ includedArms: Set[ArmName] = Set.empty
                                id="includeGroupCB@arm.name.hashCode"
                                name="includedArms"
                                title="Include in evaluation"
-                               @if((arm.kpiStats.total > 100 && includedArms.isEmpty) || includedArms.contains(arm.name)) {
+                               @if((arm.readyForEvaluation && includedArms.isEmpty) || includedArms.contains(arm.name)) {
                                  checked
                                }
                                value="@arm.name">
                         <label class="form-check-label" for="includeGroupCB@arm.name.hashCode">
                             <h6>Group <span class="text-secondary">@arm.name</span> </h6>
                         </label>
-                        <div class="fs-6"><span class="text-muted">Total:</span> @arm.kpiStats.total</div>
-                        <div class="fs-6"><span class="text-muted">Converted:</span> @arm.kpiStats.converted</div>
-                        <div class="fs-6"><span class="text-muted">Rate:</span> @formatPercentage(arm.kpiStats.rate)</div>
+                        @arm.kpiStats match {
+                            case (c: Conversions) => {
+                                @conversionsStats(c)
+                            }
+                            case (s: PerUserSamplesSummary) => {
+                                @perUserSamplesSummary(s)
+                            }
+                        }
+
                     </div>
                 }
             </div>

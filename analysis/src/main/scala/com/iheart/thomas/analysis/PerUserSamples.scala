@@ -15,5 +15,5 @@ case class PerUserSamples(
 }
 
 object PerUserSamples {
-  type Summary = PerUserSampleSummary
+  type Summary = PerUserSamplesSummary
 }
