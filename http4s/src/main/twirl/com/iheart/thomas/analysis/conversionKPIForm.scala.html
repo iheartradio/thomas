@@ -138,24 +138,24 @@ showNameField: Boolean = true
             <div class="card-body">
                 <div class="form-group">
                     <label class="form-label" for="alphaPriorInput">Alpha Prior</label>
-                    <input name="model.alphaPrior"
+                    <input name="model.alpha"
                            class="form-control"
                            id="alphaPriorInput"
                            type="number"
                            required
                            step="any"
-                           value="@draftO.map(_.model.alphaPrior).getOrElse(1)"
+                           value="@draftO.map(_.model.alpha).getOrElse(1)"
                     />
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="betaPriorInput">Beta Prior</label>
-                    <input name="model.betaPrior"
+                    <input name="model.beta"
                            class="form-control"
                            id="betaPriorInput"
                            type="number"
                            required
                            step="any"
-                           value="@draftO.map(_.model.betaPrior).getOrElse(1)"
+                           value="@draftO.map(_.model.beta).getOrElse(1)"
                     />
                 </div>
             </div>
