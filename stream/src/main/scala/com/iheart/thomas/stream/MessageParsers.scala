@@ -20,8 +20,8 @@ trait ArmParser[F[_], Message] {
     ): F[Option[ArmName]]
 }
 
-trait KpiEventParser[F[_], Message, Event] {
-  def apply(kpiName: KPIName): F[Message => F[List[Event]]]
+trait KpiEventParser[F[_], Message, Event, K <: KPI] {
+  def apply(k: K): Message => F[List[Event]]
 }
 
 object KpiEventParser {
@@ -45,16 +45,16 @@ object KpiEventParser {
          Nil)
   }
 
-  implicit def jValueConversionEventParser[F[_]: MonadThrow](
-      implicit kpiRepo: KPIRepo[F, ConversionKPI]
-    ): KpiEventParser[F, JValue, ConversionEvent] =
-    (kpiName: KPIName) =>
-      kpiRepo
-        .find(kpiName)
-        .flatMap(
-          _.flatMap(_.messageQuery).liftTo[F](NoEventQueryForKPI(kpiName))
-        )
-        .map(q => (json: JValue) => parseConversionEvent(json, q).pure[F])
+  implicit def jValueConversionEventParser[
+      F[_]: MonadThrow
+    ]: KpiEventParser[F, JValue, ConversionEvent, ConversionKPI] =
+    (kpi: ConversionKPI) => {
+      (json: JValue) =>
+        kpi.messageQuery
+          .liftTo[F](NoEventQueryForKPI(kpi.name))
+          .map(parseConversionEvent(json, _))
+    }
+
 }
 
 object JValueSyntax {

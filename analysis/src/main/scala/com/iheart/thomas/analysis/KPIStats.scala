@@ -1,10 +1,11 @@
 package com.iheart.thomas
 package analysis
 
+import breeze.stats.meanAndVariance.MeanAndVariance
 import cats.UnorderedFoldable
-import cats.kernel.Monoid
+import cats.kernel.{CommutativeMonoid, Monoid}
 import cats.implicits._
-
+import henkan.convert.Syntax._
 sealed trait KPIStats
 
 case class Conversions(
@@ -53,4 +54,36 @@ object PerUserSamplesSummary {
     samples.summary
 
   def apply(samples: PerUserSamples): PerUserSamplesSummary = fromSamples(samples)
+
+  implicit val instances: CommutativeMonoid[PerUserSamplesSummary] =
+    new CommutativeMonoid[PerUserSamplesSummary] {
+      def empty: PerUserSamplesSummary = PerUserSamplesSummary(0d, 0d, 0L)
+
+      def combine(
+          x: PerUserSamplesSummary,
+          y: PerUserSamplesSummary
+        ): PerUserSamplesSummary =
+        (x.to[MeanAndVariance]() + y.to[MeanAndVariance]())
+          .to[PerUserSamplesSummary]()
+    }
+}
+
+trait Aggregation[Event, KS <: KPIStats] {
+  def apply[C[_]: UnorderedFoldable](events: C[Event]): KS
+}
+
+object Aggregation {
+  implicit val conversionsAggregation: Aggregation[ConversionEvent, Conversions] =
+    new Aggregation[ConversionEvent, Conversions] {
+      def apply[C[_]: UnorderedFoldable](events: C[ConversionEvent]) =
+        Conversions(events)
+    }
+
+  implicit val accumulativeAggregation
+      : Aggregation[PerUserSamples, PerUserSamplesSummary] =
+    new Aggregation[PerUserSamples, PerUserSamplesSummary] {
+      def apply[C[_]: UnorderedFoldable](events: C[PerUserSamples]) =
+        events.unorderedFold.summary
+    }
+
 }

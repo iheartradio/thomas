@@ -1,6 +1,6 @@
 package com.iheart.thomas.stream
 
-import cats.{Foldable}
+import cats.{Foldable, Monoid}
 import cats.effect.{Concurrent, Timer}
 import cats.implicits._
 import com.iheart.thomas.analysis.bayesian.Posterior
@@ -8,22 +8,26 @@ import com.iheart.thomas.{ArmName, FeatureName}
 import com.iheart.thomas.analysis.monitor.ExperimentKPIStateDAO
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
 import com.iheart.thomas.analysis.{
+  Aggregation,
+  AllKPIRepo,
   ConversionEvent,
   ConversionKPI,
   Conversions,
+  KPI,
   KPIName,
-  KPIRepo
+  KPIRepo,
+  KPIStats
 }
 import com.iheart.thomas.stream.JobSpec.ProcessSettings
 import fs2.{Pipe, Stream}
 
-trait KPIProcessAlg[F[_], Message] {
+trait AllKPIProcessAlg[F[_], Message] {
   def updatePrior(
       kpiName: KPIName,
       settings: ProcessSettings
     ): F[Pipe[F, Message, Unit]]
 
-  def monitorTest(
+  def monitorExperiment(
       feature: FeatureName,
       kpiName: KPIName,
       settings: ProcessSettings
@@ -31,16 +35,35 @@ trait KPIProcessAlg[F[_], Message] {
 
 }
 
-object KPIProcessAlg {
-  import JobAlg.chunkEvents
+trait KPIProcessAlg[F[_], Message, K <: KPI] {
+  def updatePrior(
+      kpi: K,
+      settings: ProcessSettings
+    ): Pipe[F, Message, Unit]
 
-  def updateConversionArms[C[_]: Foldable](
+  def monitorExperiment(
+      kpi: K,
+      feature: FeatureName,
+      settings: ProcessSettings
+    ): Pipe[F, Message, Unit]
+}
+
+object KPIProcessAlg {
+
+  private[thomas] def updateConversionArms[C[_]: Foldable](
       events: C[(ArmName, ConversionEvent)]
     )(existing: List[ArmState[Conversions]]
-    ): List[ArmState[Conversions]] = {
-    val newStats: Map[ArmName, Conversions] = events
+    ): List[ArmState[Conversions]] = updateArms(events)(existing)
+
+  private def updateArms[C[_]: Foldable, E, KS <: KPIStats](
+      events: C[(ArmName, E)]
+    )(existing: List[ArmState[KS]]
+    )(implicit agg: Aggregation[E, KS],
+      KS: Monoid[KS]
+    ): List[ArmState[KS]] = {
+    val newStats: Map[ArmName, KS] = events
       .foldMap { case (an, ce) => Map(an -> List(ce)) }
-      .mapValues(Conversions(_))
+      .mapValues(agg(_))
 
     existing.map {
       case ArmState(armName, c, l) =>
@@ -48,7 +71,7 @@ object KPIProcessAlg {
           armName,
           c |+| newStats.getOrElse(
             armName,
-            Conversions.monoidInstance.empty
+            KS.empty
           ),
           l
         )
@@ -59,69 +82,90 @@ object KPIProcessAlg {
     }
   }
 
+  implicit def default[
+      F[_]: Concurrent: Timer,
+      K <: KPI,
+      Message,
+      Event,
+      KS <: KPIStats
+    ](implicit eventSource: KPIEventSource[
+        F,
+        K,
+        Message,
+        Event,
+      ],
+      cRepo: KPIRepo[F, K],
+      posterior: Posterior[K, KS],
+      agg: Aggregation[Event, KS],
+      stateDAO: ExperimentKPIStateDAO[F, KS],
+      KS: Monoid[KS]
+    ): KPIProcessAlg[F, Message, K] =
+    new KPIProcessAlg[F, Message, K] {
+
+      def updatePrior(
+          kpi: K,
+          settings: ProcessSettings
+        ): Pipe[F, Message, Unit] = { (input: Stream[F, Message]) =>
+        input
+          .through(eventSource.events(kpi).andThen(JobAlg.chunkEvents(settings)))
+          .evalMap { chunk =>
+            cRepo.update(kpi.name) { k =>
+              posterior(k, agg(chunk))
+            }
+          }
+          .void
+
+      }
+
+      def monitorExperiment(
+          kpi: K,
+          feature: FeatureName,
+          settings: ProcessSettings
+        ): Pipe[F, Message, Unit] = { (input: Stream[F, Message]) =>
+        Stream.eval(stateDAO.init(Key(feature, kpi.name))) *>
+          input
+            .through(
+              eventSource.events(kpi, feature) andThen JobAlg.chunkEvents(settings)
+            )
+            .evalMap { chunk =>
+              stateDAO.update(Key(feature, kpi.name))(
+                updateArms(chunk)
+              )
+            }
+            .void
+
+      }
+    }
+}
+
+object AllKPIProcessAlg {
+
   implicit def default[F[_]: Timer: Concurrent, Message](
       implicit
-      convEventParser: KpiEventParser[F, Message, ConversionEvent],
-      cKpiRepo: KPIRepo[F, ConversionKPI],
-      cStateDAO: ExperimentKPIStateDAO[F, Conversions],
-      armParser: ArmParser[F, Message]
-    ): KPIProcessAlg[F, Message] =
-    new KPIProcessAlg[F, Message] {
+      convProcessAlg: KPIProcessAlg[F, Message, ConversionKPI],
+      allKPIRepo: AllKPIRepo[F]
+    ): AllKPIProcessAlg[F, Message] =
+    new AllKPIProcessAlg[F, Message] {
 
       def updatePrior(
           kpiName: KPIName,
           settings: ProcessSettings
         ): F[Pipe[F, Message, Unit]] =
-        convEventParser(kpiName)
-          .map {
-            parser =>
-              { (input: Stream[F, Message]) =>
-                input
-                  .evalMap(parser)
-                  .filter(_.nonEmpty)
-                  .through(
-                    chunkEvents(settings)
-                  )
-                  .evalMap { chunk =>
-                    cKpiRepo.update(kpiName) { k =>
-                      k.copy(model = Posterior.update(k.model, Conversions(chunk)))
-                    }
-                  }
-                  .void
-              }
-          }
+        allKPIRepo.get(kpiName).map {
+          case kpi: ConversionKPI => convProcessAlg.updatePrior(kpi, settings)
+          case _                  => ???
+        }
 
-      def monitorTest(
+      def monitorExperiment(
           feature: FeatureName,
           kpiName: KPIName,
           settings: ProcessSettings
         ): F[Pipe[F, Message, Unit]] =
-        convEventParser(kpiName)
-          .map {
-            parser =>
-              { (input: Stream[F, Message]) =>
-                Stream.eval(cStateDAO.init(Key(feature, kpiName))) *>
-                  input
-                    .evalMap { m =>
-                      armParser.parseArm(m, feature).flatMap { armO =>
-                        armO.toList.flatTraverse { arm =>
-                          parser(m).map(_.map((arm, _)))
-                        }
-                      }
-                    }
-                    .filter(_.nonEmpty)
-                    .through(
-                      chunkEvents(settings)
-                    )
-                    .evalMap { chunk =>
-                      cStateDAO.update(Key(feature, kpiName))(
-                        updateConversionArms(chunk)
-                      )
-                    }
-                    .void
-              }
-
-          }
+        allKPIRepo.get(kpiName).map {
+          case kpi: ConversionKPI =>
+            convProcessAlg.monitorExperiment(kpi, feature, settings)
+          case _ => ???
+        }
 
     }
 }

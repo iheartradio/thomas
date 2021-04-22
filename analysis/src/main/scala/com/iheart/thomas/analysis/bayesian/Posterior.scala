@@ -24,6 +24,14 @@ object Posterior {
       posterior: Posterior[Model, Measurement]
     ): Model = posterior(model, measurement)
 
+  implicit def conversionsPosterior: Posterior[ConversionKPI, Conversions] =
+    (k: ConversionKPI, data: Conversions) => k.copy(model = update(k.model, data))
+
+  implicit def accumulativePosterior
+      : Posterior[AccumulativeKPI, PerUserSamplesSummary] =
+    (k: AccumulativeKPI, data: PerUserSamplesSummary) =>
+      k.copy(model = update(k.model, data))
+
   implicit val betaConversion: Posterior[BetaModel, Conversions] =
     (model: BetaModel, data: Conversions) => {
       val postAlpha = model.alpha + data.converted

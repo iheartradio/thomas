@@ -6,7 +6,13 @@ import com.iheart.thomas.TimeUtil
 import com.iheart.thomas.abtest.Error.NotFound
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
-import com.iheart.thomas.analysis.{ConversionKPI, KPIName, KPIStats, KPIRepo}
+import com.iheart.thomas.analysis.{
+  AccumulativeKPI,
+  ConversionKPI,
+  KPIName,
+  KPIRepo,
+  KPIStats
+}
 import com.iheart.thomas.stream.{Job, JobDAO}
 
 import java.time.Instant
@@ -116,8 +122,16 @@ object MapBasedDAOs {
 
     }
 
-  def conversionKPIAlg[F[_]](implicit F: Sync[F]): KPIRepo[F, ConversionKPI] =
+  def conversionKPIAlg[F[_]](
+      implicit F: Sync[F]
+    ): KPIRepo[F, ConversionKPI] =
     new MapBasedDAOs[F, ConversionKPI, KPIName](_.name)
       with KPIRepo[F, ConversionKPI]
+
+  def accumulativeKPIAlg[F[_]](
+      implicit F: Sync[F]
+    ): KPIRepo[F, AccumulativeKPI] =
+    new MapBasedDAOs[F, AccumulativeKPI, KPIName](_.name)
+      with KPIRepo[F, AccumulativeKPI]
 
 }

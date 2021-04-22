@@ -32,12 +32,13 @@ abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
     )(implicit config: Config = cfg
     ): IO[A] = {
     implicit val logger = EventLogger.noop[IO]
-    implicit val kpiDAO = MapBasedDAOs.conversionKPIAlg[IO]
+    implicit val ckpiDAO = MapBasedDAOs.conversionKPIAlg[IO]
+    implicit val aKpiDAO = MapBasedDAOs.accumulativeKPIAlg[IO]
     implicit val jobDAO = MapBasedDAOs.streamJobDAO[IO]
     implicit val eStateDAO = MapBasedDAOs.experimentStateDAO[IO, Conversions]
 
     PubSub.create[IO](event("type" -> "init")).flatMap { implicit pubSub =>
-      f(kpiDAO, implicitly[JobAlg[IO]], pubSub)
+      f(ckpiDAO, implicitly[JobAlg[IO]], pubSub)
     }
 
   }

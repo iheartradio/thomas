@@ -86,7 +86,7 @@ object JobAlg {
       implicit F: Concurrent[F],
       timer: Timer[F],
       dao: JobDAO[F],
-      kpiPipes: KPIProcessAlg[F, Message],
+      kpiPipes: AllKPIProcessAlg[F, Message],
       config: Config,
       logger: EventLogger[F],
       messageSubscriber: MessageSubscriber[F, Message]
@@ -143,7 +143,7 @@ object JobAlg {
                   kpiPipes.updatePrior(kpiName, processSettings)
 
                 case MonitorTest(feature, kpiName, _) =>
-                  kpiPipes.monitorTest(feature, kpiName, processSettings)
+                  kpiPipes.monitorExperiment(feature, kpiName, processSettings)
 
                 case RunBandit(_, _) => ???
               }).map { pipe =>
