@@ -3,11 +3,12 @@ package testkit
 
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 
-import java.time.OffsetDateTime
+import java.time.{Instant, OffsetDateTime}
 import com.iheart.thomas.abtest.model._
 import com.iheart.thomas.admin.Role
 import com.iheart.thomas.analysis.bayesian.models._
 import com.iheart.thomas.analysis.{
+  AccumulativeKPI,
   ConversionKPI,
   ConversionMessageQuery,
   Criteria,
@@ -19,8 +20,9 @@ import com.iheart.thomas.http4s.MongoResources
 import ThrowableExtension._
 import cats.implicits._
 
+import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
-
+import concurrent.duration._
 object Factory extends IOApp {
   val now = OffsetDateTime.now
 
@@ -95,6 +97,13 @@ object Factory extends IOApp {
       }
 
   }
+
+  def kpi(
+      name: KPIName,
+      model: LogNormalModel,
+      duration: FiniteDuration = 50.millis,
+      expire: Option[Instant] = None
+    ) = AccumulativeKPI(name, "kai", None, model, duration, None)
 
   def run(args: List[String]): IO[ExitCode] =
     insertDevelopmentData.as(ExitCode.Success)

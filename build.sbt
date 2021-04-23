@@ -65,6 +65,10 @@ addCommandAlias(
   s";thomas/test;thomas/IntegrationTest/compile"
 )
 addCommandAlias(
+  "compileAll",
+  s";tests/Test/compile;tests/IntegrationTest/compile"
+)
+addCommandAlias(
   "it",
   s";thomas/test;tests/IntegrationTest/test"
 )

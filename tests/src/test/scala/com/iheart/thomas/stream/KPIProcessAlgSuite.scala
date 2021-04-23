@@ -1,0 +1,106 @@
+package com.iheart.thomas.stream
+
+import cats.effect.IO
+import cats.effect.testing.scalatest.AsyncIOSpec
+import com.iheart.thomas.analysis.bayesian.models.{LogNormalModel, NormalModel}
+import com.iheart.thomas.analysis.{
+  AccumulativeKPI,
+  ConversionKPI,
+  Conversions,
+  KPIName,
+  KPIRepo,
+  PerUserSamples,
+  PerUserSamplesLnSummary
+}
+import cats.implicits._
+import fs2.Stream
+import com.iheart.thomas.TimeUtil
+import com.iheart.thomas.stream.JobSpec.ProcessSettings
+import com.iheart.thomas.testkit.MockEventQuery.MockData
+import com.iheart.thomas.testkit.{Factory, MapBasedDAOs, MockEventQuery}
+import com.iheart.thomas.tracking.EventLogger
+import com.typesafe.config.Config
+import org.scalatest.matchers.should.Matchers
+import org.typelevel.jawn.ast.JValue
+
+import java.time.Instant
+import concurrent.duration._
+class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
+
+  def testAccumulativeKPI[A](
+      kpi: AccumulativeKPI,
+      data: List[MockData[PerUserSamples]]
+    )(f: (KPIProcessAlg[IO, Unit, AccumulativeKPI],
+          KPIRepo[IO, AccumulativeKPI]) => IO[A]
+    ): IO[A] = {
+    implicit val logger = EventLogger.noop[IO]
+    implicit val ckpiDAO = MapBasedDAOs.conversionKPIAlg[IO]
+    implicit val aKpiDAO = MapBasedDAOs.accumulativeKPIAlg[IO]
+    implicit val jobDAO = MapBasedDAOs.streamJobDAO[IO]
+    implicit val eStateDAO = MapBasedDAOs.experimentStateDAO[IO, Conversions]
+    implicit val aStateDAO =
+      MapBasedDAOs.experimentStateDAO[IO, PerUserSamplesLnSummary]
+    implicit val eventQuery =
+      MockEventQuery[IO, AccumulativeKPI, PerUserSamples](data)
+    aKpiDAO.create(kpi) *>
+      f(
+        KPIProcessAlg.default,
+        aKpiDAO
+      )
+
+  }
+  def settings(frequency: FiniteDuration = 10.millis): ProcessSettings =
+    ProcessSettings(frequency, 1, None)
+  val blindPrior = LogNormalModel(NormalModel(1d, 1d, 1d, 1d))
+  val testKPIName = KPIName("test")
+
+  def process(
+      kpi: AccumulativeKPI,
+      alg: KPIProcessAlg[IO, Unit, AccumulativeKPI],
+      ps: ProcessSettings = settings()
+    ): IO[Unit] =
+    Stream
+      .fromIterator[IO](Iterator(()))
+      .through(alg.updatePrior(kpi, ps))
+      .interruptAfter(150.millis)
+      .compile
+      .drain
+
+  "empty data results in unchanged prior" in {
+    val kpi = Factory.kpi(testKPIName, blindPrior, 50.millis)
+    testAccumulativeKPI(
+      kpi,
+      Nil
+    ) { (alg, repo) =>
+      (for {
+
+        _ <- process(kpi, alg)
+        r <- repo.get(testKPIName)
+      } yield r).asserting(_.model shouldBe blindPrior)
+
+    }
+  }
+
+  "update prior according to data" in {
+    val kpi = Factory.kpi(testKPIName, blindPrior, 50.millis)
+    testAccumulativeKPI(
+      kpi,
+      List(
+        (
+          "fn",
+          "A",
+          testKPIName,
+          Instant.now.minusSeconds(20),
+          Instant.now.plusSeconds(20),
+          PerUserSamples(Array(1d, 2d))
+        )
+      )
+    ) { (alg, repo) =>
+      (for {
+        _ <- process(kpi, alg)
+        r <- repo.get(testKPIName)
+      } yield r).asserting(_.model shouldNot be(blindPrior))
+
+    }
+  }
+}

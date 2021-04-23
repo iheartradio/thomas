@@ -38,14 +38,14 @@ object DynamoFormats {
   implicit val conversionsSfc: DynamoFormat[Conversions] =
     deriveDynamoFormat[Conversions]
 
-  implicit val userSamplesSummarySfc: DynamoFormat[PerUserSamplesSummary] =
-    deriveDynamoFormat[PerUserSamplesSummary]
+  implicit val userSamplesSummarySfc: DynamoFormat[PerUserSamplesLnSummary] =
+    deriveDynamoFormat[PerUserSamplesLnSummary]
 
   implicit val armSfc: DynamoFormat[ArmState[Conversions]] =
     deriveDynamoFormat[ArmState[Conversions]]
 
-  implicit val armPUS: DynamoFormat[ArmState[PerUserSamplesSummary]] =
-    deriveDynamoFormat[ArmState[PerUserSamplesSummary]]
+  implicit val armPUS: DynamoFormat[ArmState[PerUserSamplesLnSummary]] =
+    deriveDynamoFormat[ArmState[PerUserSamplesLnSummary]]
 
   implicit val dfc: DynamoFormat[BanditState[Conversions]] =
     deriveDynamoFormat[BanditState[Conversions]]
@@ -126,11 +126,11 @@ object DynamoFormats {
     deriveDynamoFormat[ExperimentKPIState[Conversions]]
 
   implicit val armStatePerUserSamplesFormat
-      : DynamoFormat[ExperimentKPIState.ArmState[PerUserSamplesSummary]] =
-    deriveDynamoFormat[ExperimentKPIState.ArmState[PerUserSamplesSummary]]
+      : DynamoFormat[ExperimentKPIState.ArmState[PerUserSamplesLnSummary]] =
+    deriveDynamoFormat[ExperimentKPIState.ArmState[PerUserSamplesLnSummary]]
 
   implicit val ekpiStatePerUserSamplesFormat
-      : DynamoFormat[ExperimentKPIState[PerUserSamplesSummary]] =
-    deriveDynamoFormat[ExperimentKPIState[PerUserSamplesSummary]]
+      : DynamoFormat[ExperimentKPIState[PerUserSamplesLnSummary]] =
+    deriveDynamoFormat[ExperimentKPIState[PerUserSamplesLnSummary]]
 
 }

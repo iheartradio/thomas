@@ -13,7 +13,7 @@ import com.iheart.thomas.analysis.{
   KPIName,
   KPIRepo,
   MessageQuery,
-  PerUserSamplesSummary
+  PerUserSamplesLnSummary
 }
 import com.iheart.thomas.stream.JobSpec.{ProcessSettingsOptional, UpdateKPIPrior}
 import com.typesafe.config.{Config, ConfigFactory}
@@ -39,7 +39,7 @@ abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
     implicit val jobDAO = MapBasedDAOs.streamJobDAO[IO]
     implicit val eStateDAO = MapBasedDAOs.experimentStateDAO[IO, Conversions]
     implicit val aStateDAO =
-      MapBasedDAOs.experimentStateDAO[IO, PerUserSamplesSummary]
+      MapBasedDAOs.experimentStateDAO[IO, PerUserSamplesLnSummary]
 
     PubSub.create[IO](event("type" -> "init")).flatMap { implicit pubSub =>
       f(ckpiDAO, JobAlg[IO, JValue], pubSub)

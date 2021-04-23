@@ -99,7 +99,7 @@ trait AllExperimentKPIStateRepo[F[_]] {
 object AllExperimentKPIStateRepo {
   implicit def default[F[_]: MonadThrow](
       implicit cRepo: ExperimentKPIStateDAO[F, Conversions],
-      pRepo: ExperimentKPIStateDAO[F, PerUserSamplesSummary],
+      pRepo: ExperimentKPIStateDAO[F, PerUserSamplesLnSummary],
       kpiRepo: AllKPIRepo[F]
     ): AllExperimentKPIStateRepo[F] =
     new AllExperimentKPIStateRepo[F] {

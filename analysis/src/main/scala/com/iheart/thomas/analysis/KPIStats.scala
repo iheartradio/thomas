@@ -43,28 +43,28 @@ object Conversions {
   }
 }
 
-case class PerUserSamplesSummary(
+case class PerUserSamplesLnSummary(
     mean: Double,
     variance: Double,
     count: Long)
     extends KPIStats
 
-object PerUserSamplesSummary {
-  def fromSamples(samples: PerUserSamples): PerUserSamplesSummary =
-    samples.summary
+object PerUserSamplesLnSummary {
+  def fromSamples(samples: PerUserSamples): PerUserSamplesLnSummary =
+    samples.lnSummary
 
-  def apply(samples: PerUserSamples): PerUserSamplesSummary = fromSamples(samples)
+  def apply(samples: PerUserSamples): PerUserSamplesLnSummary = fromSamples(samples)
 
-  implicit val instances: CommutativeMonoid[PerUserSamplesSummary] =
-    new CommutativeMonoid[PerUserSamplesSummary] {
-      def empty: PerUserSamplesSummary = PerUserSamplesSummary(0d, 0d, 0L)
+  implicit val instances: CommutativeMonoid[PerUserSamplesLnSummary] =
+    new CommutativeMonoid[PerUserSamplesLnSummary] {
+      def empty: PerUserSamplesLnSummary = PerUserSamplesLnSummary(0d, 0d, 0L)
 
       def combine(
-          x: PerUserSamplesSummary,
-          y: PerUserSamplesSummary
-        ): PerUserSamplesSummary =
+          x: PerUserSamplesLnSummary,
+          y: PerUserSamplesLnSummary
+        ): PerUserSamplesLnSummary =
         (x.to[MeanAndVariance]() + y.to[MeanAndVariance]())
-          .to[PerUserSamplesSummary]()
+          .to[PerUserSamplesLnSummary]()
     }
 }
 
@@ -80,10 +80,10 @@ object Aggregation {
     }
 
   implicit val accumulativeAggregation
-      : Aggregation[PerUserSamples, PerUserSamplesSummary] =
-    new Aggregation[PerUserSamples, PerUserSamplesSummary] {
+      : Aggregation[PerUserSamples, PerUserSamplesLnSummary] =
+    new Aggregation[PerUserSamples, PerUserSamplesLnSummary] {
       def apply[C[_]: UnorderedFoldable](events: C[PerUserSamples]) =
-        events.unorderedFold.summary
+        events.unorderedFold.lnSummary
     }
 
 }

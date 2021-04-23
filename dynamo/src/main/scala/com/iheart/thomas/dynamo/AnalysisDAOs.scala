@@ -68,8 +68,10 @@ object AnalysisDAOs extends ScanamoManagement {
 
   implicit def experimentKPIStatePerUserSamplesDAO[F[_]: Async: Timer](
       implicit dynamoClient: DynamoDbAsyncClient
-    ): ExperimentKPIStateDAO[F, PerUserSamplesSummary] =
-    experimentKPIStateDAO[F, PerUserSamplesSummary](perUserSamplesKPIStateTableName)
+    ): ExperimentKPIStateDAO[F, PerUserSamplesLnSummary] =
+    experimentKPIStateDAO[F, PerUserSamplesLnSummary](
+      perUserSamplesKPIStateTableName
+    )
 
   def experimentKPIStateDAO[F[_]: Async: Timer, KS <: KPIStats](
       tableName: String

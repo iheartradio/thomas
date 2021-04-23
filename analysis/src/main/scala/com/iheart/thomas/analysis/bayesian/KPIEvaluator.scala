@@ -8,7 +8,7 @@ import com.iheart.thomas.analysis.{
   ConversionKPI,
   Conversions,
   KPIStats,
-  PerUserSamplesSummary
+  PerUserSamplesLnSummary
 }
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
@@ -25,7 +25,7 @@ object KPIEvaluator {
 
   implicit def default[F[_]: MonadThrow](
       implicit cStateDAO: ExperimentKPIStateDAO[F, Conversions],
-      pStateDAO: ExperimentKPIStateDAO[F, PerUserSamplesSummary],
+      pStateDAO: ExperimentKPIStateDAO[F, PerUserSamplesLnSummary],
       kpiRepo: AllKPIRepo[F]
     ): KPIEvaluator[F] =
     (

@@ -27,7 +27,7 @@ import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.kafka.JsonMessageSubscriber
 import com.iheart.thomas.stream.JobAlg
 import org.typelevel.log4cats.Logger
-
+import fs2.Stream
 import scala.concurrent.ExecutionContext
 import org.http4s.twirl._
 import tsec.authentication.Authenticator
@@ -69,7 +69,7 @@ class AdminUI[F[_]: MonadThrow](
     }
   }
 
-  def backgroundProcess = jobAlg.runStream
+  def backgroundProcess: Stream[F, Unit] = jobAlg.runStream
 
 }
 

@@ -1,12 +1,14 @@
 package com.iheart.thomas.analysis
 package bayesian
 
+import breeze.stats.meanAndVariance.MeanAndVariance
 import com.iheart.thomas.analysis.bayesian.models.{
   BetaModel,
   LogNormalModel,
   NormalModel
 }
 import com.iheart.thomas.analysis.{Conversions, PerUserSamples}
+import henkan.convert.Syntax._
 
 trait Posterior[Model, Measurement] {
   def apply(
@@ -28,8 +30,8 @@ object Posterior {
     (k: ConversionKPI, data: Conversions) => k.copy(model = update(k.model, data))
 
   implicit def accumulativePosterior
-      : Posterior[AccumulativeKPI, PerUserSamplesSummary] =
-    (k: AccumulativeKPI, data: PerUserSamplesSummary) =>
+      : Posterior[AccumulativeKPI, PerUserSamplesLnSummary] =
+    (k: AccumulativeKPI, data: PerUserSamplesLnSummary) =>
       k.copy(model = update(k.model, data))
 
   implicit val betaConversion: Posterior[BetaModel, Conversions] =
@@ -39,8 +41,8 @@ object Posterior {
       BetaModel(postAlpha, postBeta)
     }
 
-  implicit val normalSamples: Posterior[NormalModel, PerUserSamples.Summary] =
-    (model: NormalModel, data: PerUserSamples.Summary) => {
+  implicit val normalSamples: Posterior[NormalModel, MeanAndVariance] =
+    (model: NormalModel, data: MeanAndVariance) => {
       import model._
       val n = data.count.toDouble
       NormalModel(
@@ -52,14 +54,9 @@ object Posterior {
       )
     }
 
-  implicit val logNormalSamples: Posterior[LogNormalModel, PerUserSamples] =
-    (model: LogNormalModel, data: PerUserSamples) => {
-      update(model, data.ln.summary)
-    }
-
   implicit val logNormalSamplesSummary
-      : Posterior[LogNormalModel, PerUserSamples.Summary] =
-    (model: LogNormalModel, data: PerUserSamples.Summary) => {
-      LogNormalModel(update(model.inner, data))
+      : Posterior[LogNormalModel, PerUserSamples.LnSummary] =
+    (model: LogNormalModel, data: PerUserSamples.LnSummary) => {
+      LogNormalModel(update(model.inner, data.to[MeanAndVariance]()))
     }
 }

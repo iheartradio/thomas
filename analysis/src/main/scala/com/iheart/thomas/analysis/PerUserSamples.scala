@@ -1,7 +1,7 @@
 package com.iheart.thomas.analysis
 
 import breeze.stats.meanAndVariance
-import PerUserSamples.Summary
+import PerUserSamples.LnSummary
 import cats.kernel.CommutativeMonoid
 import henkan.convert.Syntax._
 
@@ -11,12 +11,12 @@ case class PerUserSamples(
 
   def ln: PerUserSamples = map(Math.log)
 
-  lazy val summary: Summary = meanAndVariance(values).to[Summary]()
+  lazy val lnSummary: LnSummary = meanAndVariance(ln.values).to[LnSummary]()
 
 }
 
 object PerUserSamples {
-  type Summary = PerUserSamplesSummary
+  type LnSummary = PerUserSamplesLnSummary
 
   implicit val instances: CommutativeMonoid[PerUserSamples] =
     new CommutativeMonoid[PerUserSamples] {
