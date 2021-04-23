@@ -12,7 +12,8 @@ import com.iheart.thomas.analysis.{
   Criteria,
   KPIName,
   KPIRepo,
-  MessageQuery
+  MessageQuery,
+  PerUserSamplesSummary
 }
 import com.iheart.thomas.stream.JobSpec.{ProcessSettingsOptional, UpdateKPIPrior}
 import com.typesafe.config.{Config, ConfigFactory}
@@ -27,6 +28,7 @@ import com.iheart.thomas.testkit.ExampleArmParse._
 import com.iheart.thomas.tracking.EventLogger
 
 abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
+  import testkit.MockEventQuery._
   def withAlg[A](
       f: (KPIRepo[IO, ConversionKPI], JobAlg[IO], PubSub[IO]) => IO[A]
     )(implicit config: Config = cfg
@@ -36,9 +38,11 @@ abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
     implicit val aKpiDAO = MapBasedDAOs.accumulativeKPIAlg[IO]
     implicit val jobDAO = MapBasedDAOs.streamJobDAO[IO]
     implicit val eStateDAO = MapBasedDAOs.experimentStateDAO[IO, Conversions]
+    implicit val aStateDAO =
+      MapBasedDAOs.experimentStateDAO[IO, PerUserSamplesSummary]
 
     PubSub.create[IO](event("type" -> "init")).flatMap { implicit pubSub =>
-      f(ckpiDAO, implicitly[JobAlg[IO]], pubSub)
+      f(ckpiDAO, JobAlg[IO, JValue], pubSub)
     }
 
   }
