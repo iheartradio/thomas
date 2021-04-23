@@ -20,12 +20,15 @@ trait ArmParser[F[_], Message] {
     ): F[Option[ArmName]]
 }
 
+object ArmParser {
+  type JValueArmParser[F[_]] = ArmParser[F, JValue]
+}
+
 trait KpiEventParser[F[_], Message, Event, K <: KPI] {
   def apply(k: K): Message => F[List[Event]]
 }
 
 object KpiEventParser {
-
   case class NoEventQueryForKPI(kpiName: KPIName)
       extends RuntimeException
       with NoStackTrace

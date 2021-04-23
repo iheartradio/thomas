@@ -2,8 +2,10 @@ package com.iheart.thomas
 package example
 
 import cats.effect._
+import com.iheart.thomas.analysis.{AccumulativeKPI, PerUserSamples}
 import com.iheart.thomas.http4s.AdminUI
 import com.iheart.thomas.http4s.abtest.AbtestService
+import com.iheart.thomas.stream.KPIEventQuery
 import com.iheart.thomas.tracking.EventLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import testkit.LocalDynamo
@@ -26,6 +28,9 @@ object ExampleAbtestServerApp extends IOApp {
 
 object ExampleAbtestAdminUIApp extends IOApp {
   import com.iheart.thomas.testkit.ExampleArmParse._
+  implicit val mockEventQuery: KPIEventQuery[IO, AccumulativeKPI, PerUserSamples] =
+    KPIEventQuery.alwaysFail[IO, AccumulativeKPI, PerUserSamples]
+
   implicit val logger = EventLogger.catsLogger(Slf4jLogger.getLogger[IO])
 
   def run(args: List[String]): IO[ExitCode] = {
