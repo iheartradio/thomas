@@ -21,9 +21,9 @@ case class NormalModel(
     alpha: Double,
     beta: Double) {
 
-  lazy val precision = Gamma(shape = alpha, scale = 1d / beta).latent
-  lazy val variance = 1 / precision
-  lazy val mean = Normal(miu0, precision * n0).latent
+  lazy val τ = Gamma(shape = alpha, scale = 1d / beta).latent
+  lazy val variance = 1d / τ
+  lazy val mean = Normal(miu0, (1d / (τ * n0)).pow(0.5)).latent
 }
 
 object NormalModel {

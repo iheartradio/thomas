@@ -6,6 +6,7 @@ import com.iheart.thomas.analysis.bayesian.models.{
   LogNormalModel,
   NormalModel
 }
+import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 
 trait KPIIndicator[Model] {
   def apply(
@@ -14,6 +15,12 @@ trait KPIIndicator[Model] {
 }
 
 object KPIIndicator {
+  def sample[Model](
+      model: Model
+    )(implicit indicator: KPIIndicator[Model],
+      sampler: SamplerConfig,
+      rng: RNG
+    ): Seq[Double] = indicator(model).predict()
 
   implicit val betaInstance: KPIIndicator[BetaModel] =
     (model: BetaModel) => Variable(model.prediction)

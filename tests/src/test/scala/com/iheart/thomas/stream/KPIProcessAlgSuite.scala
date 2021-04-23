@@ -1,5 +1,6 @@
 package com.iheart.thomas.stream
 
+import breeze.stats.meanAndVariance
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.iheart.thomas.analysis.bayesian.models.{LogNormalModel, NormalModel}
@@ -15,10 +16,13 @@ import com.iheart.thomas.analysis.{
 import cats.implicits._
 import fs2.Stream
 import com.iheart.thomas.TimeUtil
+import com.iheart.thomas.analysis.bayesian.{KPIIndicator, Variable}
 import com.iheart.thomas.stream.JobSpec.ProcessSettings
 import com.iheart.thomas.testkit.MockEventQuery.MockData
 import com.iheart.thomas.testkit.{Factory, MapBasedDAOs, MockEventQuery}
 import com.iheart.thomas.tracking.EventLogger
+import com.stripe.rainier.core.{LogNormal, Normal}
+import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import com.typesafe.config.Config
 import org.scalatest.matchers.should.Matchers
 import org.typelevel.jawn.ast.JValue
@@ -53,16 +57,18 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
     ProcessSettings(frequency, 1, None)
   val blindPrior = LogNormalModel(NormalModel(1d, 1d, 1d, 1d))
   val testKPIName = KPIName("test")
-
+  implicit val rng = RNG.default
+  implicit val sampler = SamplerConfig.default
   def process(
       kpi: AccumulativeKPI,
       alg: KPIProcessAlg[IO, Unit, AccumulativeKPI],
-      ps: ProcessSettings = settings()
+      ps: ProcessSettings = settings(),
+      duration: FiniteDuration = 150.millis
     ): IO[Unit] =
     Stream
       .fromIterator[IO](Iterator(()))
       .through(alg.updatePrior(kpi, ps))
-      .interruptAfter(150.millis)
+      .interruptAfter(duration)
       .compile
       .drain
 
@@ -83,6 +89,10 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
 
   "update prior according to data" in {
     val kpi = Factory.kpi(testKPIName, blindPrior, 50.millis)
+    val n = 5000
+    val dist = breeze.stats.distributions.LogNormal(1d, 0.3d)
+    val data = dist.sample(n).toArray
+
     testAccumulativeKPI(
       kpi,
       List(
@@ -92,15 +102,17 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
           testKPIName,
           Instant.now.minusSeconds(20),
           Instant.now.plusSeconds(20),
-          PerUserSamples(Array(1d, 2d))
+          PerUserSamples(data)
         )
       )
     ) { (alg, repo) =>
       (for {
-        _ <- process(kpi, alg)
-        r <- repo.get(testKPIName)
-      } yield r).asserting(_.model shouldNot be(blindPrior))
-
+        _ <- process(kpi, alg, duration = 100.millis)
+        k <- repo.get(testKPIName)
+      } yield k).asserting { k =>
+        val meanStats = meanAndVariance(KPIIndicator.sample(k.model))
+        meanStats.mean should be(dist.mean +- (dist.mean * 0.05d))
+      }
     }
   }
 }

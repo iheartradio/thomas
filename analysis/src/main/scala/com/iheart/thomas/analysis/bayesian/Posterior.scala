@@ -41,6 +41,9 @@ object Posterior {
       BetaModel(postAlpha, postBeta)
     }
 
+  /**
+    * Ref: https://people.eecs.berkeley.edu/~jordan/courses/260-spring10/lectures/lecture5.pdf
+    */
   implicit val normalSamples: Posterior[NormalModel, MeanAndVariance] =
     (model: NormalModel, data: MeanAndVariance) => {
       import model._
