@@ -39,7 +39,7 @@ includedArms: Set[ArmName] = Set.empty
                             case (c: Conversions) => {
                                 @conversionsStats(c)
                             }
-                            case (s: PerUserSamplesSummary) => {
+                            case (s: PerUserSamplesLnSummary) => {
                                 @perUserSamplesSummary(s)
                             }
                         }
