@@ -52,8 +52,7 @@ trait AuthedEndpointsUtils[F[_], Auth] {
       authGroup: AuthGroup[Role]
     )(pf: AuthEndpoint
     )(implicit
-      F: MonadThrow[F],
-      reverseRoutes: ReverseRoutes
+      F: MonadThrow[F]
     ): AuthService = {
     val auth = BasicRBAC.fromGroup[F, Role, User, Token[Auth]](authGroup)
     val onUnauthorized = BadRequest(
@@ -81,8 +80,7 @@ trait AuthedEndpointsUtils[F[_], Auth] {
       roles: Seq[Role]
     )(pf: AuthEndpoint
     )(implicit
-      F: MonadThrow[F],
-      reverseRoutes: ReverseRoutes
+      F: MonadThrow[F]
     ): AuthService = roleBasedService(AuthGroup.fromSeq(roles))(pf)
 
 }

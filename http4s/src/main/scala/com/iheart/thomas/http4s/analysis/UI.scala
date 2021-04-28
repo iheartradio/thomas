@@ -16,7 +16,7 @@ import com.iheart.thomas.analysis.{
 }
 import bayesian.models._
 import com.iheart.thomas.http4s.{AuthImp, ReverseRoutes}
-import com.iheart.thomas.http4s.auth.{AuthedEndpointsUtils, AuthenticationAlg}
+import com.iheart.thomas.http4s.auth.{AuthedEndpointsUtils}
 import org.http4s.dsl.Http4sDsl
 import cats.implicits._
 import org.http4s.twirl._
@@ -59,7 +59,6 @@ class UI[F[_]: Async](
     jobAlg: JobAlg[F],
     stateRepo: AllExperimentKPIStateRepo[F],
     kPIEvaluator: KPIEvaluator[F],
-    authAlg: AuthenticationAlg[F, AuthImp],
     aCfg: AdminUIConfig)
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
@@ -93,7 +92,7 @@ class UI[F[_]: Async](
         )
       } yield r
 
-    case se @ POST -> `rootPath` / "abtests" / feature / "monitors" asAuthed (u) =>
+    case se @ POST -> `rootPath` / "abtests" / feature / "monitors" asAuthed (_) =>
       se.request.as[StartMonitorRequest].flatMap { r =>
         jobAlg.schedule(MonitorTest(feature, r.kpi, r.settings)) *>
           Ok(
@@ -104,7 +103,7 @@ class UI[F[_]: Async](
           )
       }
 
-    case GET -> `rootPath` / "abtests" / feature / "monitors" / kpi / "stop" asAuthed (u) =>
+    case GET -> `rootPath` / "abtests" / feature / "monitors" / kpi / "stop" asAuthed (_) =>
       jobAlg.stop(MonitorTest.jobKey(feature, KPIName(kpi))) *>
         Ok(
           redirect(
@@ -133,7 +132,7 @@ class UI[F[_]: Async](
         )
       }
 
-    case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "reset" asAuthed (u) =>
+    case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "reset" asAuthed (_) =>
       stateRepo.reset(Key(feature, KPIName(kpi))) *>
         Ok(
           redirect(
@@ -146,10 +145,10 @@ class UI[F[_]: Async](
 
   val kpiManagementRoutes =
     roleBasedService(admin.Authorization.analysisManagerRoles) {
-      case GET -> `rootPath` / "conversionKPI" / "new" asAuthed (u) =>
+      case GET -> `rootPath` / "conversionKPI" / "new" asAuthed u =>
         Ok(newConversionKPI()(UIEnv(u)))
 
-      case GET -> `rootPath` / "conversionKPIs" / kpiName asAuthed (u) =>
+      case GET -> `rootPath` / "conversionKPIs" / kpiName asAuthed u =>
         convKpiAlg.find(KPIName(kpiName)).flatMap { ko =>
           ko.fold(
             NotFound(s"Cannot find the Conversion KPI under the name $kpiName")
@@ -162,7 +161,7 @@ class UI[F[_]: Async](
           }
         }
 
-      case GET -> `rootPath` / "conversionKPIs" / kpiName / "delete" asAuthed (_) =>
+      case GET -> `rootPath` / "conversionKPIs" / kpiName / "delete" asAuthed _ =>
         convKpiAlg.remove(KPIName(kpiName)) >>
           Ok(redirect(reverseRoutes.analysis, s"$kpiName, if existed, is deleted."))
 
@@ -199,14 +198,14 @@ class UI[F[_]: Async](
                   )
           )
 
-      case se @ POST -> `rootPath` / "kpis" / kpiName / "update-prior" asAuthed u =>
+      case se @ POST -> `rootPath` / "kpis" / kpiName / "update-prior" asAuthed _ =>
         se.request.as[ProcessSettingsOptional].flatMap { r =>
           jobAlg
             .schedule(UpdateKPIPrior(KPIName(kpiName), r))
             .flatMap { jo =>
               jo.fold(
                 BadRequest(errorMsg("It's being updated right now"))
-              )(j =>
+              )(_ =>
                 Ok(
                   redirect(
                     reverseRoutes.convKpi(KPIName(kpiName)),

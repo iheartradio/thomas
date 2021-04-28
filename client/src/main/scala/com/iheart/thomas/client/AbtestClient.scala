@@ -160,7 +160,6 @@ class Http4SAbtestClient[F[_]: Sync](
 
   def getGroupMeta(
       tidOrFeature: Either[TestId, FeatureName]
-    )(implicit F: Functor[F]
     ): F[Map[GroupName, GroupMeta]] =
     tidOrFeatureOp(tidOrFeature) { tid =>
       getTest(tid).map(_.data.getGroupMetas)

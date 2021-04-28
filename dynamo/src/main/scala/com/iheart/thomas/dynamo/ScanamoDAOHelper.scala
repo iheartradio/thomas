@@ -273,7 +273,6 @@ trait ScanamoManagement {
       keyAttributes: Seq[(String, ScalarAttributeType)],
       readCapacityUnits: Long,
       writeCapacityUnits: Long
-    )(implicit F: Async[F]
     ): F[Unit] =
     lift(
       client
@@ -324,7 +323,7 @@ trait ScanamoManagement {
           .build
       )
     ).void.recoverWith {
-      case e: ResourceNotFoundException =>
+      case _: ResourceNotFoundException =>
         createTable(
           client,
           tableName,

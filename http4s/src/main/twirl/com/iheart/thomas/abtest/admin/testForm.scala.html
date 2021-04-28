@@ -1,16 +1,14 @@
-@import com.iheart.thomas.FeatureName
 @import com.iheart.thomas.abtest.model._
 @import com.iheart.thomas.abtest.json.play.Formats._
 @import com.iheart.thomas.http4s.Formatters.{formatDate, formatJSON}
-@import com.iheart.thomas.http4s.UIEnv
 
-@(feature: FeatureName,
+@(
 draft: Option[AbtestSpec],
 errorMsg: Option[String] = None,
 readonly: Boolean = false,
 groupSizeChangeAllowed: Boolean = true,
 isShuffled: Boolean = false
-)(implicit env: UIEnv)
+)
 
 @group(group: Option[Group]) = {
 

@@ -461,7 +461,7 @@ lazy val developerKai = Developer(
 lazy val commonSettings = addCompilerPlugins(
   libs,
   "kind-projector"
-) ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
+) ++ sharedCommonSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := "2.12.12",
   Test / parallelExecution := false,

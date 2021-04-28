@@ -262,7 +262,7 @@ class ConversionBMABAlgIntegrationSuite extends ConversionBMABAlgSuiteBase {
 
     val (first, second) = withAPI { api =>
       for {
-        is <- api.init(spec)
+        _ <- api.init(spec)
         _ <- api.updateRewardState(
           spec.feature,
           Map(

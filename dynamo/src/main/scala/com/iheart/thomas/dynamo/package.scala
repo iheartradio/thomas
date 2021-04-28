@@ -34,7 +34,7 @@ object `package` {
     import pureconfig.generic.auto._
     import pureconfig.module.catseffect._
     Resource
-      .liftF(cfg.loadF[F, ClientConfig])
+      .eval(cfg.loadF[F, ClientConfig])
       .flatMap(client[F](_))
   }
 }

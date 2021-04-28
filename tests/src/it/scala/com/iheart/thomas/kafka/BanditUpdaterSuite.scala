@@ -377,7 +377,7 @@ abstract class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
         }
       )
 
-      val (resultState1, resultState2) =
+      val (_, resultState2) =
         updaterResource
           .use { updaterPublic =>
             val updater = updaterPublic

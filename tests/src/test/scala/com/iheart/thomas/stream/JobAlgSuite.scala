@@ -102,7 +102,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
 
     }
 
-    "set the started time when started" in withAlg { (kpiDAO, alg, pubSub) =>
+    "set the started time when started" in withAlg { (kpiDAO, alg, _) =>
       val spec = UpdateKPIPrior(kpiA.name, settings(Instant.now.plusSeconds(10)))
       kpiDAO.create(kpiA) *> alg.schedule(spec) *>
         alg.runStream.interruptAfter(800.millis).compile.drain *>

@@ -104,21 +104,19 @@ object AdminUI {
       ec: ExecutionContext
     ): Resource[F, AdminUI[F]] = {
 
-    implicit val rr = new ReverseRoutes(cfg.rootPath)
-
-    Resource.liftF(
+    Resource.eval(
       dynamo.AdminDAOs.ensureAuthTables[F](
         cfg.adminTablesReadCapacity,
         cfg.adminTablesWriteCapacity
       )
     ) *>
-      Resource.liftF(
+      Resource.eval(
         dynamo.AnalysisDAOs.ensureAnalysisTables[F](
           cfg.adminTablesReadCapacity,
           cfg.adminTablesWriteCapacity
         )
       ) *> {
-      Resource.liftF(AuthDependencies[F](cfg.key)).flatMap { deps =>
+      Resource.eval(AuthDependencies[F](cfg.key)).flatMap { deps =>
         import deps._
         import dynamo.AdminDAOs._
         implicit val authAlg = AuthenticationAlg[F, BCrypt, AuthImp]
@@ -153,7 +151,7 @@ object AdminUI {
       executionContext: ExecutionContext
     ): Resource[F, ExitCode] = {
     ConfigResource.cfg[F]().flatMap { implicit c =>
-      Resource.liftF(loadConfig[F](c)).flatMap { implicit cfg =>
+      Resource.eval(loadConfig[F](c)).flatMap { implicit cfg =>
         serverResource[F]
       }
     }
@@ -172,7 +170,7 @@ object AdminUI {
     ): Resource[F, ExitCode] = {
     import org.http4s.server.blaze._
     import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
-    Resource.liftF(Slf4jLogger.create[F]).flatMap { implicit logger =>
+    Resource.eval(Slf4jLogger.create[F]).flatMap { implicit logger =>
       for {
         ui <- AdminUI.resource[F]
         e <-

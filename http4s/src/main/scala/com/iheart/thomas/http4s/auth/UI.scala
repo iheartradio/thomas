@@ -71,7 +71,7 @@ class UI[F[_]: Async: Timer, Auth](
     case GET -> Root / "login" =>
       Ok(html.login())
 
-    case GET -> Root / "users" / username / "reset-pass" :? tokenP(token) =>
+    case GET -> Root / "users" / username / "reset-pass" :? tokenP(_) =>
       Ok(html.resetPass(username))
 
     case req @ POST -> Root / "users" / username / "reset-pass" :? tokenP(token) =>
@@ -190,8 +190,7 @@ object UI extends {
       initialAdminUsername: Option[String],
       initialRole: Role
     )(implicit dc: DynamoDbAsyncClient,
-      adminUIConfig: AdminUIConfig,
-      rv: ReverseRoutes
+      adminUIConfig: AdminUIConfig
     ): UI[F, AuthImp] = {
 
     import BCrypt._

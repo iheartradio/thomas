@@ -127,4 +127,4 @@ class DynamoJobDAOSuite
     extends JobDAOSuite(localDynamoR.map(implicit ld => AdminDAOs.streamJobDAO))
 
 class InMemoryDAOSuite
-    extends JobDAOSuite(Resource.liftF(IO.delay(MapBasedDAOs.streamJobDAO[IO])))
+    extends JobDAOSuite(Resource.eval(IO.delay(MapBasedDAOs.streamJobDAO[IO])))

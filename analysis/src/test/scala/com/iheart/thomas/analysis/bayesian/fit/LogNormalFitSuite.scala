@@ -18,7 +18,6 @@ import scala.util.Random
 import LogNormalFit.Measurements
 
 class LogNormalFitSuite extends AnyFunSuiteLike with Matchers {
-  implicit val rng = RNG.default
   implicit val sampler = SamplerConfig.default //.copy(iterations = 10000)
 
   type F[A] = Either[Throwable, A]
@@ -30,8 +29,8 @@ class LogNormalFitSuite extends AnyFunSuiteLike with Matchers {
       def measureAbtest(
           kmodel: LogNormalFit,
           abtest: Abtest,
-          start: Option[Instant] = None,
-          end: Option[Instant] = None
+          start: Option[Instant],
+          end: Option[Instant]
         ): F[Map[GroupName, Measurements]] =
         abTestData.asRight
       def measureHistory(

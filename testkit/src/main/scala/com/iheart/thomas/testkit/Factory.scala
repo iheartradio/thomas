@@ -3,7 +3,7 @@ package testkit
 
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 
-import java.time.{Instant, OffsetDateTime}
+import java.time.OffsetDateTime
 import com.iheart.thomas.abtest.model._
 import com.iheart.thomas.admin.Role
 import com.iheart.thomas.analysis.bayesian.models._
@@ -55,7 +55,7 @@ object Factory extends IOApp {
       .flatMap { implicit l =>
         implicit val ex = executionContext
         for {
-          _ <- Resource.liftF(
+          _ <- Resource.eval(
             ScanamoManagement.ensureTables[IO](Resources.tables, 1, 1)
           )
           abtestAlg <- MongoResources.abtestAlg[IO](None)
@@ -101,8 +101,7 @@ object Factory extends IOApp {
   def kpi(
       name: KPIName,
       model: LogNormalModel,
-      duration: FiniteDuration = 50.millis,
-      expire: Option[Instant] = None
+      duration: FiniteDuration = 50.millis
     ) = AccumulativeKPI(name, "kai", None, model, duration, None)
 
   def run(args: List[String]): IO[ExitCode] =

@@ -36,7 +36,7 @@ object LocalDynamo extends ScanamoManagement {
       } { _ =>
         tables.toList.parTraverse { t =>
           F.delay(LocalDynamoDB.deleteTable(client)(t._1)).void.recover {
-            case e: ResourceNotFoundException => ()
+            case _: ResourceNotFoundException => ()
           }
         }.void
       }

@@ -31,7 +31,7 @@ import reactivemongo.api.bson.collection.BSONCollection
 class AsyncEntityDAO[T: Format, F[_]: Async](
     collection: BSONCollection
   )(implicit ex: EC)
-    extends EntityDAOMonad[AsyncEntityDAO.Result[F, ?], T, Query] {
+    extends EntityDAOMonad[AsyncEntityDAO.Result[F, *], T, Query] {
   type R[A] = AsyncEntityDAO.Result[F, A]
   import AsyncEntityDAO.Result._
   implicit val cs = IO.contextShift(ex)
@@ -40,25 +40,30 @@ class AsyncEntityDAO[T: Format, F[_]: Async](
     ReadPreference.primary
   ) //due to a bug in ReactiveMongo
 
-  def get(id: EntityId): R[Entity[T]] = of(
-    collection.find(Query.idSelector(id), none[JsObject]).one[Entity[T]]
-  )
+  def get(id: EntityId): R[Entity[T]] =
+    of(
+      collection.find(Query.idSelector(id), none[JsObject]).one[Entity[T]]
+    )
 
-  def find(q: Query): R[Vector[Entity[T]]] = of {
-    internalFind(q)
-  }
+  def find(q: Query): R[Vector[Entity[T]]] =
+    of {
+      internalFind(q)
+    }
 
-  def all: R[Vector[Entity[T]]] = of {
-    internalFind(Query(JsObject.empty))
-  }
+  def all: R[Vector[Entity[T]]] =
+    of {
+      internalFind(Query(JsObject.empty))
+    }
 
-  def findOne(q: Query): R[Entity[T]] = of {
-    builder(q).one[Entity[T]](readPref(q))
-  }
+  def findOne(q: Query): R[Entity[T]] =
+    of {
+      builder(q).one[Entity[T]](readPref(q))
+    }
 
-  def findOneOption(q: Query): R[Option[Entity[T]]] = of {
-    builder(q).one[Entity[T]](readPref(q))
-  }
+  def findOneOption(q: Query): R[Option[Entity[T]]] =
+    of {
+      builder(q).one[Entity[T]](readPref(q))
+    }
 
   private def internalFind(q: Query): Future[Vector[Entity[T]]] =
     builder(q)
@@ -100,13 +105,15 @@ class AsyncEntityDAO[T: Format, F[_]: Async](
         .one(q.selector, entity, upsert = upsert, multi = false)
     }.ensureOr(UpdatedCountErrorDetail(1, _))(_ <= 1).map(_ == 1)
 
-  def removeAll(q: Query): R[Int] = of {
-    writeCollection.delete().one(q.selector)
-  }
+  def removeAll(q: Query): R[Int] =
+    of {
+      writeCollection.delete().one(q.selector)
+    }
 
-  def removeAll(): R[Int] = of {
-    writeCollection.delete().one(JsObject.empty)
-  }
+  def removeAll(): R[Int] =
+    of {
+      writeCollection.delete().one(JsObject.empty)
+    }
 
   private val errorHandler: ErrorHandler[Vector[Entity[T]]] =
     Cursor.FailOnError()
@@ -122,7 +129,7 @@ class AsyncEntityDAO[T: Format, F[_]: Async](
 object AsyncEntityDAO {
   type Result[F[_], T] = EitherT[F, DBError, T]
 
-  class MongoError(e: DBError) extends RuntimeException with NoStackTrace
+  class MongoError(val e: DBError) extends RuntimeException with NoStackTrace
 
   object Result {
     private type FE[T] = Future[Either[DBError, T]]
@@ -157,7 +164,7 @@ object AsyncEntityDAO {
     */
   def direct[F[_], A: Format](
       daoR: AsyncEntityDAO[A, F]
-    )(implicit ec: EC,
+    )(implicit
       F: MonadError[F, Throwable]
     ): EntityDAO[F, A, Query] = {
     type DBResult[T] = EitherT[F, DBError, T]

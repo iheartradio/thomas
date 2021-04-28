@@ -84,7 +84,7 @@ abstract class ExperimentKPIStateDAOSuite extends AsyncIOSpec with Matchers {
 
 class ExperimentKPIStateDAOInMemorySuite extends ExperimentKPIStateDAOSuite {
   val daoR =
-    Resource.liftF(IO.delay(MapBasedDAOs.experimentStateDAO[IO, Conversions]))
+    Resource.eval(IO.delay(MapBasedDAOs.experimentStateDAO[IO, Conversions]))
 }
 
 class ExperimentKPIStateDAODynamoSuite extends ExperimentKPIStateDAOSuite {
