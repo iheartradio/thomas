@@ -1,8 +1,7 @@
-package com.iheart.thomas.stream
+package com.iheart.thomas.analysis
 
 import cats.ApplicativeThrow
 import com.iheart.thomas.{ArmName, FeatureName}
-import com.iheart.thomas.analysis.{QueryAccumulativeKPI, KPI, PerUserSamples}
 
 import java.time.Instant
 import scala.annotation.implicitAmbiguous

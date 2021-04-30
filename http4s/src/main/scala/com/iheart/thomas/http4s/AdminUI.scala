@@ -35,7 +35,7 @@ import tsec.passwordhashers.jca.BCrypt
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import ThrowableExtension._
 import com.iheart.thomas.stream.ArmParser.JValueArmParser
-import com.iheart.thomas.stream.KPIEventQuery.PerUserSamplesQuery
+import com.iheart.thomas.analysis.KPIEventQuery.PerUserSamplesQuery
 import com.iheart.thomas.tracking.EventLogger
 
 class AdminUI[F[_]: MonadThrow](

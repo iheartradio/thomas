@@ -6,7 +6,7 @@ import com.iheart.thomas.{ArmName, FeatureName, TimeUtil}
 import com.iheart.thomas.analysis.{QueryAccumulativeKPI, KPI, PerUserSamples}
 import fs2.{Pipe, Stream}
 import cats.implicits._
-import com.iheart.thomas.stream.KPIEventQuery.PerUserSamplesQuery
+import com.iheart.thomas.analysis.KPIEventQuery.PerUserSamplesQuery
 
 trait KPIEventSource[F[_], K <: KPI, Message, Event] {
   def events(k: K): Pipe[F, Message, List[Event]]

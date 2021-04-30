@@ -5,11 +5,11 @@ import cats.effect.IO
 import com.iheart.thomas.{ArmName, FeatureName}
 import com.iheart.thomas.analysis.{
   KPI,
+  KPIEventQuery,
   KPIName,
   PerUserSamples,
   QueryAccumulativeKPI
 }
-import com.iheart.thomas.stream.KPIEventQuery
 import cats.implicits._
 
 import java.time.Instant
