@@ -35,7 +35,7 @@ abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
     ): IO[A] = {
     implicit val logger = EventLogger.noop[IO]
     implicit val ckpiDAO = MapBasedDAOs.conversionKPIAlg[IO]
-    implicit val aKpiDAO = MapBasedDAOs.accumulativeKPIAlg[IO]
+    implicit val aKpiDAO = MapBasedDAOs.queryAccumulativeKPIAlg[IO]
     implicit val jobDAO = MapBasedDAOs.streamJobDAO[IO]
     implicit val eStateDAO = MapBasedDAOs.experimentStateDAO[IO, Conversions]
     implicit val aStateDAO =

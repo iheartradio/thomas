@@ -2,7 +2,7 @@ package com.iheart.thomas.stream
 
 import cats.ApplicativeThrow
 import com.iheart.thomas.{ArmName, FeatureName}
-import com.iheart.thomas.analysis.{AccumulativeKPI, KPI, PerUserSamples}
+import com.iheart.thomas.analysis.{QueryAccumulativeKPI, KPI, PerUserSamples}
 
 import java.time.Instant
 import scala.annotation.implicitAmbiguous
@@ -25,7 +25,8 @@ trait KPIEventQuery[F[_], K <: KPI, Event] {
 }
 
 object KPIEventQuery {
-  type PerUserSamplesQuery[F[_]] = KPIEventQuery[F, AccumulativeKPI, PerUserSamples]
+  type PerUserSamplesQuery[F[_]] =
+    KPIEventQuery[F, QueryAccumulativeKPI, PerUserSamples]
 
   case class KPIEventQueryNotImplemented(typeName: String)
       extends RuntimeException

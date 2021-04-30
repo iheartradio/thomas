@@ -8,7 +8,6 @@ import com.iheart.thomas.{ArmName, FeatureName}
 import com.iheart.thomas.analysis.monitor.ExperimentKPIStateDAO
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
 import com.iheart.thomas.analysis.{
-  AccumulativeKPI,
   Aggregation,
   AllKPIRepo,
   ConversionEvent,
@@ -17,7 +16,8 @@ import com.iheart.thomas.analysis.{
   KPI,
   KPIName,
   KPIRepo,
-  KPIStats
+  KPIStats,
+  QueryAccumulativeKPI
 }
 import com.iheart.thomas.stream.JobSpec.ProcessSettings
 import fs2.{Pipe, Stream}
@@ -144,7 +144,7 @@ object AllKPIProcessAlg {
   implicit def default[F[_]: Timer: Concurrent, Message](
       implicit
       convProcessAlg: KPIProcessAlg[F, Message, ConversionKPI],
-      accumProcessAlg: KPIProcessAlg[F, Message, AccumulativeKPI],
+      accumProcessAlg: KPIProcessAlg[F, Message, QueryAccumulativeKPI],
       allKPIRepo: AllKPIRepo[F]
     ): AllKPIProcessAlg[F, Message] =
     new AllKPIProcessAlg[F, Message] {
@@ -154,8 +154,9 @@ object AllKPIProcessAlg {
           settings: ProcessSettings
         ): F[Pipe[F, Message, Unit]] =
         allKPIRepo.get(kpiName).map {
-          case kpi: ConversionKPI   => convProcessAlg.updatePrior(kpi, settings)
-          case kpi: AccumulativeKPI => accumProcessAlg.updatePrior(kpi, settings)
+          case kpi: ConversionKPI => convProcessAlg.updatePrior(kpi, settings)
+          case kpi: QueryAccumulativeKPI =>
+            accumProcessAlg.updatePrior(kpi, settings)
         }
 
       def monitorExperiment(
@@ -166,7 +167,7 @@ object AllKPIProcessAlg {
         allKPIRepo.get(kpiName).map {
           case kpi: ConversionKPI =>
             convProcessAlg.monitorExperiment(kpi, feature, settings)
-          case kpi: AccumulativeKPI =>
+          case kpi: QueryAccumulativeKPI =>
             accumProcessAlg.monitorExperiment(kpi, feature, settings)
         }
 

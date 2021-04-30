@@ -3,7 +3,7 @@ package com.iheart.thomas.stream
 import cats.{FlatMap, Monad}
 import cats.effect.Timer
 import com.iheart.thomas.{ArmName, FeatureName, TimeUtil}
-import com.iheart.thomas.analysis.{AccumulativeKPI, KPI, PerUserSamples}
+import com.iheart.thomas.analysis.{QueryAccumulativeKPI, KPI, PerUserSamples}
 import fs2.{Pipe, Stream}
 import cats.implicits._
 import com.iheart.thomas.stream.KPIEventQuery.PerUserSamplesQuery
@@ -46,9 +46,9 @@ object KPIEventSource {
 
   implicit def fromQuery[F[_]: FlatMap: Timer, Message](
       implicit query: PerUserSamplesQuery[F]
-    ): KPIEventSource[F, AccumulativeKPI, Message, PerUserSamples] =
-    new KPIEventSource[F, AccumulativeKPI, Message, PerUserSamples] {
-      def events(k: AccumulativeKPI): Pipe[F, Message, List[PerUserSamples]] =
+    ): KPIEventSource[F, QueryAccumulativeKPI, Message, PerUserSamples] =
+    new KPIEventSource[F, QueryAccumulativeKPI, Message, PerUserSamples] {
+      def events(k: QueryAccumulativeKPI): Pipe[F, Message, List[PerUserSamples]] =
         _ =>
           Stream
             .awakeEvery[F](k.period)
@@ -61,7 +61,7 @@ object KPIEventSource {
             )
 
       def events(
-          k: AccumulativeKPI,
+          k: QueryAccumulativeKPI,
           feature: FeatureName
         ): Pipe[F, Message, List[(ArmName, PerUserSamples)]] =
         _ =>

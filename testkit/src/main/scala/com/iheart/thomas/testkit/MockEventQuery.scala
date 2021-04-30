@@ -3,7 +3,12 @@ package com.iheart.thomas.testkit
 import cats.Applicative
 import cats.effect.IO
 import com.iheart.thomas.{ArmName, FeatureName}
-import com.iheart.thomas.analysis.{AccumulativeKPI, KPI, KPIName, PerUserSamples}
+import com.iheart.thomas.analysis.{
+  KPI,
+  KPIName,
+  PerUserSamples,
+  QueryAccumulativeKPI
+}
 import com.iheart.thomas.stream.KPIEventQuery
 import cats.implicits._
 
@@ -11,8 +16,8 @@ import java.time.Instant
 
 object MockEventQuery {
   implicit val failingEventQuery
-      : KPIEventQuery[IO, AccumulativeKPI, PerUserSamples] =
-    KPIEventQuery.alwaysFail[IO, AccumulativeKPI, PerUserSamples]
+      : KPIEventQuery[IO, QueryAccumulativeKPI, PerUserSamples] =
+    KPIEventQuery.alwaysFail[IO, QueryAccumulativeKPI, PerUserSamples]
 
   type MockData[E] = (FeatureName, ArmName, KPIName, Instant, Instant, E)
   def apply[F[_]: Applicative, K <: KPI, E](

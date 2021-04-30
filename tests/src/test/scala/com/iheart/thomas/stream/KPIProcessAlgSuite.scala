@@ -5,7 +5,7 @@ import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.iheart.thomas.analysis.bayesian.models.{LogNormalModel, NormalModel}
 import com.iheart.thomas.analysis.{
-  AccumulativeKPI,
+  QueryAccumulativeKPI,
   ConversionKPI,
   Conversions,
   KPIName,
@@ -31,17 +31,17 @@ import java.time.Instant
 import concurrent.duration._
 class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
 
-  def testAccumulativeKPI[A](
-      kpi: AccumulativeKPI,
+  def testQueryAccumulativeKPI[A](
+      kpi: QueryAccumulativeKPI,
       data: List[MockData[PerUserSamples]]
-    )(f: (KPIProcessAlg[IO, Unit, AccumulativeKPI],
-          KPIRepo[IO, AccumulativeKPI]) => IO[A]
+    )(f: (KPIProcessAlg[IO, Unit, QueryAccumulativeKPI],
+          KPIRepo[IO, QueryAccumulativeKPI]) => IO[A]
     ): IO[A] = {
-    implicit val aKpiDAO = MapBasedDAOs.accumulativeKPIAlg[IO]
+    implicit val aKpiDAO = MapBasedDAOs.queryAccumulativeKPIAlg[IO]
     implicit val aStateDAO =
       MapBasedDAOs.experimentStateDAO[IO, PerUserSamplesLnSummary]
     implicit val eventQuery =
-      MockEventQuery[IO, AccumulativeKPI, PerUserSamples](data)
+      MockEventQuery[IO, QueryAccumulativeKPI, PerUserSamples](data)
     aKpiDAO.create(kpi) *>
       f(
         KPIProcessAlg.default,
@@ -56,8 +56,8 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
   implicit val rng = RNG.default
   implicit val sampler = SamplerConfig.default
   def process(
-      kpi: AccumulativeKPI,
-      alg: KPIProcessAlg[IO, Unit, AccumulativeKPI],
+      kpi: QueryAccumulativeKPI,
+      alg: KPIProcessAlg[IO, Unit, QueryAccumulativeKPI],
       ps: ProcessSettings = settings(),
       duration: FiniteDuration = 150.millis
     ): IO[Unit] =
@@ -70,7 +70,7 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
 
   "empty data results in unchanged prior" in {
     val kpi = Factory.kpi(testKPIName, blindPrior, 50.millis)
-    testAccumulativeKPI(
+    testQueryAccumulativeKPI(
       kpi,
       Nil
     ) { (alg, repo) =>
@@ -89,7 +89,7 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
     val dist = breeze.stats.distributions.LogNormal(1d, 0.3d)
     val data = dist.sample(n).toArray
 
-    testAccumulativeKPI(
+    testQueryAccumulativeKPI(
       kpi,
       List(
         (

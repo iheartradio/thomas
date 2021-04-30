@@ -13,7 +13,10 @@ trait KPIRepo[F[_], K <: KPI] {
 
   protected def insert(newKpi: K): F[K]
 
-  def create(newKpi: K)(implicit F: MonadThrow[F]): F[K] =
+  def create(
+      newKpi: K
+    )(implicit F: MonadThrow[F]
+    ): F[K] = //todo: add AllKPIRepo deps to ensure kpi name uniqueness.
     validate(newKpi)
       .leftMap(es => InvalidKPI(es.mkString_("; ")))
       .liftTo[F] *> insert(newKpi)
@@ -58,7 +61,7 @@ trait AllKPIRepo[F[_]] {
 object AllKPIRepo {
   implicit def default[F[_]: MonadThrow](
       implicit cRepo: KPIRepo[F, ConversionKPI],
-      aRepo: KPIRepo[F, AccumulativeKPI]
+      aRepo: KPIRepo[F, QueryAccumulativeKPI]
     ): AllKPIRepo[F] =
     new AllKPIRepo[F] {
       def all: F[Vector[KPI]] =

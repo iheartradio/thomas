@@ -8,12 +8,13 @@ import com.iheart.thomas.abtest.model._
 import com.iheart.thomas.admin.Role
 import com.iheart.thomas.analysis.bayesian.models._
 import com.iheart.thomas.analysis.{
-  AccumulativeKPI,
   ConversionKPI,
   ConversionMessageQuery,
   Criteria,
   KPIName,
-  MessageQuery
+  MessageQuery,
+  QueryAccumulativeKPI,
+  QueryName
 }
 import com.iheart.thomas.dynamo.{AnalysisDAOs, ScanamoManagement}
 import com.iheart.thomas.http4s.MongoResources
@@ -102,7 +103,16 @@ object Factory extends IOApp {
       name: KPIName,
       model: LogNormalModel,
       duration: FiniteDuration = 50.millis
-    ) = AccumulativeKPI(name, "kai", None, model, duration, None)
+    ) =
+    QueryAccumulativeKPI(
+      name,
+      "kai",
+      None,
+      model,
+      duration,
+      QueryName("unknown"),
+      Map.empty
+    )
 
   def run(args: List[String]): IO[ExitCode] =
     insertDevelopmentData.as(ExitCode.Success)

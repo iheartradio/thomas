@@ -30,8 +30,8 @@ object Posterior {
     (k: ConversionKPI, data: Conversions) => k.copy(model = update(k.model, data))
 
   implicit def accumulativePosterior
-      : Posterior[AccumulativeKPI, PerUserSamplesLnSummary] =
-    (k: AccumulativeKPI, data: PerUserSamplesLnSummary) =>
+      : Posterior[QueryAccumulativeKPI, PerUserSamplesLnSummary] =
+    (k: QueryAccumulativeKPI, data: PerUserSamplesLnSummary) =>
       k.copy(model = update(k.model, data))
 
   implicit val betaConversion: Posterior[BetaModel, Conversions] =

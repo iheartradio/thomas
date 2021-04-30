@@ -60,10 +60,10 @@ object KPIEvaluator {
             cStateDAO
               .find(stateKey)
               .flatMap(s => evaluate(s, model).widen)
-          case AccumulativeKPI(_, _, _, model, _, _) =>
+          case k: AccumulativeKPI =>
             pStateDAO
               .find(stateKey)
-              .flatMap(s => evaluate(s, model).widen)
+              .flatMap(s => evaluate(s, k.model).widen)
         })
     }
 

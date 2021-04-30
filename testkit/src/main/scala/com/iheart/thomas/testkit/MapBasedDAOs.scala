@@ -7,7 +7,7 @@ import com.iheart.thomas.abtest.Error.NotFound
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
 import com.iheart.thomas.analysis.{
-  AccumulativeKPI,
+  QueryAccumulativeKPI,
   ConversionKPI,
   KPIName,
   KPIRepo,
@@ -128,10 +128,10 @@ object MapBasedDAOs {
     new MapBasedDAOs[F, ConversionKPI, KPIName](_.name)
       with KPIRepo[F, ConversionKPI]
 
-  def accumulativeKPIAlg[F[_]](
+  def queryAccumulativeKPIAlg[F[_]](
       implicit F: Sync[F]
-    ): KPIRepo[F, AccumulativeKPI] =
-    new MapBasedDAOs[F, AccumulativeKPI, KPIName](_.name)
-      with KPIRepo[F, AccumulativeKPI]
+    ): KPIRepo[F, QueryAccumulativeKPI] =
+    new MapBasedDAOs[F, QueryAccumulativeKPI, KPIName](_.name)
+      with KPIRepo[F, QueryAccumulativeKPI]
 
 }

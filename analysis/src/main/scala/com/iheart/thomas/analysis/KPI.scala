@@ -11,14 +11,20 @@ sealed trait KPI {
   def description: Option[String]
 }
 
-case class AccumulativeKPI(
+sealed trait AccumulativeKPI extends KPI {
+  def model: LogNormalModel
+  def period: FiniteDuration
+}
+
+case class QueryAccumulativeKPI(
     name: KPIName,
     author: String,
     description: Option[String],
     model: LogNormalModel,
     period: FiniteDuration,
-    valueQuery: Option[MessageQuery])
-    extends KPI
+    queryName: QueryName,
+    queryParams: Map[String, String])
+    extends AccumulativeKPI
 
 case class ConversionKPI(
     name: KPIName,

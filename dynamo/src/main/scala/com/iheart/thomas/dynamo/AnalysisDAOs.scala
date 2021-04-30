@@ -13,7 +13,7 @@ import scala.concurrent.duration._
 
 object AnalysisDAOs extends ScanamoManagement {
   val conversionKPITableName = "ds-abtest-conversion-kpi"
-  val accumulativeKPITableName = "ds-abtest-accumulative-kpi"
+  val queryAccumulativeKPITableName = "ds-abtest-query-accumulative-kpi"
   val kPIKeyName = "name"
   val kPIKey = ScanamoDAOHelperStringKey.keyOf(kPIKeyName)
 
@@ -26,7 +26,7 @@ object AnalysisDAOs extends ScanamoManagement {
   def tables =
     List(
       (conversionKPITableName, kPIKey),
-      (accumulativeKPITableName, kPIKey),
+      (queryAccumulativeKPITableName, kPIKey),
       (conversionKPIStateTableName, experimentKPIStateKey),
       (perUserSamplesKPIStateTableName, experimentKPIStateKey)
     )
@@ -44,8 +44,8 @@ object AnalysisDAOs extends ScanamoManagement {
 
   implicit def accumulativeKPIRepo[F[_]: Async](
       implicit dynamoClient: DynamoDbAsyncClient
-    ): KPIRepo[F, AccumulativeKPI] =
-    kPIRepo[F, AccumulativeKPI](accumulativeKPITableName)
+    ): KPIRepo[F, QueryAccumulativeKPI] =
+    kPIRepo[F, QueryAccumulativeKPI](queryAccumulativeKPITableName)
 
   def kPIRepo[F[_]: Async, K <: KPI](
       tableName: String

@@ -9,6 +9,7 @@ object `package` {
   @newsubtype case class Probability(p: Double)
   @newsubtype case class KPIDouble(d: Double)
   @newsubtype case class KPIName(n: String)
+  @newsubtype case class QueryName(n: String)
 
   type Diff = Double
   type Samples[A] = List[A]

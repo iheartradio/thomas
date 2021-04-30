@@ -6,7 +6,7 @@ import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.bayesian.models._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState
 import com.iheart.thomas.bandit.bayesian._
-import com.iheart.thomas.stream.JobSpec.{ProcessSettingsOptional}
+import com.iheart.thomas.stream.JobSpec.ProcessSettingsOptional
 import com.iheart.thomas.stream._
 import io.estatico.newtype.ops._
 import org.scanamo.{DynamoFormat, TypeCoercionError}
@@ -26,6 +26,9 @@ object DynamoFormats {
 
   implicit val dfKPName: DynamoFormat[KPIName] =
     DynamoFormat[String].coerce[DynamoFormat[KPIName]]
+
+  implicit val dfQueryName: DynamoFormat[QueryName] =
+    DynamoFormat[String].coerce[DynamoFormat[QueryName]]
 
   implicit val dfOffsetTime: DynamoFormat[OffsetDateTime] =
     DynamoFormat
@@ -94,8 +97,8 @@ object DynamoFormats {
   implicit val conversionKPIFormat: DynamoFormat[ConversionKPI] =
     deriveDynamoFormat[ConversionKPI]
 
-  implicit val accumulativeKPIFormat: DynamoFormat[AccumulativeKPI] =
-    deriveDynamoFormat[AccumulativeKPI]
+  implicit val queryAccumulativeKPIFormat: DynamoFormat[QueryAccumulativeKPI] =
+    deriveDynamoFormat[QueryAccumulativeKPI]
 
   implicit val kPIFormat: DynamoFormat[KPI] =
     deriveDynamoFormat[KPI]
