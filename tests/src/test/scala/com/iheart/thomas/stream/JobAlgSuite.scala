@@ -28,7 +28,7 @@ import com.iheart.thomas.testkit.ExampleArmParse._
 import com.iheart.thomas.tracking.EventLogger
 
 abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
-  import testkit.MockEventQuery._
+  import testkit.MockQueryAccumulativeKPIAlg._
   def withAlg[A](
       f: (KPIRepo[IO, ConversionKPI], JobAlg[IO], PubSub[IO]) => IO[A]
     )(implicit config: Config = cfg

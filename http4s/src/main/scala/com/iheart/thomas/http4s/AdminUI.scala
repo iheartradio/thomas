@@ -28,6 +28,7 @@ import com.iheart.thomas.kafka.JsonMessageSubscriber
 import com.iheart.thomas.stream.JobAlg
 import org.typelevel.log4cats.Logger
 import fs2.Stream
+
 import scala.concurrent.ExecutionContext
 import org.http4s.twirl._
 import tsec.authentication.Authenticator
@@ -35,7 +36,7 @@ import tsec.passwordhashers.jca.BCrypt
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import ThrowableExtension._
 import com.iheart.thomas.stream.ArmParser.JValueArmParser
-import com.iheart.thomas.analysis.KPIEventQuery.PerUserSamplesQuery
+import com.iheart.thomas.analysis.QueryAccumulativeKPIAlg
 import com.iheart.thomas.tracking.EventLogger
 
 class AdminUI[F[_]: MonadThrow](
@@ -97,7 +98,7 @@ object AdminUI {
   }
 
   def resource[
-      F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger: PerUserSamplesQuery: JValueArmParser
+      F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger: QueryAccumulativeKPIAlg: JValueArmParser
     ](implicit dc: DynamoDbAsyncClient,
       cfg: AdminUIConfig,
       config: Config,
@@ -132,7 +133,7 @@ object AdminUI {
   }
 
   def resourceFromDynamo[
-      F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger: PerUserSamplesQuery: JValueArmParser
+      F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger: QueryAccumulativeKPIAlg: JValueArmParser
     ](implicit
       cfg: Config,
       adminUIConfig: AdminUIConfig,
@@ -146,7 +147,9 @@ object AdminUI {
     * Provides a server that serves the Admin UI
     */
   def serverResourceAutoLoadConfig[
-      F[_]: ConcurrentEffect: Timer: ContextShift: EventLogger: PerUserSamplesQuery: JValueArmParser
+      F[
+          _
+      ]: ConcurrentEffect: Timer: ContextShift: EventLogger: QueryAccumulativeKPIAlg: JValueArmParser
     ](implicit dc: DynamoDbAsyncClient,
       executionContext: ExecutionContext
     ): Resource[F, ExitCode] = {
@@ -161,7 +164,9 @@ object AdminUI {
     * Provides a server that serves the Admin UI
     */
   def serverResource[
-      F[_]: ConcurrentEffect: Timer: ContextShift: EventLogger: PerUserSamplesQuery: JValueArmParser
+      F[
+          _
+      ]: ConcurrentEffect: Timer: ContextShift: EventLogger: QueryAccumulativeKPIAlg: JValueArmParser
     ](implicit
       adminCfg: AdminUIConfig,
       config: Config,

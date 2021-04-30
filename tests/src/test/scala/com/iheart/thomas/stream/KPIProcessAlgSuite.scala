@@ -18,8 +18,8 @@ import fs2.Stream
 import com.iheart.thomas.TimeUtil
 import com.iheart.thomas.analysis.bayesian.{KPIIndicator, Variable}
 import com.iheart.thomas.stream.JobSpec.ProcessSettings
-import com.iheart.thomas.testkit.MockEventQuery.MockData
-import com.iheart.thomas.testkit.{Factory, MapBasedDAOs, MockEventQuery}
+import com.iheart.thomas.testkit.MockQueryAccumulativeKPIAlg.MockData
+import com.iheart.thomas.testkit.{Factory, MapBasedDAOs, MockQueryAccumulativeKPIAlg}
 import com.iheart.thomas.tracking.EventLogger
 import com.stripe.rainier.core.{LogNormal, Normal}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
@@ -40,8 +40,8 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
     implicit val aKpiDAO = MapBasedDAOs.queryAccumulativeKPIAlg[IO]
     implicit val aStateDAO =
       MapBasedDAOs.experimentStateDAO[IO, PerUserSamplesLnSummary]
-    implicit val eventQuery =
-      MockEventQuery[IO, QueryAccumulativeKPI, PerUserSamples](data)
+    implicit val mockAlg =
+      MockQueryAccumulativeKPIAlg[IO](data)
     aKpiDAO.create(kpi) *>
       f(
         KPIProcessAlg.default,

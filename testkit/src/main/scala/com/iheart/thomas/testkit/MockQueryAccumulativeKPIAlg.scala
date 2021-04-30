@@ -2,26 +2,35 @@ package com.iheart.thomas.testkit
 
 import cats.Applicative
 import cats.effect.IO
-import com.iheart.thomas.{ArmName, FeatureName}
+import cats.implicits._
+import com.iheart.thomas.analysis.KPIEventQuery.PerUserSamplesQuery
 import com.iheart.thomas.analysis.{
   KPI,
   KPIEventQuery,
   KPIName,
   PerUserSamples,
-  QueryAccumulativeKPI
+  QueryAccumulativeKPIAlg,
+  QuerySpec
 }
-import cats.implicits._
+import com.iheart.thomas.{ArmName, FeatureName}
 
 import java.time.Instant
 
-object MockEventQuery {
-  implicit val failingEventQuery
-      : KPIEventQuery[IO, QueryAccumulativeKPI, PerUserSamples] =
-    KPIEventQuery.alwaysFail[IO, QueryAccumulativeKPI, PerUserSamples]
-
+object MockQueryAccumulativeKPIAlg {
+  implicit val nullAlg = QueryAccumulativeKPIAlg.unsupported[IO]
   type MockData[E] = (FeatureName, ArmName, KPIName, Instant, Instant, E)
-  def apply[F[_]: Applicative, K <: KPI, E](
-      data: List[(FeatureName, ArmName, KPIName, Instant, Instant, E)]
+  def apply[F[_]: Applicative](
+      data: List[MockData[PerUserSamples]],
+      querySpecs: List[QuerySpec] = Nil
+    ): QueryAccumulativeKPIAlg[F] =
+    new QueryAccumulativeKPIAlg[F] {
+
+      def eventQuery: PerUserSamplesQuery[F] = mockQuery(data)
+      def availableQuerySpecs: F[List[QuerySpec]] = querySpecs.pure[F]
+    }
+
+  def mockQuery[F[_]: Applicative, K <: KPI, E](
+      data: List[MockData[E]]
     ): KPIEventQuery[F, K, E] =
     new KPIEventQuery[F, K, E] {
 

@@ -26,7 +26,7 @@ object ExampleAbtestServerApp extends IOApp {
 
 object ExampleAbtestAdminUIApp extends IOApp {
   import testkit.ExampleArmParse._
-  import testkit.MockEventQuery._
+  import testkit.MockQueryAccumulativeKPIAlg._
 
   implicit val logger = EventLogger.catsLogger(Slf4jLogger.getLogger[IO])
 
