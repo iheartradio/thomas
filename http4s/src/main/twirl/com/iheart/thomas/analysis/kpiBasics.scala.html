@@ -1,0 +1,40 @@
+@import com.iheart.thomas.analysis._
+
+@(
+draftO: Option[KPI],
+showNameField: Boolean = true
+)
+
+
+<div id="kpi-basics" class="card">
+    <div class="card-header">
+        <span class="h5">Basics</span>
+    </div>
+    <div class="card-body">
+        @if( showNameField ) {
+        <div class="form-group">
+            <label class="form-label" for="nameInput">Name</label>
+            <input name="name"
+                   required
+                   class="form-control"
+                   id="nameInput"
+                   type="text"
+                   value="@draftO.map(_.name)"
+            />
+        </div>
+        } else {
+        <input name="name"
+               type="hidden"
+               value="@draftO.map(_.name)" />
+        }
+
+        <div class="form-group">
+            <label class="form-label" for="descriptionInput">Description</label>
+            <textarea name="description"
+                      class="form-control"
+                      id="descriptionInput"
+            >@draftO.flatMap(_.description)</textarea>
+        </div>
+
+    </div>
+</div>

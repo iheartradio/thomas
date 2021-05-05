@@ -96,39 +96,7 @@ showNameField: Boolean = true
 </div>
 <div class="row mt-3">
     <div class="col-md">
-        <div id="kpi-basics" class="card">
-            <div class="card-header">
-                <span class="h5">Basics</span>
-            </div>
-            <div class="card-body">
-                @if( showNameField ) {
-                <div class="form-group">
-                    <label class="form-label" for="nameInput">Name</label>
-                    <input name="name"
-                           required
-                           class="form-control"
-                           id="nameInput"
-                           type="text"
-                           value="@draftO.map(_.name)"
-                    />
-                </div>
-                } else {
-                    <input name="name"
-                           type="hidden"
-                           value="@draftO.map(_.name)" />
-                }
-
-                <div class="form-group">
-                    <label class="form-label" for="descriptionInput">Description</label>
-                    <textarea name="description"
-                              class="form-control"
-                              id="descriptionInput"
-                    >@draftO.flatMap(_.description)</textarea>
-                </div>
-
-            </div>
-        </div>
-
+        @kpiBasics(draftO, showNameField)
     </div>
     <div class="col-md">
         <div id="kpi-model" class="card">

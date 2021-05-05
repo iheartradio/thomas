@@ -6,16 +6,16 @@
 
 
 @(
-kpi: ConversionKPI,
+kpi: QueryAccumulativeKPI,
 runningJobO: Option[JobInfo[UpdateKPIPrior]],
 successMsg: Option[String] = None
 )(implicit env: UIEnv)
 
-@topNav(s"Editing Conversion KPI ${kpi.name}", "Analysis") {
+@topNav(s"Editing Accumulative KPI ${kpi.name}", "Analysis") {
 
 <form action="../conversionKPIs/@kpi.name" method="post">
 
-    @conversionKPIForm(Some(kpi), successMsg, false)
+    @accumulativeKPIForm(Some(kpi), successMsg, false)
 
     <div class="row text-end mt-5">
         <div class="mr-5">

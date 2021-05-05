@@ -31,7 +31,6 @@ kpis: Vector[ConversionKPI]
         <div class="row mt-3">
             <div class="list-group w-100">
                 @for(kpi <- kpis) {
-
                 <div class="list-group-item">
                     <div class="row">
                         <div class="col-8">
@@ -46,25 +45,19 @@ kpis: Vector[ConversionKPI]
                         </div>
 
                         <div class="col-3 text-sm-right">
-
-                            <small><span class="fw-light ml-3">
-              Author: </span>
-                                <span class="fw-heavy">
-                        @kpi.author
-
-                        </span>
-                            </small>
+                          <small><span class="fw-light ml-3">Author: </span>
+                            <span class="fw-heavy">@kpi.author</span>
+                          </small>
                         </div>
                         <div class="col-1">
                             @if(env.currentUser.has(ManageAnalysis)) {
-                            <a href="./conversionKPIs/@kpi.name/delete"
+                            <a href="./kpis/@kpi.name/delete"
                                role="button" class="btn ml-2"
                                onclick="return confirm('Please confirm you want to remove @kpi.name?')">
                                 <i class="bi bi-trash"></i>
                             </a>
                             }
                         </div>
-
                     </div>
                 </div>
                 }

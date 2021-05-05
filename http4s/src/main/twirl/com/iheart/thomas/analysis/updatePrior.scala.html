@@ -53,3 +53,16 @@ runningJobO: Option[JobInfo[UpdateKPIPrior]]
 
     </div>
 </div>
+
+@if(runningJobO.isEmpty) {
+    <script>
+    $(document).ready(function() {
+        var pickerSettings =  {
+            'format': 'Y-m-d H:i:s T'
+        };
+        $('#update-until').datetimepicker(pickerSettings);
+    });
+
+    </script>
+}
+

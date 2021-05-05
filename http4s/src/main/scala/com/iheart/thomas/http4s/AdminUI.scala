@@ -98,7 +98,8 @@ object AdminUI {
   }
 
   def resource[
-      F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger: QueryAccumulativeKPIAlg: JValueArmParser
+      F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger
+        : QueryAccumulativeKPIAlg: JValueArmParser
     ](implicit dc: DynamoDbAsyncClient,
       cfg: AdminUIConfig,
       config: Config,
@@ -117,23 +118,24 @@ object AdminUI {
           cfg.adminTablesWriteCapacity
         )
       ) *> {
-      Resource.eval(AuthDependencies[F](cfg.key)).flatMap { deps =>
-        import deps._
-        import dynamo.AdminDAOs._
-        implicit val authAlg = AuthenticationAlg[F, BCrypt, AuthImp]
-        val authUI = new UI(Some(cfg.initialAdminUsername), cfg.initialRole)
+        Resource.eval(AuthDependencies[F](cfg.key)).flatMap { deps =>
+          import deps._
+          import dynamo.AdminDAOs._
+          implicit val authAlg = AuthenticationAlg[F, BCrypt, AuthImp]
+          val authUI = new UI(Some(cfg.initialAdminUsername), cfg.initialRole)
 
-        import dynamo.AnalysisDAOs._
-        import JsonMessageSubscriber._
-        AbtestManagementUI.fromMongo[F](config).map { amUI =>
-          new AdminUI(amUI, authUI, new analysis.UI[F], new stream.UI[F])
+          import dynamo.AnalysisDAOs._
+          import JsonMessageSubscriber._
+          AbtestManagementUI.fromMongo[F](config).map { amUI =>
+            new AdminUI(amUI, authUI, new analysis.UI[F], new stream.UI[F])
+          }
         }
       }
-    }
   }
 
   def resourceFromDynamo[
-      F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger: QueryAccumulativeKPIAlg: JValueArmParser
+      F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger
+        : QueryAccumulativeKPIAlg: JValueArmParser
     ](implicit
       cfg: Config,
       adminUIConfig: AdminUIConfig,
@@ -143,13 +145,13 @@ object AdminUI {
       .client(ConfigSource.fromConfig(cfg).at("thomas.admin-ui.dynamo"))
       .flatMap { implicit dc => resource }
 
-  /**
-    * Provides a server that serves the Admin UI
+  /** Provides a server that serves the Admin UI
     */
   def serverResourceAutoLoadConfig[
-      F[
-          _
-      ]: ConcurrentEffect: Timer: ContextShift: EventLogger: QueryAccumulativeKPIAlg: JValueArmParser
+      F[_]: ConcurrentEffect
+        : Timer: ContextShift: EventLogger
+        : QueryAccumulativeKPIAlg
+        : JValueArmParser
     ](implicit dc: DynamoDbAsyncClient,
       executionContext: ExecutionContext
     ): Resource[F, ExitCode] = {
@@ -160,13 +162,11 @@ object AdminUI {
     }
   }
 
-  /**
-    * Provides a server that serves the Admin UI
+  /** Provides a server that serves the Admin UI
     */
   def serverResource[
-      F[
-          _
-      ]: ConcurrentEffect: Timer: ContextShift: EventLogger: QueryAccumulativeKPIAlg: JValueArmParser
+      F[_]: ConcurrentEffect: Timer: ContextShift: EventLogger
+        : QueryAccumulativeKPIAlg: JValueArmParser
     ](implicit
       adminCfg: AdminUIConfig,
       config: Config,

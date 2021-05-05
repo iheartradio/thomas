@@ -56,6 +56,7 @@ trait AllKPIRepo[F[_]] {
   def all: F[Vector[KPI]]
   def find(name: KPIName): F[Option[KPI]]
   def get(name: KPIName): F[KPI]
+  def delete(name: KPIName): F[Option[Unit]]
 }
 
 object AllKPIRepo {
@@ -75,6 +76,13 @@ object AllKPIRepo {
         cRepo.find(name).flatMap { r =>
           r.fold(aRepo.find(name).widen[Option[KPI]])(_ => r.pure[F].widen)
         }
+
+      def delete(name: KPIName): F[Option[Unit]] = {
+        find(name).flatMap(_.traverse {
+          case c: ConversionKPI        => cRepo.remove(c.name)
+          case a: QueryAccumulativeKPI => aRepo.remove(a.name)
+        })
+      }
 
       def get(name: KPIName): F[KPI] =
         find(name).flatMap(

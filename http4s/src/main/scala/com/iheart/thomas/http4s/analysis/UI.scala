@@ -12,11 +12,12 @@ import com.iheart.thomas.analysis.{
   KPIRepo,
   KPIStats,
   MessageQuery,
+  QueryAccumulativeKPI,
   bayesian
 }
 import bayesian.models._
 import com.iheart.thomas.http4s.{AuthImp, ReverseRoutes}
-import com.iheart.thomas.http4s.auth.{AuthedEndpointsUtils}
+import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
 import org.http4s.dsl.Http4sDsl
 import cats.implicits._
 import org.http4s.twirl._
@@ -24,7 +25,7 @@ import com.iheart.thomas.analysis.html._
 import com.iheart.thomas.html.{errorMsg, redirect}
 import org.http4s.FormDataDecoder
 import FormDataDecoder._
-import com.iheart.thomas.analysis.bayesian.{KPIEvaluator}
+import com.iheart.thomas.analysis.bayesian.KPIEvaluator
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
 import com.iheart.thomas.analysis.monitor.{
   AllExperimentKPIStateRepo,
@@ -148,21 +149,26 @@ class UI[F[_]: Async](
       case GET -> `rootPath` / "conversionKPI" / "new" asAuthed u =>
         Ok(newConversionKPI()(UIEnv(u)))
 
-      case GET -> `rootPath` / "conversionKPIs" / kpiName asAuthed u =>
-        convKpiAlg.find(KPIName(kpiName)).flatMap { ko =>
+      case GET -> `rootPath` / "kpis" / kpiName asAuthed u =>
+        allKPIRepo.find(KPIName(kpiName)).flatMap { ko =>
           ko.fold(
-            NotFound(s"Cannot find the Conversion KPI under the name $kpiName")
+            NotFound(s"Cannot find the KPI under the name $kpiName")
           ) { k =>
             jobAlg
               .findInfo[UpdateKPIPrior](UpdateKPIPrior.keyOf(KPIName(kpiName)))
               .flatMap { jobO =>
-                Ok(editConversionKPI(k, jobO)(UIEnv(u)))
+                k match {
+                  case c: ConversionKPI => Ok(editConversionKPI(c, jobO)(UIEnv(u)))
+                  case a: QueryAccumulativeKPI =>
+                    Ok(editAccumulativeKPI(a, jobO)(UIEnv(u)))
+                }
+
               }
           }
         }
 
-      case GET -> `rootPath` / "conversionKPIs" / kpiName / "delete" asAuthed _ =>
-        convKpiAlg.remove(KPIName(kpiName)) >>
+      case GET -> `rootPath` / "kpis" / kpiName / "delete" asAuthed _ =>
+        allKPIRepo.delete(KPIName(kpiName)) >>
           Ok(redirect(reverseRoutes.analysis, s"$kpiName, if existed, is deleted."))
 
       case se @ POST -> `rootPath` / "conversionKPIs" asAuthed u =>
