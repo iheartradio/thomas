@@ -4,7 +4,8 @@
 @(
 draftO: Option[QueryAccumulativeKPI],
 successMsg: Option[String] = None,
-showNameField: Boolean = true
+showNameField: Boolean = true,
+queryNames: List[QueryName] = Nil
 )(implicit env: UIEnv)
 
 
@@ -30,7 +31,7 @@ showNameField: Boolean = true
             <div class="card-body">
                 <div class="form-group">
                     <label class="form-label" for="miu0PriorInput">μ</label>
-                    <input name="model.alpha"
+                    <input name="model.miu0"
                            class="form-control"
                            id="miu0PriorInput"
                            type="number"
@@ -41,7 +42,7 @@ showNameField: Boolean = true
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="n0PriorInput">n0</label>
-                    <input name="model.beta"
+                    <input name="model.n0"
                            class="form-control"
                            id="n0PriorInput"
                            type="number"
@@ -84,7 +85,22 @@ showNameField: Boolean = true
                 <span class="h5">Query</span>
             </div>
             <div class="card-body">
+                @for( q <- draftO.map(_.queryName) ) {
+                <span class="text-primary">@q</span>
+                }
+                @if(queryNames.nonEmpty) {
+                    <label class="form-label" for="queryNameSelect">KPI Query</label>
+                    <select id="queryNameSelect" name="queryName" class="form-control form-filter" required>
+                        <option value="" disabled selected hidden>
+                            Select a query
+                        </option>
+                        @for(qn <- queryNames.map(_.n)) {
+                            <option value="@qn">@qn</option>
+                        }
 
+                    </select>
+
+                    }
             </div>
         </div>
 

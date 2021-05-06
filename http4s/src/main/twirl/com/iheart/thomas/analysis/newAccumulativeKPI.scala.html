@@ -1,0 +1,26 @@
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.analysis._
+
+@import com.iheart.thomas.http4s.UIEnv
+
+@(queryNames: List[QueryName],
+successMsg: Option[String] = None)(implicit env: UIEnv)
+
+@topNav("New Accumulative KPI", "Analysis") {
+
+<form action="../accumulativeKPIs" method="post">
+
+    @accumulativeKPIForm(None, successMsg, true, queryNames)
+
+    <div class="row text-end mt-5">
+        <div class="mr-4">
+            <button type="submit" class="btn btn-primary">
+                Create
+            </button>
+            <a href="@env.routes.analysis" role="button" class="btn btn-warning ml-2">Never Mind</a>
+        </div>
+    </div>
+
+
+</form>
+}

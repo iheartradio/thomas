@@ -31,17 +31,23 @@ import java.time.Instant
 import concurrent.duration._
 class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
 
+  val testKPIName = KPIName("test")
+
   def testQueryAccumulativeKPI[A](
       kpi: QueryAccumulativeKPI,
       data: List[MockData[PerUserSamples]]
     )(f: (KPIProcessAlg[IO, Unit, QueryAccumulativeKPI],
           KPIRepo[IO, QueryAccumulativeKPI]) => IO[A]
     ): IO[A] = {
+
     implicit val aKpiDAO = MapBasedDAOs.queryAccumulativeKPIAlg[IO]
     implicit val aStateDAO =
       MapBasedDAOs.experimentStateDAO[IO, PerUserSamplesLnSummary]
     implicit val mockAlg =
-      MockQueryAccumulativeKPIAlg[IO](data)
+      MockQueryAccumulativeKPIAlg[IO](
+        data,
+        50.millis
+      )
     aKpiDAO.create(kpi) *>
       f(
         KPIProcessAlg.default,
@@ -52,7 +58,6 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
   def settings(frequency: FiniteDuration = 10.millis): ProcessSettings =
     ProcessSettings(frequency, 1, None)
   val blindPrior = LogNormalModel(NormalModel(1d, 1d, 1d, 1d))
-  val testKPIName = KPIName("test")
   implicit val rng = RNG.default
   implicit val sampler = SamplerConfig.default
   def process(
@@ -69,7 +74,8 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
       .drain
 
   "empty data results in unchanged prior" in {
-    val kpi = Factory.kpi(testKPIName, blindPrior, 50.millis)
+    val kpi =
+      Factory.kpi(testKPIName, blindPrior, MockQueryAccumulativeKPIAlg.mockQueryName)
     testQueryAccumulativeKPI(
       kpi,
       Nil
@@ -79,12 +85,12 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
         _ <- process(kpi, alg)
         r <- repo.get(testKPIName)
       } yield r).asserting(_.model shouldBe blindPrior)
-
     }
   }
 
   "update prior according to data" in {
-    val kpi = Factory.kpi(testKPIName, blindPrior, 50.millis)
+    val kpi =
+      Factory.kpi(testKPIName, blindPrior, MockQueryAccumulativeKPIAlg.mockQueryName)
     val n = 5000
     val dist = breeze.stats.distributions.LogNormal(1d, 0.3d)
     val data = dist.sample(n).toArray

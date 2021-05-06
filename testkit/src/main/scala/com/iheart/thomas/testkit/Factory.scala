@@ -21,9 +21,7 @@ import com.iheart.thomas.http4s.MongoResources
 import ThrowableExtension._
 import cats.implicits._
 
-import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
-import concurrent.duration._
 object Factory extends IOApp {
   val now = OffsetDateTime.now
 
@@ -100,7 +98,6 @@ object Factory extends IOApp {
               author = "Kai",
               description = None,
               model = LogNormalModel(NormalModel(1, 1, 1, 1)),
-              period = 1.hour,
               queryName = QueryName("usage"),
               queryParams = Map.empty
             )
@@ -116,15 +113,14 @@ object Factory extends IOApp {
   def kpi(
       name: KPIName,
       model: LogNormalModel,
-      duration: FiniteDuration = 50.millis
+      queryName: QueryName
     ) =
     QueryAccumulativeKPI(
       name,
       "kai",
       None,
       model,
-      duration,
-      QueryName("unknown"),
+      queryName,
       Map.empty
     )
 

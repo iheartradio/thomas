@@ -20,9 +20,3 @@ trait KPIEventQuery[F[_], K <: KPI, Event] {
       at: Instant
     ): F[List[(ArmName, Event)]]
 }
-
-object KPIEventQuery {
-  type PerUserSamplesQuery[F[_]] =
-    KPIEventQuery[F, QueryAccumulativeKPI, PerUserSamples]
-
-}

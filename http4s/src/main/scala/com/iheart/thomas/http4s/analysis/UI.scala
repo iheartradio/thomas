@@ -13,6 +13,8 @@ import com.iheart.thomas.analysis.{
   KPIStats,
   MessageQuery,
   QueryAccumulativeKPI,
+  AccumulativeKPIQueryRepo,
+  QueryName,
   bayesian
 }
 import bayesian.models._
@@ -55,10 +57,12 @@ import scala.concurrent.duration.FiniteDuration
 
 class UI[F[_]: Async](
     implicit
-    convKpiAlg: KPIRepo[F, ConversionKPI],
+    convKpiRepo: KPIRepo[F, ConversionKPI],
+    accKpiRepo: KPIRepo[F, QueryAccumulativeKPI],
     allKPIRepo: AllKPIRepo[F],
     jobAlg: JobAlg[F],
     stateRepo: AllExperimentKPIStateRepo[F],
+    queryAccumulativeKPIAlg: AccumulativeKPIQueryRepo[F],
     kPIEvaluator: KPIEvaluator[F],
     aCfg: AdminUIConfig)
     extends AuthedEndpointsUtils[F, AuthImp]
@@ -72,7 +76,7 @@ class UI[F[_]: Async](
     case GET -> `rootPath` / "" asAuthed (u) =>
       for {
         states <- stateRepo.all
-        kpis <- convKpiAlg.all
+        kpis <- convKpiRepo.all
         r <- Ok(index(states, kpis)(UIEnv(u)))
       } yield r
   }
@@ -149,6 +153,11 @@ class UI[F[_]: Async](
       case GET -> `rootPath` / "conversionKPI" / "new" asAuthed u =>
         Ok(newConversionKPI()(UIEnv(u)))
 
+      case GET -> `rootPath` / "accumulativeKPI" / "new" asAuthed u =>
+        queryAccumulativeKPIAlg.queries.flatMap { qs =>
+          Ok(newAccumulativeKPI(qs.map(_.name))(UIEnv(u)))
+        }
+
       case GET -> `rootPath` / "kpis" / kpiName asAuthed u =>
         allKPIRepo.find(KPIName(kpiName)).flatMap { ko =>
           ko.fold(
@@ -177,11 +186,26 @@ class UI[F[_]: Async](
           .redeemWith(
             e => BadRequest(errorMsg(e.getMessage)),
             kpi =>
-              convKpiAlg.create(kpi.copy(author = u.username)) >>
+              convKpiRepo.create(kpi.copy(author = u.username)) >>
                 Ok(
                   redirect(
                     reverseRoutes.analysis,
                     s"Conversion KPI ${kpi.name} successfully created."
+                  )
+                )
+          )
+
+      case se @ POST -> `rootPath` / "accumulativeKPIs" asAuthed u =>
+        se.request
+          .as[QueryAccumulativeKPI]
+          .redeemWith(
+            e => BadRequest(errorMsg(e.getMessage)),
+            kpi =>
+              accKpiRepo.create(kpi.copy(author = u.username)) >>
+                Ok(
+                  redirect(
+                    reverseRoutes.analysis,
+                    s"Accumulative KPI ${kpi.name} successfully created."
                   )
                 )
           )
@@ -195,11 +219,29 @@ class UI[F[_]: Async](
               if (kpi.name.n != kpiName) {
                 BadGateway("Cannot change KPI name")
               } else
-                convKpiAlg.update(kpi.copy(author = u.username)) >>
+                convKpiRepo.update(kpi.copy(author = u.username)) >>
                   Ok(
                     redirect(
                       reverseRoutes.analysis,
                       s"Conversion KPI ${kpi.name} successfully updated."
+                    )
+                  )
+          )
+
+      case se @ POST -> `rootPath` / "accumulativeKPIs" / kpiName asAuthed u =>
+        se.request
+          .as[QueryAccumulativeKPI]
+          .redeemWith(
+            e => BadRequest(errorMsg(e.getMessage)),
+            kpi =>
+              if (kpi.name.n != kpiName) {
+                BadGateway("Cannot change KPI name")
+              } else
+                accKpiRepo.update(kpi.copy(author = u.username)) >>
+                  Ok(
+                    redirect(
+                      reverseRoutes.analysis,
+                      s"Accumulative KPI ${kpi.name} successfully updated."
                     )
                   )
           )
@@ -274,9 +316,18 @@ object UI {
     ).mapN(ConversionMessageQuery.apply)
 
     implicit val betaModelDecoder: FormDataDecoder[BetaModel] = (
-      field[Double]("alphaPrior"),
-      field[Double]("betaPrior")
+      field[Double]("alpha"),
+      field[Double]("beta")
     ).mapN(BetaModel.apply)
+
+    implicit val logModelDecoder: FormDataDecoder[LogNormalModel] = (
+      field[Double]("miu0"),
+      field[Double]("n0"),
+      field[Double]("alpha"),
+      field[Double]("beta")
+    ).mapN((miu0, n0, alpha, beta) =>
+      LogNormalModel(NormalModel(miu0, n0, alpha, beta))
+    )
 
     implicit val conversionKPIDecoder: FormDataDecoder[ConversionKPI] = (
       field[KPIName]("name"),
@@ -285,5 +336,13 @@ object UI {
       nested[BetaModel]("model"),
       nestedOptional[ConversionMessageQuery]("messageQuery")
     ).mapN(ConversionKPI.apply).sanitized
+
+    implicit val accumulativeKPIDecoder: FormDataDecoder[QueryAccumulativeKPI] = (
+      field[KPIName]("name"),
+      field[String]("author"),
+      fieldOptional[String]("description"),
+      nested[LogNormalModel]("model"),
+      field[QueryName]("queryName")
+    ).mapN(QueryAccumulativeKPI(_, _, _, _, _, Map.empty)).sanitized
   }
 }

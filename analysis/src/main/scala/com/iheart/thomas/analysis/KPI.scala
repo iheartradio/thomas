@@ -2,7 +2,6 @@ package com.iheart.thomas.analysis
 import MessageQuery._
 import bayesian.models.{BetaModel, LogNormalModel}
 
-import scala.concurrent.duration.FiniteDuration
 import scala.util.matching.Regex
 
 sealed trait KPI {
@@ -13,7 +12,6 @@ sealed trait KPI {
 
 sealed trait AccumulativeKPI extends KPI {
   def model: LogNormalModel
-  def period: FiniteDuration
 }
 
 case class QueryAccumulativeKPI(
@@ -21,7 +19,6 @@ case class QueryAccumulativeKPI(
     author: String,
     description: Option[String],
     model: LogNormalModel,
-    period: FiniteDuration,
     queryName: QueryName,
     queryParams: Map[String, String])
     extends AccumulativeKPI

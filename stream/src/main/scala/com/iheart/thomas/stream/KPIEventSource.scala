@@ -1,17 +1,21 @@
 package com.iheart.thomas.stream
 
-import cats.{FlatMap, Monad}
+import cats.{Monad, MonadThrow}
 import cats.effect.Timer
 import com.iheart.thomas.{ArmName, FeatureName, TimeUtil}
 import com.iheart.thomas.analysis.{
   KPI,
   PerUserSamples,
+  PerUserSamplesQuery,
   QueryAccumulativeKPI,
-  QueryAccumulativeKPIAlg
+  AccumulativeKPIQueryRepo,
+  QueryName
 }
 import fs2.{Pipe, Stream}
 import cats.implicits._
-import com.iheart.thomas.analysis.KPIEventQuery.PerUserSamplesQuery
+
+import java.time.Instant
+import scala.util.control.NoStackTrace
 
 trait KPIEventSource[F[_], K <: KPI, Message, Event] {
   def events(k: K): Pipe[F, Message, List[Event]]
@@ -63,41 +67,46 @@ object KPIEventSource {
       }
     }
 
-  def fromQuery[F[_]: FlatMap: Timer, Message](
-      query: PerUserSamplesQuery[F]
-    ): KPIEventSource[F, QueryAccumulativeKPI, Message, PerUserSamples] =
-    new KPIEventSource[F, QueryAccumulativeKPI, Message, PerUserSamples] {
-      def events(k: QueryAccumulativeKPI): Pipe[F, Message, List[PerUserSamples]] =
-        _ =>
+  implicit def fromAlg[F[_]: MonadThrow: Timer, Message](
+      implicit alg: AccumulativeKPIQueryRepo[F]
+    ): KPIEventSource[F, QueryAccumulativeKPI, Message, PerUserSamples] = {
+    if (!alg.implemented) KPIEventSource.nullSource
+    else
+      new KPIEventSource[F, QueryAccumulativeKPI, Message, PerUserSamples] {
+
+        def pulse(
+            k: QueryAccumulativeKPI
+          ): Stream[F, (PerUserSamplesQuery[F], Instant)] =
           Stream
-            .awakeEvery[F](k.period)
-            .evalMap(_ =>
-              TimeUtil
-                .now[F]
-                .flatMap(
-                  query(k, _)
-                )
+            .eval(
+              alg
+                .findQuery(k.queryName)
+                .flatMap(_.liftTo[F](UnknownQueryName(k.queryName)))
             )
-
-      def events(
-          k: QueryAccumulativeKPI,
-          feature: FeatureName
-        ): Pipe[F, Message, List[(ArmName, PerUserSamples)]] =
-        _ =>
-          Stream
-            .awakeEvery[F](k.period)
-            .evalMap(_ =>
-              TimeUtil
-                .now[F]
-                .flatMap(
-                  query(k, feature, _)
+            .flatMap { query =>
+              Stream
+                .awakeEvery[F](query.frequency)
+                .evalMap(_ =>
+                  TimeUtil
+                    .now[F]
+                    .map((query, _))
                 )
-            )
-    }
+            }
 
-  implicit def fromAlg[F[_]: FlatMap: Timer, Message](
-      implicit alg: QueryAccumulativeKPIAlg[F]
-    ): KPIEventSource[F, QueryAccumulativeKPI, Message, PerUserSamples] =
-    if (alg.implemented) fromQuery(alg.eventQuery) else KPIEventSource.nullSource
+        def events(
+            k: QueryAccumulativeKPI
+          ): Pipe[F, Message, List[PerUserSamples]] =
+          _ => pulse(k).evalMap { case (query, now) => query(k, now) }
 
+        def events(
+            k: QueryAccumulativeKPI,
+            feature: FeatureName
+          ): Pipe[F, Message, List[(ArmName, PerUserSamples)]] =
+          _ => pulse(k).evalMap { case (query, now) => query(k, feature, now) }
+      }
+  }
+
+  case class UnknownQueryName(q: QueryName)
+      extends RuntimeException
+      with NoStackTrace
 }
