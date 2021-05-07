@@ -20,7 +20,7 @@ lazy val libs = {
     .addJVM(name = "akka-slf4j",            version = "2.6.14",  org = "com.typesafe.akka")
     .addJVM(name = "breeze",                version = "1.2",    org ="org.scalanlp", "breeze", "breeze-viz")
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
-    .add(   name = "cats-testkit-scalatest",version = "2.1.3",  org = org.typelevel.typeLevelOrg)
+    .add(   name = "cats-testkit-scalatest",version = "2.1.4",  org = org.typelevel.typeLevelOrg)
     .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
     .add(   name = "cats-retry",            version = "2.1.0",  org = "com.github.cb372")
     .addJVM(name = "decline",               version = "2.0.0",  org = "com.monovore")
