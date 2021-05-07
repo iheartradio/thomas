@@ -76,7 +76,7 @@ class UI[F[_]: Async](
     case GET -> `rootPath` / "" asAuthed (u) =>
       for {
         states <- stateRepo.all
-        kpis <- convKpiRepo.all
+        kpis <- allKPIRepo.all
         r <- Ok(index(states, kpis)(UIEnv(u)))
       } yield r
   }
@@ -256,7 +256,7 @@ class UI[F[_]: Async](
               )(_ =>
                 Ok(
                   redirect(
-                    reverseRoutes.convKpi(KPIName(kpiName)),
+                    reverseRoutes.kpi(KPIName(kpiName)),
                     s"Scheduled a background process to update the prior using ongoing data. "
                   )
                 )

@@ -36,7 +36,6 @@ object ExampleAbtestAdminUIApp extends IOApp {
       .client[IO]()
       .flatMap(implicit c => AdminUI.serverResourceAutoLoadConfig[IO])
       .use(_ => IO.never)
-
   }
 
 }

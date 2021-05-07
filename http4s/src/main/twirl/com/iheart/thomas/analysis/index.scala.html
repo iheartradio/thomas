@@ -7,7 +7,7 @@
 
 @(
 states: Vector[ExperimentKPIState[KPIStats]],
-kpis: Vector[ConversionKPI]
+kpis: Vector[KPI]
 )(implicit env: UIEnv)
 
 
@@ -26,7 +26,7 @@ kpis: Vector[ConversionKPI]
     </div>
     <div class="col-5">
         <div class="row mt-5">
-            <span class="h4">Conversion KPIs</span>
+            <span class="h4">KPIs</span>
         </div>
         <div class="row mt-3">
             <div class="list-group w-100">
@@ -35,7 +35,7 @@ kpis: Vector[ConversionKPI]
                     <div class="row">
                         <div class="col-8">
                             <div>
-                                <a href="./conversionKPIs/@kpi.name">
+                                <a href="./kpis/@kpi.name">
                                     <span class="mb-1 h5 fw-light text-success">@kpi.name</span>
                                 </a>
                             </div>

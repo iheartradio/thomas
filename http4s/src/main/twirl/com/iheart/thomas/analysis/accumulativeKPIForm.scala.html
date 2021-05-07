@@ -40,7 +40,7 @@ queryNames: List[QueryName] = Nil
                            value="@draftO.map(_.model.inner.miu0).getOrElse(1)"
                     />
                 </div>
-                <div class="form-group">
+                <div class="form-group mt-3">
                     <label class="form-label" for="n0PriorInput">n0</label>
                     <input name="model.n0"
                            class="form-control"
@@ -51,7 +51,7 @@ queryNames: List[QueryName] = Nil
                            value="@draftO.map(_.model.inner.n0).getOrElse(1)"
                     />
                 </div>
-                <div class="form-group">
+                <div class="form-group mt-3">
                     <label class="form-label" for="alphaPriorInput">α</label>
                     <input name="model.alpha"
                            class="form-control"
@@ -62,7 +62,7 @@ queryNames: List[QueryName] = Nil
                            value="@draftO.map(_.model.inner.alpha).getOrElse(1)"
                     />
                 </div>
-                <div class="form-group">
+                <div class="form-group mt-3">
                     <label class="form-label" for="betaPriorInput">β</label>
                     <input name="model.beta"
                            class="form-control"
@@ -86,7 +86,7 @@ queryNames: List[QueryName] = Nil
             </div>
             <div class="card-body">
                 @for( q <- draftO.map(_.queryName) ) {
-                <span class="text-primary">@q</span>
+                   <span class="text-primary">@q</span>
                 }
                 @if(queryNames.nonEmpty) {
                     <label class="form-label" for="queryNameSelect">KPI Query</label>
@@ -99,8 +99,7 @@ queryNames: List[QueryName] = Nil
                         }
 
                     </select>
-
-                    }
+               }
             </div>
         </div>
 

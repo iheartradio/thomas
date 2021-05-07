@@ -24,13 +24,23 @@ object MockQueryAccumulativeKPIAlg {
   val mockQueryName = QueryName("Mock Query with preset data")
   def mockLogNormalData(kpiName: KPIName) = {
     val dist = breeze.stats.distributions.LogNormal(1d, 0.3d)
+    val begin = Instant.now.minusSeconds(20000)
+    val end = Instant.now.plusSeconds(20000)
     List(
       (
-        "fn",
+        "A_Feature",
         "A",
         kpiName,
-        Instant.now.minusSeconds(20),
-        Instant.now.plusSeconds(20),
+        begin,
+        end,
+        PerUserSamples(dist.sample(5000).toArray)
+      ),
+      (
+        "A_Feature",
+        "B",
+        kpiName,
+        begin,
+        end,
         PerUserSamples(dist.sample(5000).toArray)
       )
     )
@@ -78,11 +88,13 @@ object MockQueryAccumulativeKPIAlg {
         k: K,
         feature: FeatureName,
         at: Instant
-      ): F[List[(ArmName, E)]] =
+      ): F[List[(ArmName, E)]] = {
       find(k, at)
         .collect {
           case (fn, am, data) if (fn == feature) => (am, data)
         }
         .pure[F]
+
+    }
   }
 }

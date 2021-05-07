@@ -55,7 +55,8 @@ object ExperimentKPIState {
       likelihoodOptimum: Option[Probability]) {
     def readyForEvaluation: Boolean = {
       kpiStats match {
-        case c: Conversions => c.total > 100
+        case c: Conversions                   => c.total > 100
+        case samples: PerUserSamplesLnSummary => samples.count > 1000
       }
     }
   }
