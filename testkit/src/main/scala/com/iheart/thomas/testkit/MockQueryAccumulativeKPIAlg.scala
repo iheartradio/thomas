@@ -51,7 +51,7 @@ object MockQueryAccumulativeKPIAlg {
 
             def frequency: FiniteDuration = freq
           }
-        ).widen[PerUserSamplesQuery[F]].pure[F]
+        ).pure[F].widen
     }
 
   abstract class MockQuery[F[_]: Applicative, K <: KPI, E](
