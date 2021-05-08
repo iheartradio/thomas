@@ -22,7 +22,7 @@ lazy val libs = {
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
     .add(   name = "cats-testkit-scalatest",version = "2.1.4",  org = org.typelevel.typeLevelOrg)
     .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
-    .add(   name = "cats-retry",            version = "2.1.0",  org = "com.github.cb372")
+    .add(   name = "cats-retry",            version = "2.1.1",  org = "com.github.cb372")
     .addJVM(name = "decline",               version = "2.0.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
     .addJVM(name = "evilplot",              version = "0.8.0",  org = "com.cibo")
