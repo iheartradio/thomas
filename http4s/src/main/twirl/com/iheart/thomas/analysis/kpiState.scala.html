@@ -12,7 +12,7 @@ includedArms: Set[ArmName] = Set.empty
 <div class="card">
     <div class="card-header">
        KPI stats for <a class="text-primary" href=@env.routes.analysisOf(state.key.feature)
-    >@state.key.feature</a> on <a href=@env.routes.convKpi(state.key.kpi) class="text-secondary">@state.key.kpi</a>
+    >@state.key.feature</a> on <a href=@env.routes.kpi(state.key.kpi) class="text-secondary">@state.key.kpi</a>
         from @dateTimeMid(state.start) to @dateTimeMid(state.lastUpdated)
     </div>
     <div class="card-body">
