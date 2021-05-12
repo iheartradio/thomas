@@ -25,7 +25,7 @@ lazy val libs = {
     .add(   name = "cats-retry",            version = "2.1.0",  org = "com.github.cb372")
     .addJVM(name = "decline",               version = "2.0.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
-    .addJVM(name = "evilplot",              version = "0.8.0",  org = "com.cibo")
+    .addJVM(name = "evilplot",              version = "0.8.1",  org = "com.cibo")
     .addJVM(name = "fs2-kafka",             version = "1.4.1",  org = "com.github.fd4s")
     .addModule("http4s", "http4s-twirl")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
@@ -241,7 +241,6 @@ lazy val analysis = project
   .settings(rootSettings)
   .settings(taglessSettings)
   .settings(
-    resolvers += Resolver.bintrayRepo("rainier", "maven"),
     libs.testDependencies("scalacheck", "cats-effect-testing-scalatest"),
     libs.dependencies(
       "rainier-core",
@@ -258,7 +257,6 @@ lazy val plot = project
   .settings(name := "thomas-plot")
   .settings(rootSettings)
   .settings(
-    resolvers += Resolver.bintrayRepo("cibotech", "public"),
     libs.dependencies("evilplot", "scala-view")
   )
 
