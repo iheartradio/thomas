@@ -10,7 +10,7 @@ trait ConfigResource {
       cfgResourceName: Option[String] = None
     )(implicit F: Sync[F]
     ): Resource[F, Config] =
-    Resource.liftF(
+    Resource.eval(
       cfgResourceName
         .fold(ConfigSource.default)(name =>
           ConfigSource

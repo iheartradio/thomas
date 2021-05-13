@@ -1,0 +1,9 @@
+
+@import com.iheart.thomas.analysis._
+@import com.iheart.thomas.http4s.Formatters, Formatters._
+
+@(conversions: Conversions)
+
+<div class="fs-6"><span class="text-muted">Total:</span> @conversions.total</div>
+<div class="fs-6"><span class="text-muted">Converted:</span> @conversions.converted</div>
+<div class="fs-6"><span class="text-muted">Rate:</span> @formatPercentage(conversions.rate)</div>

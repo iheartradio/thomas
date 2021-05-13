@@ -56,8 +56,6 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
 
       "get test by feature name sorted by start and end date" in {
         withAlg { alg =>
-          val startTime = OffsetDateTime.now.plusDays(1)
-
           for {
             test1 <- alg.create(fakeAb(1, 3))
             test2 <- alg.continue(fakeAb(2, 4, test1.data.feature))
@@ -71,8 +69,6 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
 
       "get test by feature name sorted by end date missing" in {
         withAlg { alg =>
-          val startTime = OffsetDateTime.now.plusDays(1)
-
           for {
             test1 <- alg.create(fakeAb(1, 3))
             test2 <- alg.continue(fakeAb(2, 4, test1.data.feature).copy(end = None))
@@ -89,8 +85,6 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
 
       "get tests valid at the target time" in {
         withAlg { alg =>
-          val startTime = OffsetDateTime.now.plusDays(1)
-
           for {
             test <- alg.create(fakeAb())
             testData <- alg.getTestsData(
@@ -448,7 +442,7 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
             ab <- alg.create(
               fakeAb(start = 1, userMetaCriteria = Some(and(RegexMatch("a", "a"))))
             )
-            r <- alg.updateUserMetaCriteria(ab._id, None, false)
+            _ <- alg.updateUserMetaCriteria(ab._id, None, false)
             retrieved <- alg.getTest(ab._id)
           } yield {
 
@@ -487,7 +481,7 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
               fakeAb(1, 2, feature = "a_new_feature_to_override")
             )
             overrideGroup = ab.data.groups.last.name
-            r <- alg.addOverrides(
+            _ <- alg.addOverrides(
               ab.data.feature,
               Map(userId1 -> overrideGroup, userId2 -> overrideGroup)
             )
@@ -513,7 +507,7 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
               fakeAb(1, 2, feature = "a_new_feature_to_override")
             )
             overrideGroup = ab.data.groups.last.name
-            r <- alg.addOverrides(
+            _ <- alg.addOverrides(
               ab.data.feature,
               Map(userId1 -> overrideGroup, userId2 -> overrideGroup)
             )

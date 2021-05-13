@@ -9,13 +9,13 @@ import org.scalatest.matchers.should.Matchers
 
 class DecoderSuite extends AnyFunSuiteLike with Matchers {
 
-  test("can read data") {
+  test("can read conversion kpi form") {
     UI.Decoders.conversionKPIDecoder.apply(
       Map(
         "name" -> Chain("foo"),
         "author" -> Chain("bar"),
-        "model.alphaPrior" -> Chain("1"),
-        "model.betaPrior" -> Chain("2")
+        "model.alpha" -> Chain("1"),
+        "model.beta" -> Chain("2")
       )
     ) should be(
       Valid(ConversionKPI(KPIName("foo"), "bar", None, BetaModel(1, 2), None))

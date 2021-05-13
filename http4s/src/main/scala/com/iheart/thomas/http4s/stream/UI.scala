@@ -3,7 +3,7 @@ package com.iheart.thomas.http4s.stream
 import cats.effect.Async
 import com.iheart.thomas.admin
 import com.iheart.thomas.http4s.{AuthImp, ReverseRoutes, UIEnv}
-import com.iheart.thomas.http4s.auth.{AuthedEndpointsUtils, AuthenticationAlg}
+import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
 import com.iheart.thomas.stream.JobAlg
 import org.http4s.dsl.Http4sDsl
 import tsec.authentication._
@@ -16,7 +16,6 @@ import com.iheart.thomas.stream.html._
 class UI[F[_]: Async](
     implicit
     jobAlg: JobAlg[F],
-    authAlg: AuthenticationAlg[F, AuthImp],
     adminUICfg: AdminUIConfig)
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {

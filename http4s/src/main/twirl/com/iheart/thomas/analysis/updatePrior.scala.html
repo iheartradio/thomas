@@ -1,0 +1,68 @@
+@import com.iheart.thomas.analysis._
+@import com.iheart.thomas.stream.html._
+@import com.iheart.thomas.stream._, JobSpec._
+@import com.iheart.thomas.http4s.Formatters, Formatters._
+
+@(
+kpiName: KPIName,
+runningJobO: Option[JobInfo[UpdateKPIPrior]]
+)
+
+<div class="row mt-3">
+    <div class="col-6">
+        <div id="kpi-update-prior" class="card">
+            <div class="card-header">
+                <span class="h5">Update prior using ongoing data</span>
+            </div>
+            <div class="card-body">
+                @if(runningJobO.isEmpty) {
+
+                <form action="../kpis/@kpiName/update-prior" method="post">
+                    <div class="form-group">
+                        <label class="form-label" for="update-until">Collect data until</label>
+                        <input name="expiration"
+                               required
+                               class="form-control"
+                               id="update-until"
+                               type="text"
+                        />
+                    </div>
+                    <div class="row text-end mt-5">
+                        <div class="mr-4">
+                            <button type="submit" class="btn btn-primary">
+                                Schedule Prior Update
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                } else {
+                    @for(job <- runningJobO) {
+                    <span class="h5 fw-light text-success">
+                              Updating using ongoing data
+                                @for(exp <- job.spec.processSettings.expiration) {
+                                    until @dateTimeMid(exp)
+                                }
+                            </span>
+                     @jobStatusBadge(job.started)
+
+                    }
+                }
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@if(runningJobO.isEmpty) {
+    <script>
+    $(document).ready(function() {
+        var pickerSettings =  {
+            'format': 'Y-m-d H:i:s T'
+        };
+        $('#update-until').datetimepicker(pickerSettings);
+    });
+
+    </script>
+}
+

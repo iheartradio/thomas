@@ -52,7 +52,7 @@ class AssignmentSuite extends AsyncIOSpec with Matchers {
         )
       withAlg { alg =>
         for {
-          test1 <- alg.create(test1)
+          _ <- alg.create(test1)
           test2 <- alg.create(test2)
           retrieved <- alg.getGroupsWithMeta(
             q(
@@ -337,7 +337,7 @@ class AssignmentSuite extends AsyncIOSpec with Matchers {
         val userIds = List.fill(200)(randomUserId)
         withAlg { alg =>
           for {
-            ab <- alg.create(originalSpec)
+            _ <- alg.create(originalSpec)
 
             reshuffled <- alg.continue(
               originalSpec

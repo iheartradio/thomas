@@ -7,10 +7,9 @@ import cats.implicits._
 import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
 import com.iheart.thomas.{dynamo, mongo}
-import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import com.typesafe.config.ConfigFactory
 import _root_.play.api.libs.json.Json
-import com.iheart.thomas.analysis.ConversionKPIAlg
+import com.iheart.thomas.analysis.{ConversionKPI, KPIRepo}
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.http4s.AuthImp
 import com.iheart.thomas.http4s.auth.AuthenticationAlg
@@ -23,8 +22,6 @@ import dynamo.BanditsDAOs._
 
 object Resources {
 
-  import mongo.idSelector
-
   import concurrent.ExecutionContext.Implicits.global
   implicit private val cs = IO.contextShift(global)
   val timer = IO.timer(global)
@@ -32,7 +29,7 @@ object Resources {
 
   val defaultNowF = IO.delay(Instant.now)
   lazy val mangoDAOs =
-    Resource.liftF(IO(ConfigFactory.load(getClass.getClassLoader))).flatMap {
+    Resource.eval(IO(ConfigFactory.load(getClass.getClassLoader))).flatMap {
       config =>
         mongo.daosResource[IO](config).flatMap {
           case daos =>
@@ -59,20 +56,16 @@ object Resources {
     * An ConversionAPI resource that cleans up after
     */
   def apis(
-      implicit logger: EventLogger[IO] = EventLogger.noop[IO],
-      nowF: IO[Instant] = defaultNowF
+      implicit logger: EventLogger[IO] = EventLogger.noop[IO]
     ): Resource[
     IO,
-    (ConversionBMABAlg[IO], AbtestAlg[IO], ConversionKPIAlg[IO])
+    (ConversionBMABAlg[IO], AbtestAlg[IO], KPIRepo[IO, ConversionKPI])
   ] =
     (mangoDAOs, localDynamoR).tupled
       .flatMap { deps =>
         implicit val ((abtestDAO, featureDAO), dynamoDb) = deps
         lazy val refreshPeriod = 0.seconds
         AbtestAlg.defaultResource[IO](refreshPeriod).map { implicit abtestAlg =>
-          implicit val ss = SamplerConfig.default
-          implicit val rng = RNG.default
-
           (
             implicitly,
             abtestAlg,
@@ -84,12 +77,9 @@ object Resources {
   def authAlg(
       implicit dc: DynamoDbAsyncClient
     ): Resource[IO, AuthenticationAlg[IO, AuthImp]] =
-    Resource.liftF(AuthenticationAlg.default[IO](sys.env("THOMAS_ADMIN_KEY")))
+    Resource.eval(AuthenticationAlg.default[IO](sys.env("THOMAS_ADMIN_KEY")))
 
-  def abtestAlg(
-      implicit logger: EventLogger[IO] = EventLogger.noop[IO],
-      nowF: IO[Instant] = defaultNowF
-    ): Resource[
+  def abtestAlg: Resource[
     IO,
     AbtestAlg[IO]
   ] =

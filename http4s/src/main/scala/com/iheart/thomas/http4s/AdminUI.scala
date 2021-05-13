@@ -25,16 +25,18 @@ import pureconfig.module.catseffect._
 import cats.MonadThrow
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.kafka.JsonMessageSubscriber
-import com.iheart.thomas.stream.{ArmParser, JobAlg}
+import com.iheart.thomas.stream.JobAlg
 import org.typelevel.log4cats.Logger
+import fs2.Stream
 
 import scala.concurrent.ExecutionContext
 import org.http4s.twirl._
 import tsec.authentication.Authenticator
 import tsec.passwordhashers.jca.BCrypt
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import org.typelevel.jawn.ast.JValue
 import ThrowableExtension._
+import com.iheart.thomas.stream.ArmParser.JValueArmParser
+import com.iheart.thomas.analysis.AccumulativeKPIQueryRepo
 import com.iheart.thomas.tracking.EventLogger
 
 class AdminUI[F[_]: MonadThrow](
@@ -68,7 +70,7 @@ class AdminUI[F[_]: MonadThrow](
     }
   }
 
-  def backgroundProcess = jobAlg.runStream
+  def backgroundProcess: Stream[F, Unit] = jobAlg.runStream
 
 }
 
@@ -95,85 +97,85 @@ object AdminUI {
     ConfigSource.fromConfig(cfg).at("thomas.admin-ui").loadF[F, AdminUIConfig]
   }
 
-  def resource[F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger](
-      implicit dc: DynamoDbAsyncClient,
+  def resource[
+      F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger
+        : AccumulativeKPIQueryRepo: JValueArmParser
+    ](implicit dc: DynamoDbAsyncClient,
       cfg: AdminUIConfig,
       config: Config,
-      ec: ExecutionContext,
-      ap: ArmParser[F, JValue]
+      ec: ExecutionContext
     ): Resource[F, AdminUI[F]] = {
 
-    implicit val rr = new ReverseRoutes(cfg.rootPath)
-
-    Resource.liftF(
+    Resource.eval(
       dynamo.AdminDAOs.ensureAuthTables[F](
         cfg.adminTablesReadCapacity,
         cfg.adminTablesWriteCapacity
       )
     ) *>
-      Resource.liftF(
+      Resource.eval(
         dynamo.AnalysisDAOs.ensureAnalysisTables[F](
           cfg.adminTablesReadCapacity,
           cfg.adminTablesWriteCapacity
         )
       ) *> {
-      Resource.liftF(AuthDependencies[F](cfg.key)).flatMap { deps =>
-        import deps._
-        import dynamo.AdminDAOs._
-        implicit val authAlg = AuthenticationAlg[F, BCrypt, AuthImp]
-        val authUI = new UI(Some(cfg.initialAdminUsername), cfg.initialRole)
+        Resource.eval(AuthDependencies[F](cfg.key)).flatMap { deps =>
+          import deps._
+          import dynamo.AdminDAOs._
+          implicit val authAlg = AuthenticationAlg[F, BCrypt, AuthImp]
+          val authUI = new UI(Some(cfg.initialAdminUsername), cfg.initialRole)
 
-        import dynamo.AnalysisDAOs._
-        import JsonMessageSubscriber._
-        AbtestManagementUI.fromMongo[F](config).map { amUI =>
-          new AdminUI(amUI, authUI, new analysis.UI[F], new stream.UI[F])
+          import dynamo.AnalysisDAOs._
+          import JsonMessageSubscriber._
+          AbtestManagementUI.fromMongo[F](config).map { amUI =>
+            new AdminUI(amUI, authUI, new analysis.UI[F], new stream.UI[F])
+          }
         }
       }
-    }
   }
 
   def resourceFromDynamo[
       F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger
+        : AccumulativeKPIQueryRepo: JValueArmParser
     ](implicit
       cfg: Config,
       adminUIConfig: AdminUIConfig,
-      ec: ExecutionContext,
-      ap: ArmParser[F, JValue]
+      ec: ExecutionContext
     ): Resource[F, AdminUI[F]] =
     dynamo
       .client(ConfigSource.fromConfig(cfg).at("thomas.admin-ui.dynamo"))
       .flatMap { implicit dc => resource }
 
-  /**
-    * Provides a server that serves the Admin UI
+  /** Provides a server that serves the Admin UI
     */
   def serverResourceAutoLoadConfig[
-      F[_]: ConcurrentEffect: Timer: ContextShift: EventLogger
+      F[_]: ConcurrentEffect
+        : Timer: ContextShift: EventLogger
+        : AccumulativeKPIQueryRepo
+        : JValueArmParser
     ](implicit dc: DynamoDbAsyncClient,
-      executionContext: ExecutionContext,
-      ap: ArmParser[F, JValue]
+      executionContext: ExecutionContext
     ): Resource[F, ExitCode] = {
     ConfigResource.cfg[F]().flatMap { implicit c =>
-      Resource.liftF(loadConfig[F](c)).flatMap { implicit cfg =>
+      Resource.eval(loadConfig[F](c)).flatMap { implicit cfg =>
         serverResource[F]
       }
     }
   }
 
-  /**
-    * Provides a server that serves the Admin UI
+  /** Provides a server that serves the Admin UI
     */
-  def serverResource[F[_]: ConcurrentEffect: Timer: ContextShift: EventLogger](
-      implicit
+  def serverResource[
+      F[_]: ConcurrentEffect: Timer: ContextShift: EventLogger
+        : AccumulativeKPIQueryRepo: JValueArmParser
+    ](implicit
       adminCfg: AdminUIConfig,
       config: Config,
       dc: DynamoDbAsyncClient,
-      executionContext: ExecutionContext,
-      ap: ArmParser[F, JValue]
+      executionContext: ExecutionContext
     ): Resource[F, ExitCode] = {
     import org.http4s.server.blaze._
     import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
-    Resource.liftF(Slf4jLogger.create[F]).flatMap { implicit logger =>
+    Resource.eval(Slf4jLogger.create[F]).flatMap { implicit logger =>
       for {
         ui <- AdminUI.resource[F]
         e <-

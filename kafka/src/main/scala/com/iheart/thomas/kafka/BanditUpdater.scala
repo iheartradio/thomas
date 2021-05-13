@@ -16,7 +16,6 @@ import fs2.concurrent.SignallingRef
 import fs2.kafka.{AutoOffsetReset, ConsumerSettings, Deserializer, KafkaConsumer}
 import fs2.{Pipe, Stream}
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
 //todo to be retired
@@ -42,7 +41,7 @@ object BanditUpdater {
       toEvent: (FeatureName, KPIName) => F[
         Pipe[F, Message, (ArmName, ConversionEvent)]
       ]
-    )(implicit ex: ExecutionContext,
+    )(implicit
       amazonClient: DynamoDbAsyncClient,
       deserializer: Deserializer[F, Message]
     ): Resource[F, BanditUpdater[F]] = {
@@ -55,7 +54,7 @@ object BanditUpdater {
   def resource[
       F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs: MessageProcessor: EventLogger: NonEmptyParallel
     ](cfg: Config
-    )(implicit ex: ExecutionContext,
+    )(implicit
       amazonClient: DynamoDbAsyncClient
     ): Resource[F, BanditUpdater[F]] =
     ConversionBMABAlgResource[F].evalMap(implicit alg => create[F](cfg))

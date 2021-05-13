@@ -1,12 +1,12 @@
 package com.iheart.thomas.bandit
 
 import java.time.OffsetDateTime
-
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import Formats._
 import com.iheart.thomas.bandit.bayesian.{BanditSettings, ConversionBanditSpec}
 import _root_.play.api.libs.json.{Format, JsSuccess, Json}
+import com.iheart.thomas.analysis.KPIName
 
 import concurrent.duration._
 class FormatSuite extends AnyFunSuiteLike with Matchers {
@@ -50,7 +50,7 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
           feature = "Search_Opt_Alpha",
           author = "Kai",
           title = "Initial Test",
-          kpiName = "Search Conversion 2",
+          kpiName = KPIName("Search Conversion 2"),
           minimumSizeChange = 0.001,
           initialSampleSize = 500,
           oldHistoryWeight = Some(0.5d),

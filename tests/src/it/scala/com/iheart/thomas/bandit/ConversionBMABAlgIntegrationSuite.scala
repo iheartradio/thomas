@@ -8,7 +8,7 @@ import cats.effect.{IO, Resource}
 import com.iheart.thomas.abtest.{AbtestAlg, DefaultAbtestAlg}
 import com.iheart.thomas.analysis.{
   ConversionKPI,
-  ConversionKPIAlg,
+  KPIRepo,
   Conversions,
   KPIName,
   Probability
@@ -262,7 +262,7 @@ class ConversionBMABAlgIntegrationSuite extends ConversionBMABAlgSuiteBase {
 
     val (first, second) = withAPI { api =>
       for {
-        is <- api.init(spec)
+        _ <- api.init(spec)
         _ <- api.updateRewardState(
           spec.feature,
           Map(
@@ -520,15 +520,15 @@ class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
 
 //  implicit val logger: EventLogger[IO] = EventLogger.stdout
   val kpi = ConversionKPI(
-    KPIName("test kpi"),
+    KPIName("test_kpi"),
     "kai",
     None,
-    BetaModel(alphaPrior = 1000, betaPrior = 100000),
+    BetaModel(alpha = 1000, beta = 100000),
     None
   )
 
   def withAPI[A](
-      f: (ConversionBMABAlg[IO], ConversionKPIAlg[IO], AbtestAlg[IO]) => IO[A]
+      f: (ConversionBMABAlg[IO], KPIRepo[IO, ConversionKPI], AbtestAlg[IO]) => IO[A]
     ): A =
     apis
       .use {

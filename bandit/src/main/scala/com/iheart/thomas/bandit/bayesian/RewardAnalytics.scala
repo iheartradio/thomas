@@ -5,6 +5,7 @@ import cats.FlatMap
 import cats.implicits._
 import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.bayesian.models.BetaModel
+import com.iheart.thomas.analysis.bayesian._
 
 trait RewardAnalytics[F[_], R] {
   def sampleSize(r: R): Long
@@ -19,8 +20,8 @@ trait RewardAnalytics[F[_], R] {
 
 object RewardAnalytics {
   implicit def metricDataConversions[F[_]: FlatMap](
-      implicit kpiAlg: ConversionKPIAlg[F],
-      evaluator: KPIEvaluator[
+      implicit kpiAlg: KPIRepo[F, ConversionKPI],
+      evaluator: ModelEvaluator[
         F,
         BetaModel,
         Conversions
@@ -43,7 +44,7 @@ object RewardAnalytics {
               historical
                 .flatMap { le =>
                   le.get(armName)
-                    .map(rs => kpi.model.updateFrom(rs))
+                    .map(rs => BetaModel(rs))
                 }
                 .getOrElse(kpi.model)
 

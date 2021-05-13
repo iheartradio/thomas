@@ -6,8 +6,13 @@ import com.iheart.thomas.TimeUtil
 import com.iheart.thomas.abtest.Error.NotFound
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
-import com.iheart.thomas.analysis.bayesian.models._
-import com.iheart.thomas.analysis.{ConversionKPI, ConversionKPIAlg, KPIName}
+import com.iheart.thomas.analysis.{
+  QueryAccumulativeKPI,
+  ConversionKPI,
+  KPIName,
+  KPIRepo,
+  KPIStats
+}
 import com.iheart.thomas.stream.{Job, JobDAO}
 
 import java.time.Instant
@@ -46,7 +51,10 @@ object MapBasedDAOs {
       }
 
     def remove(k: K): F[Unit] =
-      F.delay(map.remove(k)).void
+      delete(k).void
+
+    def delete(k: K): F[Option[A]] =
+      F.delay(map.remove(k))
 
     def update(a: A): F[A] =
       updateO(a).flatMap(_.liftTo[F](NotFound(s"${keyOf(a)} is not found")))
@@ -87,15 +95,17 @@ object MapBasedDAOs {
 
     }
 
-  def experimentStateDAO[F[_]: Sync, R]: ExperimentKPIStateDAO[F, R] =
-    new MapBasedDAOs[F, ExperimentKPIState[R], Key](_.key)
-      with ExperimentKPIStateDAO[F, R] {
+  def experimentStateDAO[
+      F[_]: Sync: Timer,
+      KS <: KPIStats
+    ]: ExperimentKPIStateDAO[F, KS] =
+    new MapBasedDAOs[F, ExperimentKPIState[KS], Key](_.key)
+      with ExperimentKPIStateDAO[F, KS] {
 
-      def updateState(
+      def update(
           key: ExperimentKPIState.Key
-        )(updateArms: List[ArmState[R]] => List[ArmState[R]]
-        )(implicit T: Timer[F]
-        ): F[ExperimentKPIState[R]] =
+        )(updateArms: List[ArmState[KS]] => List[ArmState[KS]]
+        ): F[ExperimentKPIState[KS]] =
         for {
           now <- TimeUtil.now[F]
           s <- get(key)
@@ -106,15 +116,22 @@ object MapBasedDAOs {
             )
           )
         } yield r
+
+      def init(key: Key): F[ExperimentKPIState[KS]] =
+        ensure(key)(ExperimentKPIState.init[F, KS](key))
+
     }
 
-  def conversionKPIAlg[F[_]](implicit F: Sync[F]): ConversionKPIAlg[F] =
-    new MapBasedDAOs[F, ConversionKPI, KPIName](_.name) with ConversionKPIAlg[F] {
-      def setModel(
-          name: KPIName,
-          model: BetaModel
-        ): F[ConversionKPI] =
-        get(name).flatMap(k => update(k.copy(model = model)))
-    }
+  def conversionKPIAlg[F[_]](
+      implicit F: Sync[F]
+    ): KPIRepo[F, ConversionKPI] =
+    new MapBasedDAOs[F, ConversionKPI, KPIName](_.name)
+      with KPIRepo[F, ConversionKPI]
+
+  def queryAccumulativeKPIAlg[F[_]](
+      implicit F: Sync[F]
+    ): KPIRepo[F, QueryAccumulativeKPI] =
+    new MapBasedDAOs[F, QueryAccumulativeKPI, KPIName](_.name)
+      with KPIRepo[F, QueryAccumulativeKPI]
 
 }

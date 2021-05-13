@@ -1,10 +1,11 @@
-package com.iheart.thomas.analysis.bayesian.models
+package com.iheart.thomas.analysis
+package bayesian
+package models
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.implicits._
 import com.iheart.thomas.abtest.model.Abtest
-import com.iheart.thomas.analysis.{Conversions, KPIEvaluator}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import org.scalatest.matchers.should.Matchers
 
@@ -13,7 +14,7 @@ class BetaKPISuite extends AsyncIOSpec with Matchers {
   implicit val sampler = SamplerConfig.default
 
   val mockAb: Abtest = null
-  val alg: KPIEvaluator[IO, BetaModel, Conversions] =
+  val alg: ModelEvaluator[IO, BetaModel, Conversions] =
     implicitly
 
   "BetaKPI Assessment Alg" - {
