@@ -19,7 +19,7 @@ errorMsg: Option[String] = None)(implicit env: UIEnv)
     <span class="h4 text-primary" title="This is feature name for the test.">
       @featureTestsLink(fromTest.data.feature)</span>
   </div>
-  @testForm(fromTest.data.feature, draft, errorMsg)
+  @testForm(draft, errorMsg)
   <div class="row text-end mt-5">
     <div class="mr-4">
       <button type="submit" class="btn btn-primary"

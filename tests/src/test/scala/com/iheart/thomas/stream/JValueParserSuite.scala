@@ -10,7 +10,7 @@ import com.iheart.thomas.analysis.{ConversionMessageQuery, Criteria, MessageQuer
 import org.typelevel.jawn.ast._
 
 class JValueParserSuite extends AnyFreeSpecLike with Matchers {
-  val parser = ConversionParser.jValueParser[Id]
+  import KpiEventParser.parseConversionEvent
   "JValue Parser" - {
     "parse single event from regex" in {
       val query = ConversionMessageQuery(
@@ -18,19 +18,19 @@ class JValueParserSuite extends AnyFreeSpecLike with Matchers {
         convertedMessage = MessageQuery(None, List(Criteria("bar", "^abc$")))
       )
 
-      parser.parseConversion(
+      parseConversionEvent(
         JObject.fromSeq(
           Seq("foo" -> JObject.fromSeq(Seq(("bar" -> JString("xxxabcxxx")))))
         ),
         query
       ) shouldBe List(Initiated)
 
-      parser.parseConversion(
+      parseConversionEvent(
         JObject.fromSeq(Seq("bar" -> JString("abc"))),
         query
       ) shouldBe List(Converted)
 
-      parser.parseConversion(
+      parseConversionEvent(
         JObject.fromSeq(Seq("bar" -> JString("abc2"))),
         query
       ) shouldBe Nil
@@ -42,14 +42,12 @@ class JValueParserSuite extends AnyFreeSpecLike with Matchers {
         convertedMessage = MessageQuery(None, List(Criteria("action", "^click$")))
       )
 
-      parser
-        .parseConversion(
-          JObject.fromSeq(
-            Seq("display" -> JString("search"), "action" -> JString("click"))
-          ),
-          query
-        )
-        .toSet shouldBe Set(Converted, Initiated)
+      parseConversionEvent(
+        JObject.fromSeq(
+          Seq("display" -> JString("search"), "action" -> JString("click"))
+        ),
+        query
+      ).toSet shouldBe Set(Converted, Initiated)
 
     }
   }

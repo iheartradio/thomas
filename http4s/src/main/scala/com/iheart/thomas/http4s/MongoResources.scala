@@ -2,7 +2,7 @@ package com.iheart.thomas
 package http4s
 
 import cats.effect.{Async, Concurrent, Resource, Timer}
-import com.iheart.thomas
+
 import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.mongo.DAOs
 import com.typesafe.config.Config
@@ -17,7 +17,6 @@ object MongoResources extends ConfigResource {
       daos: mongo.DAOs[F]
     ): Resource[F, AbtestAlg[F]] = {
 
-    import thomas.mongo.idSelector
     implicit val (abtestDAO, featureDAO) = daos
     val refreshPeriod =
       cfg.getDuration("thomas.abtest.get-groups.ttl").toScala

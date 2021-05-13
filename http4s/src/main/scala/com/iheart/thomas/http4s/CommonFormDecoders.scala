@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package http4s
 
-import java.time.{OffsetDateTime, ZonedDateTime}
+import java.time.{Instant, OffsetDateTime, ZonedDateTime}
 import _root_.play.api.libs.json.{JsObject, Json, Reads}
 import cats.data.NonEmptyList
 import cats.implicits._
@@ -15,6 +15,7 @@ import org.http4s.{
 import io.estatico.newtype.Coercible
 import io.estatico.newtype.ops._
 
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.Try
 
 trait CommonQueryParamDecoders {
@@ -22,6 +23,16 @@ trait CommonQueryParamDecoders {
     QueryParamDecoder.fromUnsafeCast(qp =>
       ZonedDateTime.parse(qp.value, Formatters.dateTimeFormatter).toOffsetDateTime
     )("OffsetDateTime")
+  }
+
+  implicit val instantQueryParamDecoder: QueryParamDecoder[Instant] = {
+    offsetDateTimeQueryParamDecoder.map(_.toInstant)
+  }
+
+  implicit val finiteDurationQueryParamDecoder: QueryParamDecoder[FiniteDuration] = {
+    QueryParamDecoder.fromUnsafeCast(qp =>
+      Duration(qp.value).asInstanceOf[FiniteDuration]
+    )("FiniteDuration")
   }
 
   implicit val bigDecimalQPD: QueryParamDecoder[BigDecimal] =

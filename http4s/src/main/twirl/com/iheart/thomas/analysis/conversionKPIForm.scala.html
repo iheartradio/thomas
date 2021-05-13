@@ -96,39 +96,7 @@ showNameField: Boolean = true
 </div>
 <div class="row mt-3">
     <div class="col-md">
-        <div id="kpi-basics" class="card">
-            <div class="card-header">
-                <span class="h5">Basics</span>
-            </div>
-            <div class="card-body">
-                @if( showNameField ) {
-                <div class="form-group">
-                    <label class="form-label" for="nameInput">Name</label>
-                    <input name="name"
-                           required
-                           class="form-control"
-                           id="nameInput"
-                           type="text"
-                           value="@draftO.map(_.name)"
-                    />
-                </div>
-                } else {
-                    <input name="name"
-                           type="hidden"
-                           value="@draftO.map(_.name)" />
-                }
-
-                <div class="form-group">
-                    <label class="form-label" for="descriptionInput">Description</label>
-                    <textarea name="description"
-                              class="form-control"
-                              id="descriptionInput"
-                    >@draftO.flatMap(_.description)</textarea>
-                </div>
-
-            </div>
-        </div>
-
+        @kpiBasics(draftO, showNameField)
     </div>
     <div class="col-md">
         <div id="kpi-model" class="card">
@@ -138,24 +106,24 @@ showNameField: Boolean = true
             <div class="card-body">
                 <div class="form-group">
                     <label class="form-label" for="alphaPriorInput">Alpha Prior</label>
-                    <input name="model.alphaPrior"
+                    <input name="model.alpha"
                            class="form-control"
                            id="alphaPriorInput"
                            type="number"
                            required
                            step="any"
-                           value="@draftO.map(_.model.alphaPrior).getOrElse(1)"
+                           value="@draftO.map(_.model.alpha).getOrElse(1)"
                     />
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="betaPriorInput">Beta Prior</label>
-                    <input name="model.betaPrior"
+                    <input name="model.beta"
                            class="form-control"
                            id="betaPriorInput"
                            type="number"
                            required
                            step="any"
-                           value="@draftO.map(_.model.betaPrior).getOrElse(1)"
+                           value="@draftO.map(_.model.beta).getOrElse(1)"
                     />
                 </div>
             </div>

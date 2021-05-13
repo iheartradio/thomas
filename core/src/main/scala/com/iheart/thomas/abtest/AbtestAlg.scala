@@ -174,8 +174,7 @@ object AbtestAlg {
       abTestDao: EntityDAO[F, Abtest, JsObject],
       featureDao: EntityDAO[F, Feature, JsObject],
       F: Concurrent[F],
-      eligibilityControl: EligibilityControl[F],
-      idSelector: EntityId => JsObject
+      eligibilityControl: EligibilityControl[F]
     ): Resource[F, AbtestAlg[F]] =
     RefreshRef
       .resource[F, TestsData]
@@ -203,8 +202,7 @@ final class DefaultAbtestAlg[F[_]](
     refreshRef: RefreshRef[F, TestsData],
     nowF: F[Instant],
     F: MonadThrow[F],
-    eligibilityControl: EligibilityControl[F],
-    idSelector: EntityId => JsObject)
+    eligibilityControl: EligibilityControl[F])
     extends AbtestAlg[F] {
   import QueryDSL._
 
@@ -269,7 +267,7 @@ final class DefaultAbtestAlg[F[_]](
       refreshRef.getOrFetch(refreshPeriod, staleTimeout)(
         nowF.flatMap(getTestsData(_, None))
       ) {
-        case e => F.unit //todo: add logging here for Abtest retrieval failure
+        case _ => F.unit //todo: add logging here for Abtest retrieval failure
       }
     )(getTestsData(_, None))
 
@@ -730,11 +728,6 @@ final class DefaultAbtestAlg[F[_]](
     assignments.toList.collect {
       case (k, AssignmentResult(groupName, _)) => (k, groupName)
     }.toMap
-
-  private def getGroupAssignmentsOf(
-      query: UserGroupQuery
-    ): F[Map[FeatureName, AssignmentResult]] =
-    getGroupAssignmentsOfWithAt(query).map(_._1)
 
   private def getGroupAssignmentsOfWithAt(
       query: UserGroupQuery

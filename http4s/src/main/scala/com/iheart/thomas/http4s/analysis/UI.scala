@@ -4,17 +4,22 @@ package analysis
 
 import cats.effect.Async
 import com.iheart.thomas.analysis.{
-  bayesian,
+  AllKPIRepo,
   ConversionKPI,
-  ConversionKPIAlg,
   ConversionMessageQuery,
   Criteria,
   KPIName,
-  MessageQuery
+  KPIRepo,
+  KPIStats,
+  MessageQuery,
+  QueryAccumulativeKPI,
+  AccumulativeKPIQueryRepo,
+  QueryName,
+  bayesian
 }
 import bayesian.models._
 import com.iheart.thomas.http4s.{AuthImp, ReverseRoutes}
-import com.iheart.thomas.http4s.auth.{AuthedEndpointsUtils, AuthenticationAlg}
+import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
 import org.http4s.dsl.Http4sDsl
 import cats.implicits._
 import org.http4s.twirl._
@@ -22,32 +27,43 @@ import com.iheart.thomas.analysis.html._
 import com.iheart.thomas.html.{errorMsg, redirect}
 import org.http4s.FormDataDecoder
 import FormDataDecoder._
+import com.iheart.thomas.analysis.bayesian.KPIEvaluator
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
-import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, MonitorAlg}
+import com.iheart.thomas.analysis.monitor.{
+  AllExperimentKPIStateRepo,
+  ExperimentKPIState
+}
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.http4s.analysis.UI.{
   MonitorInfo,
   StartMonitorRequest,
-  UpdateKPIRequest,
   controlArm,
   includedArms
 }
 import com.iheart.thomas.stream.{JobAlg, JobInfo}
-import com.iheart.thomas.stream.JobSpec.{MonitorTest, UpdateKPIPrior}
+import com.iheart.thomas.stream.JobSpec.{
+  MonitorTest,
+  ProcessSettingsOptional,
+  UpdateKPIPrior
+}
 import org.http4s.dsl.impl.{
   OptionalMultiQueryParamDecoderMatcher,
   OptionalQueryParamDecoderMatcher
 }
 import tsec.authentication._
 
-import java.time.OffsetDateTime
+import java.time.Instant
+import scala.concurrent.duration.FiniteDuration
 
 class UI[F[_]: Async](
     implicit
-    convKpiAlg: ConversionKPIAlg[F],
+    convKpiRepo: KPIRepo[F, ConversionKPI],
+    accKpiRepo: KPIRepo[F, QueryAccumulativeKPI],
+    allKPIRepo: AllKPIRepo[F],
     jobAlg: JobAlg[F],
-    monitorAlg: MonitorAlg[F],
-    authAlg: AuthenticationAlg[F, AuthImp],
+    stateRepo: AllExperimentKPIStateRepo[F],
+    queryAccumulativeKPIAlg: AccumulativeKPIQueryRepo[F],
+    kPIEvaluator: KPIEvaluator[F],
     aCfg: AdminUIConfig)
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
@@ -59,8 +75,8 @@ class UI[F[_]: Async](
 
     case GET -> `rootPath` / "" asAuthed (u) =>
       for {
-        states <- monitorAlg.allConversions
-        kpis <- convKpiAlg.all
+        states <- stateRepo.all
+        kpis <- allKPIRepo.all
         r <- Ok(index(states, kpis)(UIEnv(u)))
       } yield r
   }
@@ -71,19 +87,19 @@ class UI[F[_]: Async](
       for {
         js <- jobAlg.monitors(feature)
         monitors <- js.traverse { j =>
-          monitorAlg.getConversion(Key(feature, j.spec.kpi)).map(MonitorInfo(j, _))
+          stateRepo.find(Key(feature, j.spec.kpiName)).map(MonitorInfo(j, _))
         }
-        kpis <- convKpiAlg.all
+        kpis <- allKPIRepo.all
         availableKpis =
-          kpis.map(_.name).filter(k => js.find(_.spec.kpi == k).isEmpty)
+          kpis.map(_.name).filter(k => js.find(_.spec.kpiName == k).isEmpty)
         r <- Ok(
           abtest(feature, monitors, availableKpis)(UIEnv(u))
         )
       } yield r
 
-    case se @ POST -> `rootPath` / "abtests" / feature / "monitors" asAuthed (u) =>
+    case se @ POST -> `rootPath` / "abtests" / feature / "monitors" asAuthed (_) =>
       se.request.as[StartMonitorRequest].flatMap { r =>
-        jobAlg.schedule(MonitorTest(feature, r.kpi, r.until.toInstant)) *>
+        jobAlg.schedule(MonitorTest(feature, r.kpi, r.settings)) *>
           Ok(
             redirect(
               reverseRoutes.analysisOf(feature),
@@ -92,7 +108,7 @@ class UI[F[_]: Async](
           )
       }
 
-    case GET -> `rootPath` / "abtests" / feature / "monitors" / kpi / "stop" asAuthed (u) =>
+    case GET -> `rootPath` / "abtests" / feature / "monitors" / kpi / "stop" asAuthed (_) =>
       jobAlg.stop(MonitorTest.jobKey(feature, KPIName(kpi))) *>
         Ok(
           redirect(
@@ -103,26 +119,26 @@ class UI[F[_]: Async](
     case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "evaluate" :? controlArm(
           caO
         ) +& includedArms(arms) asAuthed (u) =>
-      monitorAlg.getConversion(Key(feature, KPIName(kpi))).flatMap { stateO =>
-        stateO
-          .traverse(monitorAlg.evaluate(_, caO, arms.toOption.filter(_.nonEmpty)))
-          .flatMap { evaluationO =>
-            Ok(
-              evaluation(
-                feature,
-                KPIName(kpi),
-                evaluationO.toList.flatten,
-                stateO,
-                arms.toList.flatten.toSet
-              )(
-                UIEnv(u)
-              )
-            )
-          }
+      kPIEvaluator(
+        Key(feature, KPIName(kpi)),
+        caO,
+        arms.toOption.filter(_.nonEmpty)
+      ).flatMap { ro =>
+        Ok(
+          evaluation(
+            feature,
+            KPIName(kpi),
+            ro.map(_._1).toList.flatten,
+            ro.map(_._2),
+            arms.toList.flatten.toSet
+          )(
+            UIEnv(u)
+          )
+        )
       }
 
-    case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "reset" asAuthed (u) =>
-      monitorAlg.resetConversion(Key(feature, KPIName(kpi))) *>
+    case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "reset" asAuthed (_) =>
+      stateRepo.reset(Key(feature, KPIName(kpi))) *>
         Ok(
           redirect(
             reverseRoutes.analysisOf(feature),
@@ -134,23 +150,34 @@ class UI[F[_]: Async](
 
   val kpiManagementRoutes =
     roleBasedService(admin.Authorization.analysisManagerRoles) {
-      case GET -> `rootPath` / "conversionKPI" / "new" asAuthed (u) =>
+      case GET -> `rootPath` / "conversionKPI" / "new" asAuthed u =>
         Ok(newConversionKPI()(UIEnv(u)))
 
-      case GET -> `rootPath` / "conversionKPIs" / kpiName asAuthed (u) =>
-        convKpiAlg.find(kpiName).flatMap { ko =>
+      case GET -> `rootPath` / "accumulativeKPI" / "new" asAuthed u =>
+        queryAccumulativeKPIAlg.queries.flatMap { qs =>
+          Ok(newAccumulativeKPI(qs.map(_.name))(UIEnv(u)))
+        }
+
+      case GET -> `rootPath` / "kpis" / kpiName asAuthed u =>
+        allKPIRepo.find(KPIName(kpiName)).flatMap { ko =>
           ko.fold(
-            NotFound(s"Cannot find the Conversion KPI under the name $kpiName")
+            NotFound(s"Cannot find the KPI under the name $kpiName")
           ) { k =>
-            jobAlg.findInfo[UpdateKPIPrior](UpdateKPIPrior.keyOf(kpiName)).flatMap {
-              jobO =>
-                Ok(editConversionKPI(k, jobO)(UIEnv(u)))
-            }
+            jobAlg
+              .findInfo[UpdateKPIPrior](UpdateKPIPrior.keyOf(KPIName(kpiName)))
+              .flatMap { jobO =>
+                k match {
+                  case c: ConversionKPI => Ok(editConversionKPI(c, jobO)(UIEnv(u)))
+                  case a: QueryAccumulativeKPI =>
+                    Ok(editAccumulativeKPI(a, jobO)(UIEnv(u)))
+                }
+
+              }
           }
         }
 
-      case GET -> `rootPath` / "conversionKPIs" / kpiName / "delete" asAuthed (_) =>
-        convKpiAlg.remove(kpiName) >>
+      case GET -> `rootPath` / "kpis" / kpiName / "delete" asAuthed _ =>
+        allKPIRepo.delete(KPIName(kpiName)) >>
           Ok(redirect(reverseRoutes.analysis, s"$kpiName, if existed, is deleted."))
 
       case se @ POST -> `rootPath` / "conversionKPIs" asAuthed u =>
@@ -159,11 +186,26 @@ class UI[F[_]: Async](
           .redeemWith(
             e => BadRequest(errorMsg(e.getMessage)),
             kpi =>
-              convKpiAlg.create(kpi.copy(author = u.username)) >>
+              convKpiRepo.create(kpi.copy(author = u.username)) >>
                 Ok(
                   redirect(
                     reverseRoutes.analysis,
                     s"Conversion KPI ${kpi.name} successfully created."
+                  )
+                )
+          )
+
+      case se @ POST -> `rootPath` / "accumulativeKPIs" asAuthed u =>
+        se.request
+          .as[QueryAccumulativeKPI]
+          .redeemWith(
+            e => BadRequest(errorMsg(e.getMessage)),
+            kpi =>
+              accKpiRepo.create(kpi.copy(author = u.username)) >>
+                Ok(
+                  redirect(
+                    reverseRoutes.analysis,
+                    s"Accumulative KPI ${kpi.name} successfully created."
                   )
                 )
           )
@@ -177,7 +219,7 @@ class UI[F[_]: Async](
               if (kpi.name.n != kpiName) {
                 BadGateway("Cannot change KPI name")
               } else
-                convKpiAlg.update(kpi.copy(author = u.username)) >>
+                convKpiRepo.update(kpi.copy(author = u.username)) >>
                   Ok(
                     redirect(
                       reverseRoutes.analysis,
@@ -186,20 +228,40 @@ class UI[F[_]: Async](
                   )
           )
 
-      case se @ POST -> `rootPath` / "conversionKPIs" / kpiName / "update-prior" asAuthed u =>
-        se.request.as[UpdateKPIRequest].flatMap { r =>
-          jobAlg.schedule(UpdateKPIPrior(kpiName, r.until.toInstant)).flatMap { jo =>
-            jo.fold(
-              BadRequest(errorMsg("It's being updated right now"))
-            )(j =>
-              Ok(
-                redirect(
-                  reverseRoutes.convKpi(KPIName(kpiName)),
-                  s"Scheduled a background process to update the prior using ongoing data. "
+      case se @ POST -> `rootPath` / "accumulativeKPIs" / kpiName asAuthed u =>
+        se.request
+          .as[QueryAccumulativeKPI]
+          .redeemWith(
+            e => BadRequest(errorMsg(e.getMessage)),
+            kpi =>
+              if (kpi.name.n != kpiName) {
+                BadGateway("Cannot change KPI name")
+              } else
+                accKpiRepo.update(kpi.copy(author = u.username)) >>
+                  Ok(
+                    redirect(
+                      reverseRoutes.analysis,
+                      s"Accumulative KPI ${kpi.name} successfully updated."
+                    )
+                  )
+          )
+
+      case se @ POST -> `rootPath` / "kpis" / kpiName / "update-prior" asAuthed _ =>
+        se.request.as[ProcessSettingsOptional].flatMap { r =>
+          jobAlg
+            .schedule(UpdateKPIPrior(KPIName(kpiName), r))
+            .flatMap { jo =>
+              jo.fold(
+                BadRequest(errorMsg("It's being updated right now"))
+              )(_ =>
+                Ok(
+                  redirect(
+                    reverseRoutes.kpi(KPIName(kpiName)),
+                    s"Scheduled a background process to update the prior using ongoing data. "
+                  )
                 )
               )
-            )
-          }
+            }
         }
     }
 
@@ -213,15 +275,14 @@ object UI {
   object includedArms
       extends OptionalMultiQueryParamDecoderMatcher[GroupName]("includedArms")
 
-  case class UpdateKPIRequest(until: OffsetDateTime)
   case class StartMonitorRequest(
       kpi: KPIName,
-      until: OffsetDateTime)
+      settings: ProcessSettingsOptional)
 
-  case class MonitorInfo[R](
+  case class MonitorInfo(
       job: JobInfo[MonitorTest],
-      state: Option[ExperimentKPIState[R]]) {
-    def kpi: KPIName = job.spec.kpi
+      state: Option[ExperimentKPIState[KPIStats]]) {
+    def kpi: KPIName = job.spec.kpiName
   }
 
   object Decoders {
@@ -238,11 +299,14 @@ object UI {
       list[Criteria]("criteria")
     ).mapN(MessageQuery.apply)
 
-    implicit val uprDecoder: FormDataDecoder[UpdateKPIRequest] =
-      field[OffsetDateTime]("until").map(UpdateKPIRequest(_))
+    implicit val processSettingsDecoder: FormDataDecoder[ProcessSettingsOptional] = (
+      fieldOptional[FiniteDuration]("frequency"),
+      fieldOptional[Int]("eventChunkSize"),
+      fieldOptional[Instant]("expiration")
+    ).mapN(ProcessSettingsOptional.apply)
 
     implicit val smrDecoder: FormDataDecoder[StartMonitorRequest] =
-      (field[KPIName]("kpi"), field[OffsetDateTime]("until"))
+      (field[KPIName]("kpi"), nested[ProcessSettingsOptional]("settings"))
         .mapN(StartMonitorRequest.apply)
 
     implicit val conversionMessageQueryDecoder
@@ -252,9 +316,18 @@ object UI {
     ).mapN(ConversionMessageQuery.apply)
 
     implicit val betaModelDecoder: FormDataDecoder[BetaModel] = (
-      field[Double]("alphaPrior"),
-      field[Double]("betaPrior")
+      field[Double]("alpha"),
+      field[Double]("beta")
     ).mapN(BetaModel.apply)
+
+    implicit val logModelDecoder: FormDataDecoder[LogNormalModel] = (
+      field[Double]("miu0"),
+      field[Double]("n0"),
+      field[Double]("alpha"),
+      field[Double]("beta")
+    ).mapN((miu0, n0, alpha, beta) =>
+      LogNormalModel(NormalModel(miu0, n0, alpha, beta))
+    )
 
     implicit val conversionKPIDecoder: FormDataDecoder[ConversionKPI] = (
       field[KPIName]("name"),
@@ -263,5 +336,13 @@ object UI {
       nested[BetaModel]("model"),
       nestedOptional[ConversionMessageQuery]("messageQuery")
     ).mapN(ConversionKPI.apply).sanitized
+
+    implicit val accumulativeKPIDecoder: FormDataDecoder[QueryAccumulativeKPI] = (
+      field[KPIName]("name"),
+      field[String]("author"),
+      fieldOptional[String]("description"),
+      nested[LogNormalModel]("model"),
+      field[QueryName]("queryName")
+    ).mapN(QueryAccumulativeKPI(_, _, _, _, _, Map.empty)).sanitized
   }
 }

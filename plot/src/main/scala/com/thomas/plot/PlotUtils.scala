@@ -8,6 +8,7 @@ import com.cibo.evilplot.plot.aesthetics.DefaultTheme._
 import com.iheart.thomas.GroupName
 import com.iheart.thomas.analysis.bayesian.BenchmarkResult
 import scalaview.Utils._
+import cats.implicits._
 
 object PlotUtils {
 
@@ -19,9 +20,8 @@ object PlotUtils {
       ): F[Unit] = {
       val img = drawable.asBufferedImage
       F.delay {
-        val d =
-          scalaview.SwingImageViewer(biResize(img, newW = width, newH = height))
-      }
+        scalaview.SwingImageViewer(biResize(img, newW = width, newH = height))
+      }.void
     }
   }
 

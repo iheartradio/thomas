@@ -21,7 +21,7 @@ followUpO: Option[Entity[Abtest]] = None)(implicit env: UIEnv)
     <span class="h4 text-success" title="This is feature name for the test.">
       @featureTestsLink(test.data.feature)</span>
   </div>
-  @testForm(test.data.feature, spec.orElse(Some(test.data.toSpec)), errMessage, false, followUpO.isEmpty)
+  @testForm(spec.orElse(Some(test.data.toSpec)), errMessage, false, followUpO.isEmpty)
 
   <div class="row text-end mt-5">
     <div class="mr-4">

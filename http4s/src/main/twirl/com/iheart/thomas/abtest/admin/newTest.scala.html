@@ -36,7 +36,7 @@ followUpCandidateO: Option[Entity[Abtest]] = None
 } else {
 
 <form action="@env.routes.features/@feature/tests" method="post">
-  @testForm(feature, draft, errorMsg)
+  @testForm(draft, errorMsg)
   <div class="row text-end mt-5">
     <div class="mr-4">
       <button type="submit" class="btn btn-primary">Submit</button>

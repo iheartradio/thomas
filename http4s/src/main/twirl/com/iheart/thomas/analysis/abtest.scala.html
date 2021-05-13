@@ -7,7 +7,7 @@
 
 @(
 feature: FeatureName,
-monitors: Vector[MonitorInfo[Conversions]],
+monitors: Vector[MonitorInfo],
 kpis: Seq[KPIName]
 )(implicit env: UIEnv)
 
@@ -23,7 +23,7 @@ kpis: Seq[KPIName]
                     <div class="row">
                         <div class="col-12 mt-2">
                         @for(state <- monitor.state) {
-                            @conversionState(state)
+                            @kpiState(state)
                         }
                         </div>
                     </div>
@@ -40,7 +40,9 @@ kpis: Seq[KPIName]
 
                         </div>
                         <div class="col-auto me-auto">
-                            <small>Expires at @formatDate(monitor.job.spec.until, dateTimeFormatterMid)</small>
+                            @for(exp <- monitor.job.spec.processSettings.expiration) {
+                                <small>Expires at @formatDate(exp, dateTimeFormatterMid)</small>
+                            }
                         </div>
                         <div class="col-auto">
                             <a href="monitors/@monitor.kpi/stop"
@@ -82,7 +84,7 @@ kpis: Seq[KPIName]
 
     <div class="col-12">
         <label class="form-label" for="monitor-until" class="sr-only">Expires</label>
-        <input name="until"
+        <input name="settings.expiration"
                required
                class="form-control"
                id="monitor-until"

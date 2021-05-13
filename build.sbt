@@ -25,7 +25,7 @@ lazy val libs = {
     .add(   name = "cats-retry",            version = "2.1.0",  org = "com.github.cb372")
     .addJVM(name = "decline",               version = "2.0.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
-    .addJVM(name = "evilplot",              version = "0.8.0",  org = "com.cibo")
+    .addJVM(name = "evilplot",              version = "0.8.1",  org = "io.github.cibotech")
     .addJVM(name = "fs2-kafka",             version = "1.4.1",  org = "com.github.fd4s")
     .addModule("http4s", "http4s-twirl")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
@@ -38,7 +38,7 @@ lazy val libs = {
     .add(   name = "play-json",             version = "2.7.4",  org = "com.typesafe.play")
     .addJVM(name = "play-json-derived-codecs", version = "7.0.0", org = "org.julienrf")
     .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
-    .addJVM(name = "rainier",               version = "0.3.3",  org ="com.stripe", "rainier-core", "rainier-cats")
+    .addJVM(name = "rainier",               version = "0.3.3-Kai",  org ="com.kailuowang", "rainier-core", "rainier-cats")
     .addJVM(name = "reactivemongo",         version = reactiveMongoVer, org = "org.reactivemongo", "reactivemongo", "reactivemongo-bson-api", "reactivemongo-iteratees" )
     .addJVM(name = "reactivemongo-play-json-compat", version = reactiveMongoVer + "-play27", org = "org.reactivemongo")
     .addJVM(name = "scala-java8-compat",    version = "0.9.1",  org = "org.scala-lang.modules")
@@ -63,6 +63,10 @@ addCommandAlias(
 addCommandAlias(
   "quickValidate",
   s";thomas/test;thomas/IntegrationTest/compile"
+)
+addCommandAlias(
+  "compileAll",
+  s";tests/Test/compile;tests/IntegrationTest/compile"
 )
 addCommandAlias(
   "it",
@@ -237,7 +241,6 @@ lazy val analysis = project
   .settings(rootSettings)
   .settings(taglessSettings)
   .settings(
-    resolvers += Resolver.bintrayRepo("rainier", "maven"),
     libs.testDependencies("scalacheck", "cats-effect-testing-scalatest"),
     libs.dependencies(
       "rainier-core",
@@ -254,7 +257,6 @@ lazy val plot = project
   .settings(name := "thomas-plot")
   .settings(rootSettings)
   .settings(
-    resolvers += Resolver.bintrayRepo("cibotech", "public"),
     libs.dependencies("evilplot", "scala-view")
   )
 
@@ -457,7 +459,7 @@ lazy val developerKai = Developer(
 lazy val commonSettings = addCompilerPlugins(
   libs,
   "kind-projector"
-) ++ sharedCommonSettings ++ scalacAllSettings ++ Seq(
+) ++ sharedCommonSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := "2.12.12",
   Test / parallelExecution := false,

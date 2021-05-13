@@ -10,7 +10,7 @@
 feature: FeatureName,
 kpi: KPIName,
 evaluation: List[Evaluation],
-stateO: Option[ExperimentKPIState[Conversions]],
+stateO: Option[ExperimentKPIState[KPIStats]],
 includedArms: Set[ArmName]
 )(implicit env: UIEnv)
 
@@ -25,7 +25,7 @@ includedArms: Set[ArmName]
     <div class="row mt-5">
         <div class="col-12">
         @for(state <- stateO ){
-        @conversionState(state, true, includedArms)
+            @kpiState(state, true, includedArms)
         }
         </div>
 

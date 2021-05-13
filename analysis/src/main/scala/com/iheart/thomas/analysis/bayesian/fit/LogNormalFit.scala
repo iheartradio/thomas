@@ -1,16 +1,16 @@
-package com.iheart.thomas.analysis.bayesian.fit
+package com.iheart.thomas.analysis
+package bayesian.fit
 
 import cats.MonadError
 import FitAssessmentAlg.BayesianAssessmentAlg
-import com.iheart.thomas.analysis.DistributionSpec.{Normal, Uniform}
-import com.iheart.thomas.analysis.`package`.{Indicator, Measurements}
+import DistributionSpec.{Normal, Uniform}
+
 import com.stripe.rainier.compute.Real
 import com.stripe.rainier.core.{LogNormal, Model}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
 import cats.implicits._
 import com.iheart.thomas.analysis.bayesian.Variable
-
 import java.time.Instant
 
 /**
@@ -25,7 +25,7 @@ case class LogNormalFit(
     scaleLnPrior: Uniform)
 
 object LogNormalFit {
-
+  type Measurements = List[Double]
   implicit def logNormalInstances[F[_]](
       implicit
       sampler: SamplerConfig = SamplerConfig.default,
