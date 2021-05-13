@@ -24,7 +24,7 @@ lazy val libs = {
     .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
     .add(   name = "cats-retry",            version = "2.1.0",  org = "com.github.cb372")
     .addJVM(name = "decline",               version = "2.0.0",  org = "com.monovore")
-    .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
+    .addJVM(name = "embedded-kafka",        version = "2.8.0",  org = "io.github.embeddedkafka")
     .addJVM(name = "evilplot",              version = "0.8.1",  org = "io.github.cibotech")
     .addJVM(name = "fs2-kafka",             version = "1.4.1",  org = "com.github.fd4s")
     .addModule("http4s", "http4s-twirl")
