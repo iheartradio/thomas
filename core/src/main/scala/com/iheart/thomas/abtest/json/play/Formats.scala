@@ -57,7 +57,7 @@ object Formats {
           seq.toList
             .traverse {
               case JsString(str) => JsSuccess(str)
-              case j             => JsError(s"Invalid %in expression in $f: %j")
+              case j             => JsError(s"Invalid %in expression in $f: $j")
             }
             .map(s => InMatch(f, s.toSet))
         case Seq(("%versionStart", JsString(start))) =>
@@ -66,7 +66,7 @@ object Formats {
         case Seq(("%versionRange", JsArray(Seq(JsString(start), JsString(end))))) =>
           JsSuccess(VersionRange(f, start, Some(end)))
         case j =>
-          JsError(JsPath \ f, s"Invalid JSON %j for user meta criteria for field %f")
+          JsError(JsPath \ f, s"Invalid JSON $j for user meta criteria for field %f")
       }
 
     def readSets(jvs: JsValue): JsResult[Set[UserMetaCriterion]] = {
@@ -117,7 +117,7 @@ object Formats {
             case Greater(_, v)        => Json.obj(s"%gt" -> JsNumber(v))
             case GreaterOrEqual(_, v) => Json.obj(s"%ge" -> JsNumber(v))
             case Less(_, v)           => Json.obj(s"%lt" -> JsNumber(v))
-            case LessOrEqual(f, v)    => Json.obj(s"%le" -> JsNumber(v))
+            case LessOrEqual(_, v)    => Json.obj(s"%le" -> JsNumber(v))
             case VersionRange(_, start, Some(end)) =>
               Json.obj(s"%versionRange" -> Json.arr(start, end))
             case VersionRange(_, start, None) =>

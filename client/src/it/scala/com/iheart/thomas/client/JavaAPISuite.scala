@@ -24,8 +24,8 @@ class JavaAPISuite extends AnyFunSuite with Matchers {
     val begin = LocalDateTime.now
     println(begin + " --- Begin")
     val n = 1000000
-    val userIds = (1 to n).map { uid =>
-      val _ = api.assignments(
+    (1 to n).foreach { uid =>
+      api.assignments(
         uid.toString,
         new java.util.ArrayList[String](),
         new java.util.HashMap[String, String](),

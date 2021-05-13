@@ -6,7 +6,7 @@ import cats.implicits._
 import com.iheart.thomas.TimeUtil.epochDay
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.dynamo.AdminDAOs
-import com.iheart.thomas.stream.JobSpec.UpdateKPIPrior
+import com.iheart.thomas.stream.JobSpec.{ProcessSettingsOptional, UpdateKPIPrior}
 import com.iheart.thomas.testkit.MapBasedDAOs
 import com.iheart.thomas.testkit.Resources.localDynamoR
 import org.scalatest.matchers.should.Matchers
@@ -17,7 +17,10 @@ abstract class JobDAOSuite(daoR: Resource[IO, JobDAO[IO]])
     extends AsyncIOSpec
     with Matchers {
 
-  val jobSpec = UpdateKPIPrior(KPIName("foo"), Instant.parse("2021-01-30T00:00:00Z"))
+  val jobSpec = UpdateKPIPrior(
+    KPIName("foo"),
+    ProcessSettingsOptional(None, None, Some(Instant.parse("2021-01-30T00:00:00Z")))
+  )
 
   "JobDAO" - {
     "insertO new job" in {
@@ -42,8 +45,10 @@ abstract class JobDAOSuite(daoR: Resource[IO, JobDAO[IO]])
     }
 
     "cannot re-insert same job with the same key" in {
-      val job = Job(jobSpec.copy(until = Instant.now))
-      val job2 = Job(jobSpec.copy(until = Instant.now.plusSeconds(1)))
+      val job = Job(
+        jobSpec.copy(processSettings = ProcessSettingsOptional(None, None, None))
+      )
+      val job2 = Job(jobSpec)
       daoR
         .use { dao =>
           dao.insertO(job) >>
@@ -122,4 +127,4 @@ class DynamoJobDAOSuite
     extends JobDAOSuite(localDynamoR.map(implicit ld => AdminDAOs.streamJobDAO))
 
 class InMemoryDAOSuite
-    extends JobDAOSuite(Resource.liftF(IO.delay(MapBasedDAOs.streamJobDAO[IO])))
+    extends JobDAOSuite(Resource.eval(IO.delay(MapBasedDAOs.streamJobDAO[IO])))

@@ -33,8 +33,7 @@ import com.iheart.thomas.tracking.EventLogger
 
 class BanditService[F[_]: Async: Timer] private (
     apiAlg: ConversionBMABAlg[F],
-    banditUpdater: BanditUpdater[F]
-  )(implicit log: EventLogger[F])
+    banditUpdater: BanditUpdater[F])
     extends Http4sDsl[F] {
   private type PartialRoutes = PartialFunction[Request[F], F[Response[F]]]
 
@@ -69,7 +68,7 @@ class BanditService[F[_]: Async: Timer] private (
     fa.flatMap(a => Ok(toJson(a)))
 
   private def managementRoutes = {
-    case req @ PUT -> Root / "conversions" / "features" / feature / "settings" =>
+    case req @ PUT -> Root / "conversions" / "features" / _ / "settings" =>
       req.as[BanditSettings[BanditSettings.Conversion]].flatMap { s =>
         apiAlg.update(s)
       }
@@ -131,7 +130,7 @@ object BanditService {
     )(implicit ex: ExecutionContext
     ): Resource[F, BanditService[F]] = {
     Resource
-      .liftF(BanditServiceConfig.load(configResource))
+      .eval(BanditServiceConfig.load(configResource))
       .flatMap {
         case (bsc, root) =>
           create[F](bsc.updater, root, bsc.dynamo)
@@ -155,7 +154,7 @@ object BanditService {
   def create[
       F[_]: ConcurrentEffect: Timer: ContextShift: mongo.DAOs: MessageProcessor: EventLogger: NonEmptyParallel
     ](buConfig: BanditUpdater.Config
-    )(implicit ex: ExecutionContext,
+    )(implicit
       amazonClient: DynamoDbAsyncClient
     ): Resource[F, BanditService[F]] = {
     ConversionBMABAlgResource[F].evalMap { implicit conversionBMAB =>

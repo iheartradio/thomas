@@ -37,6 +37,8 @@ import cats.Functor
 import TimeUtil._
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 
+import scala.util.control.NoStackTrace
+
 class AbtestManagementUI[F[_]: Async: Timer](
     alg: AbtestAlg[F],
     authAlg: AuthenticationAlg[F, AuthImp]
@@ -76,7 +78,7 @@ class AbtestManagementUI[F[_]: Async: Timer](
 
     def testsList(
         u: User,
-        filters: Filters = Filters(defaultEndsAfter)
+        filters: Filters
       ) =
       (
         alg
@@ -188,6 +190,7 @@ class AbtestManagementUI[F[_]: Async: Timer](
       case se @ POST -> Root / "features" / feature asAuthed u =>
         se.request
           .as[Feature]
+          .ensure(MismatchFeatureName)(_.name == feature)
           .redeemWith(
             e => BadRequest(errorMsg(e.getMessage)),
             f => {
@@ -223,13 +226,11 @@ class AbtestManagementUI[F[_]: Async: Timer](
                    else alg.create(spec, false))
                     .flatMap(redirectToTest)
                     .handleErrorWith(e =>
-                      get(testId).flatMap { t =>
-                        BadRequest(
-                          newRevision(fromTest, Some(spec), Some(displayError(e)))(
-                            UIEnv(u)
-                          )
+                      BadRequest(
+                        newRevision(fromTest, Some(spec), Some(displayError(e)))(
+                          UIEnv(u)
                         )
-                      }
+                      )
                     )
               }
             )
@@ -347,6 +348,7 @@ class AbtestManagementUI[F[_]: Async: Timer](
 object AbtestManagementUI {
   val defaultEndsAfter = OffsetDateTime.now.minusDays(30)
 
+  case object MismatchFeatureName extends RuntimeException with NoStackTrace
   import enumeratum._
   sealed trait OrderBy extends EnumEntry
 

@@ -1,4 +1,4 @@
-package com.iheart.thomas.analysis
+package com.iheart.thomas.analysis.bayesian.fit
 
 import com.stripe.rainier
 import com.stripe.rainier.core.Distribution
@@ -17,7 +17,8 @@ object DistributionSpec {
 
   object Normal {
     def fit(data: List[Double]): Normal = {
-      import breeze.stats.meanAndVariance, meanAndVariance.MeanAndVariance
+      import breeze.stats.meanAndVariance
+      import meanAndVariance.MeanAndVariance
       val MeanAndVariance(m, v, _) = meanAndVariance(data)
       Normal(m, Math.sqrt(v))
     }
@@ -29,13 +30,6 @@ object DistributionSpec {
       extends DistributionSpec[Double] {
     val distribution = rainier.core.LogNormal(location, scale)
 
-  }
-
-  case class Gamma(
-      shape: Double,
-      scale: Double)
-      extends DistributionSpec[Double] {
-    val distribution = rainier.core.Gamma(shape, scale)
   }
 
   case class Uniform(

@@ -18,18 +18,6 @@ import scala.util.Try
 object BayesianMABCommands {
   val fnOpts = Opts.option[String]("feature", "feature name", "f")
 
-  private val conversionSettingsOps = (
-    Opts
-      .option[Int]("eventChunkSize", "chunk size for kpi update")
-      .withDefault(300),
-    Opts
-      .option[Int](
-        "reallocateEveryNChunk",
-        "number of chunks for every reallocating"
-      )
-      .withDefault(3)
-  ).mapN(BanditSettings.Conversion.apply)
-
   implicit val durationArg: Argument[FiniteDuration] = new Argument[FiniteDuration] {
 
     override def read(string: String): ValidatedNel[String, FiniteDuration] =
@@ -73,13 +61,11 @@ object BayesianMABCommands {
               clientR.use { client =>
                 client
                   .currentState(feature)
-                  .map(
-                    s => s"""
+                  .map(s => s"""
                       |=========== Bayesian State Start ============
                       |$s
                       |=========== Bayesian State End =============
-                      |""".stripMargin
-                  )
+                      |""".stripMargin)
               }
           }
         },

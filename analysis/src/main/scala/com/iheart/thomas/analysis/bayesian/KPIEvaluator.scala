@@ -1,137 +1,70 @@
-package com.iheart.thomas
-package analysis
-package bayesian
+package com.iheart.thomas.analysis.bayesian
 
-import cats.Monad
-import cats.data.NonEmptyList
-import com.iheart.thomas.{ArmName, GroupName}
-import com.stripe.rainier.sampler.{RNG, SamplerConfig}
-import cats.implicits._
-import com.stripe.rainier.core.Beta
-import models._
-
-trait KPIEvaluator[F[_], Model, Measurement] {
-  def evaluate(
-      model: Model,
-      measurements: Map[ArmName, Measurement],
-      benchmark: Option[(ArmName, Measurement)]
-    ): F[List[Evaluation]]
-
-  /**
-    *
-   * Measure optimal arm probability based on their model and measurement
-    * @return
-    */
-  def evaluate(
-      measurementsAndModel: Map[ArmName, (Measurement, Model)]
-    ): F[Map[ArmName, Probability]]
-
-  def compare(
-      baseline: (Measurement, Model),
-      results: (Measurement, Model)
-    ): F[Samples[Diff]]
-
-  def compare(
-      model: Model,
-      baseline: Measurement,
-      results: Measurement
-    ): F[Samples[Diff]] = compare((baseline, model), (results, model))
+import cats.MonadThrow
+import com.iheart.thomas.ArmName
+import com.iheart.thomas.analysis.{
+  AccumulativeKPI,
+  AllKPIRepo,
+  ConversionKPI,
+  Conversions,
+  KPIStats,
+  PerUserSamplesLnSummary
 }
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
+import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
+import cats.implicits._
+trait KPIEvaluator[F[_]] {
+  def apply(
+      stateKey: Key,
+      benchmarkArm: Option[ArmName],
+      includedArms: Option[Seq[ArmName]] = None
+    ): F[Option[(List[Evaluation], ExperimentKPIState[KPIStats])]]
 
+}
 object KPIEvaluator {
 
-  def apply[F[_], Model, Measurement](
-      implicit inst: KPIEvaluator[F, Model, Measurement]
-    ): KPIEvaluator[F, Model, Measurement] = inst
+  implicit def default[F[_]: MonadThrow](
+      implicit cStateDAO: ExperimentKPIStateDAO[F, Conversions],
+      pStateDAO: ExperimentKPIStateDAO[F, PerUserSamplesLnSummary],
+      kpiRepo: AllKPIRepo[F]
+    ): KPIEvaluator[F] =
+    (
+        stateKey: Key,
+        benchmarkArm: Option[ArmName],
+        includedArms: Option[Seq[ArmName]]
+    ) => {
 
-  implicit def rainierKPIEvaluator[F[_], Model, Measurement](
-      implicit
-      sampler: SamplerConfig,
-      rng: RNG,
-      F: Monad[F],
-      K: KPIIndicator[Model, Measurement]
-    ): KPIEvaluator[F, Model, Measurement] =
-    new KPIEvaluator[F, Model, Measurement] {
+      def evaluate[KS <: KPIStats, Model](
+          stateO: Option[ExperimentKPIState[KS]],
+          model: Model
+        )(implicit evaluator: ModelEvaluator[F, Model, KS]
+        ): F[Option[(List[Evaluation], ExperimentKPIState[KS])]] =
+        stateO.traverse(state =>
+          evaluator
+            .evaluate(
+              model,
+              includedArms.fold(state.armsStateMap) { arms =>
+                state.armsStateMap
+                  .filterKeys(arms.toSet ++ benchmarkArm.toSet)
+              },
+              benchmarkArm
+                .flatMap(ba => state.armsStateMap.get(ba).map((ba, _)))
+            )
+            .map((_, state))
+        )
 
-      def evaluate(
-          model: Model,
-          measurements: Map[ArmName, Measurement],
-          benchmarkO: Option[(ArmName, Measurement)]
-        ): F[List[Evaluation]] =
-        for {
-          probabilities <- evaluate(measurements.mapValues((_, model)))
-          r <-
-            probabilities.toList
-              .traverse {
-                case (armName, probability) =>
-                  benchmarkO
-                    .traverseFilter {
-                      case (benchmarkName, benchmarkMeasurement)
-                          if benchmarkName != armName =>
-                        compare(
-                          (benchmarkMeasurement, model),
-                          (measurements.get(armName).get, model)
-                        ).map(r =>
-                          Option(bayesian.BenchmarkResult(r, benchmarkName))
-                        )
-                      case _ => none[BenchmarkResult].pure[F]
-                    }
-                    .map(brO => Evaluation(armName, probability, brO))
-              }
-        } yield r
-
-      def compare(
-          baseline: (Measurement, Model),
-          results: (Measurement, Model)
-        ): F[Samples[Diff]] = {
-        val improvement =
-          K(results._2, results._1)
-            .map2(K(baseline._2, baseline._1))(_ - _)
-            .predict()
-
-        improvement.pure[F]
-      }
-
-      def evaluate(
-          allMeasurement: Map[GroupName, (Measurement, Model)]
-        ): F[Map[GroupName, Probability]] =
-        NonEmptyList
-          .fromList(allMeasurement.toList)
-          .map {
-            _.nonEmptyTraverse {
-              case (gn, (ms, k)) => K(k, ms).map((gn, _))
-            }
-          }
-          .fold(F.pure(Map.empty[GroupName, Probability])) { rvGroupResults =>
-            val numericGroupResult =
-              rvGroupResults
-                .map(_.toList.toMap)
-                .predict()
-
-            val initCounts = allMeasurement.map { case (gn, _) => (gn, 0L) }
-
-            val winnerCounts = numericGroupResult.foldLeft(initCounts) {
-              (counts, groupResult) =>
-                val winnerGroup = groupResult.maxBy(_._2)._1
-                counts.updated(winnerGroup, counts(winnerGroup) + 1)
-            }
-
-            val total = winnerCounts.toList.map(_._2).sum
-            F.pure(winnerCounts.map {
-              case (gn, c) => (gn, Probability(c.toDouble / total.toDouble))
-            })
-          }
+      kpiRepo
+        .find(stateKey.kpi)
+        .flatMap(_.traverseFilter {
+          case ConversionKPI(_, _, _, model, _) =>
+            cStateDAO
+              .find(stateKey)
+              .flatMap(s => evaluate(s, model).widen)
+          case k: AccumulativeKPI =>
+            pStateDAO
+              .find(stateKey)
+              .flatMap(s => evaluate(s, k.model).widen)
+        })
     }
-
-  object BayesianKPIEvaluator {
-    def sample(
-        model: BetaModel,
-        data: Conversions
-      ): Indicator = {
-      val postAlpha = model.alphaPrior + data.converted
-      val postBeta = model.betaPrior + data.total - data.converted
-      Variable(Beta(postAlpha, postBeta).latent, None)
-    }
-  }
 
 }

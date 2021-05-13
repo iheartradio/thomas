@@ -20,8 +20,8 @@ trait RewardAnalytics[F[_], R] {
 
 object RewardAnalytics {
   implicit def metricDataConversions[F[_]: FlatMap](
-      implicit kpiAlg: ConversionKPIAlg[F],
-      evaluator: KPIEvaluator[
+      implicit kpiAlg: KPIRepo[F, ConversionKPI],
+      evaluator: ModelEvaluator[
         F,
         BetaModel,
         Conversions
@@ -44,7 +44,7 @@ object RewardAnalytics {
               historical
                 .flatMap { le =>
                   le.get(armName)
-                    .map(rs => kpi.model.updateFrom(rs))
+                    .map(rs => BetaModel(rs))
                 }
                 .getOrElse(kpi.model)
 

@@ -19,6 +19,7 @@ import org.scanamo.ops.ScanamoOps
 import org.scanamo.syntax._
 import org.scanamo.{
   ConditionNotMet,
+  DeleteReturn,
   DynamoFormat,
   DynamoReadError,
   ScanamoCats,
@@ -153,9 +154,15 @@ abstract class ScanamoDAOHelperStringFormatKey[F[_], A: DynamoFormat, K](
     ) =
     toF(sc.exec(table.update(keyName === stringKey(k), ue)))
 
+  def delete(k: K): F[Option[A]] =
+    sc.exec(
+      table
+        .deleteAndReturn(DeleteReturn.OldValue)(keyName === stringKey(k))
+        .map(_.flatMap(_.toOption))
+    )
 }
 
-trait WithTimeStamp[A] {
+trait WithTimeStamp[-A] {
   def lastUpdated(a: A): Instant
 }
 
@@ -266,7 +273,6 @@ trait ScanamoManagement {
       keyAttributes: Seq[(String, ScalarAttributeType)],
       readCapacityUnits: Long,
       writeCapacityUnits: Long
-    )(implicit F: Async[F]
     ): F[Unit] =
     lift(
       client
@@ -317,7 +323,7 @@ trait ScanamoManagement {
           .build
       )
     ).void.recoverWith {
-      case e: ResourceNotFoundException =>
+      case _: ResourceNotFoundException =>
         createTable(
           client,
           tableName,

@@ -29,7 +29,6 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
 
   "AbtestAlg" - {
     val algR = testkit.Resources.apis.map(_._2)
-    val now = OffsetDateTime.now
 
     "update test flow" - {
       "does not allow changing group sizes when there is a follow test" in {
@@ -37,7 +36,7 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
           .use { alg =>
             for {
               init <- alg.create(fakeAb(1, 2), false)
-              followUp <- alg.create(
+              _ <- alg.create(
                 fakeAb().copy(
                   feature = init.data.feature,
                   start = init.data.end.get.plusSeconds(10).toOffsetDateTimeUTC

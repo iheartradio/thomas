@@ -12,7 +12,9 @@ import com.iheart.thomas.analysis.{
   ConversionMessageQuery,
   Criteria,
   KPIName,
-  MessageQuery
+  MessageQuery,
+  QueryAccumulativeKPI,
+  QueryName
 }
 import com.iheart.thomas.dynamo.{AnalysisDAOs, ScanamoManagement}
 import com.iheart.thomas.http4s.MongoResources
@@ -20,7 +22,6 @@ import ThrowableExtension._
 import cats.implicits._
 
 import scala.util.Random
-
 object Factory extends IOApp {
   val now = OffsetDateTime.now
 
@@ -53,48 +54,75 @@ object Factory extends IOApp {
       .flatMap { implicit l =>
         implicit val ex = executionContext
         for {
-          _ <- Resource.liftF(
+          _ <- Resource.eval(
             ScanamoManagement.ensureTables[IO](Resources.tables, 1, 1)
           )
           abtestAlg <- MongoResources.abtestAlg[IO](None)
           authAlg <- Resources.authAlg
-        } yield (abtestAlg, authAlg, AnalysisDAOs.conversionKPIAlg[IO])
+        } yield (
+          abtestAlg,
+          authAlg,
+          AnalysisDAOs.conversionKPIRepo[IO],
+          AnalysisDAOs.accumulativeKPIRepo[IO]
+        )
       }
-      .use {
-        case (abtestAlg, authAlg, cKpiAlg) =>
-          List(
-            abtestAlg.create(fakeAb(feature = "A_Feature")).void,
-            authAlg.register("admin", "123456", Role.Admin).void,
-            cKpiAlg
-              .create(
-                ConversionKPI(
-                  KPIName("A_KPI"),
-                  "Kai",
-                  None,
-                  BetaModel(2d, 2d),
-                  Some(
-                    ConversionMessageQuery(
-                      initMessage = MessageQuery(
-                        None,
-                        List(Criteria("page_shown", "front_page"))
-                      ),
-                      convertedMessage = MessageQuery(
-                        None,
-                        List(Criteria("click", "front_page_recommendation"))
-                      )
+      .use { case (abtestAlg, authAlg, cKpiAlg, aKpiAlg) =>
+        List(
+          abtestAlg.create(fakeAb(feature = "A_Feature")).void,
+          authAlg.register("admin", "123456", Role.Admin).void,
+          cKpiAlg
+            .create(
+              ConversionKPI(
+                KPIName("A Conversion KPI"),
+                "Kai",
+                None,
+                BetaModel(2d, 2d),
+                Some(
+                  ConversionMessageQuery(
+                    initMessage = MessageQuery(
+                      None,
+                      List(Criteria("page_shown", "front_page"))
+                    ),
+                    convertedMessage = MessageQuery(
+                      None,
+                      List(Criteria("click", "front_page_recommendation"))
                     )
                   )
                 )
               )
-              .void
-          ).map(_.handleErrorWith { e =>
-              IO.delay(println(s"Failed to create data due to ${e.fullStackTrace}"))
-            })
-            .parSequence_
+            )
+            .void,
+          aKpiAlg.create(
+            QueryAccumulativeKPI(
+              name = KPIName("A accumulative KPI"),
+              author = "Kai",
+              description = None,
+              model = LogNormalModel(NormalModel(1, 1, 1, 1)),
+              queryName = QueryName("usage"),
+              queryParams = Map.empty
+            )
+          )
+        ).map(_.handleErrorWith { e =>
+          IO.delay(println(s"Failed to create data due to ${e.fullStackTrace}"))
+        }).parSequence_
 
       }
 
   }
+
+  def kpi(
+      name: KPIName,
+      model: LogNormalModel,
+      queryName: QueryName
+    ) =
+    QueryAccumulativeKPI(
+      name,
+      "kai",
+      None,
+      model,
+      queryName,
+      Map.empty
+    )
 
   def run(args: List[String]): IO[ExitCode] =
     insertDevelopmentData.as(ExitCode.Success)

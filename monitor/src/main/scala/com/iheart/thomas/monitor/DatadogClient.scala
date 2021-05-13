@@ -65,7 +65,7 @@ object DatadogClient {
       cfg: Config
     ): Resource[F, DatadogClient[F]] =
     Resource
-      .liftF(
+      .eval(
         ConfigSource
           .fromConfig(cfg)
           .at("thomas.datadog.api-key")

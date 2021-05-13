@@ -6,6 +6,7 @@ import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.bayesian.models._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState
 import com.iheart.thomas.bandit.bayesian._
+import com.iheart.thomas.stream.JobSpec.ProcessSettingsOptional
 import com.iheart.thomas.stream._
 import io.estatico.newtype.ops._
 import org.scanamo.{DynamoFormat, TypeCoercionError}
@@ -26,6 +27,9 @@ object DynamoFormats {
   implicit val dfKPName: DynamoFormat[KPIName] =
     DynamoFormat[String].coerce[DynamoFormat[KPIName]]
 
+  implicit val dfQueryName: DynamoFormat[QueryName] =
+    DynamoFormat[String].coerce[DynamoFormat[QueryName]]
+
   implicit val dfOffsetTime: DynamoFormat[OffsetDateTime] =
     DynamoFormat
       .coercedXmap[OffsetDateTime, String, DateTimeParseException](
@@ -36,8 +40,15 @@ object DynamoFormats {
 
   implicit val conversionsSfc: DynamoFormat[Conversions] =
     deriveDynamoFormat[Conversions]
+
+  implicit val userSamplesSummarySfc: DynamoFormat[PerUserSamplesLnSummary] =
+    deriveDynamoFormat[PerUserSamplesLnSummary]
+
   implicit val armSfc: DynamoFormat[ArmState[Conversions]] =
     deriveDynamoFormat[ArmState[Conversions]]
+
+  implicit val armPUS: DynamoFormat[ArmState[PerUserSamplesLnSummary]] =
+    deriveDynamoFormat[ArmState[PerUserSamplesLnSummary]]
 
   implicit val dfc: DynamoFormat[BanditState[Conversions]] =
     deriveDynamoFormat[BanditState[Conversions]]
@@ -68,6 +79,12 @@ object DynamoFormats {
 
   implicit val betaFormat: DynamoFormat[BetaModel] = deriveDynamoFormat[BetaModel]
 
+  implicit val normalFormat: DynamoFormat[NormalModel] =
+    deriveDynamoFormat[NormalModel]
+
+  implicit val logNormalFormat: DynamoFormat[LogNormalModel] =
+    deriveDynamoFormat[LogNormalModel]
+
   implicit val critFormat: DynamoFormat[Criteria] =
     deriveDynamoFormat[Criteria]
 
@@ -79,6 +96,15 @@ object DynamoFormats {
 
   implicit val conversionKPIFormat: DynamoFormat[ConversionKPI] =
     deriveDynamoFormat[ConversionKPI]
+
+  implicit val queryAccumulativeKPIFormat: DynamoFormat[QueryAccumulativeKPI] =
+    deriveDynamoFormat[QueryAccumulativeKPI]
+
+  implicit val kPIFormat: DynamoFormat[KPI] =
+    deriveDynamoFormat[KPI]
+
+  implicit val processSettingsDF: DynamoFormat[ProcessSettingsOptional] =
+    deriveDynamoFormat[ProcessSettingsOptional]
 
   implicit val jobSpecFormat: DynamoFormat[JobSpec] = deriveDynamoFormat[JobSpec]
   implicit val jobFormat: DynamoFormat[Job] = deriveDynamoFormat[Job]
@@ -101,5 +127,13 @@ object DynamoFormats {
   implicit val ekpiStateConversionFormat
       : DynamoFormat[ExperimentKPIState[Conversions]] =
     deriveDynamoFormat[ExperimentKPIState[Conversions]]
+
+  implicit val armStatePerUserSamplesFormat
+      : DynamoFormat[ExperimentKPIState.ArmState[PerUserSamplesLnSummary]] =
+    deriveDynamoFormat[ExperimentKPIState.ArmState[PerUserSamplesLnSummary]]
+
+  implicit val ekpiStatePerUserSamplesFormat
+      : DynamoFormat[ExperimentKPIState[PerUserSamplesLnSummary]] =
+    deriveDynamoFormat[ExperimentKPIState[PerUserSamplesLnSummary]]
 
 }

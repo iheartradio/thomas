@@ -1,15 +1,18 @@
 package com.iheart.thomas.stream
 
+import cats.Functor
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
-import com.iheart.thomas.{FeatureName, TimeUtil}
-import TimeUtil.InstantOps
-import cats.Functor
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
-import com.iheart.thomas.analysis.monitor.MonitorAlg
-import com.iheart.thomas.analysis.{ConversionKPIAlg, ConversionMessageQuery, KPIName}
-import com.iheart.thomas.stream.JobSpec.{MonitorTest, RunBandit, UpdateKPIPrior}
+import com.iheart.thomas.TimeUtil.InstantOps
+import com.iheart.thomas.analysis.KPIName
+import com.iheart.thomas.stream.JobSpec.{
+  MonitorTest,
+  ProcessSettings,
+  RunBandit,
+  UpdateKPIPrior
+}
 import com.iheart.thomas.tracking.EventLogger
+import com.iheart.thomas.{FeatureName, TimeUtil}
 import com.typesafe.config.Config
 import fs2._
 import pureconfig.ConfigSource
@@ -18,6 +21,7 @@ import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
+import pureconfig.generic.auto._
 
 trait JobAlg[F[_]] {
 
@@ -59,6 +63,16 @@ trait JobAlg[F[_]] {
 }
 
 object JobAlg {
+  def chunkEvents[F[_]: Timer: Concurrent, E](
+      processSettings: ProcessSettings
+    ): Pipe[F, List[E], Chunk[E]] =
+    (input: Stream[F, List[E]]) =>
+      input
+        .flatMap(le => Stream.fromIterator(le.iterator))
+        .groupWithin(
+          processSettings.eventChunkSize,
+          processSettings.frequency
+        )
 
   case class ConversionEventStats(
       initCount: Int,
@@ -72,10 +86,7 @@ object JobAlg {
       implicit F: Concurrent[F],
       timer: Timer[F],
       dao: JobDAO[F],
-      cKpiAlg: ConversionKPIAlg[F],
-      armParser: ArmParser[F, Message],
-      monitorAlg: MonitorAlg[F],
-      convParser: ConversionParser[F, Message],
+      kpiPipes: AllKPIProcessAlg[F, Message],
       config: Config,
       logger: EventLogger[F],
       messageSubscriber: MessageSubscriber[F, Message]
@@ -101,80 +112,42 @@ object JobAlg {
           .eval(JobRunnerConfig.fromConfig(config))
           .flatMap { cfg =>
             def jobPipe(job: Job): F[Pipe[F, Message, Unit]] = {
+              val processSettings = (
+                ProcessSettings(
+                  frequency = job.spec.processSettings.frequency
+                    .getOrElse(cfg.jobProcessFrequency),
+                  eventChunkSize = job.spec.processSettings.eventChunkSize
+                    .getOrElse(cfg.maxChunkSize),
+                  expiration = job.spec.processSettings.expiration
+                )
+              )
 
-              def kpiQuery(name: KPIName): F[ConversionMessageQuery] =
-                cKpiAlg
-                  .get(name)
-                  .flatMap { kpi =>
-                    kpi.messageQuery
-                      .liftTo[F](CannotUpdateKPIWithoutQuery(name))
-                  }
-
-              def chunkPipe[A](until: Instant): Pipe[F, A, Chunk[A]] =
+              def checkExpiration[A]: Pipe[F, A, A] =
                 (input: Stream[F, A]) => {
-                  val checkJobComplete = Stream
-                    .fixedDelay(cfg.jobCheckFrequency)
-                    .evalMap(_ => until.passed)
-                    .evalTap { completed =>
-                      if (completed) stop(job.key)
-                      else F.unit
-                    }
-                  input
-                    .interruptWhen(checkJobComplete)
-                    .groupWithin(cfg.maxChunkSize, cfg.jobProcessFrequency)
-
+                  def checkJobComplete(exp: Instant) =
+                    Stream
+                      .fixedDelay(cfg.jobCheckFrequency)
+                      .evalMap(_ => exp.passed)
+                      .evalTap { completed =>
+                        if (completed) stop(job.key)
+                        else F.unit
+                      }
+                  processSettings.expiration.fold(input)(exp =>
+                    input
+                      .interruptWhen(checkJobComplete(exp))
+                  )
                 }
 
-              job.spec match {
-                case UpdateKPIPrior(kpiName, until) =>
-                  kpiQuery(kpiName)
-                    .map {
-                      query =>
-                        { (input: Stream[F, Message]) =>
-                          input
-                            .evalMap(m => convParser.parseConversion(m, query))
-                            .filter(_.nonEmpty)
-                            .through(chunkPipe(until))
-                            .evalMap { chunk =>
-                              cKpiAlg.updateModel(
-                                kpiName,
-                                chunk.toList.flatten
-                              )
-                            }
-                            .void
-                        }
-                    }
+              (job.spec match {
+                case UpdateKPIPrior(kpiName, _) =>
+                  kpiPipes.updatePrior(kpiName, processSettings)
 
-                case MonitorTest(feature, kpiName, expiration) =>
-                  kpiQuery(kpiName)
-                    .map {
-                      query =>
-                        { (input: Stream[F, Message]) =>
-                          Stream.eval(monitorAlg.initConversion(feature, kpiName)) *>
-                            input
-                              .evalMap { m =>
-                                armParser.parseArm(m, feature).flatMap { armO =>
-                                  armO.toList.flatTraverse { arm =>
-                                    convParser
-                                      .parseConversion(m, query)
-                                      .map(_.map((arm, _)))
-                                  }
-                                }
-                              }
-                              .filter(_.nonEmpty)
-                              .through(chunkPipe(expiration))
-                              .evalMap { chunk =>
-                                monitorAlg.updateState(
-                                  Key(feature, kpiName),
-                                  chunk.toList.flatten
-                                )
-                              }
-                              .void
-                        }
+                case MonitorTest(feature, kpiName, _) =>
+                  kpiPipes.monitorExperiment(feature, kpiName, processSettings)
 
-                    }
-
-                case RunBandit(_) => ???
+                case RunBandit(_, _) => ???
+              }).map { pipe =>
+                checkExpiration[Message].andThen(pipe)
               }
             }
 
@@ -262,7 +235,6 @@ case class JobRunnerConfig(
 
 object JobRunnerConfig {
   def fromConfig[F[_]: Sync](cfg: Config): F[JobRunnerConfig] = {
-    import pureconfig.generic.auto._
     import pureconfig.module.catseffect._
     ConfigSource.fromConfig(cfg).at("thomas.stream.job").loadF[F, JobRunnerConfig]
   }

@@ -14,7 +14,7 @@ class BetaKPISuite extends AsyncIOSpec with Matchers {
   implicit val sampler = SamplerConfig.default
 
   val mockAb: Abtest = null
-  val alg: KPIEvaluator[IO, BetaModel, Conversions] =
+  val alg: ModelEvaluator[IO, BetaModel, Conversions] =
     implicitly
 
   "BetaKPI Assessment Alg" - {
