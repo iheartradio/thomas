@@ -4,15 +4,21 @@ import cats.{Monad, MonadThrow}
 import cats.effect.Timer
 import com.iheart.thomas.{ArmName, FeatureName, TimeUtil}
 import com.iheart.thomas.analysis.{
+  AccumulativeKPIQueryRepo,
   KPI,
   PerUserSamples,
   PerUserSamplesQuery,
   QueryAccumulativeKPI,
-  AccumulativeKPIQueryRepo,
   QueryName
 }
 import fs2.{Pipe, Stream}
 import cats.implicits._
+import com.iheart.thomas.stream.JobEvent.{
+  EventQueryInitiated,
+  EventsQueried,
+  EventsQueriedForFeature
+}
+import com.iheart.thomas.tracking.EventLogger
 
 import java.time.Instant
 import scala.util.control.NoStackTrace
@@ -68,7 +74,8 @@ object KPIEventSource {
     }
 
   implicit def fromAlg[F[_]: MonadThrow: Timer, Message](
-      implicit alg: AccumulativeKPIQueryRepo[F]
+      implicit alg: AccumulativeKPIQueryRepo[F],
+      logger: EventLogger[F]
     ): KPIEventSource[F, QueryAccumulativeKPI, Message, PerUserSamples] = {
     if (!alg.implemented) KPIEventSource.nullSource
     else
@@ -84,25 +91,39 @@ object KPIEventSource {
                 .flatMap(_.liftTo[F](UnknownQueryName(k.queryName)))
             )
             .flatMap { query =>
-              Stream
-                .awakeEvery[F](query.frequency)
-                .evalMap(_ =>
-                  TimeUtil
-                    .now[F]
-                    .map((query, _))
-                )
+              val signalF = TimeUtil
+                .now[F]
+                .map((query, _))
+
+              (Stream.eval(signalF) ++
+                Stream
+                  .awakeEvery[F](query.frequency)
+                  .evalMap(_ => signalF))
+                .evalTap(_ => logger(EventQueryInitiated(k)))
             }
 
         def events(
             k: QueryAccumulativeKPI
           ): Pipe[F, Message, List[PerUserSamples]] =
-          _ => pulse(k).evalMap { case (query, now) => query(k, now) }
+          _ =>
+            pulse(k).evalMap { case (query, now) =>
+              query(k, now).flatTap { r =>
+                logger(EventsQueried(k, r.length))
+              }
+            }
 
         def events(
             k: QueryAccumulativeKPI,
             feature: FeatureName
           ): Pipe[F, Message, List[(ArmName, PerUserSamples)]] =
-          _ => pulse(k).evalMap { case (query, now) => query(k, feature, now) }
+          _ =>
+            pulse(k).evalMap { case (query, now) =>
+              query(k, feature, now).flatTap { r =>
+                logger(
+                  EventsQueriedForFeature(k, feature, r.map(_.map(_.values.length)))
+                )
+              }
+            }
       }
   }
 

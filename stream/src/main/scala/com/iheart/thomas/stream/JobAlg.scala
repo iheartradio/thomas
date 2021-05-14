@@ -5,12 +5,8 @@ import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
 import com.iheart.thomas.TimeUtil.InstantOps
 import com.iheart.thomas.analysis.KPIName
-import com.iheart.thomas.stream.JobSpec.{
-  MonitorTest,
-  ProcessSettings,
-  RunBandit,
-  UpdateKPIPrior
-}
+import com.iheart.thomas.stream.JobEvent.RunningJobsUpdated
+import com.iheart.thomas.stream.JobSpec.{MonitorTest, ProcessSettings, RunBandit, UpdateKPIPrior}
 import com.iheart.thomas.tracking.EventLogger
 import com.iheart.thomas.{FeatureName, TimeUtil}
 import com.typesafe.config.Config
@@ -168,7 +164,7 @@ object JobAlg {
                   }
                 ) //todo: be resilient against DB error with logging.
 
-            val runningJobs = availableJobs
+            val runningJobs: Stream[F, Vector[Job]] = availableJobs
               .evalScan(
                 (
                   Vector.empty[Job], //previous set of Jobs
@@ -202,6 +198,7 @@ object JobAlg {
               .mapFilter(_._2)
 
             runningJobs.switchMap { jobs =>
+              Stream.eval(logger(RunningJobsUpdated(jobs))) *>
               Stream
                 .eval(jobs.traverse(j => jobPipe(j)))
                 .flatMap { pipes =>
