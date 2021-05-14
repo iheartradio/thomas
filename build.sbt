@@ -36,7 +36,7 @@ lazy val libs = {
     .addJVM(name = "mau",                   version = "0.2.2",  org = "com.kailuowang")
     .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
     .add(   name = "play-json",             version = "2.7.4",  org = "com.typesafe.play")
-    .addJVM(name = "play-json-derived-codecs", version = "7.0.0", org = "org.julienrf")
+    .addJVM(name = "play-json-derived-codecs", version = "10.0.2", org = "org.julienrf")
     .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
     .addJVM(name = "rainier",               version = "0.3.3-Kai",  org ="com.kailuowang", "rainier-core", "rainier-cats")
     .addJVM(name = "reactivemongo",         version = reactiveMongoVer, org = "org.reactivemongo", "reactivemongo", "reactivemongo-bson-api", "reactivemongo-iteratees" )
