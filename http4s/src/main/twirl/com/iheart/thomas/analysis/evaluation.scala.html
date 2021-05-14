@@ -73,8 +73,20 @@ includedArms: Set[ArmName]
                             <div id="histogram-@e._2"></div>
                         </div>
                         <div class="mt-3">
-                           Benefit Range*: <b>@formatPercentage(br.riskOfUsing)</b> &mdash; <b>@formatPercentage(-br.riskOfNotUsing)</b>
-                           ( Median: <b>@formatPercentage(br.medianEffect)</b> )
+                           Benefit Range*:
+                            @for(stats <- stateO.flatMap(_.arms.headOption.map(_.kpiStats))) {
+                            @stats match {
+                                case _: Conversions => {
+                                    <b>@formatPercentage(br.riskOfUsing)</b> &mdash; <b>@formatPercentage(-br.riskOfNotUsing)</b>
+                                    ( Median: <b>@formatPercentage(br.medianEffect)</b> )
+                                }
+                                case _: PerUserSamplesLnSummary => {
+                                     <b>@br.riskOfUsing</b> &mdash; <b>@{-br.riskOfNotUsing}</b>
+                                    ( Median: <b>@br.medianEffect</b> )
+                                }
+                            }}
+
+
                         </div>
                         <div>
                             <small><b>*</b>  95% confidence on boundaries</small>
@@ -114,8 +126,20 @@ includedArms: Set[ArmName]
                     title: "@e._1.name against benchmark @br.benchmarkArm",
                     legend: { position: 'none' },
                     hAxis: {
-                        title: 'Percentage difference',
-                        format: '##.##%'
+                        @for(stats <- stateO.flatMap(_.arms.headOption.map(_.kpiStats))) {
+                          @stats match {
+                             case _: Conversions => {
+                                title: 'Percentage difference',
+                                format: '##.##%'
+                             }
+                             case _: PerUserSamplesLnSummary => {
+                                title: 'Difference',
+
+                             }
+                          }
+
+                        }
+
                     },
                     chartArea: {
                         width: 600,

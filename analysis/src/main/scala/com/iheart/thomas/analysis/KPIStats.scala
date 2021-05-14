@@ -6,6 +6,7 @@ import cats.UnorderedFoldable
 import cats.kernel.{CommutativeMonoid, Monoid}
 import cats.implicits._
 import henkan.convert.Syntax._
+
 sealed trait KPIStats
 
 case class Conversions(

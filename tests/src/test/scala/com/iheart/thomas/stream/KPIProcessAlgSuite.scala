@@ -40,6 +40,7 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
           KPIRepo[IO, QueryAccumulativeKPI]) => IO[A]
     ): IO[A] = {
 
+    implicit val eventLogger = EventLogger.noop[IO]
     implicit val aKpiDAO = MapBasedDAOs.queryAccumulativeKPIAlg[IO]
     implicit val aStateDAO =
       MapBasedDAOs.experimentStateDAO[IO, PerUserSamplesLnSummary]
