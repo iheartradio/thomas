@@ -172,8 +172,7 @@ object AuthenticationAlg {
         } yield r
     }
 
-  /**
-    * using dynamo BCyrpt and HMACSHA256
+  /** using dynamo BCyrpt and HMACSHA256
     */
   def default[F[_]: Concurrent](
       key: String

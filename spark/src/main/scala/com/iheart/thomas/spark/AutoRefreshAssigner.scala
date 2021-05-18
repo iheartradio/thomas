@@ -8,11 +8,10 @@ import concurrent.duration._
 import cats.implicits._
 import org.apache.spark.sql.functions.udf
 
-/**
-  * Provides a `udf` that assigns based on auto refreshed test data.
+/** Provides a `udf` that assigns based on auto refreshed test data.
   *
   * @param url
-  * @param refreshPeriod how often test data is refreshed
+  *   @param refreshPeriod how often test data is refreshed
   */
 case class AutoRefreshAssigner(
     url: String,

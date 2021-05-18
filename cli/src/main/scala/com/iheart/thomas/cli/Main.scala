@@ -26,9 +26,8 @@ object Main extends IOApp {
         .parse(args)
         .fold(
           help => IO(println(help)).as(ExitCode.Error),
-          _.flatMap(r => IO(println(r))).as(ExitCode.Success).onError {
-            case e =>
-              IO(println(s"""
+          _.flatMap(r => IO(println(r))).as(ExitCode.Success).onError { case e =>
+            IO(println(s"""
                 |$errorSign
                 |!!!!!!!!!!!!!!!!!!!!!!!!!!!ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 |

@@ -531,10 +531,9 @@ class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
       f: (ConversionBMABAlg[IO], KPIRepo[IO, ConversionKPI], AbtestAlg[IO]) => IO[A]
     ): A =
     apis
-      .use {
-        case (conversionBMABAlg, abtestAlg, conversionKPIAlg) =>
-          conversionKPIAlg
-            .create(kpi) >> f(conversionBMABAlg, conversionKPIAlg, abtestAlg)
+      .use { case (conversionBMABAlg, abtestAlg, conversionKPIAlg) =>
+        conversionKPIAlg
+          .create(kpi) >> f(conversionBMABAlg, conversionKPIAlg, abtestAlg)
       }
       .unsafeRunSync()
 

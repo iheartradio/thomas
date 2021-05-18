@@ -1,7 +1,7 @@
 /*
-* Copyright [2017] [iHeartMedia Inc]
-* All rights reserved
-*/
+ * Copyright [2017] [iHeartMedia Inc]
+ * All rights reserved
+ */
 package lihua
 package mongo
 
@@ -9,17 +9,13 @@ trait ShutdownHook {
   def onShutdown[T](code: ⇒ T): Unit
 }
 
-
 object ShutdownHook {
 
-  /**
-    * a shutdownhook
+  /** a shutdownhook
     */
   object ignore extends ShutdownHook {
     override def onShutdown[T](code: => T): Unit = ()
   }
-
-
 
   class Manual extends ShutdownHook {
     @volatile

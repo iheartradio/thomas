@@ -6,7 +6,12 @@ import cats.implicits._
 import com.iheart.thomas.TimeUtil.InstantOps
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.stream.JobEvent.RunningJobsUpdated
-import com.iheart.thomas.stream.JobSpec.{MonitorTest, ProcessSettings, RunBandit, UpdateKPIPrior}
+import com.iheart.thomas.stream.JobSpec.{
+  MonitorTest,
+  ProcessSettings,
+  RunBandit,
+  UpdateKPIPrior
+}
 import com.iheart.thomas.tracking.EventLogger
 import com.iheart.thomas.{FeatureName, TimeUtil}
 import com.typesafe.config.Config
@@ -21,14 +26,13 @@ import pureconfig.generic.auto._
 
 trait JobAlg[F[_]] {
 
-  /**
-    * Creates a job if the job key is not already in the job list
-    * @return Some(job) if successful, None otherwise.
+  /** Creates a job if the job key is not already in the job list
+    * @return
+    *   Some(job) if successful, None otherwise.
     */
   def schedule(spec: JobSpec): F[Option[Job]]
 
-  /**
-    * Stops and removes a job
+  /** Stops and removes a job
     */
   def stop(jobKey: String): F[Unit]
 
@@ -49,10 +53,10 @@ trait JobAlg[F[_]] {
   def monitors(feature: FeatureName): F[Vector[JobInfo[MonitorTest]]] =
     findInfo((m: MonitorTest) => m.feature == feature)
 
-  /**
-    * Find job according to spec. Since you can't run two jobs with the same key, find ignores the rest of the spec.
+  /** Find job according to spec. Since you can't run two jobs with the same key,
+    * find ignores the rest of the spec.
     * @param spec
-    * @return
+    *   @return
     */
   def find(spec: JobSpec): F[Option[Job]]
 
@@ -199,29 +203,32 @@ object JobAlg {
 
             runningJobs.switchMap { jobs =>
               Stream.eval(logger(RunningJobsUpdated(jobs))) *>
-              Stream
-                .eval(jobs.traverse(j => jobPipe(j)))
-                .flatMap { pipes =>
-                  (if (cfg.logEveryMessage)
-                     messageSubscriber.subscribe
-                       .flatTap(m =>
-                         Stream.eval(logger(JobEvent.MessageReceived(m)))
-                       )
-                   else messageSubscriber.subscribe)
-                    .broadcastTo(pipes: _*)
-                }
+                Stream
+                  .eval(jobs.traverse(j => jobPipe(j)))
+                  .flatMap { pipes =>
+                    (if (cfg.logEveryMessage)
+                       messageSubscriber.subscribe
+                         .flatTap(m =>
+                           Stream.eval(logger(JobEvent.MessageReceived(m)))
+                         )
+                     else messageSubscriber.subscribe)
+                      .broadcastTo(pipes: _*)
+                  }
             }
           }
 
     }
 }
 
-/**
-  *
-  * @param jobCheckFrequency how often it checks new available jobs or running jobs being stoped.
-  * @param jobProcessFrequency how often it does the task of a job.
-  * @param jobObsoleteCount the threshold over which times a job misses being checkedOut will be count as obsolete and available for worker to pick up.
-  * @param maxChunkSize when messages accumulate over maxChunkSize, they will be processed for the job.
+/** @param jobCheckFrequency
+  *   how often it checks new available jobs or running jobs being stoped.
+  * @param jobProcessFrequency
+  *   how often it does the task of a job.
+  * @param jobObsoleteCount
+  *   the threshold over which times a job misses being checkedOut will be count as
+  *   obsolete and available for worker to pick up.
+  * @param maxChunkSize
+  *   when messages accumulate over maxChunkSize, they will be processed for the job.
   */
 case class JobRunnerConfig(
     jobCheckFrequency: FiniteDuration,

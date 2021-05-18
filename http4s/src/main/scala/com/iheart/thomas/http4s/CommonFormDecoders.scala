@@ -54,12 +54,11 @@ trait CommonQueryParamDecoders {
           A.reads(json)
             .asEither
             .leftMap { e =>
-              NonEmptyList.fromListUnsafe(e.map {
-                case (path, errors) =>
-                  ParseFailure(
-                    "Json field parse failed",
-                    s"$path: ${errors.map(_.message).mkString(";")}"
-                  )
+              NonEmptyList.fromListUnsafe(e.map { case (path, errors) =>
+                ParseFailure(
+                  "Json field parse failed",
+                  s"$path: ${errors.map(_.message).mkString(";")}"
+                )
               }.toList)
             }
             .toValidated

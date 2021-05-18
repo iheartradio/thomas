@@ -48,9 +48,8 @@ object TestMessageKafkaProducer extends IOApp {
       groups: Seq[(FeatureName, GroupName)]
     ) = {
     val groupValues = groups
-      .map {
-        case (fn, gn) =>
-          s""" "$fn" : "$gn" """
+      .map { case (fn, gn) =>
+        s""" "$fn" : "$gn" """
       }
       .mkString(""",
           | """.stripMargin)

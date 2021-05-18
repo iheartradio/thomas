@@ -43,10 +43,9 @@ abstract class ExperimentKPIStateDAOSuite extends AsyncIOSpec with Matchers {
             }
           } yield (init, updated)
         }
-        .asserting {
-          case (init, updated) =>
-            updated.lastUpdated.isAfter(init.lastUpdated) shouldBe true
-            updated.arms shouldBe List(ArmState("A", Conversions(1, 4), None))
+        .asserting { case (init, updated) =>
+          updated.lastUpdated.isAfter(init.lastUpdated) shouldBe true
+          updated.arms shouldBe List(ArmState("A", Conversions(1, 4), None))
         }
 
     }

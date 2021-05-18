@@ -25,8 +25,7 @@ trait BanditUpdater[F[_]] {
   def isPaused: F[Boolean]
 }
 
-/**
-  * For internal testing purpose
+/** For internal testing purpose
   */
 private[kafka] trait WithConversionBMABAlg[F[_]] {
   def conversionBMABAlg: ConversionBMABAlg[F]
@@ -35,7 +34,8 @@ private[kafka] trait WithConversionBMABAlg[F[_]] {
 object BanditUpdater {
 
   def resource[
-      F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs: EventLogger: NonEmptyParallel,
+      F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs: EventLogger
+        : NonEmptyParallel,
       Message
     ](cfg: Config,
       toEvent: (FeatureName, KPIName) => F[
@@ -52,7 +52,8 @@ object BanditUpdater {
   }
 
   def resource[
-      F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs: MessageProcessor: EventLogger: NonEmptyParallel
+      F[_]: Timer: ContextShift: ConcurrentEffect: mongo.DAOs: MessageProcessor
+        : EventLogger: NonEmptyParallel
     ](cfg: Config
     )(implicit
       amazonClient: DynamoDbAsyncClient

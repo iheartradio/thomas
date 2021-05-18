@@ -66,20 +66,18 @@ object KPIProcessAlg {
       .foldMap { case (an, ce) => Map(an -> List(ce)) }
       .mapValues(agg(_))
 
-    existing.map {
-      case ArmState(armName, c, l) =>
-        ArmState(
+    existing.map { case ArmState(armName, c, l) =>
+      ArmState(
+        armName,
+        c |+| newStats.getOrElse(
           armName,
-          c |+| newStats.getOrElse(
-            armName,
-            KS.empty
-          ),
-          l
-        )
-    } ++ newStats.toList.mapFilter {
-      case (name, c) =>
-        if (existing.exists(_.name == name)) None
-        else Some(ArmState(name, c, None))
+          KS.empty
+        ),
+        l
+      )
+    } ++ newStats.toList.mapFilter { case (name, c) =>
+      if (existing.exists(_.name == name)) None
+      else Some(ArmState(name, c, None))
     }
   }
 

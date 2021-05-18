@@ -111,8 +111,8 @@ class AbtestService[F[_]: Async](
 
     }
 
-    result.flatMap(t => Ok(toJson(t))).recoverWith {
-      case e: abtest.Error => errResponse(e)
+    result.flatMap(t => Ok(toJson(t))).recoverWith { case e: abtest.Error =>
+      errResponse(e)
     }
   }
 
@@ -120,9 +120,8 @@ class AbtestService[F[_]: Async](
     Router("/internal/" -> internal).orElse(public).orNotFound
 
   def public =
-    HttpRoutes.of[F] {
-      case req @ POST -> Root / "users" / "groups" / "query" =>
-        req.as[UserGroupQuery] >>= (ugq => respond(api.getGroupsWithMeta(ugq)))
+    HttpRoutes.of[F] { case req @ POST -> Root / "users" / "groups" / "query" =>
+      req.as[UserGroupQuery] >>= (ugq => respond(api.getGroupsWithMeta(ugq)))
     }
 
   def readonly: HttpRoutes[F] =

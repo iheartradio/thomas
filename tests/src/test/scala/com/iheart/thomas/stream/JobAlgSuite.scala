@@ -79,9 +79,8 @@ abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
   )
 
   def event(vs: (String, String)*) =
-    JObject.fromSeq(vs.toList.map {
-      case (k, v) =>
-        k -> (JString(v): JValue)
+    JObject.fromSeq(vs.toList.map { case (k, v) =>
+      k -> (JString(v): JValue)
     })
   def settings(exp: Instant) = ProcessSettingsOptional(None, None, Some(exp))
 }
@@ -96,8 +95,8 @@ class JobAlgSuite extends JobAlgSuiteBase {
         )
         jobs <- alg.allJobs
 
-      } yield (job, jobs)).asserting {
-        case (job, jobs) => jobs.contains(job.get) shouldBe true
+      } yield (job, jobs)).asserting { case (job, jobs) =>
+        jobs.contains(job.get) shouldBe true
       }
 
     }
@@ -142,9 +141,8 @@ class JobAlgSuite extends JobAlgSuiteBase {
               .compile
               .drain
           jobs <- alg.allJobs
-        } yield (start, jobs)).asserting {
-          case (start, jobs) =>
-            jobs.head.checkedOut.get.isAfter(start.plusMillis(700)) shouldBe true
+        } yield (start, jobs)).asserting { case (start, jobs) =>
+          jobs.head.checkedOut.get.isAfter(start.plusMillis(700)) shouldBe true
         }
 
     }
@@ -244,9 +242,8 @@ class JobAlgSuite extends JobAlgSuiteBase {
             restartAt <- TimeUtil.now[IO]
             _ <- alg.runStream.interruptAfter(500.millis).compile.drain
             jobO <- alg.find(spec)
-          } yield (restartAt, jobO)).asserting {
-            case (restartAt, jobO) =>
-              jobO.flatMap(_.checkedOut).get.isAfter(restartAt) shouldBe true
+          } yield (restartAt, jobO)).asserting { case (restartAt, jobO) =>
+            jobO.flatMap(_.checkedOut).get.isAfter(restartAt) shouldBe true
           }
       }
     }
@@ -263,9 +260,8 @@ class JobAlgSuite extends JobAlgSuiteBase {
             restartAt <- TimeUtil.now[IO]
             _ <- alg.runStream.interruptAfter(500.millis).compile.drain
             jobO <- alg.find(spec)
-          } yield (restartAt, jobO)).asserting {
-            case (restartAt, jobO) =>
-              jobO.flatMap(_.checkedOut).get.isBefore(restartAt) shouldBe true
+          } yield (restartAt, jobO)).asserting { case (restartAt, jobO) =>
+            jobO.flatMap(_.checkedOut).get.isBefore(restartAt) shouldBe true
           }
       }
     }

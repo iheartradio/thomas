@@ -89,12 +89,11 @@ class AbtestManagementUI[F[_]: Async: Timer](
           filters.feature
             .fold(tests)(f => tests.filter(_.data.feature == f))
             .groupBy(_.data.feature)
-            .map {
-              case (fn, tests) =>
-                (
-                  features.find(_.name == fn).get,
-                  tests.sortBy(_.data.start).toList.reverse
-                )
+            .map { case (fn, tests) =>
+              (
+                features.find(_.name == fn).get,
+                tests.sortBy(_.data.start).toList.reverse
+              )
             }
             .toList
 

@@ -83,8 +83,8 @@ abstract class ScanamoDAOHelper[F[_], A](
   }
 
   def insertO(a: A): F[Option[A]] =
-    insert(a).map(Option(_)).recover {
-      case ScanamoError(ConditionNotMet(_)) => None
+    insert(a).map(Option(_)).recover { case ScanamoError(ConditionNotMet(_)) =>
+      None
     }
 
 }
@@ -238,9 +238,8 @@ trait ScanamoManagement {
     val keySchemas = hashKeyWithType._1 -> KeyType.HASH :: rangeKeyWithType.map(
       _._1 -> KeyType.RANGE
     )
-    keySchemas.map {
-      case (symbol, keyType) =>
-        KeySchemaElement.builder.attributeName(symbol).keyType(keyType).build
+    keySchemas.map { case (symbol, keyType) =>
+      KeySchemaElement.builder.attributeName(symbol).keyType(keyType).build
     }.asJava
   }
 
@@ -298,15 +297,14 @@ trait ScanamoManagement {
       writeCapacityUnits: Long
     )(implicit dynamo: DynamoDbAsyncClient
     ): F[Unit] =
-    tables.traverse {
-      case (tableName, keyAttribute) =>
-        ensureTable(
-          dynamo,
-          tableName,
-          Seq(keyAttribute),
-          readCapacityUnits,
-          writeCapacityUnits
-        )
+    tables.traverse { case (tableName, keyAttribute) =>
+      ensureTable(
+        dynamo,
+        tableName,
+        Seq(keyAttribute),
+        readCapacityUnits,
+        writeCapacityUnits
+      )
     }.void
 
   def ensureTable[F[_]: Concurrent](
@@ -322,25 +320,23 @@ trait ScanamoManagement {
           .tableName(tableName)
           .build
       )
-    ).void.recoverWith {
-      case _: ResourceNotFoundException =>
-        createTable(
-          client,
-          tableName,
-          keyAttributes,
-          readCapacityUnits,
-          writeCapacityUnits
-        )
+    ).void.recoverWith { case _: ResourceNotFoundException =>
+      createTable(
+        client,
+        tableName,
+        keyAttributes,
+        readCapacityUnits,
+        writeCapacityUnits
+      )
     }
   }
 
   private def attributeDefinitions(attributes: Seq[(String, ScalarAttributeType)]) =
-    attributes.map {
-      case (symbol, attributeType) =>
-        AttributeDefinition.builder
-          .attributeName(symbol)
-          .attributeType(attributeType)
-          .build
+    attributes.map { case (symbol, attributeType) =>
+      AttributeDefinition.builder
+        .attributeName(symbol)
+        .attributeType(attributeType)
+        .build
     }.asJava
 }
 

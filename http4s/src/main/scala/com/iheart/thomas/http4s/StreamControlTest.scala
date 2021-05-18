@@ -19,16 +19,15 @@ object StreamControlTest extends IOApp with Http4sDsl[IO] {
       Stream
         .repeatEval(IO.sleep(1.second) *> IO(println(LocalDateTime.now)))
         .interruptAfter(120.seconds)
-    ).flatMap {
-      case (runs, pause) =>
-        BlazeServerBuilder[IO](ExecutionContext.global)
-          .bindHttp(9000, "localhost")
-          .withHttpApp(routes(pause).orNotFound)
-          .serve
-          .concurrently(runs)
-          .compile
-          .drain
-          .as(ExitCode.Success)
+    ).flatMap { case (runs, pause) =>
+      BlazeServerBuilder[IO](ExecutionContext.global)
+        .bindHttp(9000, "localhost")
+        .withHttpApp(routes(pause).orNotFound)
+        .serve
+        .concurrently(runs)
+        .compile
+        .drain
+        .as(ExitCode.Success)
     }
 
   def banditUpdateController[F[_]: Concurrent](stream: Stream[F, Unit]) = {
