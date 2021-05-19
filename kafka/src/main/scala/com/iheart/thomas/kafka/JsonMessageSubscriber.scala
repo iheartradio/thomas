@@ -31,19 +31,21 @@ object JsonMessageSubscriber {
             .using(consumerSettings)
             .evalTap(_.subscribeTo(cfg.topic))
             .map {
-              _.stream.evalMap { r =>
-                ast.JParser
-                  .parseFromString(r.record.value)
-                  .fold(
-                    e =>
-                      log
-                        .error(
-                          s"kafka message json parse error. $e \n json: ${r.record.value}"
-                        )
-                        .as(none[JValue]),
-                    j => Option(j).pure[F]
-                  )
-              }.flattenOption
+              _.stream
+                .parEvalMap(cfg.parseParallelization) { r =>
+                  ast.JParser
+                    .parseFromString(r.record.value)
+                    .fold(
+                      e =>
+                        log
+                          .error(
+                            s"kafka message json parse error. $e \n json: ${r.record.value}"
+                          )
+                          .as(none[JValue]),
+                      j => Option(j).pure[F]
+                    )
+                }
+                .flattenOption
 
             }
             .flatten
