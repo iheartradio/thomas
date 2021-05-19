@@ -10,7 +10,7 @@ object ExampleArmParse {
   import com.iheart.thomas.stream.JValueSyntax._
   implicit def armParser[F[_]: Applicative] =
     new ArmParser[F, JValue] {
-      def parseArm(
+      def parse(
           m: JValue,
           feature: FeatureName
         ): F[Option[ArmName]] =

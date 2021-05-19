@@ -64,7 +64,7 @@ object KPIEventSource {
         (input: Stream[F, Message]) =>
           input
             .evalMap { m =>
-              armParser.parseArm(m, feature).flatMap { armO =>
+              armParser.parse(m, feature).flatMap { armO =>
                 armO.toList.flatTraverse { arm =>
                   parser(m).map(_.map((arm, _)))
                 }

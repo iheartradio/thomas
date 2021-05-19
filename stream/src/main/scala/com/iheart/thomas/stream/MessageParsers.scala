@@ -6,6 +6,7 @@ import com.iheart.thomas.analysis._
 import cats.implicits._
 import org.typelevel.jawn.ast.{JNull, JValue}
 
+import java.time.Instant
 import scala.annotation.implicitNotFound
 import scala.util.control.NoStackTrace
 import scala.util.matching.Regex
@@ -14,7 +15,7 @@ import scala.util.matching.Regex
   "Need to provide a parse that can parse group name (or arm name) out of ${Message} of event "
 )
 trait ArmParser[F[_], Message] {
-  def parseArm(
+  def parse(
       m: Message,
       feature: FeatureName
     ): F[Option[ArmName]]
@@ -22,6 +23,12 @@ trait ArmParser[F[_], Message] {
 
 object ArmParser {
   type JValueArmParser[F[_]] = ArmParser[F, JValue]
+}
+
+trait TimeStampParser[F[_], Message] {
+  def parse(
+      m: Message
+    ): F[Instant]
 }
 
 trait KpiEventParser[F[_], Message, Event, K <: KPI] {
