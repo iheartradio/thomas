@@ -8,6 +8,7 @@ import com.iheart.thomas.analysis.monitor.ExperimentKPIState
 import com.iheart.thomas.bandit.bayesian._
 import com.iheart.thomas.stream.JobSpec.ProcessSettingsOptional
 import com.iheart.thomas.stream._
+import utils.time.Period
 import io.estatico.newtype.ops._
 import org.scanamo.{DynamoFormat, TypeCoercionError}
 
@@ -38,8 +39,8 @@ object DynamoFormats {
         _.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
       )
 
-  implicit val rangeFormat: DynamoFormat[Range] =
-    deriveDynamoFormat[Range]
+  implicit val rangeFormat: DynamoFormat[Period] =
+    deriveDynamoFormat[Period]
 
   implicit val conversionsSfc: DynamoFormat[Conversions] =
     deriveDynamoFormat[Conversions]

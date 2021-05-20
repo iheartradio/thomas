@@ -1,8 +1,8 @@
-package com.iheart.thomas.testkit
+package com.iheart.thomas
+package testkit
 
 import cats.effect.{Sync, Timer}
 import cats.implicits._
-import com.iheart.thomas.utils.time
 import com.iheart.thomas.abtest.Error.NotFound
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}

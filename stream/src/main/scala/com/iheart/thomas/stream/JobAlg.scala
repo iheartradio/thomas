@@ -1,4 +1,5 @@
-package com.iheart.thomas.stream
+package com.iheart.thomas
+package stream
 
 import cats.Functor
 import cats.effect.{Concurrent, Sync, Timer}
@@ -13,7 +14,6 @@ import com.iheart.thomas.stream.JobSpec.{
   UpdateKPIPrior
 }
 import com.iheart.thomas.tracking.EventLogger
-import com.iheart.thomas.{FeatureName, utils.time}
 import com.typesafe.config.Config
 import fs2._
 import pureconfig.ConfigSource

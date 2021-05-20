@@ -1,4 +1,5 @@
-package com.iheart.thomas.http4s.abtest
+package com.iheart.thomas
+package http4s.abtest
 
 import java.time.Instant
 
@@ -13,7 +14,6 @@ import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 import com.iheart.thomas.abtest.{AbtestAlg, Error}
 import Error.{NotFound => APINotFound}
 import com.iheart.thomas.http4s.MongoResources
-import com.iheart.thomas.{GroupName, utils.time, UserId, abtest}
 import com.typesafe.config.Config
 import lihua.EntityId
 import lihua.mongo.JsonFormats._
@@ -111,8 +111,8 @@ class AbtestService[F[_]: Async](
 
     }
 
-    result.flatMap(t => Ok(toJson(t))).recoverWith {
-      case e: abtest.Error => errResponse(e)
+    result.flatMap(t => Ok(toJson(t))).recoverWith { case e: abtest.Error =>
+      errResponse(e)
     }
   }
 
@@ -120,9 +120,8 @@ class AbtestService[F[_]: Async](
     Router("/internal/" -> internal).orElse(public).orNotFound
 
   def public =
-    HttpRoutes.of[F] {
-      case req @ POST -> Root / "users" / "groups" / "query" =>
-        req.as[UserGroupQuery] >>= (ugq => respond(api.getGroupsWithMeta(ugq)))
+    HttpRoutes.of[F] { case req @ POST -> Root / "users" / "groups" / "query" =>
+      req.as[UserGroupQuery] >>= (ugq => respond(api.getGroupsWithMeta(ugq)))
     }
 
   def readonly: HttpRoutes[F] =

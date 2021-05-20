@@ -1,8 +1,8 @@
-package com.iheart.thomas.stream
+package com.iheart.thomas
+package stream
 
 import cats.{Monad, MonadThrow}
 import cats.effect.Timer
-import com.iheart.thomas.{ArmName, FeatureName, utils.time}
 import com.iheart.thomas.analysis.{
   AccumulativeKPIQueryRepo,
   KPI,

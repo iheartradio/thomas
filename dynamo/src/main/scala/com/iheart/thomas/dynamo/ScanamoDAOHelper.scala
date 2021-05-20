@@ -1,4 +1,5 @@
-package com.iheart.thomas.dynamo
+package com.iheart.thomas
+package dynamo
 
 import cats.effect.{Async, Concurrent, Timer}
 import cats.implicits._
@@ -13,7 +14,6 @@ import software.amazon.awssdk.services.dynamodb.model.{
   ResourceNotFoundException,
   ScalarAttributeType
 }
-import com.iheart.thomas.utils.time
 import com.iheart.thomas.dynamo.ScanamoDAOHelper.NotFound
 import org.scanamo.ops.ScanamoOps
 import org.scanamo.syntax._

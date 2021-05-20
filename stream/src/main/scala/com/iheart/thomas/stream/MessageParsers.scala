@@ -31,6 +31,28 @@ trait TimeStampParser[F[_], Message] {
     ): F[Instant]
 }
 
+object TimeStampParser {
+
+  case class InvalidTimeStamp(path: String, value: String)
+      extends RuntimeException
+      with NoStackTrace
+  def fromField[F[_]: MonadThrow](fieldPath: String): TimeStampParser[F, JValue] =
+    new TimeStampParser[F, JValue] {
+      import JValueSyntax._
+      def parse(m: JValue): F[Instant] =
+        m.getPath(fieldPath)
+          .getLong
+          .map(ts => Instant.ofEpochMilli(ts))
+          .liftTo[F](
+            InvalidTimeStamp(
+              fieldPath,
+              m.getPath(fieldPath).getString.getOrElse("")
+            )
+          )
+    }
+
+}
+
 trait KpiEventParser[F[_], Message, Event, K <: KPI] {
   def apply(k: K): Message => F[List[Event]]
 }

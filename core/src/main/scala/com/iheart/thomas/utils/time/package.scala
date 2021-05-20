@@ -18,6 +18,12 @@ package object time {
       ZoneId.systemDefault()
     )
 
+  def first(a: Instant, b: Instant): Instant =
+    if (a.isBefore(b)) a else b
+
+  def last(a: Instant, b: Instant): Instant =
+    if (a.isAfter(b)) a else b
+
   implicit class InstantOps(private val me: Instant) extends AnyVal {
     def toOffsetDateTimeUTC = me.atOffset(ZoneOffset.UTC)
 

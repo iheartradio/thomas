@@ -5,7 +5,7 @@ package monitor
 import com.iheart.thomas.analysis.Probability
 import cats.implicits._
 import ExperimentKPIState.{ArmState, Key}
-import cats.{Functor, MonadThrow, Applicative}
+import cats.{Applicative, Functor, MonadThrow}
 import cats.effect.Timer
 import com.iheart.thomas.abtest.Error.NotFound
 
@@ -14,6 +14,7 @@ import java.time.Instant
 case class ExperimentKPIState[+KS <: KPIStats](
     key: Key,
     arms: List[ArmState[KS]],
+//    dataPeriod: Period,
     lastUpdated: Instant,
     start: Instant) {
 
