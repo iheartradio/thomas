@@ -15,7 +15,7 @@ import com.iheart.thomas.analysis.{
 }
 import cats.implicits._
 import fs2.Stream
-import com.iheart.thomas.TimeUtil
+import com.iheart.thomas.utils.time
 import com.iheart.thomas.analysis.bayesian.{KPIIndicator, Variable}
 import com.iheart.thomas.stream.JobSpec.ProcessSettings
 import com.iheart.thomas.testkit.MockQueryAccumulativeKPIAlg.MockData

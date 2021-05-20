@@ -38,6 +38,9 @@ object DynamoFormats {
         _.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
       )
 
+  implicit val rangeFormat: DynamoFormat[Range] =
+    deriveDynamoFormat[Range]
+
   implicit val conversionsSfc: DynamoFormat[Conversions] =
     deriveDynamoFormat[Conversions]
 

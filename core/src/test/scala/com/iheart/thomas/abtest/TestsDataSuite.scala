@@ -11,7 +11,7 @@ import org.scalacheck.Arbitrary
 import scala.concurrent.duration._
 import org.scalacheck.Gen._
 
-import TimeUtil._
+import utils.time._
 
 class TestsDataSuite
     extends AnyFreeSpec

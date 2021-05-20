@@ -19,7 +19,7 @@ import com.iheart.thomas.abtest.model.{
 import com.iheart.thomas.testkit.Factory.{now, _}
 import org.scalatest.matchers.should.Matchers
 import cats.implicits._
-import TimeUtil._
+import utils.time._
 import cats.MonadError
 
 import concurrent.duration._
@@ -169,9 +169,8 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
 
             } yield (r, t)
           }
-          .asserting {
-            case (r, t) =>
-              r.groups.contains(t.data.feature) shouldBe true
+          .asserting { case (r, t) =>
+            r.groups.contains(t.data.feature) shouldBe true
           }
       }
 
@@ -197,9 +196,8 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
               )
             } yield (r, t)
           }
-          .asserting {
-            case (r, t) =>
-              r.groups.contains(t.data.feature) shouldBe false
+          .asserting { case (r, t) =>
+            r.groups.contains(t.data.feature) shouldBe false
 
           }
       }
@@ -299,8 +297,8 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
                     true
                   )
                   .as("fail")
-                  .recover {
-                    case CannotUpdateExpiredTest(_) => "success"
+                  .recover { case CannotUpdateExpiredTest(_) =>
+                    "success"
                   }
 
             } yield r

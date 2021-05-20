@@ -3,7 +3,7 @@ package com.iheart.thomas.stream
 import cats.Functor
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
-import com.iheart.thomas.TimeUtil.InstantOps
+import com.iheart.thomas.utils.time.InstantOps
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.stream.JobEvent.RunningJobsUpdated
 import com.iheart.thomas.stream.JobSpec.{
@@ -13,7 +13,7 @@ import com.iheart.thomas.stream.JobSpec.{
   UpdateKPIPrior
 }
 import com.iheart.thomas.tracking.EventLogger
-import com.iheart.thomas.{FeatureName, TimeUtil}
+import com.iheart.thomas.{FeatureName, utils.time}
 import com.typesafe.config.Config
 import fs2._
 import pureconfig.ConfigSource
@@ -155,7 +155,7 @@ object JobAlg {
               Stream
                 .fixedDelay[F](cfg.jobCheckFrequency)
                 .evalMap(_ =>
-                  TimeUtil.now[F].flatMap { now =>
+                  utils.time.now[F].flatMap { now =>
                     dao.all.map(_.filter { j =>
                       j.checkedOut.fold(true)(lastCheckedOut =>
                         now.isAfter(
@@ -179,7 +179,7 @@ object JobAlg {
               ) { (memo, newAvailable) =>
                 val currentlyRunning = memo._1
                 for {
-                  now <- TimeUtil.now[F]
+                  now <- utils.time.now[F]
                   updatedRunning <-
                     currentlyRunning.traverseFilter(dao.updateCheckedOut(_, now))
                   newlyCheckedout <-

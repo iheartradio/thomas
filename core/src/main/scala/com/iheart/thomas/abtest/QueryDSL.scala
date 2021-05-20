@@ -6,7 +6,7 @@ import java.time.{Instant, OffsetDateTime}
 import model._
 import lihua.{Entity, EntityDAO}
 import _root_.play.api.libs.json.{JsObject, Json, Writes}
-import TimeUtil._
+import utils.time._
 import scala.concurrent.duration.FiniteDuration
 
 object QueryDSL {

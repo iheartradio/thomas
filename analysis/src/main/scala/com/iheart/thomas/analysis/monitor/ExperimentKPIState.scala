@@ -39,7 +39,7 @@ object ExperimentKPIState {
   def init[F[_]: Timer: Functor, KS <: KPIStats](
       key: Key
     ): F[ExperimentKPIState[KS]] =
-    TimeUtil
+    utils.time
       .now[F]
       .map(now => ExperimentKPIState[KS](key, Nil, now, now))
 

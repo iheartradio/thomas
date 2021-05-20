@@ -2,7 +2,7 @@ package com.iheart.thomas.stream
 
 import cats.{Monad, MonadThrow}
 import cats.effect.Timer
-import com.iheart.thomas.{ArmName, FeatureName, TimeUtil}
+import com.iheart.thomas.{ArmName, FeatureName, utils.time}
 import com.iheart.thomas.analysis.{
   AccumulativeKPIQueryRepo,
   KPI,
@@ -91,7 +91,7 @@ object KPIEventSource {
                 .flatMap(_.liftTo[F](UnknownQueryName(k.queryName)))
             )
             .flatMap { query =>
-              val signalF = TimeUtil
+              val signalF = utils.time
                 .now[F]
                 .map((query, _))
 

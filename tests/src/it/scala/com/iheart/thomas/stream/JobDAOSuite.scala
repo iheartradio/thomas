@@ -3,7 +3,7 @@ package com.iheart.thomas.stream
 import cats.effect.{IO, Resource}
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.implicits._
-import com.iheart.thomas.TimeUtil.epochDay
+import com.iheart.thomas.utils.time.epochDay
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.dynamo.AdminDAOs
 import com.iheart.thomas.stream.JobSpec.{ProcessSettingsOptional, UpdateKPIPrior}

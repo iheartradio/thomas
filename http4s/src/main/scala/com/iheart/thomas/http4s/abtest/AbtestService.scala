@@ -13,7 +13,7 @@ import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 import com.iheart.thomas.abtest.{AbtestAlg, Error}
 import Error.{NotFound => APINotFound}
 import com.iheart.thomas.http4s.MongoResources
-import com.iheart.thomas.{GroupName, TimeUtil, UserId, abtest}
+import com.iheart.thomas.{GroupName, utils.time, UserId, abtest}
 import com.typesafe.config.Config
 import lihua.EntityId
 import lihua.mongo.JsonFormats._
@@ -137,7 +137,7 @@ class AbtestService[F[_]: Async](
 
       case GET -> Root / "tests" :? at(atL) +& endAfter(eAL) =>
         respond(
-          eAL.fold(api.getAllTests(atL.map(TimeUtil.toDateTime))) { ea =>
+          eAL.fold(api.getAllTests(atL.map(utils.time.toDateTime))) { ea =>
             api.getAllTestsEndAfter(ea)
           }
         )

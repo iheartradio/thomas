@@ -2,7 +2,7 @@ package com.iheart.thomas.testkit
 
 import cats.effect.{Sync, Timer}
 import cats.implicits._
-import com.iheart.thomas.TimeUtil
+import com.iheart.thomas.utils.time
 import com.iheart.thomas.abtest.Error.NotFound
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
@@ -107,7 +107,7 @@ object MapBasedDAOs {
         )(updateArms: List[ArmState[KS]] => List[ArmState[KS]]
         ): F[ExperimentKPIState[KS]] =
         for {
-          now <- TimeUtil.now[F]
+          now <- utils.time.now[F]
           s <- get(key)
           r <- update(
             s.copy(
