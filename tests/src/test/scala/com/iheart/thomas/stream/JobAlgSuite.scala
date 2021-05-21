@@ -82,7 +82,7 @@ abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
 
   def event(timeStamp: Instant, vs: (String, String)*): JObject =
     JObject.fromSeq(
-      (("timeStamp" -> timeStamp.getEpochSecond.toString) :: vs.toList).map {
+      (("timeStamp" -> timeStamp.toEpochMilli.toString) :: vs.toList).map {
         case (k, v) =>
           k -> (JString(v): JValue)
       }

@@ -127,7 +127,7 @@ object KPIEventSource {
             pulse(k)
               .evalMap { case (query, at) =>
                 query(k, feature, at)
-                  .map(_.toList.map { case (arm, samples) =>
+                  .map(_.map { case (arm, samples) =>
                     ArmKPIEvents(arm, NonEmptyChain(samples), at)
                   })
                   .flatTap { r =>

@@ -13,13 +13,14 @@ includedArms: Set[ArmName] = Set.empty
     <div class="card-header">
        KPI stats for <a class="text-primary" href=@env.routes.analysisOf(state.key.feature)
     >@state.key.feature</a> on <a href=@env.routes.kpi(state.key.kpi) class="text-secondary">@state.key.kpi</a>
-        from @dateTimeMid(state.start) to @dateTimeMid(state.lastUpdated)
+        from @formatDate(state.dataPeriod.from) to @formatDate(state.dataPeriod.to)
     </div>
     <div class="card-body">
         @if(showCommands) {
         <form action="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/evaluate" >
         }
         <div class="d-flex mt-2 flex-wrap">
+
             @for(arm <- state.arms.sortBy(_.name)) {
                 <div class="mr-1 p-3 form-check form-check-inline">
                     <input class="form-check-input"

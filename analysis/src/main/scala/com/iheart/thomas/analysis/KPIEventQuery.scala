@@ -18,5 +18,5 @@ trait KPIEventQuery[F[_], K <: KPI, Event] {
       k: K,
       feature: FeatureName,
       at: Instant
-    ): F[Map[ArmName, Event]]
+    ): F[List[(ArmName, Event)]]
 }

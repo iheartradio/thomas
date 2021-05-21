@@ -61,7 +61,7 @@ object TestMessageKafkaProducer extends IOApp {
       |   $eventString,
       |   "treatment-groups": {
       |      $groupValues,
-      |      timeStamp: ${Instant.now.getEpochSecond}
+      |      timeStamp: ${Instant.now.toEpochMilli}
       |    }
       |}
       |""".stripMargin
