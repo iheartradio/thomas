@@ -37,6 +37,7 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 import ThrowableExtension._
 import com.iheart.thomas.stream.ArmParser.JValueArmParser
 import com.iheart.thomas.analysis.AccumulativeKPIQueryRepo
+import com.iheart.thomas.stream.TimeStampParser.JValueTimeStampParser
 import com.iheart.thomas.tracking.EventLogger
 
 class AdminUI[F[_]: MonadThrow](
@@ -99,7 +100,7 @@ object AdminUI {
 
   def resource[
       F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger
-        : AccumulativeKPIQueryRepo: JValueArmParser
+        : AccumulativeKPIQueryRepo: JValueArmParser: JValueTimeStampParser
     ](implicit dc: DynamoDbAsyncClient,
       cfg: AdminUIConfig,
       config: Config,
@@ -135,7 +136,7 @@ object AdminUI {
 
   def resourceFromDynamo[
       F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger
-        : AccumulativeKPIQueryRepo: JValueArmParser
+        : AccumulativeKPIQueryRepo: JValueArmParser: JValueTimeStampParser
     ](implicit
       cfg: Config,
       adminUIConfig: AdminUIConfig,
@@ -151,7 +152,7 @@ object AdminUI {
       F[_]: ConcurrentEffect
         : Timer: ContextShift: EventLogger
         : AccumulativeKPIQueryRepo
-        : JValueArmParser
+        : JValueArmParser: JValueTimeStampParser
     ](implicit dc: DynamoDbAsyncClient,
       executionContext: ExecutionContext
     ): Resource[F, ExitCode] = {
@@ -166,7 +167,7 @@ object AdminUI {
     */
   def serverResource[
       F[_]: ConcurrentEffect: Timer: ContextShift: EventLogger
-        : AccumulativeKPIQueryRepo: JValueArmParser
+        : AccumulativeKPIQueryRepo: JValueArmParser: JValueTimeStampParser
     ](implicit
       adminCfg: AdminUIConfig,
       config: Config,

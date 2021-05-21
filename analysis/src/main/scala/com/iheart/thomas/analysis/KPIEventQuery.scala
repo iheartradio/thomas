@@ -12,11 +12,11 @@ trait KPIEventQuery[F[_], K <: KPI, Event] {
   def apply(
       k: K,
       at: Instant
-    ): F[List[Event]]
+    ): F[Event]
 
   def apply(
       k: K,
       feature: FeatureName,
       at: Instant
-    ): F[List[(ArmName, Event)]]
+    ): F[Map[ArmName, Event]]
 }

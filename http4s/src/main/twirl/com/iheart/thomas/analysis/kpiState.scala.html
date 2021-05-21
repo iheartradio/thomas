@@ -16,55 +16,51 @@ includedArms: Set[ArmName] = Set.empty
         from @dateTimeMid(state.start) to @dateTimeMid(state.lastUpdated)
     </div>
     <div class="card-body">
-        @if(state.arms.nonEmpty){
-            @if(showCommands) {
-            <form action="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/evaluate" >
-            }
-            <div class="d-flex mt-2 flex-wrap">
-                @for(arm <- state.arms.sortBy(_.name)) {
-                    <div class="mr-1 p-3 form-check form-check-inline">
-                        <input class="form-check-input"
-                               type="checkbox"
-                               id="includeGroupCB@arm.name.hashCode"
-                               name="includedArms"
-                               title="Include in evaluation"
-                               @if((arm.readyForEvaluation && includedArms.isEmpty) || includedArms.contains(arm.name)) {
-                                 checked
-                               }
-                               value="@arm.name">
-                        <label class="form-check-label" for="includeGroupCB@arm.name.hashCode">
-                            <h6>Group <span class="text-secondary">@arm.name</span> </h6>
-                        </label>
-                        @arm.kpiStats match {
-                            case (c: Conversions) => {
-                                @conversionsStats(c)
-                            }
-                            case (s: PerUserSamplesLnSummary) => {
-                                @perUserSamplesSummary(s)
-                            }
-                        }
-
-                    </div>
-                }
-            </div>
-            @if(showCommands) {
-                <div class="text-end">
-                    <button class="btn btn-primary mr-3" title="Detailed Evaluation" type="submit">
-                    <i class="bi bi-graph-up" ></i> Evaluate</button>
-                    <a href="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/reset"
-                       class="btn btn-warning" title="Reset the state" role="button"
-                       onclick="return confirm('Please confirm you want reset @state.key.kpi stats for @state.key.feature ')"
-                    >
-                        <i class="bi bi-trash" ></i>
-                        Reset</a>
-                </div>
-            </form>
-            }
-
-        } else {
-
-          <h5 class="text-warning">There is no data collected yet.</h5>
+        @if(showCommands) {
+        <form action="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/evaluate" >
         }
+        <div class="d-flex mt-2 flex-wrap">
+            @for(arm <- state.arms.sortBy(_.name)) {
+                <div class="mr-1 p-3 form-check form-check-inline">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           id="includeGroupCB@arm.name.hashCode"
+                           name="includedArms"
+                           title="Include in evaluation"
+                           @if((arm.readyForEvaluation && includedArms.isEmpty) || includedArms.contains(arm.name)) {
+                             checked
+                           }
+                           value="@arm.name">
+                    <label class="form-check-label" for="includeGroupCB@arm.name.hashCode">
+                        <h6>Group <span class="text-secondary">@arm.name</span> </h6>
+                    </label>
+                    @arm.kpiStats match {
+                        case (c: Conversions) => {
+                            @conversionsStats(c)
+                        }
+                        case (s: PerUserSamplesLnSummary) => {
+                            @perUserSamplesSummary(s)
+                        }
+                    }
+
+                </div>
+            }
+        </div>
+        @if(showCommands) {
+            <div class="text-end">
+                <button class="btn btn-primary mr-3" title="Detailed Evaluation" type="submit">
+                <i class="bi bi-graph-up" ></i> Evaluate</button>
+                <a href="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/reset"
+                   class="btn btn-warning" title="Reset the state" role="button"
+                   onclick="return confirm('Please confirm you want reset @state.key.kpi stats for @state.key.feature ')"
+                >
+                    <i class="bi bi-trash" ></i>
+                    Reset</a>
+            </div>
+        </form>
+        }
+
+
 
 
     </div>

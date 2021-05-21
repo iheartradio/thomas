@@ -1,6 +1,7 @@
 package com.iheart.thomas
 package dynamo
 
+import cats.data.NonEmptyList
 import com.iheart.thomas.admin.{AuthRecord, PassResetToken, Role, User}
 import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.bayesian.models._
@@ -37,6 +38,13 @@ object DynamoFormats {
         (s: String) =>
           OffsetDateTime.parse(s, DateTimeFormatter.ISO_OFFSET_DATE_TIME),
         _.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+      )
+
+  implicit def nonEmptyDynamoFormat[A: DynamoFormat]: DynamoFormat[NonEmptyList[A]] =
+    DynamoFormat
+      .coercedXmap[NonEmptyList[A], List[A], IllegalArgumentException](
+        NonEmptyList.fromListUnsafe,
+        _.toList
       )
 
   implicit val rangeFormat: DynamoFormat[Period] =

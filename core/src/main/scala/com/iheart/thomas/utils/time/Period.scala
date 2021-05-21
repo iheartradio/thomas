@@ -1,7 +1,8 @@
 package com.iheart.thomas.utils.time
 
-import cats.{Reducible, Semigroup}
+import cats.{Foldable, Reducible, Semigroup}
 import cats.implicits._
+
 import java.time.Instant
 
 case class Period(from: Instant, to: Instant) {
@@ -32,4 +33,16 @@ object Period {
 
   def fromStamps[F[_]: Reducible](stamps: F[Instant]): Period =
     stamps.reduceLeftTo(i => Period(i, i))(_.extendsToInclude(_))
+
+  def of[F[_]: Foldable, A](
+      withStamps: F[A],
+      stamp: A => Instant
+    ): Option[Period] =
+    withStamps.reduceLeftToOption { a =>
+      val s = stamp(a)
+      Period(s, s)
+    } { (p, a) =>
+      p.extendsToInclude(stamp(a))
+    }
+
 }

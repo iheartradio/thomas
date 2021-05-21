@@ -38,15 +38,14 @@ abstract class ExperimentKPIStateDAOSuite extends AsyncIOSpec with Matchers {
               ExperimentKPIState(key, Nil, Instant.now, Instant.now).pure[IO]
             )
             _ <- IO.sleep(100.millis)
-            updated <- dao.update(key) { _ =>
+            updated <- dao.upsert(key) { _ =>
               List(ArmState("A", Conversions(1, 4), None))
             }
           } yield (init, updated)
         }
-        .asserting {
-          case (init, updated) =>
-            updated.lastUpdated.isAfter(init.lastUpdated) shouldBe true
-            updated.arms shouldBe List(ArmState("A", Conversions(1, 4), None))
+        .asserting { case (init, updated) =>
+          updated.lastUpdated.isAfter(init.lastUpdated) shouldBe true
+          updated.arms shouldBe List(ArmState("A", Conversions(1, 4), None))
         }
 
     }
@@ -57,12 +56,12 @@ abstract class ExperimentKPIStateDAOSuite extends AsyncIOSpec with Matchers {
       daoR
         .use { implicit dao =>
           for {
-            _ <- dao.init(key)
-            _ <- dao.update(key)(
+            _ <- dao.ensureWithInit(key)
+            _ <- dao.upsert(key)(
               KPIProcessAlg
                 .updateConversionArms(List("A" -> false, "A" -> false, "A" -> true))
             )
-            _ <- dao.update(key)(
+            _ <- dao.upsert(key)(
               KPIProcessAlg
                 .updateConversionArms(List("B" -> false, "B" -> false, "A" -> true))
             )
@@ -97,11 +96,11 @@ class ExperimentKPIStateDAODynamoSuite extends ExperimentKPIStateDAOSuite {
     daoR
       .use { implicit dao =>
         for {
-          _ <- dao.init(key)
+          _ <- dao.ensureWithInit(key)
           _ <-
             List
               .fill(20)(
-                dao.update(key)(
+                dao.upsert(key)(
                   KPIProcessAlg.updateConversionArms(
                     List("A" -> false, "A" -> false, "A" -> true)
                   )

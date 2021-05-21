@@ -65,10 +65,9 @@ trait JobAlg[F[_]] {
 object JobAlg {
   def chunkEvents[F[_]: Timer: Concurrent, E](
       processSettings: ProcessSettings
-    ): Pipe[F, List[E], Chunk[E]] =
-    (input: Stream[F, List[E]]) =>
+    ): Pipe[F, E, Chunk[E]] =
+    (input: Stream[F, E]) =>
       input
-        .flatMap(le => Stream.fromIterator(le.iterator))
         .groupWithin(
           processSettings.eventChunkSize,
           processSettings.frequency

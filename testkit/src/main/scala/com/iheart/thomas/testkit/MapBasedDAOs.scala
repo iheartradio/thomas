@@ -116,10 +116,6 @@ object MapBasedDAOs {
             )
           )
         } yield r
-
-      def init(key: Key): F[ExperimentKPIState[KS]] =
-        ensure(key)(ExperimentKPIState.init[F, KS](key))
-
     }
 
   def conversionKPIAlg[F[_]](

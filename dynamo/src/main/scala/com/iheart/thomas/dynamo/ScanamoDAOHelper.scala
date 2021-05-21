@@ -178,24 +178,43 @@ trait AtomicUpdatable[F[_], A, K] {
     )(implicit T: Timer[F],
       F: Async[F],
       A: WithTimeStamp[A]
-    ): F[A] = {
-    val updateF = for {
-      existing <- get(k)
-      now <- utils.time.now[F]
-      r <- toF(
-        sc.exec(
-          table
-            .when(lastUpdatedFieldName === A.lastUpdated(existing))
-            .update(
-              keyName === stringKey(k),
-              updateExpression(existing)
-                and set(lastUpdatedFieldName, now)
-            )
-        )
+    ): F[A] = atomicUpsert(k, retryPolicy)(updateExpression)(
+    F.raiseError(
+      NotFound(
+        s"No record to be updated in table $tableName whose $keyName is '${stringKey(k)}'. "
       )
-    } yield r
+    )
+  )
 
-    retryPolicy.fold(updateF)(rp =>
+  def atomicUpsert(
+      k: K,
+      retryPolicy: Option[RetryPolicy[F]] = None
+    )(updateExpression: A => UpdateExpression
+    )(ifEmpty: F[A]
+    )(implicit T: Timer[F],
+      F: Async[F],
+      A: WithTimeStamp[A]
+    ): F[A] = {
+    val upsertF =
+      find(k).flatMap {
+        case Some(existing) =>
+          utils.time.now[F].flatMap { now =>
+            toF(
+              sc.exec(
+                table
+                  .when(lastUpdatedFieldName === A.lastUpdated(existing))
+                  .update(
+                    keyName === stringKey(k),
+                    updateExpression(existing)
+                      and set(lastUpdatedFieldName, now)
+                  )
+              )
+            )
+          }
+        case None => ifEmpty.flatMap(insert)
+      }
+
+    retryPolicy.fold(upsertF)(rp =>
       retryingOnSomeErrors(
         rp,
         { (e: Throwable) =>
@@ -205,7 +224,7 @@ trait AtomicUpdatable[F[_], A, K] {
           }
         },
         (_: Throwable, _) => Async[F].unit
-      )(updateF)
+      )(upsertF)
     )
 
   }

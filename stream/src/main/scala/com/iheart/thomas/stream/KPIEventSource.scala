@@ -1,6 +1,7 @@
 package com.iheart.thomas
 package stream
 
+import cats.data.NonEmptyChain
 import cats.{Monad, MonadThrow}
 import cats.effect.Timer
 import com.iheart.thomas.analysis.{
@@ -24,11 +25,11 @@ import java.time.Instant
 import scala.util.control.NoStackTrace
 
 trait KPIEventSource[F[_], K <: KPI, Message, Event] {
-  def events(k: K): Pipe[F, Message, List[Event]]
+  def events(k: K): Pipe[F, Message, Event]
   def events(
       k: K,
       feature: FeatureName
-    ): Pipe[F, Message, List[(ArmName, Event)]]
+    ): Pipe[F, Message, ArmKPIEvents[Event]]
 }
 
 object KPIEventSource {
@@ -39,34 +40,38 @@ object KPIEventSource {
       Event
     ]: KPIEventSource[F, K, Message, Event] =
     new KPIEventSource[F, K, Message, Event] {
-      def events(k: K): Pipe[F, Message, List[Event]] = _ => Stream.empty
+      def events(k: K): Pipe[F, Message, Event] = _ => Stream.empty
       def events(
           k: K,
           feature: FeatureName
-        ): Pipe[F, Message, List[(ArmName, Event)]] = _ => Stream.empty
+        ): Pipe[F, Message, ArmKPIEvents[Event]] = _ => Stream.empty
     }
 
   implicit def fromParsers[F[_]: Monad, K <: KPI, Message, Event](
       implicit eventParser: KpiEventParser[F, Message, Event, K],
-      armParser: ArmParser[F, Message]
+      armParser: ArmParser[F, Message],
+      timeStampParser: TimeStampParser[F, Message]
     ): KPIEventSource[F, K, Message, Event] =
     new KPIEventSource[F, K, Message, Event] {
-      def events(k: K): Pipe[F, Message, List[Event]] = {
+      def events(k: K): Pipe[F, Message, Event] = {
         val parser = eventParser(k)
-        (_: Stream[F, Message]).evalMap(parser)
+        (_: Stream[F, Message]).evalMap(parser).flatMap(l => Stream(l: _*))
       }
 
       def events(
           k: K,
           feature: FeatureName
-        ): Pipe[F, Message, List[(ArmName, Event)]] = {
+        ): Pipe[F, Message, ArmKPIEvents[Event]] = {
         val parser = eventParser(k)
         (input: Stream[F, Message]) =>
           input
-            .evalMap { m =>
+            .evalMapFilter { m =>
               armParser.parse(m, feature).flatMap { armO =>
-                armO.toList.flatTraverse { arm =>
-                  parser(m).map(_.map((arm, _)))
+                armO.flatTraverse { arm =>
+                  (parser(m), timeStampParser(m))
+                    .mapN { (es, ts) =>
+                      NonEmptyChain.fromSeq(es).map(ArmKPIEvents(arm, _, ts))
+                    }
                 }
               }
             }
@@ -104,26 +109,36 @@ object KPIEventSource {
 
         def events(
             k: QueryAccumulativeKPI
-          ): Pipe[F, Message, List[PerUserSamples]] =
+          ): Pipe[F, Message, PerUserSamples] =
           _ =>
-            pulse(k).evalMap { case (query, now) =>
-              query(k, now).flatTap { r =>
-                logger(EventsQueried(k, r.length))
+            pulse(k).evalMap { case (query, at) =>
+              query(k, at).flatTap { r =>
+                logger(EventsQueried(k, r.values.length))
               }
             }
 
         def events(
             k: QueryAccumulativeKPI,
             feature: FeatureName
-          ): Pipe[F, Message, List[(ArmName, PerUserSamples)]] =
+          ): Pipe[F, Message, ArmKPIEvents[PerUserSamples]] =
           _ =>
-            pulse(k).evalMap { case (query, now) =>
-              query(k, feature, now).flatTap { r =>
-                logger(
-                  EventsQueriedForFeature(k, feature, r.map(_.map(_.values.length)))
-                )
+            pulse(k)
+              .evalMap { case (query, at) =>
+                query(k, feature, at)
+                  .map(_.toList.map { case (arm, samples) =>
+                    ArmKPIEvents(arm, NonEmptyChain(samples), at)
+                  })
+                  .flatTap { r =>
+                    logger(
+                      EventsQueriedForFeature(
+                        k,
+                        feature,
+                        r.map(ae => (ae.armName, ae.es.head.values.length))
+                      )
+                    )
+                  }
               }
-            }
+              .flatMap(l => Stream(l: _*))
       }
   }
 

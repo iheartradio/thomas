@@ -26,20 +26,21 @@ object ArmParser {
 }
 
 trait TimeStampParser[F[_], Message] {
-  def parse(
+  def apply(
       m: Message
     ): F[Instant]
 }
 
 object TimeStampParser {
-
+  type JValueTimeStampParser[F[_]] = TimeStampParser[F, JValue]
   case class InvalidTimeStamp(path: String, value: String)
       extends RuntimeException
       with NoStackTrace
-  def fromField[F[_]: MonadThrow](fieldPath: String): TimeStampParser[F, JValue] =
+
+  def fromField[F[_]: MonadThrow](fieldPath: String): JValueTimeStampParser[F] =
     new TimeStampParser[F, JValue] {
       import JValueSyntax._
-      def parse(m: JValue): F[Instant] =
+      def apply(m: JValue): F[Instant] =
         m.getPath(fieldPath)
           .getLong
           .map(ts => Instant.ofEpochMilli(ts))

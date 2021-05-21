@@ -1,12 +1,17 @@
-package com.iheart.thomas.stream
+package com.iheart.thomas
+package stream
 
+import cats.data.NonEmptyList
 import cats.{Foldable, Monoid}
 import cats.effect.{Concurrent, Timer}
 import cats.implicits._
 import com.iheart.thomas.analysis.bayesian.Posterior
-import com.iheart.thomas.{ArmName, FeatureName}
 import com.iheart.thomas.analysis.monitor.ExperimentKPIStateDAO
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{
+  ArmState,
+  ArmsState,
+  Key
+}
 import com.iheart.thomas.analysis.{
   Aggregation,
   AllKPIRepo,
@@ -20,6 +25,7 @@ import com.iheart.thomas.analysis.{
   QueryAccumulativeKPI
 }
 import com.iheart.thomas.stream.JobSpec.ProcessSettings
+import com.iheart.thomas.utils.time.Period
 import fs2.{Pipe, Stream}
 
 trait AllKPIProcessAlg[F[_], Message] {
@@ -52,34 +58,44 @@ trait KPIProcessAlg[F[_], Message, K <: KPI] {
 object KPIProcessAlg {
 
   private[thomas] def updateConversionArms[C[_]: Foldable](
-      events: C[(ArmName, ConversionEvent)]
-    )(existing: List[ArmState[Conversions]]
-    ): List[ArmState[Conversions]] = updateArms(events)(existing)
+      events: C[ArmKPIEvents[ConversionEvent]]
+    )(existing: ArmsState[Conversions]
+    ): ArmsState[Conversions] =
+    statsOf(events).fold(existing)(updateArms(_)(existing))
 
-  private def updateArms[C[_]: Foldable, E, KS <: KPIStats](
-      events: C[(ArmName, E)]
-    )(existing: List[ArmState[KS]]
-    )(implicit agg: Aggregation[E, KS],
+  private def statsOf[C[_]: Foldable, E, KS <: KPIStats](
+      events: C[ArmKPIEvents[E]]
+    )(implicit agg: Aggregation[E, KS]
+    ): Option[ArmsState[KS]] = {
+    NonEmptyList.fromList(
+      events
+        .foldMap { ake => Map(ake.armName -> ake.es) }
+        .toList
+        .map { case (name, es) =>
+          ArmState(name, agg(es), None)
+        }
+    )
+
+  }
+
+  private def updateArms[KS <: KPIStats](
+      newArmsState: ArmsState[KS]
+    )(existing: ArmsState[KS]
+    )(implicit
       KS: Monoid[KS]
-    ): List[ArmState[KS]] = {
-    val newStats: Map[ArmName, KS] = events
-      .foldMap { case (an, ce) => Map(an -> List(ce)) }
-      .mapValues(agg(_))
-
-    existing.map {
-      case ArmState(armName, c, l) =>
-        ArmState(
-          armName,
-          c |+| newStats.getOrElse(
-            armName,
-            KS.empty
-          ),
-          l
-        )
-    } ++ newStats.toList.mapFilter {
-      case (name, c) =>
-        if (existing.exists(_.name == name)) None
-        else Some(ArmState(name, c, None))
+    ): ArmsState[KS] = {
+    existing.map { case ArmState(armName, c, l) =>
+      ArmState(
+        armName,
+        c |+| newArmsState
+          .find(_.name == armName)
+          .map(_.kpiStats)
+          .getOrElse(KS.empty),
+        l
+      )
+    } ++ newArmsState.toList.mapFilter { as =>
+      if (existing.exists(_.name == as.name)) None
+      else Some(ArmState(as.name, as.kpiStats, None))
     }
   }
 
@@ -123,17 +139,25 @@ object KPIProcessAlg {
           feature: FeatureName,
           settings: ProcessSettings
         ): Pipe[F, Message, Unit] = { (input: Stream[F, Message]) =>
-        Stream.eval(stateDAO.init(Key(feature, kpi.name))) *>
-          input
-            .through(
-              eventSource.events(kpi, feature) andThen JobAlg.chunkEvents(settings)
-            )
-            .evalMap { chunk =>
-              stateDAO.update(Key(feature, kpi.name))(
-                updateArms(chunk)
-              )
+        input
+          .through(
+            eventSource.events(kpi, feature) andThen JobAlg.chunkEvents(settings)
+          )
+          .evalMapFilter { chunk =>
+            (
+              statsOf(chunk),
+              Period.of(chunk, (_: ArmKPIEvents[Event]).timeStamp)
+            ).traverseN { (chunkStats, chunkPeriod) =>
+              stateDAO.upsert(Key(feature, kpi.name)) { (existing, existingPeriod) =>
+                (
+                  updateArms(chunkStats)(existing),
+                  chunkPeriod |+| existingPeriod
+                )
+              }((chunkStats, chunkPeriod))
             }
-            .void
+
+          }
+          .void
 
       }
     }
