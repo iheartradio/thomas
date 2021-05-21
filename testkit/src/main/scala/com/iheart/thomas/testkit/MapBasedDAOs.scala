@@ -106,7 +106,7 @@ object MapBasedDAOs {
       def upsert(
           key: Key
         )(updateF: (ArmsState[KS], Period) => (ArmsState[KS], Period)
-        )(ifEmpty: (ArmsState[KS], Period)
+        )(ifEmpty: => (ArmsState[KS], Period)
         ): F[ExperimentKPIState[KS]] =
         for {
           now <- utils.time.now[F]

@@ -73,7 +73,9 @@ abstract class ExperimentKPIStateDAOSuite extends AsyncIOSpec with Matchers {
         }
         .asserting { case (init, updated) =>
           updated.lastUpdated.isAfter(init.lastUpdated) shouldBe true
-          updated.arms shouldBe List(ArmState("A", Conversions(1, 4), None))
+          updated.arms shouldBe NonEmptyList.one(
+            ArmState("A", Conversions(2, 8), None)
+          )
         }
 
     }
@@ -84,7 +86,6 @@ abstract class ExperimentKPIStateDAOSuite extends AsyncIOSpec with Matchers {
       daoR
         .use { implicit dao =>
           for {
-
             _ <- insert(key, stateOf(List("A" -> false, "A" -> false, "A" -> true)))
             _ <- update(key, stateOf(List("B" -> false, "B" -> false, "A" -> true)))
             updated <- dao.get(key)
@@ -131,7 +132,7 @@ class ExperimentKPIStateDAODynamoSuite extends ExperimentKPIStateDAOSuite {
         } yield updated
       }
       .asserting {
-        _.arms shouldBe List(
+        _.arms shouldBe NonEmptyList.one(
           ArmState("A", Conversions(20, 40), None)
         )
       }

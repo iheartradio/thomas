@@ -77,7 +77,7 @@ trait ExperimentKPIStateDAO[F[_], KS <: KPIStats] {
   def upsert(
       key: Key
     )(update: (ArmsState[KS], Period) => (ArmsState[KS], Period)
-    )(ifEmpty: (ArmsState[KS], Period)
+    )(ifEmpty: => (ArmsState[KS], Period)
     ): F[ExperimentKPIState[KS]]
 
   def delete(key: Key): F[Option[ExperimentKPIState[KS]]]

@@ -78,11 +78,12 @@ object AnalysisDAOs extends ScanamoManagement {
       perUserSamplesKPIStateTableName
     )
 
-  def experimentKPIStateDAO[F[_]: Async: Timer, KS <: KPIStats](
+  def experimentKPIStateDAO[F[_]: Timer, KS <: KPIStats](
       tableName: String
     )(implicit dynamoClient: DynamoDbAsyncClient,
       dynamoFormat: DynamoFormat[ExperimentKPIState[KS]],
-      armFormat: DynamoFormat[ArmState[KS]]
+      armFormat: DynamoFormat[ArmState[KS]],
+      F: Async[F]
     ): ExperimentKPIStateDAO[F, KS] =
     new ScanamoDAOHelperStringFormatKey[F, ExperimentKPIState[KS], Key](
       tableName,
@@ -97,7 +98,7 @@ object AnalysisDAOs extends ScanamoManagement {
       def upsert(
           key: Key
         )(update: (ArmsState[KS], Period) => (ArmsState[KS], Period)
-        )(ifEmpty: (ArmsState[KS], Period)
+        )(ifEmpty: => (ArmsState[KS], Period)
         ): F[ExperimentKPIState[KS]] = {
 
         atomicUpsert(key, Some(RetryPolicies.constantDelay[F](40.milliseconds))) {
@@ -105,7 +106,7 @@ object AnalysisDAOs extends ScanamoManagement {
             val (updatedArms, updatedPeriod) = update(state.arms, state.dataPeriod)
             set("arms", updatedArms) and
               set("dataPeriod", updatedPeriod)
-        }(ExperimentKPIState.init[F, KS](key, ifEmpty._1, ifEmpty._2))
+        }(F.defer(ExperimentKPIState.init[F, KS](key, ifEmpty._1, ifEmpty._2)))
       }
 
     }
