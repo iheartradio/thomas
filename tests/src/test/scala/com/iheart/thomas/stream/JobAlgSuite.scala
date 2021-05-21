@@ -24,7 +24,7 @@ import fs2.Stream
 
 import java.time.Instant
 import concurrent.duration._
-import com.iheart.thomas.testkit.ExampleArmParse._
+import com.iheart.thomas.testkit.ExampleParsers._
 import com.iheart.thomas.tracking.EventLogger
 
 abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
@@ -78,10 +78,16 @@ abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
     )
   )
 
-  def event(vs: (String, String)*) =
-    JObject.fromSeq(vs.toList.map { case (k, v) =>
-      k -> (JString(v): JValue)
-    })
+  def event(vs: (String, String)*): JObject = event(Instant.now, vs: _*)
+
+  def event(timeStamp: Instant, vs: (String, String)*): JObject =
+    JObject.fromSeq(
+      (("timeStamp" -> timeStamp.getEpochSecond.toString) :: vs.toList).map {
+        case (k, v) =>
+          k -> (JString(v): JValue)
+      }
+    )
+
   def settings(exp: Instant) = ProcessSettingsOptional(None, None, Some(exp))
 }
 

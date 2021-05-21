@@ -88,13 +88,13 @@ object MockQueryAccumulativeKPIAlg {
         k: K,
         feature: FeatureName,
         at: Instant
-      ): F[List[(ArmName, E)]] = {
+      ): F[Map[ArmName, E]] = {
       find(k, at)
         .collect {
           case (fn, am, data) if (fn == feature) => (am, data)
         }
+        .toMap
         .pure[F]
-
     }
   }
 }

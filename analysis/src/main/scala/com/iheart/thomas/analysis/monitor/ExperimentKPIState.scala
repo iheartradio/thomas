@@ -70,11 +70,6 @@ object ExperimentKPIState {
 
 trait ExperimentKPIStateDAO[F[_], KS <: KPIStats] {
 
-  private[analysis] def ensure(
-      key: Key
-    )(s: => F[ExperimentKPIState[KS]]
-    ): F[ExperimentKPIState[KS]]
-
   def get(key: Key): F[ExperimentKPIState[KS]]
   def all: F[Vector[ExperimentKPIState[KS]]]
   def find(key: Key): F[Option[ExperimentKPIState[KS]]]

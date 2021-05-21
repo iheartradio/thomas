@@ -111,11 +111,13 @@ object KPIEventSource {
             k: QueryAccumulativeKPI
           ): Pipe[F, Message, PerUserSamples] =
           _ =>
-            pulse(k).evalMap { case (query, at) =>
-              query(k, at).flatTap { r =>
-                logger(EventsQueried(k, r.values.length))
+            pulse(k)
+              .evalMap { case (query, at) =>
+                query(k, at).flatTap { r =>
+                  logger(EventsQueried(k, r.map(_.values.length).sum))
+                }
               }
-            }
+              .flatMap(Stream(_: _*))
 
         def events(
             k: QueryAccumulativeKPI,

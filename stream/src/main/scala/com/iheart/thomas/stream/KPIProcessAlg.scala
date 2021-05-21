@@ -15,9 +15,7 @@ import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{
 import com.iheart.thomas.analysis.{
   Aggregation,
   AllKPIRepo,
-  ConversionEvent,
   ConversionKPI,
-  Conversions,
   KPI,
   KPIName,
   KPIRepo,
@@ -57,13 +55,9 @@ trait KPIProcessAlg[F[_], Message, K <: KPI] {
 
 object KPIProcessAlg {
 
-  private[thomas] def updateConversionArms[C[_]: Foldable](
-      events: C[ArmKPIEvents[ConversionEvent]]
-    )(existing: ArmsState[Conversions]
-    ): ArmsState[Conversions] =
-    statsOf(events).fold(existing)(updateArms(_)(existing))
-
-  private def statsOf[C[_]: Foldable, E, KS <: KPIStats](
+  /** package private for testing purpose
+    */
+  private[thomas] def statsOf[C[_]: Foldable, E, KS <: KPIStats](
       events: C[ArmKPIEvents[E]]
     )(implicit agg: Aggregation[E, KS]
     ): Option[ArmsState[KS]] = {
@@ -78,9 +72,9 @@ object KPIProcessAlg {
 
   }
 
-  private def updateArms[KS <: KPIStats](
-      newArmsState: ArmsState[KS]
-    )(existing: ArmsState[KS]
+  private[thomas] def updateArms[KS <: KPIStats](
+      newArmsState: ArmsState[KS],
+      existing: ArmsState[KS]
     )(implicit
       KS: Monoid[KS]
     ): ArmsState[KS] = {
@@ -150,7 +144,7 @@ object KPIProcessAlg {
             ).traverseN { (chunkStats, chunkPeriod) =>
               stateDAO.upsert(Key(feature, kpi.name)) { (existing, existingPeriod) =>
                 (
-                  updateArms(chunkStats)(existing),
+                  updateArms(chunkStats, existing),
                   chunkPeriod |+| existingPeriod
                 )
               }((chunkStats, chunkPeriod))
