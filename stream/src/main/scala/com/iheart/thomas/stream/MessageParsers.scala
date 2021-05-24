@@ -8,6 +8,7 @@ import org.typelevel.jawn.ast.{JNull, JValue}
 
 import java.time.Instant
 import scala.annotation.implicitNotFound
+import scala.util.Try
 import scala.util.control.NoStackTrace
 import scala.util.matching.Regex
 
@@ -35,21 +36,25 @@ object TimeStampParser {
   type JValueTimeStampParser[F[_]] = TimeStampParser[F, JValue]
   case class InvalidTimeStamp(path: String, value: String)
       extends RuntimeException
-      with NoStackTrace
+      with NoStackTrace {
+    override def getMessage: String =
+      s"value $value at $path is an invalid timestamp, expecting epoc milliseconds"
+  }
 
   def fromField[F[_]: MonadThrow](fieldPath: String): JValueTimeStampParser[F] =
     new TimeStampParser[F, JValue] {
       import JValueSyntax._
-      def apply(m: JValue): F[Instant] =
-        m.getPath(fieldPath)
-          .getLong
+      def apply(m: JValue): F[Instant] = {
+        val jVal = m.getPath(fieldPath)
+        (jVal.getLong orElse jVal.getString.flatMap(s => Try(s.toLong).toOption))
           .map(ts => Instant.ofEpochMilli(ts))
           .liftTo[F](
             InvalidTimeStamp(
               fieldPath,
-              m.getPath(fieldPath).getString.getOrElse("")
+              m.toString
             )
           )
+      }
     }
 
 }

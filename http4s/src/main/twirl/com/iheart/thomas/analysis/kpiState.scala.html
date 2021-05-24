@@ -21,7 +21,7 @@ includedArms: Set[ArmName] = Set.empty
         }
         <div class="d-flex mt-2 flex-wrap">
 
-            @for(arm <- state.arms.sortBy(_.name)) {
+            @for(arm <- state.arms.sortBy(_.name).toList) {
                 <div class="mr-1 p-3 form-check form-check-inline">
                     <input class="form-check-input"
                            type="checkbox"

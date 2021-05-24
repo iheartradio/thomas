@@ -2,7 +2,7 @@ package com.iheart.thomas
 package stream
 
 import cats.data.NonEmptyChain
-import cats.{Monad, MonadThrow}
+import cats.MonadThrow
 import cats.effect.Timer
 import com.iheart.thomas.analysis.{
   AccumulativeKPIQueryRepo,
@@ -17,7 +17,8 @@ import cats.implicits._
 import com.iheart.thomas.stream.JobEvent.{
   EventQueryInitiated,
   EventsQueried,
-  EventsQueriedForFeature
+  EventsQueriedForFeature,
+  MessagesParseError
 }
 import com.iheart.thomas.tracking.EventLogger
 
@@ -47,9 +48,10 @@ object KPIEventSource {
         ): Pipe[F, Message, ArmKPIEvents[Event]] = _ => Stream.empty
     }
 
-  implicit def fromParsers[F[_]: Monad, K <: KPI, Message, Event](
+  implicit def fromParsers[F[_]: MonadThrow, K <: KPI, Message, Event](
       implicit eventParser: KpiEventParser[F, Message, Event, K],
       armParser: ArmParser[F, Message],
+      logger: EventLogger[F],
       timeStampParser: TimeStampParser[F, Message]
     ): KPIEventSource[F, K, Message, Event] =
     new KPIEventSource[F, K, Message, Event] {
@@ -66,14 +68,19 @@ object KPIEventSource {
         (input: Stream[F, Message]) =>
           input
             .evalMapFilter { m =>
-              armParser.parse(m, feature).flatMap { armO =>
-                armO.flatTraverse { arm =>
-                  (parser(m), timeStampParser(m))
-                    .mapN { (es, ts) =>
-                      NonEmptyChain.fromSeq(es).map(ArmKPIEvents(arm, _, ts))
-                    }
+              armParser
+                .parse(m, feature)
+                .flatMap { armO =>
+                  armO.flatTraverse { arm =>
+                    (parser(m), timeStampParser(m))
+                      .mapN { (es, ts) =>
+                        NonEmptyChain.fromSeq(es).map(ArmKPIEvents(arm, _, ts))
+                      }
+                  }
                 }
-              }
+                .recoverWith { case e: Throwable =>
+                  logger(MessagesParseError(e, m)) *> none.pure[F]
+                }
             }
       }
     }
