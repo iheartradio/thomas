@@ -22,7 +22,7 @@ object JsonMessageSubscriber {
           val consumerSettings =
             ConsumerSettings[F, Unit, String]
               .withEnableAutoCommit(true)
-              .withAutoOffsetReset(AutoOffsetReset.Earliest)
+              .withAutoOffsetReset(AutoOffsetReset.Latest)
               .withBootstrapServers(cfg.kafkaServers)
               .withGroupId(cfg.groupId)
 
