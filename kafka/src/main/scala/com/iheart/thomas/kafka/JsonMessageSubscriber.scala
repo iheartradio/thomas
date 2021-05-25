@@ -30,7 +30,7 @@ object JsonMessageSubscriber {
             .stream[F]
             .using(consumerSettings)
             .evalTap(_.subscribeTo(cfg.topic))
-            .map {
+            .flatMap {
               _.stream
                 .parEvalMap(cfg.parseParallelization) { r =>
                   ast.JParser
@@ -48,7 +48,6 @@ object JsonMessageSubscriber {
                 .flattenOption
 
             }
-            .flatten
 
         }
     }
