@@ -1,9 +1,10 @@
-package com.iheart.thomas.stream
+package com.iheart.thomas
+package stream
 
 import cats.Functor
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
-import com.iheart.thomas.TimeUtil.InstantOps
+import com.iheart.thomas.utils.time.InstantOps
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.stream.JobEvent.RunningJobsUpdated
 import com.iheart.thomas.stream.JobSpec.{
@@ -13,7 +14,6 @@ import com.iheart.thomas.stream.JobSpec.{
   UpdateKPIPrior
 }
 import com.iheart.thomas.tracking.EventLogger
-import com.iheart.thomas.{FeatureName, TimeUtil}
 import com.typesafe.config.Config
 import fs2._
 import pureconfig.ConfigSource
@@ -65,10 +65,9 @@ trait JobAlg[F[_]] {
 object JobAlg {
   def chunkEvents[F[_]: Timer: Concurrent, E](
       processSettings: ProcessSettings
-    ): Pipe[F, List[E], Chunk[E]] =
-    (input: Stream[F, List[E]]) =>
+    ): Pipe[F, E, Chunk[E]] =
+    (input: Stream[F, E]) =>
       input
-        .flatMap(le => Stream.fromIterator(le.iterator))
         .groupWithin(
           processSettings.eventChunkSize,
           processSettings.frequency
@@ -155,7 +154,7 @@ object JobAlg {
               Stream
                 .fixedDelay[F](cfg.jobCheckFrequency)
                 .evalMap(_ =>
-                  TimeUtil.now[F].flatMap { now =>
+                  utils.time.now[F].flatMap { now =>
                     dao.all.map(_.filter { j =>
                       j.checkedOut.fold(true)(lastCheckedOut =>
                         now.isAfter(
@@ -179,7 +178,7 @@ object JobAlg {
               ) { (memo, newAvailable) =>
                 val currentlyRunning = memo._1
                 for {
-                  now <- TimeUtil.now[F]
+                  now <- utils.time.now[F]
                   updatedRunning <-
                     currentlyRunning.traverseFilter(dao.updateCheckedOut(_, now))
                   newlyCheckedout <-
@@ -206,13 +205,19 @@ object JobAlg {
                 Stream
                   .eval(jobs.traverse(j => jobPipe(j)))
                   .flatMap { pipes =>
-                    (if (cfg.logEveryMessage)
-                       messageSubscriber.subscribe
-                         .flatTap(m =>
-                           Stream.eval(logger(JobEvent.MessageReceived(m)))
-                         )
-                     else messageSubscriber.subscribe)
-                      .broadcastTo(pipes: _*)
+                    val logPipeO: Option[Pipe[F, Message, Unit]] =
+                      cfg.logEveryNMessage.map { n =>
+                        (_: Stream[F, Message]).chunkN(n).evalMap { c =>
+                          c.head
+                            .traverse(m =>
+                              logger(JobEvent.MessagesReceived(m, c.size))
+                            )
+                            .void
+                        }
+                      }
+
+                    messageSubscriber.subscribe
+                      .broadcastTo((pipes ++ logPipeO.toList): _*)
                   }
             }
           }
@@ -221,7 +226,7 @@ object JobAlg {
 }
 
 /** @param jobCheckFrequency
-  *   how often it checks new available jobs or running jobs being stoped.
+  *   how often it checks new available jobs or running jobs being stopped.
   * @param jobProcessFrequency
   *   how often it does the task of a job.
   * @param jobObsoleteCount
@@ -235,7 +240,7 @@ case class JobRunnerConfig(
     jobObsoleteCount: Long,
     maxChunkSize: Int,
     jobProcessFrequency: FiniteDuration,
-    logEveryMessage: Boolean = false)
+    logEveryNMessage: Option[Int] = None)
 
 object JobRunnerConfig {
   def fromConfig[F[_]: Sync](cfg: Config): F[JobRunnerConfig] = {

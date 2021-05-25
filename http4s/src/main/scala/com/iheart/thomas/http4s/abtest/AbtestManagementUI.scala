@@ -34,7 +34,7 @@ import _root_.play.api.libs.json.JsObject
 import scala.concurrent.ExecutionContext
 import admin.Authorization._
 import cats.Functor
-import TimeUtil._
+import utils.time._
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 
 import scala.util.control.NoStackTrace

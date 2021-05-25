@@ -6,6 +6,8 @@ import com.iheart.thomas.kafka.KafkaConfig
 import com.typesafe.config.ConfigFactory
 import fs2.kafka.{KafkaProducer, ProducerRecord, ProducerRecords, ProducerSettings}
 import fs2.Stream
+
+import java.time.Instant
 import concurrent.duration._
 import scala.util.{Random, Try}
 
@@ -57,11 +59,10 @@ object TestMessageKafkaProducer extends IOApp {
     s"""
       |{ 
       |   $eventString,
-      |   
       |   "treatment-groups": {
-      |      $groupValues 
+      |      $groupValues,
+      |      timeStamp: ${Instant.now.toEpochMilli}
       |    }
-      |     
       |}
       |""".stripMargin
   }

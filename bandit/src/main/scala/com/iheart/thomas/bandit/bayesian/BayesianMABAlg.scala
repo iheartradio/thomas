@@ -6,7 +6,7 @@ import java.time.{OffsetDateTime, ZoneOffset}
 import cats.NonEmptyParallel
 import cats.effect.Timer
 import cats.implicits._
-import com.iheart.thomas.TimeUtil._
+import com.iheart.thomas.utils.time._
 import com.iheart.thomas.abtest.model.Abtest.Specialization
 import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group, GroupSize}
 import com.iheart.thomas.analysis.Probability

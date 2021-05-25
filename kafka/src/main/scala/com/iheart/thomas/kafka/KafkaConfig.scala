@@ -7,7 +7,8 @@ import pureconfig.ConfigSource
 case class KafkaConfig(
     kafkaServers: String,
     topic: String,
-    groupId: String)
+    groupId: String,
+    parseParallelization: Int)
 
 object KafkaConfig {
   def fromConfig[F[_]: Sync](cfg: Config): F[KafkaConfig] = {

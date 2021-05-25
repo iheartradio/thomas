@@ -138,7 +138,7 @@ class UI[F[_]: Async](
       }
 
     case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "reset" asAuthed (_) =>
-      stateRepo.reset(Key(feature, KPIName(kpi))) *>
+      stateRepo.delete(Key(feature, KPIName(kpi))) *>
         Ok(
           redirect(
             reverseRoutes.analysisOf(feature),

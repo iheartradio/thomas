@@ -12,7 +12,6 @@ import _root_.play.api.libs.json._
 import cats._
 import cats.implicits._
 import cats.tagless.FunctorK
-import com.iheart.thomas.TimeUtil
 import Error._
 import cats.effect.{Concurrent, Resource, Timer}
 import com.iheart.thomas.abtest.AssignGroups.AssignmentResult
@@ -76,7 +75,7 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
     ): F[Vector[Entity[Abtest]]]
 
   def getAllTestsEpoch(time: Option[Long]): F[Vector[Entity[Abtest]]] =
-    getAllTests(time.map(TimeUtil.toDateTime))
+    getAllTests(time.map(utils.time.toDateTime))
 
   def setOverrideEligibilityIn(
       feature: FeatureName,
@@ -91,7 +90,7 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
   def getAllTestsEndAfter(time: OffsetDateTime): F[Vector[Entity[Abtest]]]
 
   def getAllTestsEndAfter(time: Long): F[Vector[Entity[Abtest]]] =
-    getAllTestsEndAfter(TimeUtil.toDateTime(time))
+    getAllTestsEndAfter(utils.time.toDateTime(time))
 
   /** Get all the tests together with their Feature cached.
     * @param time
@@ -105,7 +104,7 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
   def getAllTestsCachedEpoch(
       time: Option[Long]
     ): F[Vector[(Entity[Abtest], Feature)]] =
-    getAllTestsCached(time.map(TimeUtil.toDateTime))
+    getAllTestsCached(time.map(utils.time.toDateTime))
 
   def addOverrides(
       featureName: FeatureName,
@@ -581,7 +580,7 @@ final class DefaultAbtestAlg[F[_]](
       feature: Entity[Feature],
       gracePeriod: Option[FiniteDuration]
     ): F[Boolean] = {
-    import TimeUtil.InstantOps
+    import utils.time.InstantOps
     val noLock: (String, JsValueWrapper) = "lockedAt" -> Json.obj("$exists" -> false)
     nowF.flatMap { now =>
       val lockCheck: (String, JsValueWrapper) =

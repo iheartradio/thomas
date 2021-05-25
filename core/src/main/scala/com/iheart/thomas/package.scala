@@ -6,4 +6,5 @@ package object thomas {
   type Username = String
   type UserId = String
   type ArmName = GroupName
+  type Period = utils.time.Period
 }

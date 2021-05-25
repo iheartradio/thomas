@@ -19,7 +19,7 @@ import com.iheart.thomas.abtest.model.{
 import com.iheart.thomas.testkit.Factory.{now, _}
 import org.scalatest.matchers.should.Matchers
 import cats.implicits._
-import TimeUtil._
+import utils.time._
 import cats.MonadError
 
 import concurrent.duration._

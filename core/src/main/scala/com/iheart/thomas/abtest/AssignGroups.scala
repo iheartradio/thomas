@@ -12,7 +12,7 @@ import cats.Monad
 import cats.implicits._
 import com.iheart.thomas.abtest.model._
 import henkan.convert.Syntax._
-import TimeUtil._
+import utils.time._
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.control.NoStackTrace

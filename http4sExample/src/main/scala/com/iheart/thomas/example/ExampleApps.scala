@@ -25,7 +25,7 @@ object ExampleAbtestServerApp extends IOApp {
 }
 
 object ExampleAbtestAdminUIApp extends IOApp {
-  import testkit.ExampleArmParse._
+  import testkit.ExampleParsers._
 
   implicit val queryAlg = MockQueryAccumulativeKPIAlg[IO]()
 

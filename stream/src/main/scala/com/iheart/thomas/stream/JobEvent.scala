@@ -7,7 +7,8 @@ import com.iheart.thomas.tracking.Event
 sealed trait JobEvent extends Event
 
 object JobEvent {
-  case class MessageReceived[M](m: M) extends JobEvent
+  case class MessagesReceived[M](sample: M, size: Int) extends JobEvent
+  case class MessagesParseError[M](err: Throwable, rawMsg: M) extends JobEvent
   case class RunningJobsUpdated(jobs: Seq[Job]) extends JobEvent
   case class EventsQueriedForFeature(
       k: QueryAccumulativeKPI,

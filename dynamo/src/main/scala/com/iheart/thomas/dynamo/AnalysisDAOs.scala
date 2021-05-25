@@ -2,9 +2,14 @@ package com.iheart.thomas.dynamo
 
 import cats.effect.{Async, Concurrent, Timer}
 import com.iheart.thomas.analysis._
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{
+  ArmState,
+  ArmsState,
+  Key
+}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
 import com.iheart.thomas.dynamo.DynamoFormats._
+import com.iheart.thomas.utils.time.Period
 import org.scanamo.DynamoFormat
 import org.scanamo.syntax._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
@@ -73,11 +78,12 @@ object AnalysisDAOs extends ScanamoManagement {
       perUserSamplesKPIStateTableName
     )
 
-  def experimentKPIStateDAO[F[_]: Async: Timer, KS <: KPIStats](
+  def experimentKPIStateDAO[F[_]: Timer, KS <: KPIStats](
       tableName: String
     )(implicit dynamoClient: DynamoDbAsyncClient,
       dynamoFormat: DynamoFormat[ExperimentKPIState[KS]],
-      armFormat: DynamoFormat[ArmState[KS]]
+      armFormat: DynamoFormat[ArmState[KS]],
+      F: Async[F]
     ): ExperimentKPIStateDAO[F, KS] =
     new ScanamoDAOHelperStringFormatKey[F, ExperimentKPIState[KS], Key](
       tableName,
@@ -88,21 +94,19 @@ object AnalysisDAOs extends ScanamoManagement {
 
       protected def stringKey(k: Key) = k.toStringKey
       import retry._
-      def update(
+
+      def upsert(
           key: Key
-        )(updateArms: List[ArmState[KS]] => List[ArmState[KS]]
+        )(update: (ArmsState[KS], Period) => (ArmsState[KS], Period)
+        )(ifEmpty: => (ArmsState[KS], Period)
         ): F[ExperimentKPIState[KS]] = {
 
-        atomicUpdate(key, Some(RetryPolicies.constantDelay[F](40.milliseconds))) {
+        atomicUpsert(key, Some(RetryPolicies.constantDelay[F](40.milliseconds))) {
           state =>
-            set("arms", updateArms(state.arms))
-        }
-      }
-
-      def init(
-          key: Key
-        ): F[ExperimentKPIState[KS]] = {
-        ensure(key)(ExperimentKPIState.init[F, KS](key))
+            val (updatedArms, updatedPeriod) = update(state.arms, state.dataPeriod)
+            set("arms", updatedArms) and
+              set("dataPeriod", updatedPeriod)
+        }(F.defer(ExperimentKPIState.init[F, KS](key, ifEmpty._1, ifEmpty._2)))
       }
 
     }

@@ -77,7 +77,8 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
                 kafka = KafkaConfig(
                   server,
                   topic,
-                  "test-bandits"
+                  "test-bandits",
+                  1
                 )
               ),
               toEvent

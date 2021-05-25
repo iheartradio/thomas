@@ -13,7 +13,7 @@ import play.api.libs.json.JsObject
 import lihua.EntityId
 import java.time.Instant
 import henkan.convert.Syntax._
-import TimeUtil._
+import utils.time._
 
 package object model {
   type TestId = EntityId

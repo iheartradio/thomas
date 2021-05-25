@@ -74,7 +74,7 @@ includedArms: Set[ArmName]
                         </div>
                         <div class="mt-3">
                            Benefit Range*:
-                            @for(stats <- stateO.flatMap(_.arms.headOption.map(_.kpiStats))) {
+                            @for(stats <- stateO.map(_.arms.head.kpiStats)) {
                             @stats match {
                                 case _: Conversions => {
                                     <b>@formatPercentage(br.riskOfUsing)</b> &mdash; <b>@formatPercentage(-br.riskOfNotUsing)</b>
@@ -126,7 +126,7 @@ includedArms: Set[ArmName]
                     title: "@e._1.name against benchmark @br.benchmarkArm",
                     legend: { position: 'none' },
                     hAxis: {
-                        @for(stats <- stateO.flatMap(_.arms.headOption.map(_.kpiStats))) {
+                        @for(stats <- stateO.map(_.arms.head.kpiStats)) {
                           @stats match {
                              case _: Conversions => {
                                 title: 'Percentage difference',
