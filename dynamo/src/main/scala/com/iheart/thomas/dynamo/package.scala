@@ -7,6 +7,8 @@ import pureconfig.ConfigSource
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.regions.Region
 
+import java.net.URI
+
 object `package` {
 
   implicit def coercible[A]: Coercible[A, A] = new Coercible[A, A] {}
@@ -17,15 +19,18 @@ object `package` {
     ): Resource[F, DynamoDbAsyncClient] = {
     import config._
     Resource.make(
-      F.delay(
-        DynamoDbAsyncClient
-          .builder()
-          .region(Region.of(region))
-          .credentialsProvider(() =>
-            AwsBasicCredentials.create(accessKey, secretKey)
-          )
-          .build()
-      )
+      F.delay {
+        val builder =
+          DynamoDbAsyncClient
+            .builder()
+            .region(Region.of(region))
+            .credentialsProvider(() =>
+              AwsBasicCredentials.create(accessKey, secretKey)
+            )
+        config.overrideEndpoint.fold(builder.build())(ep =>
+          builder.endpointOverride(URI.create(ep)).build()
+        )
+      }
     )(c => F.delay(c.close()))
 
   }
@@ -42,4 +47,5 @@ object `package` {
 case class ClientConfig(
     accessKey: String,
     secretKey: String,
-    region: String)
+    region: String,
+    overrideEndpoint: Option[String] = None)

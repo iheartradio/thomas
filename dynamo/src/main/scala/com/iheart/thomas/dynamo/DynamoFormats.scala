@@ -1,6 +1,7 @@
 package com.iheart.thomas
 package dynamo
 
+import cats.data.NonEmptyList
 import com.iheart.thomas.admin.{AuthRecord, PassResetToken, Role, User}
 import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.bayesian.models._
@@ -8,6 +9,7 @@ import com.iheart.thomas.analysis.monitor.ExperimentKPIState
 import com.iheart.thomas.bandit.bayesian._
 import com.iheart.thomas.stream.JobSpec.ProcessSettingsOptional
 import com.iheart.thomas.stream._
+import utils.time.Period
 import io.estatico.newtype.ops._
 import org.scanamo.{DynamoFormat, TypeCoercionError}
 
@@ -37,6 +39,16 @@ object DynamoFormats {
           OffsetDateTime.parse(s, DateTimeFormatter.ISO_OFFSET_DATE_TIME),
         _.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
       )
+
+  implicit def nonEmptyDynamoFormat[A: DynamoFormat]: DynamoFormat[NonEmptyList[A]] =
+    DynamoFormat
+      .coercedXmap[NonEmptyList[A], List[A], IllegalArgumentException](
+        NonEmptyList.fromListUnsafe,
+        _.toList
+      )
+
+  implicit val rangeFormat: DynamoFormat[Period] =
+    deriveDynamoFormat[Period]
 
   implicit val conversionsSfc: DynamoFormat[Conversions] =
     deriveDynamoFormat[Conversions]

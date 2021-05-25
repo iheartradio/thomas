@@ -24,7 +24,7 @@ import fs2.Stream
 
 import java.time.Instant
 import concurrent.duration._
-import com.iheart.thomas.testkit.ExampleArmParse._
+import com.iheart.thomas.testkit.ExampleParsers._
 import com.iheart.thomas.tracking.EventLogger
 
 abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
@@ -78,11 +78,16 @@ abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
     )
   )
 
-  def event(vs: (String, String)*) =
-    JObject.fromSeq(vs.toList.map {
-      case (k, v) =>
-        k -> (JString(v): JValue)
-    })
+  def event(vs: (String, String)*): JObject = event(Instant.now, vs: _*)
+
+  def event(timeStamp: Instant, vs: (String, String)*): JObject =
+    JObject.fromSeq(
+      (("timeStamp" -> timeStamp.toEpochMilli.toString) :: vs.toList).map {
+        case (k, v) =>
+          k -> (JString(v): JValue)
+      }
+    )
+
   def settings(exp: Instant) = ProcessSettingsOptional(None, None, Some(exp))
 }
 
@@ -96,8 +101,8 @@ class JobAlgSuite extends JobAlgSuiteBase {
         )
         jobs <- alg.allJobs
 
-      } yield (job, jobs)).asserting {
-        case (job, jobs) => jobs.contains(job.get) shouldBe true
+      } yield (job, jobs)).asserting { case (job, jobs) =>
+        jobs.contains(job.get) shouldBe true
       }
 
     }
@@ -135,16 +140,15 @@ class JobAlgSuite extends JobAlgSuiteBase {
           UpdateKPIPrior(kpiA.name, settings(Instant.now.plusSeconds(2)))
         ) *>
         (for {
-          start <- TimeUtil.now[IO]
+          start <- utils.time.now[IO]
           _ <-
             alg.runStream
               .interruptAfter(1.second)
               .compile
               .drain
           jobs <- alg.allJobs
-        } yield (start, jobs)).asserting {
-          case (start, jobs) =>
-            jobs.head.checkedOut.get.isAfter(start.plusMillis(700)) shouldBe true
+        } yield (start, jobs)).asserting { case (start, jobs) =>
+          jobs.head.checkedOut.get.isAfter(start.plusMillis(700)) shouldBe true
         }
 
     }
@@ -241,12 +245,11 @@ class JobAlgSuite extends JobAlgSuiteBase {
           alg.runStream.interruptAfter(500.millis).compile.drain *>
           (for {
             _ <- ioTimer.sleep(300.millis)
-            restartAt <- TimeUtil.now[IO]
+            restartAt <- utils.time.now[IO]
             _ <- alg.runStream.interruptAfter(500.millis).compile.drain
             jobO <- alg.find(spec)
-          } yield (restartAt, jobO)).asserting {
-            case (restartAt, jobO) =>
-              jobO.flatMap(_.checkedOut).get.isAfter(restartAt) shouldBe true
+          } yield (restartAt, jobO)).asserting { case (restartAt, jobO) =>
+            jobO.flatMap(_.checkedOut).get.isAfter(restartAt) shouldBe true
           }
       }
     }
@@ -260,12 +263,11 @@ class JobAlgSuite extends JobAlgSuiteBase {
           alg.runStream.interruptAfter(500.millis).compile.drain *>
           (for {
             _ <- ioTimer.sleep(300.millis)
-            restartAt <- TimeUtil.now[IO]
+            restartAt <- utils.time.now[IO]
             _ <- alg.runStream.interruptAfter(500.millis).compile.drain
             jobO <- alg.find(spec)
-          } yield (restartAt, jobO)).asserting {
-            case (restartAt, jobO) =>
-              jobO.flatMap(_.checkedOut).get.isBefore(restartAt) shouldBe true
+          } yield (restartAt, jobO)).asserting { case (restartAt, jobO) =>
+            jobO.flatMap(_.checkedOut).get.isBefore(restartAt) shouldBe true
           }
       }
     }

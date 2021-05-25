@@ -6,7 +6,9 @@ import com.iheart.thomas.analysis._
 import cats.implicits._
 import org.typelevel.jawn.ast.{JNull, JValue}
 
+import java.time.Instant
 import scala.annotation.implicitNotFound
+import scala.util.Try
 import scala.util.control.NoStackTrace
 import scala.util.matching.Regex
 
@@ -14,7 +16,7 @@ import scala.util.matching.Regex
   "Need to provide a parse that can parse group name (or arm name) out of ${Message} of event "
 )
 trait ArmParser[F[_], Message] {
-  def parseArm(
+  def parse(
       m: Message,
       feature: FeatureName
     ): F[Option[ArmName]]
@@ -22,6 +24,39 @@ trait ArmParser[F[_], Message] {
 
 object ArmParser {
   type JValueArmParser[F[_]] = ArmParser[F, JValue]
+}
+
+trait TimeStampParser[F[_], Message] {
+  def apply(
+      m: Message
+    ): F[Instant]
+}
+
+object TimeStampParser {
+  type JValueTimeStampParser[F[_]] = TimeStampParser[F, JValue]
+  case class InvalidTimeStamp(path: String, value: String)
+      extends RuntimeException
+      with NoStackTrace {
+    override def getMessage: String =
+      s"value $value at $path is an invalid timestamp, expecting epoc milliseconds"
+  }
+
+  def fromField[F[_]: MonadThrow](fieldPath: String): JValueTimeStampParser[F] =
+    new TimeStampParser[F, JValue] {
+      import JValueSyntax._
+      def apply(m: JValue): F[Instant] = {
+        val jVal = m.getPath(fieldPath)
+        (jVal.getLong orElse jVal.getString.flatMap(s => Try(s.toLong).toOption))
+          .map(ts => Instant.ofEpochMilli(ts))
+          .liftTo[F](
+            InvalidTimeStamp(
+              fieldPath,
+              m.toString
+            )
+          )
+      }
+    }
+
 }
 
 trait KpiEventParser[F[_], Message, Event, K <: KPI] {

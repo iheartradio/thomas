@@ -1,4 +1,5 @@
-package com.iheart.thomas.dynamo
+package com.iheart.thomas
+package dynamo
 
 import cats.effect.{Async, Concurrent, Timer}
 import cats.implicits._
@@ -13,7 +14,6 @@ import software.amazon.awssdk.services.dynamodb.model.{
   ResourceNotFoundException,
   ScalarAttributeType
 }
-import com.iheart.thomas.TimeUtil
 import com.iheart.thomas.dynamo.ScanamoDAOHelper.NotFound
 import org.scanamo.ops.ScanamoOps
 import org.scanamo.syntax._
@@ -83,8 +83,8 @@ abstract class ScanamoDAOHelper[F[_], A](
   }
 
   def insertO(a: A): F[Option[A]] =
-    insert(a).map(Option(_)).recover {
-      case ScanamoError(ConditionNotMet(_)) => None
+    insert(a).map(Option(_)).recover { case ScanamoError(ConditionNotMet(_)) =>
+      None
     }
 
 }
@@ -178,24 +178,43 @@ trait AtomicUpdatable[F[_], A, K] {
     )(implicit T: Timer[F],
       F: Async[F],
       A: WithTimeStamp[A]
-    ): F[A] = {
-    val updateF = for {
-      existing <- get(k)
-      now <- TimeUtil.now[F]
-      r <- toF(
-        sc.exec(
-          table
-            .when(lastUpdatedFieldName === A.lastUpdated(existing))
-            .update(
-              keyName === stringKey(k),
-              updateExpression(existing)
-                and set(lastUpdatedFieldName, now)
-            )
-        )
+    ): F[A] = atomicUpsert(k, retryPolicy)(updateExpression)(
+    F.raiseError(
+      NotFound(
+        s"No record to be updated in table $tableName whose $keyName is '${stringKey(k)}'. "
       )
-    } yield r
+    )
+  )
 
-    retryPolicy.fold(updateF)(rp =>
+  def atomicUpsert(
+      k: K,
+      retryPolicy: Option[RetryPolicy[F]] = None
+    )(updateExpression: A => UpdateExpression
+    )(ifEmpty: F[A]
+    )(implicit T: Timer[F],
+      F: Async[F],
+      A: WithTimeStamp[A]
+    ): F[A] = {
+    val upsertF =
+      find(k).flatMap {
+        case Some(existing) =>
+          utils.time.now[F].flatMap { now =>
+            toF(
+              sc.exec(
+                table
+                  .when(lastUpdatedFieldName === A.lastUpdated(existing))
+                  .update(
+                    keyName === stringKey(k),
+                    updateExpression(existing)
+                      and set(lastUpdatedFieldName, now)
+                  )
+              )
+            )
+          }
+        case None => ifEmpty.flatMap(insert)
+      }
+
+    retryPolicy.fold(upsertF)(rp =>
       retryingOnSomeErrors(
         rp,
         { (e: Throwable) =>
@@ -205,7 +224,7 @@ trait AtomicUpdatable[F[_], A, K] {
           }
         },
         (_: Throwable, _) => Async[F].unit
-      )(updateF)
+      )(upsertF)
     )
 
   }
@@ -238,9 +257,8 @@ trait ScanamoManagement {
     val keySchemas = hashKeyWithType._1 -> KeyType.HASH :: rangeKeyWithType.map(
       _._1 -> KeyType.RANGE
     )
-    keySchemas.map {
-      case (symbol, keyType) =>
-        KeySchemaElement.builder.attributeName(symbol).keyType(keyType).build
+    keySchemas.map { case (symbol, keyType) =>
+      KeySchemaElement.builder.attributeName(symbol).keyType(keyType).build
     }.asJava
   }
 
@@ -298,15 +316,14 @@ trait ScanamoManagement {
       writeCapacityUnits: Long
     )(implicit dynamo: DynamoDbAsyncClient
     ): F[Unit] =
-    tables.traverse {
-      case (tableName, keyAttribute) =>
-        ensureTable(
-          dynamo,
-          tableName,
-          Seq(keyAttribute),
-          readCapacityUnits,
-          writeCapacityUnits
-        )
+    tables.traverse { case (tableName, keyAttribute) =>
+      ensureTable(
+        dynamo,
+        tableName,
+        Seq(keyAttribute),
+        readCapacityUnits,
+        writeCapacityUnits
+      )
     }.void
 
   def ensureTable[F[_]: Concurrent](
@@ -322,25 +339,23 @@ trait ScanamoManagement {
           .tableName(tableName)
           .build
       )
-    ).void.recoverWith {
-      case _: ResourceNotFoundException =>
-        createTable(
-          client,
-          tableName,
-          keyAttributes,
-          readCapacityUnits,
-          writeCapacityUnits
-        )
+    ).void.recoverWith { case _: ResourceNotFoundException =>
+      createTable(
+        client,
+        tableName,
+        keyAttributes,
+        readCapacityUnits,
+        writeCapacityUnits
+      )
     }
   }
 
   private def attributeDefinitions(attributes: Seq[(String, ScalarAttributeType)]) =
-    attributes.map {
-      case (symbol, attributeType) =>
-        AttributeDefinition.builder
-          .attributeName(symbol)
-          .attributeType(attributeType)
-          .build
+    attributes.map { case (symbol, attributeType) =>
+      AttributeDefinition.builder
+        .attributeName(symbol)
+        .attributeType(attributeType)
+        .build
     }.asJava
 }
 

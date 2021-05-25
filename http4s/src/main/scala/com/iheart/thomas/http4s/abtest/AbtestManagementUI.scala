@@ -34,7 +34,7 @@ import _root_.play.api.libs.json.JsObject
 import scala.concurrent.ExecutionContext
 import admin.Authorization._
 import cats.Functor
-import TimeUtil._
+import utils.time._
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 
 import scala.util.control.NoStackTrace
@@ -89,12 +89,11 @@ class AbtestManagementUI[F[_]: Async: Timer](
           filters.feature
             .fold(tests)(f => tests.filter(_.data.feature == f))
             .groupBy(_.data.feature)
-            .map {
-              case (fn, tests) =>
-                (
-                  features.find(_.name == fn).get,
-                  tests.sortBy(_.data.start).toList.reverse
-                )
+            .map { case (fn, tests) =>
+              (
+                features.find(_.name == fn).get,
+                tests.sortBy(_.data.start).toList.reverse
+              )
             }
             .toList
 

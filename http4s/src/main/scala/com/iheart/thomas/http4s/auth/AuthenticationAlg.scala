@@ -16,7 +16,7 @@ import tsec.passwordhashers.jca.BCrypt
 import cats.MonadThrow
 
 import scala.util.control.NoStackTrace
-import TimeUtil._
+import utils.time._
 import concurrent.duration._
 trait AuthenticationAlg[F[_], Auth] {
 
@@ -139,7 +139,7 @@ object AuthenticationAlg {
         )(implicit T: Timer[F]
         ): F[PassResetToken] =
         for {
-          now <- TimeUtil.now[F]
+          now <- utils.time.now[F]
           token = PassResetToken(
             SecureRandomIdGenerator(32).generate,
             now.plusDuration(24.hours)
@@ -160,7 +160,7 @@ object AuthenticationAlg {
         ): F[User] =
         for {
           user <- userDAO.get(username)
-          now <- TimeUtil.now[F]
+          now <- utils.time.now[F]
           _ <- F.unit.ensure(InvalidToken)(_ =>
             user.resetToken.fold(false)(_.value === token)
           )
@@ -172,8 +172,7 @@ object AuthenticationAlg {
         } yield r
     }
 
-  /**
-    * using dynamo BCyrpt and HMACSHA256
+  /** using dynamo BCyrpt and HMACSHA256
     */
   def default[F[_]: Concurrent](
       key: String
