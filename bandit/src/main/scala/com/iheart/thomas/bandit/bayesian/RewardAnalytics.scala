@@ -49,9 +49,8 @@ object RewardAnalytics {
                 .getOrElse(kpi.model)
 
             evaluator.evaluate(
-              r.map {
-                case (armName, conversions) =>
-                  (armName, (conversions, getPrior(armName)))
+              r.map { case (armName, conversions) =>
+                (armName, (conversions, getPrior(armName)))
               }
             )
 

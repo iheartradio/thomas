@@ -125,21 +125,22 @@ object BanditService {
   }
 
   def create[
-      F[_]: ConcurrentEffect: Timer: ContextShift: MessageProcessor: EventLogger: NonEmptyParallel
+      F[_]: ConcurrentEffect: Timer: ContextShift: MessageProcessor: EventLogger
+        : NonEmptyParallel
     ](configResource: Option[String] = None
     )(implicit ex: ExecutionContext
     ): Resource[F, BanditService[F]] = {
     Resource
       .eval(BanditServiceConfig.load(configResource))
-      .flatMap {
-        case (bsc, root) =>
-          create[F](bsc.updater, root, bsc.dynamo)
+      .flatMap { case (bsc, root) =>
+        create[F](bsc.updater, root, bsc.dynamo)
       }
 
   }
 
   def create[
-      F[_]: ConcurrentEffect: Timer: ContextShift: MessageProcessor: EventLogger: NonEmptyParallel
+      F[_]: ConcurrentEffect: Timer: ContextShift: MessageProcessor: EventLogger
+        : NonEmptyParallel
     ](buConfig: BanditUpdater.Config,
       mongoConfig: Config,
       dynamoConfig: dynamo.ClientConfig
@@ -152,7 +153,8 @@ object BanditService {
     }
 
   def create[
-      F[_]: ConcurrentEffect: Timer: ContextShift: mongo.DAOs: MessageProcessor: EventLogger: NonEmptyParallel
+      F[_]: ConcurrentEffect: Timer: ContextShift: mongo.DAOs: MessageProcessor
+        : EventLogger: NonEmptyParallel
     ](buConfig: BanditUpdater.Config
     )(implicit
       amazonClient: DynamoDbAsyncClient

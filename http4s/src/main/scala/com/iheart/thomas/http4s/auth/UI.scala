@@ -182,8 +182,7 @@ object UI extends {
     object tokenP extends QueryParamDecoderMatcher[String]("token")
   }
 
-  /**
-    * @return
+  /** @return
     */
   def default[F[_]: Async: Timer](
       authDeps: AuthDependencies[AuthImp],

@@ -10,8 +10,7 @@ object SharedOpts {
   val tidOpts = Opts.option[String]("id", "test id", "i").map(EntityId(_))
   val fnOpts = Opts.option[String]("feature", "test feature", "f")
 
-  /**
-    * Either a test id or a feature name
+  /** Either a test id or a feature name
     */
   val tidOrFnOps: Opts[Either[TestId, FeatureName]] = tidOpts.either(fnOpts)
   def show(tidOrFeature: Either[TestId, FeatureName]) =

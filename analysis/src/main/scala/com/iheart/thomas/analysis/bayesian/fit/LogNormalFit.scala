@@ -13,11 +13,10 @@ import cats.implicits._
 import com.iheart.thomas.analysis.bayesian.Variable
 import java.time.Instant
 
-/**
-  * https://stats.stackexchange.com/questions/30369/priors-for-log-normal-models
+/** https://stats.stackexchange.com/questions/30369/priors-for-log-normal-models
   *
- * @param name
-  * @param locationPrior
+  * @param name
+  *   @param locationPrior
   * @param scaleLnPrior
   */
 case class LogNormalFit(
@@ -50,8 +49,8 @@ object LogNormalFit {
           logNormalDistribution: LogNormalFit,
           data: List[Double]
         ): Indicator = {
-        fitModel(logNormalDistribution, data).map {
-          case (location, scale) => (location + scale.pow(2d) / 2d).exp
+        fitModel(logNormalDistribution, data).map { case (location, scale) =>
+          (location + scale.pow(2d) / 2d).exp
         }
       }
 

@@ -159,8 +159,7 @@ object AsyncEntityDAO {
     }
   }
 
-  /**
-    * creates a DAO that use F for error handling directly
+  /** creates a DAO that use F for error handling directly
     */
   def direct[F[_], A: Format](
       daoR: AsyncEntityDAO[A, F]

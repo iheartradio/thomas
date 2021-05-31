@@ -4,8 +4,7 @@ import cats.effect.{Concurrent, Fiber}
 import org.typelevel.log4cats.Logger
 import cats.implicits._
 
-/**
-  * Fire and forget reporter
+/** Fire and forget reporter
   *
   * @tparam F
   */

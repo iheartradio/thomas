@@ -14,9 +14,7 @@ trait ModelEvaluator[F[_], Model, Measurement] {
       benchmark: Option[(ArmName, Measurement)]
     ): F[List[Evaluation]]
 
-  /**
-    *
-   * Measure optimal arm probability based on their model and measurement
+  /** Measure optimal arm probability based on their model and measurement
     * @return
     */
   def evaluate(
@@ -67,21 +65,18 @@ object ModelEvaluator {
           probabilities <- evaluate(measurements.mapValues((_, model)))
           r <-
             probabilities.toList
-              .traverse {
-                case (armName, probability) =>
-                  benchmarkO
-                    .traverseFilter {
-                      case (benchmarkName, benchmarkMeasurement)
-                          if benchmarkName != armName =>
-                        compare(
-                          (benchmarkMeasurement, model),
-                          (measurements.get(armName).get, model)
-                        ).map(r =>
-                          Option(bayesian.BenchmarkResult(r, benchmarkName))
-                        )
-                      case _ => none[BenchmarkResult].pure[F]
-                    }
-                    .map(brO => Evaluation(armName, probability, brO))
+              .traverse { case (armName, probability) =>
+                benchmarkO
+                  .traverseFilter {
+                    case (benchmarkName, benchmarkMeasurement)
+                        if benchmarkName != armName =>
+                      compare(
+                        (benchmarkMeasurement, model),
+                        (measurements.get(armName).get, model)
+                      ).map(r => Option(bayesian.BenchmarkResult(r, benchmarkName)))
+                    case _ => none[BenchmarkResult].pure[F]
+                  }
+                  .map(brO => Evaluation(armName, probability, brO))
               }
         } yield r
 
@@ -105,8 +100,8 @@ object ModelEvaluator {
         NonEmptyList
           .fromList(allMeasurement.toList)
           .map {
-            _.nonEmptyTraverse {
-              case (gn, (ms, k)) => posteriorIndicator(k, ms).map((gn, _))
+            _.nonEmptyTraverse { case (gn, (ms, k)) =>
+              posteriorIndicator(k, ms).map((gn, _))
             }
           }
           .fold(F.pure(Map.empty[GroupName, Probability])) { rvGroupResults =>
@@ -124,8 +119,8 @@ object ModelEvaluator {
             }
 
             val total = winnerCounts.toList.map(_._2).sum
-            F.pure(winnerCounts.map {
-              case (gn, c) => (gn, Probability(c.toDouble / total.toDouble))
+            F.pure(winnerCounts.map { case (gn, c) =>
+              (gn, Probability(c.toDouble / total.toDouble))
             })
           }
     }

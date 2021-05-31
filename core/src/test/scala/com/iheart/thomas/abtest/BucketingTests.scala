@@ -369,9 +369,7 @@ object BucketingTests {
   implicit val testA: Arbitrary[Abtest] = Arbitrary(testG)
   implicit val userListA: Arbitrary[List[UserId]] = Arbitrary(usersListG)
   implicit val groupListA: Arbitrary[List[Group]] = Arbitrary(groupsGen(3))
-  implicit val noShrinkForUsers: Shrink[List[UserId]] = Shrink(
-    _ => Stream.empty
-  )
+  implicit val noShrinkForUsers: Shrink[List[UserId]] = Shrink(_ => Stream.empty)
   implicit val noShrinkForGroupRanges: Shrink[(GroupRanges, List[Group])] =
     Shrink(_ => Stream.empty)
   implicit val noShrinkForGroupRanges3

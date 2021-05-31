@@ -8,7 +8,7 @@ object `package` {
 
   implicit def toDataOps[A](a: A): DataOps[A] = new DataOps(a)
 
-  val idFieldName = "_id"  //determined by the field name of Entity
+  val idFieldName = "_id" //determined by the field name of Entity
 }
 
 private[lihua] class DataOps[A](private val a: A) extends AnyVal {

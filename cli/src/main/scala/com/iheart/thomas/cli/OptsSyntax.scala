@@ -39,13 +39,11 @@ object OptsSyntax {
               s =>
                 Validated.Invalid(
                   NonEmptyList.fromListUnsafe(
-                    s.map(
-                        p =>
-                          "Json error: " + p._1 + " -> " + p._2
-                            .map(_.message)
-                            .mkString
-                      )
-                      .toList
+                    s.map(p =>
+                      "Json error: " + p._1 + " -> " + p._2
+                        .map(_.message)
+                        .mkString
+                    ).toList
                   )
                 ),
               _.validNel
@@ -61,13 +59,11 @@ object OptsSyntax {
               s =>
                 Validated.Invalid(
                   NonEmptyList.fromListUnsafe(
-                    s.map(
-                        p =>
-                          "Json error: " + p._1 + " -> " + p._2
-                            .map(_.message)
-                            .mkString
-                      )
-                      .toList
+                    s.map(p =>
+                      "Json error: " + p._1 + " -> " + p._2
+                        .map(_.message)
+                        .mkString
+                    ).toList
                   )
                 ),
               _.validNel

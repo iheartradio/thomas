@@ -86,11 +86,10 @@ object KpiEventParser {
   implicit def jValueConversionEventParser[
       F[_]: MonadThrow
     ]: KpiEventParser[F, JValue, ConversionEvent, ConversionKPI] =
-    (kpi: ConversionKPI) => {
-      (json: JValue) =>
-        kpi.messageQuery
-          .liftTo[F](NoEventQueryForKPI(kpi.name))
-          .map(parseConversionEvent(json, _))
+    (kpi: ConversionKPI) => { (json: JValue) =>
+      kpi.messageQuery
+        .liftTo[F](NoEventQueryForKPI(kpi.name))
+        .map(parseConversionEvent(json, _))
     }
 
 }

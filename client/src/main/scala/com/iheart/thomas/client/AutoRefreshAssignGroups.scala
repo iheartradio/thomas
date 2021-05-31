@@ -36,15 +36,18 @@ object AutoRefreshAssignGroups {
       testsRange = config.testsRange
     )
 
-  /**
-    *
-    * @param dataProvider  client to get A/B tests data
-    * @param refreshPeriod  how ofter the data is refreshed
-    * @param staleTimeout how stale is the data allowed to be (in cases when refresh fails)
-    * @param testsRange time range during which valid tests are used to for getting assignment.
-    *                   if the `at` field in the UserGroupQuery is outside this range, the assignment
-    *                   will fail
-    * @return A Resource of An [[AutoRefreshAssignGroups]]
+  /** @param dataProvider
+    *   client to get A/B tests data
+    * @param refreshPeriod
+    *   how ofter the data is refreshed
+    * @param staleTimeout
+    *   how stale is the data allowed to be (in cases when refresh fails)
+    * @param testsRange
+    *   time range during which valid tests are used to for getting assignment. if
+    *   the `at` field in the UserGroupQuery is outside this range, the assignment
+    *   will fail
+    * @return
+    *   A Resource of An [[AutoRefreshAssignGroups]]
     */
   def resource[F[_]: Timer](
       dataProvider: abtest.DataProvider[F],
@@ -55,7 +58,9 @@ object AutoRefreshAssignGroups {
       nowF: F[Instant]
     ): Resource[F, AutoRefreshAssignGroups[F]] = {
     RefreshRef
-      .resource[F, TestsData]((_: TestsData) => F.unit) //todo: possibly add logging here.
+      .resource[F, TestsData]((_: TestsData) =>
+        F.unit
+      ) //todo: possibly add logging here.
       .map { ref =>
         new AutoRefreshAssignGroups[F] {
           def assign(
