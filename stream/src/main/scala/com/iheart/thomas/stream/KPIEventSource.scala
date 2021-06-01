@@ -153,5 +153,7 @@ object KPIEventSource {
 
   case class UnknownQueryName(q: QueryName)
       extends RuntimeException
-      with NoStackTrace
+      with NoStackTrace {
+    override def getMessage: FeatureName = s"Cannot find query with name $q"
+  }
 }

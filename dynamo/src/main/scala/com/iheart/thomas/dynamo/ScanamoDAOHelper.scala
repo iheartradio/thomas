@@ -143,7 +143,11 @@ abstract class ScanamoDAOHelperStringFormatKey[F[_], A: DynamoFormat, K](
     sc.exec(table.delete(keyName === stringKey(k)))
 
   def update(a: A): F[A] =
-    sc.exec(table.when(attributeExists(keyName)).put(a)).as(a)
+    toF(sc.exec(table.when(attributeExists(keyName)).put(a)))
+      .adaptErr { case ScanamoError(ConditionNotMet(_)) =>
+        NotFound(s"Trying to update $a but it is not found in table $tableName")
+      }
+      .as(a)
 
   def upsert(a: A): F[A] =
     sc.exec(table.put(a)).as(a)
