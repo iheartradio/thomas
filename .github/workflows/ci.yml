@@ -26,16 +26,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Java and Scala
-        uses: olafurpg/setup-scala@v10
+      - uses: actions/checkout@v2
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
         with:
-          java-version: ${{ matrix.java }}
-
-      - name: Setup Docker
-        uses: docker-practice/actions-setup-docker@master
-        with:
-          docker_channel: stable
-          docker_version: 20.10
+          java-version: '11'
+          distribution: 'adopt'
 
       - name: Cache sbt
         uses: actions/cache@v2
