@@ -92,7 +92,7 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
   "update prior according to data" in {
     val kpi =
       Factory.kpi(testKPIName, blindPrior, MockQueryAccumulativeKPIAlg.mockQueryName)
-    val n = 5000
+    val n = 10000
     val dist = breeze.stats.distributions.LogNormal(1d, 0.3d)
     val data = dist.sample(n).toArray
 
@@ -110,7 +110,7 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
       )
     ) { (alg, repo) =>
       (for {
-        _ <- process(kpi, alg, duration = 100.millis)
+        _ <- process(kpi, alg, duration = 200.millis)
         k <- repo.get(testKPIName)
       } yield k).asserting { k =>
         val meanStats = meanAndVariance(KPIIndicator.sample(k.model))
