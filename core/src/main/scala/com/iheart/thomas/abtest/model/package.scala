@@ -142,9 +142,9 @@ package model {
     *   his field is used for creating mutually exclusive tests. When Thomas segments
     *   users into different groups, it hashes the user Id to a number between 0 and
     *   1. If an A/B test is set with a set of segment ranges, then only hashes
-    *   within that range will be eligible for that test. Thus if two tests have
-    *   non-overlapping segment ranges, they will be mutually exclusive, i.e. users
-    *   who eligible for one will not be eligible for the other.
+    *      within that range will be eligible for that test. Thus if two tests have
+    *      non-overlapping segment ranges, they will be mutually exclusive, i.e.
+    *      users who eligible for one will not be eligible for the other.
     */
   case class AbtestSpec(
       name: TestName,

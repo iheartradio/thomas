@@ -15,10 +15,9 @@ sealed trait JobSpec extends Serializable with Product {
 object JobSpec {
   type ErrorMsg = String
 
-  /**
-    * Update a KPI's prior based a sample
+  /** Update a KPI's prior based a sample
     * @param kpiName
-    * @param sampleSize
+    *   @param sampleSize
     */
   case class UpdateKPIPrior(
       kpiName: KPIName,

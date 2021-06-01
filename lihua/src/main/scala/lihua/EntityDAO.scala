@@ -3,10 +3,11 @@ package lihua
 import cats.Monad
 import cats.tagless._
 
-/**
-  * Final tagless encoding of the DAO Algebra
-  * @tparam F effect Monad
-  * @tparam T type of the domain model
+/** Final tagless encoding of the DAO Algebra
+  * @tparam F
+  *   effect Monad
+  * @tparam T
+  *   type of the domain model
   */
 @autoFunctorK
 @autoContravariant
@@ -31,12 +32,15 @@ trait EntityDAO[F[_], T, Query] {
 
   def removeAll(query: Query): F[Int]
 
-  /**
-    * update the first entity query finds
-    * @param query search query
-    * @param entity to be updated to
-    * @param upsert whether to insert of nothing is found
-    * @return whether anything is updated
+  /** update the first entity query finds
+    * @param query
+    *   search query
+    * @param entity
+    *   to be updated to
+    * @param upsert
+    *   whether to insert of nothing is found
+    * @return
+    *   whether anything is updated
     */
   def update(
       query: Query,
@@ -53,10 +57,12 @@ trait EntityDAO[F[_], T, Query] {
 }
 
 object EntityDAO {
-  /**
-    * Provides more default implementation thanks to F being a Monad
-    * @tparam F effect Monad
-    * @tparam T type of the domain model
+
+  /** Provides more default implementation thanks to F being a Monad
+    * @tparam F
+    *   effect Monad
+    * @tparam T
+    *   type of the domain model
     * @tparam Query
     */
   abstract class EntityDAOMonad[F[_]: Monad, T, Query]

@@ -29,9 +29,8 @@ object LocalDynamo extends ScanamoManagement {
     ): Resource[F, DynamoDbAsyncClient] =
     client[F](8043).flatTap { client =>
       Resource.make {
-        tables.toList.parTraverse {
-          case (tableName, keyAttributes) =>
-            ensureTable[F](client, tableName, keyAttributes, 10L, 10L)
+        tables.toList.parTraverse { case (tableName, keyAttributes) =>
+          ensureTable[F](client, tableName, keyAttributes, 10L, 10L)
         }
       } { _ =>
         tables.toList.parTraverse { t =>

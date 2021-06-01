@@ -31,15 +31,13 @@ object Resources {
   lazy val mangoDAOs =
     Resource.eval(IO(ConfigFactory.load(getClass.getClassLoader))).flatMap {
       config =>
-        mongo.daosResource[IO](config).flatMap {
-          case daos =>
-            Resource
-              .make(IO.pure(daos)) {
-                case (abtestDAO, featureDAO) =>
-                  List(abtestDAO, featureDAO)
-                    .traverse(_.removeAll(Json.obj()))
-                    .void
-              }
+        mongo.daosResource[IO](config).flatMap { case daos =>
+          Resource
+            .make(IO.pure(daos)) { case (abtestDAO, featureDAO) =>
+              List(abtestDAO, featureDAO)
+                .traverse(_.removeAll(Json.obj()))
+                .void
+            }
         }
     }
 
@@ -52,8 +50,7 @@ object Resources {
         tables.map(_.map(Seq(_))): _*
       )
 
-  /**
-    * An ConversionAPI resource that cleans up after
+  /** An ConversionAPI resource that cleans up after
     */
   def apis(
       implicit logger: EventLogger[IO] = EventLogger.noop[IO]

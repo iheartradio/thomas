@@ -119,8 +119,9 @@ class ContinuationSuite extends AsyncIOSpec with Matchers {
             259, 257, 256, 254).sorted.map(_.toString)
         )
         groupAssignment2("B") should be(
-          List(317, 312, 306, 298, 294, 291, 277, 271, 268, 262,
-            260).sorted.map(_.toString)
+          List(317, 312, 306, 298, 294, 291, 277, 271, 268, 262, 260).sorted.map(
+            _.toString
+          )
         )
         groupAssignment3("A") should be(
           List(316, 315, 314, 313, 310, 309, 308, 307, 305, 304, 303, 301, 299, 297,

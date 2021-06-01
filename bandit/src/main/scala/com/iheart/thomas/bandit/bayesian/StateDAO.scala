@@ -12,11 +12,10 @@ private[thomas] trait StateDAO[F[_], R] {
       update: List[ArmState[R]] => F[List[ArmState[R]]]
     ): F[BanditState[R]]
 
-  /**
-    *
-    * @param featureName
-    * @param expirationDuration
-    * @return Some new state if a new iteration is started, None otherwise.
+  /** @param featureName
+    *   @param expirationDuration
+    * @return
+    *   Some new state if a new iteration is started, None otherwise.
     */
   def newIteration(
       featureName: FeatureName,

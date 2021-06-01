@@ -35,8 +35,8 @@ class Assigner(data: TestsData) extends Serializable {
       )
       .unsafeRunSync
       .get(feature)
-      .collect {
-        case AssignmentResult(groupName, _) => groupName
+      .collect { case AssignmentResult(groupName, _) =>
+        groupName
       }
   }
 

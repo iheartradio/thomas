@@ -16,9 +16,7 @@ import scala.concurrent.duration.FiniteDuration
 import concurrent.duration._
 import reactivemongo.api.bson.collection.BSONCollection
 
-/**
-  * A MongoDB instance from config
-  * Should be created one per application
+/** A MongoDB instance from config Should be created one per application
   */
 class MongoDB[F[_]: Async] private (
     private[mongo] val config: MongoDB.MongoConfig,
@@ -43,15 +41,13 @@ class MongoDB[F[_]: Async] private (
       config.dbs.get(dbName).flatMap(_.collections.get(collectionName))
     val name = collectionConfig.flatMap(_.name).getOrElse(collectionName)
     val readPreference = collectionConfig.flatMap(_.readPreference)
-    database(dbName).map(
-      db =>
-        db.collection[BSONCollection](
-            name,
-            db.failoverStrategy
-          )
-          .withReadPreference(
-            readPreference.getOrElse(ReadPreference.primary)
-          )
+    database(dbName).map(db =>
+      db.collection[BSONCollection](
+        name,
+        db.failoverStrategy
+      ).withReadPreference(
+        readPreference.getOrElse(ReadPreference.primary)
+      )
     )
   }
 
@@ -107,8 +103,7 @@ object MongoDB {
         failoverStrategy = FailoverStrategy.default.copy(
           initialDelay = config.initialDelay
             .getOrElse(FailoverStrategy.default.initialDelay),
-          retries =
-            config.retries.getOrElse(FailoverStrategy.default.retries)
+          retries = config.retries.getOrElse(FailoverStrategy.default.retries)
         ),
         credentials = creds
       )
@@ -136,19 +131,17 @@ object MongoDB {
     )(implicit F: Async[F]
     ): F[Map[String, MongoConnectionOptions.Credential]] =
     config.dbs.toList
-      .traverse {
-        case (k, dbc) =>
-          dbc.credential.traverse { c =>
-            cryptO
-              .fold(F.pure(c.password))(_.decrypt(c.password))
-              .map(
-                p =>
-                  (
-                    dbc.name.getOrElse(k),
-                    MongoConnectionOptions.Credential(c.username, Some(p))
-                  )
+      .traverse { case (k, dbc) =>
+        dbc.credential.traverse { c =>
+          cryptO
+            .fold(F.pure(c.password))(_.decrypt(c.password))
+            .map(p =>
+              (
+                dbc.name.getOrElse(k),
+                MongoConnectionOptions.Credential(c.username, Some(p))
               )
-          }
+            )
+        }
       }
       .map { l =>
         val map = l.flatten.toMap

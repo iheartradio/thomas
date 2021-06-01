@@ -17,9 +17,9 @@ object ConversionBanditUpdater {
 
   type Settings = BanditSettings[BanditSettings.Conversion]
 
-  /**
-    * A stream of running bandits, but only when the set of bandits changes meaningfully. See banditIdentifier below
-    * */
+  /** A stream of running bandits, but only when the set of bandits changes
+    * meaningfully. See banditIdentifier below
+    */
   private[stream] def runningBandits[F[_]: Timer: ConcurrentEffect](
       allowedBanditsStaleness: FiniteDuration
     )(implicit
@@ -123,20 +123,18 @@ object ConversionBanditUpdater {
       .map { chunk =>
         val isConverted = identity[ConversionEvent] _
         (chunk
-          .foldMap {
-            case (an, ce) =>
-              Map(an -> List(ce))
+          .foldMap { case (an, ce) =>
+            Map(an -> List(ce))
           })
-          .map {
-            case (an, ces) =>
-              val convertedCount = ces.count(isConverted)
-              (
-                an,
-                Conversions(
-                  converted = convertedCount.toLong,
-                  total = (ces.size - convertedCount).toLong
-                )
+          .map { case (an, ces) =>
+            val convertedCount = ces.count(isConverted)
+            (
+              an,
+              Conversions(
+                converted = convertedCount.toLong,
+                total = (ces.size - convertedCount).toLong
               )
+            )
           }
       }
   }

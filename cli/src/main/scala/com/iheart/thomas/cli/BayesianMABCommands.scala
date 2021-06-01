@@ -56,17 +56,16 @@ object BayesianMABCommands {
           "show",
           "show an existing conversion KPI based Bayesian MAB"
         ) {
-          (fnOpts, conversionClientOpts[F]).mapN {
-            (feature, clientR) =>
-              clientR.use { client =>
-                client
-                  .currentState(feature)
-                  .map(s => s"""
+          (fnOpts, conversionClientOpts[F]).mapN { (feature, clientR) =>
+            clientR.use { client =>
+              client
+                .currentState(feature)
+                .map(s => s"""
                       |=========== Bayesian State Start ============
                       |$s
                       |=========== Bayesian State End =============
                       |""".stripMargin)
-              }
+            }
           }
         },
         Command(

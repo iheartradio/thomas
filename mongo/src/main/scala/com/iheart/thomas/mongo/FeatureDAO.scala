@@ -23,19 +23,18 @@ class FeatureDAOFactory[F[_]: Async](implicit ec: ExecutionContext)
     implicit val contextShiftIO = IO.contextShift(ec)
 
     IO.fromFuture(
-        IO(
-          collection.indexesManager
-            .ensure(
-              index(
-                Seq(
-                  ("name", IndexType.Ascending)
-                ),
-                unique = true
-              )
+      IO(
+        collection.indexesManager
+          .ensure(
+            index(
+              Seq(
+                ("name", IndexType.Ascending)
+              ),
+              unique = true
             )
-            .void
-        )
+          )
+          .void
       )
-      .to[F]
+    ).to[F]
   }
 }

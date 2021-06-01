@@ -29,21 +29,19 @@ class DatadogClient[F[_]](
 
   def send(e: MonitorEvent)(errorHandler: Throwable => F[Unit]): F[Unit] = {
     F.start(
-        c.successful(
-            POST(
-              Json.toJson(e),
-              Uri
-                .unsafeFromString(
-                  "https://api.datadoghq.com/api/v1/events"
-                )
-                .withQueryParam("api_key", apiKey)
+      c.successful(
+        POST(
+          Json.toJson(e),
+          Uri
+            .unsafeFromString(
+              "https://api.datadoghq.com/api/v1/events"
             )
-          )
-          .ensure(ErrorResponseFromDataDogService)(identity)
-          .void
-          .handleErrorWith(errorHandler)
-      )
-      .void
+            .withQueryParam("api_key", apiKey)
+        )
+      ).ensure(ErrorResponseFromDataDogService)(identity)
+        .void
+        .handleErrorWith(errorHandler)
+    ).void
   }
 }
 

@@ -9,6 +9,8 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
 
   test("dynamo format") {
 
-    implicitly[DynamoFormat[BanditSettings[BanditSettings.Conversion]]] should not be (null)
+    implicitly[
+      DynamoFormat[BanditSettings[BanditSettings.Conversion]]
+    ] should not be (null)
   }
 }

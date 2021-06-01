@@ -17,7 +17,6 @@ class CryptTsec[F[_]](key: String)(implicit F: Sync[F]) extends Crypt[F] {
   private val ekeyF: F[SecretKey[AES128CTR]] =
     b64(key).flatMap(AES128CTR.buildKey[F])
 
-
   def b64(s: String): F[Array[Byte]] =
     s.b64Bytes.liftTo[F](Base64Error)
 
@@ -26,9 +25,10 @@ class CryptTsec[F[_]](key: String)(implicit F: Sync[F]) extends Crypt[F] {
   def encrypt(value: String): F[String] =
     for {
       ekey <- ekeyF
-      encrypted <- AES128CTR.genEncryptor[F].encrypt(PlainText(value.utf8Bytes), ekey)
+      encrypted <- AES128CTR
+        .genEncryptor[F]
+        .encrypt(PlainText(value.utf8Bytes), ekey)
     } yield (encrypted.content ++ encrypted.nonce).toB64String
-
 
   def decrypt(value: String): F[String] =
     for {
@@ -40,12 +40,11 @@ class CryptTsec[F[_]](key: String)(implicit F: Sync[F]) extends Crypt[F] {
 
 }
 
-
 object CryptTsec {
   def apply[F[_]: Sync](key: String): Crypt[F] = new CryptTsec[F](key)
 
-  def genKey[F[_]: Sync] : F[String] =
-      AES128CTR.generateKey[F].map(_.getEncoded.toB64String)
+  def genKey[F[_]: Sync]: F[String] =
+    AES128CTR.generateKey[F].map(_.getEncoded.toB64String)
 
   case object Base64Error extends RuntimeException
 
@@ -59,12 +58,11 @@ object CryptTsec {
           r <- CryptTsec[IO](key).encrypt(pass)
         } yield r
 
-
       case Some("decrypt") =>
         for {
-           key <- IO(StdIn.readLine("Enter your key:"))
-           pass <- IO(StdIn.readLine("Enter your text:"))
-           r <- CryptTsec[IO](key).decrypt(pass)
+          key <- IO(StdIn.readLine("Enter your key:"))
+          pass <- IO(StdIn.readLine("Enter your text:"))
+          r <- CryptTsec[IO](key).decrypt(pass)
         } yield r
       case _ => IO.pure("usage: [genKey|encrypt]")
     }

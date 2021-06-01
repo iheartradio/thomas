@@ -57,8 +57,8 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
           }
           .asserting {
             case Left(CannotChangeGroupSizeWithFollowUpTest(_)) => succeed
-            case Left(e)                                        => fail(s"incorrect error $e")
-            case Right(_)                                       => fail("Failed to prevent size change")
+            case Left(e)  => fail(s"incorrect error $e")
+            case Right(_) => fail("Failed to prevent size change")
           }
 
       }

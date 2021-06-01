@@ -22,26 +22,25 @@ class AbtestDAOFactory[F[_]: Async](implicit ec: ExecutionContext)
   def ensure(collection: BSONCollection): F[Unit] = {
     implicit val contextShiftIO = IO.contextShift(ec)
     IO.fromFuture(
-        IO(
-          collection.indexesManager.ensure(
+      IO(
+        collection.indexesManager.ensure(
+          index(
+            Seq(
+              ("start", IndexType.Descending),
+              ("end", IndexType.Descending)
+            )
+          )
+        ) *> collection.indexesManager
+          .ensure(
             index(
               Seq(
-                ("start", IndexType.Descending),
-                ("end", IndexType.Descending)
+                ("feature", IndexType.Ascending)
               )
             )
-          ) *> collection.indexesManager
-            .ensure(
-              index(
-                Seq(
-                  ("feature", IndexType.Ascending)
-                )
-              )
-            )
-            .void
-        )
+          )
+          .void
       )
-      .to[F]
+    ).to[F]
 
   }
 }
