@@ -17,7 +17,7 @@ val reactiveMongoVer = "1.0.3"
 // format: off
 lazy val libs = {
   org.typelevel.libraries
-    .addJVM(name = "akka-slf4j",            version = "2.6.14",  org = "com.typesafe.akka")
+    .addJVM(name = "akka-slf4j",            version = "2.6.15",  org = "com.typesafe.akka")
     .addJVM(name = "breeze",                version = "1.2",    org ="org.scalanlp", "breeze", "breeze-viz")
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
     .add(   name = "cats-testkit-scalatest",version = "2.1.4",  org = org.typelevel.typeLevelOrg)
