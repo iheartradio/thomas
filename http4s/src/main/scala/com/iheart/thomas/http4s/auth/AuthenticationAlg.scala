@@ -37,6 +37,10 @@ trait AuthenticationAlg[F[_], Auth] {
       roleO: Option[Role]
     ): F[User]
 
+  def deleteUser(
+      username: Username
+    ): F[Unit]
+
   def remove(username: String): F[Unit]
 
   def logout(token: Token[Auth]): F[Unit]
@@ -170,6 +174,8 @@ object AuthenticationAlg {
           newHash <- hashPassword(newPass, AuthError.PasswordTooWeak(user.username))
           r <- userDAO.update(user.copy(resetToken = None, hash = newHash))
         } yield r
+
+      def deleteUser(username: Username): F[Unit] = userDAO.remove(username)
     }
 
   /** using dynamo BCyrpt and HMACSHA256

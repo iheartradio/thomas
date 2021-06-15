@@ -46,6 +46,10 @@ class UI[F[_]: Async: Timer, Auth](
         r <- SeeOther(reverseRoutes.users.location)
       } yield r
 
+    case GET -> Root / "users" / username / "delete" asAuthed _ =>
+      alg.deleteUser(username) *>
+        SeeOther(reverseRoutes.users.location)
+
     case req @ GET -> Root / "users" / username / "reset-pass-link" asAuthed (u) =>
       for {
         token <- alg.generateResetToken(username)
