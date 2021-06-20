@@ -49,7 +49,7 @@ lazy val libs = {
     .add(   name = "spark",                 version = "2.4.5",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
     .addJVM(name = "tsec",                  version = "0.2.1",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
-    .add   (name = "enumeratum",            version = "1.6.1",  org = "com.beachape" )
+    .add   (name = "enumeratum",            version = "1.7.0",  org = "com.beachape" )
     .add(   name = "jawn-ast",              version = "1.0.0",  org = org.typelevel.typeLevelOrg)
 
 }
