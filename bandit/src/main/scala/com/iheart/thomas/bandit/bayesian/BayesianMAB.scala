@@ -3,10 +3,10 @@ package bayesian
 
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.abtest.model.Abtest
-import com.iheart.thomas.analysis.KPIName
+import com.iheart.thomas.analysis.{KPIName, KPIStats}
 import lihua.Entity
 
-case class BayesianMAB[R, S](
+case class BayesianMAB[R <: KPIStats, S](
     abtest: Entity[Abtest],
     settings: BanditSettings[S],
     state: BanditState[R]) {

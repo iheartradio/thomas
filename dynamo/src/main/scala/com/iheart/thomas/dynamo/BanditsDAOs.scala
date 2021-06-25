@@ -7,8 +7,9 @@ import cats.effect.{Async, Concurrent, Timer}
 import cats.implicits._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.FeatureName
+import com.iheart.thomas.analysis.KPIStats
+import com.iheart.thomas.bandit.`package`.ArmState
 import com.iheart.thomas.bandit.bayesian.{
-  ArmState,
   BanditSettings,
   BanditSettingsDAO,
   BanditState,
@@ -46,7 +47,7 @@ object BanditsDAOs extends ScanamoManagement {
       dynamoClient
     ) with BanditSettingsDAO[F, S]
 
-  implicit def banditState[F[_]: Async, R](
+  implicit def banditState[F[_]: Async, R <: KPIStats](
       implicit dynamoClient: DynamoDbAsyncClient,
       bsformat: DynamoFormat[BanditState[R]],
       armformat: DynamoFormat[ArmState[R]],

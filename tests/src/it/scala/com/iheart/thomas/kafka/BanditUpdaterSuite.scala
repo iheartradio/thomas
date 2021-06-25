@@ -6,8 +6,8 @@ import cats.effect.{ContextShift, IO, Sync, Timer}
 import cats.implicits._
 import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.bayesian.models.BetaModel
-import com.iheart.thomas.bandit.{ArmSpec, BanditSpec}
-import com.iheart.thomas.bandit.bayesian.{ArmState, BanditSettings}
+import com.iheart.thomas.bandit.{ArmSpec, BanditSpec, ArmState}
+import com.iheart.thomas.bandit.bayesian.BanditSettings
 import com.iheart.thomas.stream.ConversionBanditUpdater
 import com.iheart.thomas.testkit.Resources
 import com.iheart.thomas.tracking.EventLogger
@@ -254,7 +254,7 @@ abstract class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
           }
           .unsafeRunSync()
 
-      resultState.state.arms.head.rewardState.total should be < (10L)
+      resultState.state.arms.head.kpiStats.total should be < (10L)
     }
   }
 
@@ -292,7 +292,7 @@ abstract class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
           }
           .unsafeRunSync()
 
-      resultState.state.arms.head.rewardState.total.toDouble should be > (count.get.toDouble * 0.6d)
+      resultState.state.arms.head.kpiStats.total.toDouble should be > (count.get.toDouble * 0.6d)
     }
   }
 
@@ -334,7 +334,7 @@ abstract class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
           }
           .unsafeRunSync()
 
-      resultState.state.arms.head.rewardState.total.toDouble should be > (count.get.toDouble * 0.6d)
+      resultState.state.arms.head.kpiStats.total.toDouble should be > (count.get.toDouble * 0.6d)
     }
 
   }
@@ -403,7 +403,7 @@ abstract class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
             } yield (state1, state2)
           }
           .unsafeRunSync()
-      resultState2.state.arms.head.rewardState.total should be > (40L)
+      resultState2.state.arms.head.kpiStats.total should be > (40L)
     }
 
   }
@@ -450,7 +450,7 @@ abstract class BanditUpdaterSuite extends BanditUpdaterSuiteBase {
       result.state.arms
         .find(_.name == "A")
         .get
-        .rewardState
+        .kpiStats
         .total shouldBe totalPublish
     }
   }

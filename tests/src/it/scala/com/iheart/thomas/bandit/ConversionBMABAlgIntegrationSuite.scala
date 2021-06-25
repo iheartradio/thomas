@@ -133,11 +133,11 @@ class ConversionBMABAlgIntegrationSuite extends ConversionBMABAlgSuiteBase {
     newState.arms
       .find(_.name == "A")
       .get
-      .rewardState shouldBe Conversions(7, 25)
+      .kpiStats shouldBe Conversions(7, 25)
     newState.arms
       .find(_.name == "B")
       .get
-      .rewardState shouldBe Conversions(13, 55)
+      .kpiStats shouldBe Conversions(13, 55)
 
   }
 
@@ -318,7 +318,7 @@ class ConversionBMABAlgIntegrationSuite extends ConversionBMABAlgSuiteBase {
       previousState.rewardState
     )
     currentState.arms.size shouldBe previousState.arms.size
-    currentState.arms.forall(_.rewardState.total == 0) shouldBe true
+    currentState.arms.forall(_.kpiStats.total == 0) shouldBe true
     currentState.iterationStart
       .isAfter(previousState.iterationStart) shouldBe true
 

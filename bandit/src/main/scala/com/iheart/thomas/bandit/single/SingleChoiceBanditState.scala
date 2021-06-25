@@ -13,8 +13,8 @@ import cats.implicits._
 
 case class SingleChoiceBanditState[RewardStateT](
     spec: BanditSpec[BanditSpec.EmptySubSettings.type],
-    chosenArm: ArmState,
-    otherArms: List[ArmState],
+    chosenArm: SingleChoiceArmState,
+    otherArms: List[SingleChoiceArmState],
     rewardStateSoFar: RewardStateT,
     start: Instant,
     epsilon: Double) {
@@ -54,7 +54,7 @@ case class SingleChoiceBanditState[RewardStateT](
 
 }
 
-case class ArmState(
+case class SingleChoiceArmState(
     name: ArmName,
     expectedReward: ExpectedReward,
     chosenCount: Long)

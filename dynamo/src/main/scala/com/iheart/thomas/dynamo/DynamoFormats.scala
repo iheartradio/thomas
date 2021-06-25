@@ -6,6 +6,7 @@ import com.iheart.thomas.admin.{AuthRecord, PassResetToken, Role, User}
 import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.bayesian.models._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.ArmState
 import com.iheart.thomas.bandit.bayesian._
 import com.iheart.thomas.stream.JobSpec.ProcessSettingsOptional
 import com.iheart.thomas.stream._
@@ -131,18 +132,9 @@ object DynamoFormats {
           ),
       _.toStringKey
     )
-
-  implicit val armStateConversionFormat
-      : DynamoFormat[ExperimentKPIState.ArmState[Conversions]] =
-    deriveDynamoFormat[ExperimentKPIState.ArmState[Conversions]]
-
   implicit val ekpiStateConversionFormat
       : DynamoFormat[ExperimentKPIState[Conversions]] =
     deriveDynamoFormat[ExperimentKPIState[Conversions]]
-
-  implicit val armStatePerUserSamplesFormat
-      : DynamoFormat[ExperimentKPIState.ArmState[PerUserSamplesLnSummary]] =
-    deriveDynamoFormat[ExperimentKPIState.ArmState[PerUserSamplesLnSummary]]
 
   implicit val ekpiStatePerUserSamplesFormat
       : DynamoFormat[ExperimentKPIState[PerUserSamplesLnSummary]] =

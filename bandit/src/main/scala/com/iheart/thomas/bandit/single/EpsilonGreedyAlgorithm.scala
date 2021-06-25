@@ -38,7 +38,7 @@ class EpsilonGreedyAlgorithm[RewardStateT](
   }
 
   def initialState(spec: BanditSpec[EmptySubSettings.type]): State = {
-    val allArms = spec.arms.map(a => ArmState(a.name, 0d, 0L))
+    val allArms = spec.arms.map(a => SingleChoiceArmState(a.name, 0d, 0L))
     SingleChoiceBanditState[RewardStateT](
       spec = spec,
       chosenArm = allArms.head,

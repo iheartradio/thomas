@@ -1,5 +1,6 @@
 package com.iheart.thomas
-package bandit.bayesian
+package bandit
+package bayesian
 
 import java.time.temporal.ChronoUnit
 import java.time.{OffsetDateTime, ZoneOffset}
@@ -9,7 +10,7 @@ import cats.implicits._
 import com.iheart.thomas.utils.time._
 import com.iheart.thomas.abtest.model.Abtest.Specialization
 import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group, GroupSize}
-import com.iheart.thomas.analysis.Probability
+import com.iheart.thomas.analysis.{KPIStats, Probability}
 import com.iheart.thomas.bandit.tracking.BanditEvent.BanditPolicyUpdate.Reallocated
 import com.iheart.thomas.bandit.tracking.BanditEvent
 import com.iheart.thomas.bandit.{AbtestNotFound, BanditSpec, RewardState}
@@ -21,10 +22,8 @@ import com.iheart.thomas.tracking.EventLogger
 import scala.annotation.tailrec
 
 /** Abtest based Bayesian Multi Arm Bandit Algebra
-  * @tparam F
-  *   @tparam R
   */
-trait BayesianMABAlg[F[_], R, S] {
+trait BayesianMABAlg[F[_], R <: KPIStats, S] {
   def updateRewardState(
       featureName: FeatureName,
       rewardState: Map[ArmName, R]
@@ -68,7 +67,7 @@ object BayesianMABAlg {
     ).pure[F]
   }
 
-  implicit def apply[F[_], R, S](
+  implicit def apply[F[_], R <: KPIStats, S](
       implicit stateDao: StateDAO[F, R],
       log: EventLogger[F],
       settingsDao: BanditSettingsDAO[F, S],
@@ -92,9 +91,9 @@ object BayesianMABAlg {
                 featureName,
                 _.map { arm =>
                   arm.copy(
-                    rewardState = rewards
+                    kpiStats = rewards
                       .get(arm.name)
-                      .fold(arm.rewardState)(arm.rewardState |+| _)
+                      .fold(arm.kpiStats)(arm.kpiStats |+| _)
                   )
                 }.pure[F]
               )
@@ -239,11 +238,11 @@ object BayesianMABAlg {
                             oldR <- oldHistory.flatMap(_.get(arm.name))
                             oldWeight <- bandit.settings.oldHistoryWeight
                           } yield RS.applyWeight(oldR, oldWeight) |+| RS.applyWeight(
-                            arm.rewardState,
+                            arm.kpiStats,
                             1d - oldWeight
                           )
 
-                        (arm.name, weightedHistoryO.getOrElse(arm.rewardState))
+                        (arm.name, weightedHistoryO.getOrElse(arm.kpiStats))
                       }
 
                       (
@@ -282,7 +281,7 @@ object BayesianMABAlg {
           hasEnoughSamples =
             current.state.historical.isDefined || newState.arms
               .forall { r =>
-                R.sampleSize(r.rewardState) > current.settings.initialSampleSize
+                R.sampleSize(r.kpiStats) > current.settings.initialSampleSize
               }
           updatedBandit <-
             if (hasEnoughSamples)

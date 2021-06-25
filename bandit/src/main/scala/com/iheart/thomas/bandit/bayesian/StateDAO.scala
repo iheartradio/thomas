@@ -2,9 +2,12 @@ package com.iheart.thomas
 package bandit
 package bayesian
 
+import com.iheart.thomas.analysis.KPIStats
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.ArmState
+
 import scala.concurrent.duration.FiniteDuration
 
-private[thomas] trait StateDAO[F[_], R] {
+private[thomas] trait StateDAO[F[_], R <: KPIStats] {
   def insert(state: BanditState[R]): F[BanditState[R]]
 
   def updateArms(
