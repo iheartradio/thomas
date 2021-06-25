@@ -28,7 +28,7 @@ includedArms: Set[ArmName] = Set.empty
                            id="includeGroupCB@arm.name.hashCode"
                            name="includedArms"
                            title="Include in evaluation"
-                           @if((arm.readyForEvaluation && includedArms.isEmpty) || includedArms.contains(arm.name)) {
+                           @if((arm.sampleSize > 500L && includedArms.isEmpty) || includedArms.contains(arm.name)) {
                              checked
                            }
                            value="@arm.name">

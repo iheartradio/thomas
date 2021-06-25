@@ -281,7 +281,7 @@ object BayesianMABAlg {
           hasEnoughSamples =
             current.state.historical.isDefined || newState.arms
               .forall { r =>
-                R.sampleSize(r.kpiStats) > current.settings.initialSampleSize
+                r.sampleSize > current.settings.initialSampleSize
               }
           updatedBandit <-
             if (hasEnoughSamples)

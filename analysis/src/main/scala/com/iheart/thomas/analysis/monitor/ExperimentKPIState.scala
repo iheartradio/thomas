@@ -59,10 +59,11 @@ object ExperimentKPIState {
       name: ArmName,
       kpiStats: KS,
       likelihoodOptimum: Option[Probability]) {
-    def readyForEvaluation: Boolean = {
+
+    def sampleSize: Long = {
       kpiStats match {
-        case c: Conversions                   => c.total > 100
-        case samples: PerUserSamplesLnSummary => samples.count > 1000
+        case c: Conversions                   => c.total
+        case samples: PerUserSamplesLnSummary => samples.count
       }
     }
   }
