@@ -247,6 +247,7 @@ lazy val analysis = project
       "rainier-core",
       "cats-effect",
       "newtype",
+      "enumeratum",
       "breeze",
       "commons-math3",
       "play-json-derived-codecs"
@@ -376,8 +377,7 @@ lazy val http4s = project
       "tsec-signatures",
       "tsec-jwt-mac",
       "tsec-jwt-sig",
-      "tsec-http4s",
-      "enumeratum"
+      "tsec-http4s"
     )
   )
 

@@ -10,9 +10,12 @@ import cats.{Functor, MonadThrow}
 import cats.effect.Timer
 import com.iheart.thomas.abtest.Error.NotFound
 import com.iheart.thomas.utils.time.Period
+import enumeratum._
 
 import java.time.Instant
 import ExperimentKPIState.ArmsState
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Specialization.RealtimeMonitor
+
 case class ExperimentKPIState[+KS <: KPIStats](
     key: Key,
     arms: ArmsState[KS],
@@ -33,11 +36,33 @@ case class ExperimentKPIState[+KS <: KPIStats](
 
 object ExperimentKPIState {
   type ArmsState[+KS <: KPIStats] = NonEmptyList[ArmState[KS]]
-
   case class Key(
       feature: FeatureName,
-      kpi: KPIName) {
-    def toStringKey = feature + "|" + kpi.n
+      kpi: KPIName,
+      specialization: Specialization = RealtimeMonitor) {
+    lazy val toStringKey: String =
+      kpi.n + "|" + feature + "|" + specialization.entryName
+  }
+  object Key {
+    def parse(string: String): Option[Key] = {
+      string.split('|').toList match {
+        case kn :: fn :: sp :: Nil =>
+          Specialization.withNameOption(sp).map {
+            Key(fn, KPIName(kn), _)
+          }
+        case _ => None
+      }
+    }
+  }
+
+  sealed trait Specialization extends EnumEntry
+
+  object Specialization extends Enum[Specialization] {
+
+    val values = findValues
+    case object RealtimeMonitor extends Specialization
+    case object BanditCurrent extends Specialization
+    case object BanditHistory extends Specialization
   }
 
   def init[F[_]: Timer: Functor, KS <: KPIStats](
@@ -48,12 +73,6 @@ object ExperimentKPIState {
     utils.time
       .now[F]
       .map(now => ExperimentKPIState[KS](key, arms, dataPeriod, now, now))
-
-  def parseKey(string: String): Option[Key] = {
-    val split = string.split('|')
-    if (split.length != 2) None
-    else Some(Key(split.head, KPIName(split.last)))
-  }
 
   case class ArmState[+KS <: KPIStats](
       name: ArmName,

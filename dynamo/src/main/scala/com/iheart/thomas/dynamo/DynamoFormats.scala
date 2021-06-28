@@ -125,8 +125,8 @@ object DynamoFormats {
   implicit val estateKeyFormat: DynamoFormat[ExperimentKPIState.Key] =
     DynamoFormat.xmap[ExperimentKPIState.Key, String](
       s =>
-        ExperimentKPIState
-          .parseKey(s)
+        ExperimentKPIState.Key
+          .parse(s)
           .toRight(
             TypeCoercionError(new Exception("Invalid key format in DB: " + s))
           ),
