@@ -32,16 +32,16 @@ private[thomas] trait StateDAO[F[_], R <: KPIStats] {
   def get(featureName: FeatureName): F[BanditState[R]]
 }
 
-private[thomas] trait BanditSettingsDAO[F[_], SpecificSettings] {
+private[thomas] trait BanditSettingsDAO[F[_]] {
   def insert(
-      state: BanditSettings[SpecificSettings]
-    ): F[BanditSettings[SpecificSettings]]
+      state: BanditSettings
+    ): F[BanditSettings]
 
   def remove(featureName: FeatureName): F[Unit]
 
-  def get(featureName: FeatureName): F[BanditSettings[SpecificSettings]]
+  def get(featureName: FeatureName): F[BanditSettings]
 
   def update(
-      settings: BanditSettings[SpecificSettings]
-    ): F[BanditSettings[SpecificSettings]]
+      settings: BanditSettings
+    ): F[BanditSettings]
 }

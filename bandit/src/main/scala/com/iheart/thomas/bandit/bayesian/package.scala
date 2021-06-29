@@ -7,12 +7,10 @@ package object bayesian {
   type Likelihood = Double
 
   type ConversionBMABAlg[F[_]] =
-    BayesianMABAlg[F, Conversions, BanditSettings.Conversion]
+    BayesianMABAlg[F, Conversions]
 
   type ConversionBandit =
-    BayesianMAB[Conversions, BanditSettings.Conversion]
+    BayesianMAB[Conversions]
   type ConversionBandits = Vector[ConversionBandit]
-
-  type ConversionBanditSpec = BanditSpec[BanditSettings.Conversion]
 
 }

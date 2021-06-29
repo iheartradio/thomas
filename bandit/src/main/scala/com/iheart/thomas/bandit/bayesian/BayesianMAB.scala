@@ -6,9 +6,9 @@ import com.iheart.thomas.abtest.model.Abtest
 import com.iheart.thomas.analysis.{KPIName, KPIStats}
 import lihua.Entity
 
-case class BayesianMAB[R <: KPIStats, S](
+case class BayesianMAB[R <: KPIStats](
     abtest: Entity[Abtest],
-    settings: BanditSettings[S],
+    settings: BanditSettings,
     state: BanditState[R]) {
   def feature: FeatureName = abtest.data.feature
   def kpiName: KPIName = settings.kpiName

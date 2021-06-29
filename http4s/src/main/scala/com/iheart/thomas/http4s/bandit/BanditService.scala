@@ -5,11 +5,7 @@ package bandit
 import cats.effect.{Async, ConcurrentEffect, ContextShift, Resource, Sync, Timer}
 import cats.implicits._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
-import com.iheart.thomas.bandit.bayesian.{
-  BanditSettings,
-  ConversionBMABAlg,
-  ConversionBanditSpec
-}
+import com.iheart.thomas.bandit.bayesian.{BanditSettings, ConversionBMABAlg}
 import com.iheart.thomas.kafka.{
   BanditUpdater,
   ConversionBMABAlgResource,
@@ -29,6 +25,7 @@ import org.http4s.server.Router
 import scala.concurrent.ExecutionContext
 import _root_.play.api.libs.json.Json.toJson
 import cats.NonEmptyParallel
+import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.tracking.EventLogger
 
 class BanditService[F[_]: Async: Timer] private (
@@ -69,7 +66,7 @@ class BanditService[F[_]: Async: Timer] private (
 
   private def managementRoutes = {
     case req @ PUT -> Root / "conversions" / "features" / _ / "settings" =>
-      req.as[BanditSettings[BanditSettings.Conversion]].flatMap { s =>
+      req.as[BanditSettings].flatMap { s =>
         apiAlg.update(s)
       }
 
@@ -86,7 +83,7 @@ class BanditService[F[_]: Async: Timer] private (
       apiAlg.delete(feature) *> Ok(s"$feature, if existed, was removed.")
 
     case req @ POST -> Root / "conversions" / "features" =>
-      req.as[ConversionBanditSpec].flatMap { bs =>
+      req.as[BanditSpec].flatMap { bs =>
         apiAlg.init(bs)
       }
 

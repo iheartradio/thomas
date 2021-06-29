@@ -5,11 +5,7 @@ import cats.NonEmptyParallel
 import cats.effect._
 import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.analysis.Conversions
-import com.iheart.thomas.bandit.bayesian.{
-  BanditSettings,
-  BayesianMABAlg,
-  ConversionBMABAlg
-}
+import com.iheart.thomas.bandit.bayesian.{BayesianMABAlg, ConversionBMABAlg}
 import com.iheart.thomas.dynamo.DynamoFormats._
 import com.iheart.thomas.tracking.EventLogger
 import com.typesafe.config.Config
@@ -19,6 +15,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import dynamo.DynamoFormats._
 import com.iheart.thomas.dynamo.AnalysisDAOs._
+
 object ConversionBMABAlgResource {
   def apply[F[_]: Timer: EventLogger: NonEmptyParallel](
       implicit
@@ -29,12 +26,12 @@ object ConversionBMABAlgResource {
     implicit val stateDAO =
       dynamo.BanditsDAOs.banditState[F, Conversions]
     implicit val settingDAO =
-      dynamo.BanditsDAOs.banditSettings[F, BanditSettings.Conversion]
+      dynamo.BanditsDAOs.banditSettings[F]
     implicit val (abtestDAO, featureDAO) = mongoDAOs
     lazy val refreshPeriod =
       0.seconds //No cache is needed for abtests in Conversion API
     AbtestAlg.defaultResource[F](refreshPeriod).map { implicit abtestAlg =>
-      BayesianMABAlg[F, Conversions, BanditSettings.Conversion]
+      BayesianMABAlg[F, Conversions]
     }
   }
 

@@ -26,10 +26,8 @@ import scala.concurrent.duration.FiniteDuration
   *   @param maintainExplorationSize
   * @param reservedGroups
   *   reserve some arms from being changed by the bandit alg (useful for A/B tests)
-  * @param distSpecificSettings
-  *   @tparam SpecificSettings
   */
-case class BanditSettings[SpecificSettings](
+case class BanditSettings(
     feature: FeatureName,
     title: String,
     author: String,
@@ -41,10 +39,5 @@ case class BanditSettings[SpecificSettings](
     iterationDuration: Option[FiniteDuration] = None,
     oldHistoryWeight: Option[Weight] = None,
     reservedGroups: Set[GroupName] = Set.empty,
-    distSpecificSettings: SpecificSettings)
-
-object BanditSettings {
-  case class Conversion(
-      eventChunkSize: Int,
-      updatePolicyEveryNChunk: Int)
-}
+    eventChunkSize: Int = 1,
+    updatePolicyEveryNChunk: Int = 1)

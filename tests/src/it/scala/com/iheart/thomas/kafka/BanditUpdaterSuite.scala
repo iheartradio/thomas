@@ -105,10 +105,8 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
           title = "for integration tests",
           author = "Test Runner",
           kpiName = kpi.name,
-          distSpecificSettings = BanditSettings.Conversion(
-            eventChunkSize = chunkSize,
-            updatePolicyEveryNChunk = numOfChunksPerReallocate
-          )
+          eventChunkSize = chunkSize,
+          updatePolicyEveryNChunk = numOfChunksPerReallocate
         )
       )
     )

@@ -72,11 +72,8 @@ object DynamoFormats {
       _.toNanos
     )
 
-  implicit val bssc: DynamoFormat[BanditSettings.Conversion] =
-    deriveDynamoFormat[BanditSettings.Conversion]
-
-  implicit val bss: DynamoFormat[BanditSettings[BanditSettings.Conversion]] =
-    deriveDynamoFormat[BanditSettings[BanditSettings.Conversion]]
+  implicit val bss: DynamoFormat[BanditSettings] =
+    deriveDynamoFormat[BanditSettings]
 
   implicit val authRecordFormat: DynamoFormat[AuthRecord] =
     deriveDynamoFormat[AuthRecord]

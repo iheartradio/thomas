@@ -569,10 +569,8 @@ class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
         iterationDuration = iterationDuration,
         oldHistoryWeight = oldHistoryWeight,
         reservedGroups = reservedGroups,
-        distSpecificSettings = BanditSettings.Conversion(
-          eventChunkSize = 1,
-          updatePolicyEveryNChunk = 1
-        )
+        eventChunkSize = 1,
+        updatePolicyEveryNChunk = 1
       )
     )
 

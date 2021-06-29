@@ -4,7 +4,7 @@ import java.time.OffsetDateTime
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import Formats._
-import com.iheart.thomas.bandit.bayesian.{BanditSettings, ConversionBanditSpec}
+import com.iheart.thomas.bandit.bayesian.{BanditSettings, BanditSpec}
 import _root_.play.api.libs.json.{Format, JsSuccess, Json}
 import com.iheart.thomas.analysis.KPIName
 
@@ -41,7 +41,7 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
         |}
         |""".stripMargin
 
-    implicitly[Format[ConversionBanditSpec]]
+    implicitly[Format[BanditSpec]]
       .reads(Json.parse(json)) shouldBe JsSuccess(
       BanditSpec(
         start = OffsetDateTime.parse("2020-03-09T16:15:00.000-05:00"),

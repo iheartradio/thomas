@@ -15,7 +15,7 @@ import scala.concurrent.duration.FiniteDuration
 
 object ConversionBanditUpdater {
 
-  type Settings = BanditSettings[BanditSettings.Conversion]
+  type Settings = BanditSettings
 
   /** A stream of running bandits, but only when the set of bandits changes
     * meaningfully. See banditIdentifier below
@@ -41,7 +41,7 @@ object ConversionBanditUpdater {
       ) { (memo, current) =>
         val old = memo._1
 
-        def banditIdentifier(b: BayesianMAB[_, _]) =
+        def banditIdentifier(b: BayesianMAB[_]) =
           (b.abtest.data.groups.map(_.name).toSet, b.settings)
 
         (
@@ -71,7 +71,7 @@ object ConversionBanditUpdater {
     def updateConversion(
         settings: Settings
       ): Pipe[F, (ArmName, ConversionEvent), Unit] =
-      toConversion[F](settings.distSpecificSettings.eventChunkSize) andThen {
+      toConversion[F](settings.eventChunkSize) andThen {
         _.broadcastTo[F](
           (i: Stream[F, Map[ArmName, Conversions]]) =>
             i.evalMap { r =>
@@ -83,9 +83,8 @@ object ConversionBanditUpdater {
                   .void
             },
           (i: Stream[F, Map[ArmName, Conversions]]) =>
-            i.chunkN(settings.distSpecificSettings.updatePolicyEveryNChunk).evalMap {
-              _ =>
-                cbm.updatePolicy(settings.feature).void
+            i.chunkN(settings.updatePolicyEveryNChunk).evalMap { _ =>
+              cbm.updatePolicy(settings.feature).void
             }
         )
       }

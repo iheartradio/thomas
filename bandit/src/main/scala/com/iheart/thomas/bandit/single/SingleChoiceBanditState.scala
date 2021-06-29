@@ -12,7 +12,7 @@ import monocle.macros.syntax.lens._
 import cats.implicits._
 
 case class SingleChoiceBanditState[RewardStateT](
-    spec: BanditSpec[BanditSpec.EmptySubSettings.type],
+    spec: BanditSpec,
     chosenArm: SingleChoiceArmState,
     otherArms: List[SingleChoiceArmState],
     rewardStateSoFar: RewardStateT,

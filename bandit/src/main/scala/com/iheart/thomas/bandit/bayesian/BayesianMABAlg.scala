@@ -23,14 +23,14 @@ import scala.annotation.tailrec
 
 /** Abtest based Bayesian Multi Arm Bandit Algebra
   */
-trait BayesianMABAlg[F[_], R <: KPIStats, S] {
+trait BayesianMABAlg[F[_], R <: KPIStats] {
   def updateRewardState(
       featureName: FeatureName,
       rewardState: Map[ArmName, R]
     ): F[BanditState[R]]
 
-  type Bandit = BayesianMAB[R, S]
-  def init(banditSpec: BanditSpec[S]): F[Bandit]
+  type Bandit = BayesianMAB[R]
+  def init(banditSpec: BanditSpec): F[Bandit]
 
   def currentState(featureName: FeatureName): F[Bandit]
 
@@ -42,13 +42,13 @@ trait BayesianMABAlg[F[_], R <: KPIStats, S] {
 
   def delete(featureName: FeatureName): F[Unit]
 
-  def update(banditSettings: BanditSettings[S]): F[BanditSettings[S]]
+  def update(banditSettings: BanditSettings): F[BanditSettings]
 
 }
 object BayesianMABAlg {
 
   private[bayesian] def createTestSpec[F[_]: MonadThrow](
-      from: BanditSpec[_]
+      from: BanditSpec
     ): F[AbtestSpec] = {
     val defaultSize = (1d - from.arms
       .flatMap(_.initialSize)
@@ -67,18 +67,18 @@ object BayesianMABAlg {
     ).pure[F]
   }
 
-  implicit def apply[F[_], R <: KPIStats, S](
+  implicit def apply[F[_], R <: KPIStats](
       implicit stateDao: StateDAO[F, R],
       log: EventLogger[F],
-      settingsDao: BanditSettingsDAO[F, S],
+      settingsDao: BanditSettingsDAO[F],
       abtestAPI: abtest.AbtestAlg[F],
       RS: RewardState[R],
       T: Timer[F],
       P: NonEmptyParallel[F],
       F: MonadThrow[F],
       R: RewardAnalytics[F, R]
-    ): BayesianMABAlg[F, R, S] =
-    new BayesianMABAlg[F, R, S] {
+    ): BayesianMABAlg[F, R] =
+    new BayesianMABAlg[F, R] {
 
       def updateRewardState(
           featureName: FeatureName,
@@ -145,7 +145,7 @@ object BayesianMABAlg {
         ).mapN(BayesianMAB.apply _)
       }
 
-      def update(banditSettings: BanditSettings[S]): F[BanditSettings[S]] = {
+      def update(banditSettings: BanditSettings): F[BanditSettings] = {
         settingsDao.update(banditSettings)
       }
 
@@ -158,7 +158,7 @@ object BayesianMABAlg {
           )
         )
 
-      def init(banditSpec: BanditSpec[S]): F[Bandit] = {
+      def init(banditSpec: BanditSpec): F[Bandit] = {
         R.validateKPI(banditSpec.settings.kpiName) >>
           (
             stateDao

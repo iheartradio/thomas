@@ -19,11 +19,8 @@ object Formats {
 
   implicit val jfC: Format[Conversions] = j.format[Conversions]
 
-  implicit val jfBC: Format[BanditSettings.Conversion] =
-    j.format[BanditSettings.Conversion]
-
-  implicit val jfBSWC: Format[BanditSettings[BanditSettings.Conversion]] =
-    j.format[BanditSettings[BanditSettings.Conversion]]
+  implicit val jfBSWC: Format[BanditSettings] =
+    j.format[BanditSettings]
 
   implicit val jfAS: Format[ArmState[Conversions]] =
     j.format[ArmState[Conversions]]
@@ -31,13 +28,13 @@ object Formats {
   implicit val jfArmSpec: Format[ArmSpec] =
     j.format[ArmSpec]
 
-  implicit val jfBS: Format[ConversionBanditSpec] =
-    j.format[BanditSpec[BanditSettings.Conversion]]
+  implicit val jfBS: Format[BanditSpec] =
+    j.format[BanditSpec]
 
   implicit val jfBSC: Format[BanditState[Conversions]] =
     j.format[BanditState[Conversions]]
 
   implicit val jfBMAB: Format[ConversionBandit] =
-    j.format[BayesianMAB[Conversions, BanditSettings.Conversion]]
+    j.format[BayesianMAB[Conversions]]
 
 }

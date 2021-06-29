@@ -6,6 +6,7 @@ import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
 import com.iheart.thomas.utils.time.InstantOps
 import com.iheart.thomas.analysis.KPIName
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Specialization
 import com.iheart.thomas.stream.JobEvent.RunningJobsUpdated
 import com.iheart.thomas.stream.JobSpec.{
   MonitorTest,
@@ -23,6 +24,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
 import pureconfig.generic.auto._
+import PipeSyntax._
 
 trait JobAlg[F[_]] {
 
@@ -140,10 +142,15 @@ object JobAlg {
               (job.spec match {
                 case UpdateKPIPrior(kpiName, _) =>
                   kpiPipes.updatePrior(kpiName, processSettings)
-
                 case MonitorTest(feature, kpiName, _) =>
-                  kpiPipes.monitorExperiment(feature, kpiName, processSettings)
-
+                  kpiPipes
+                    .monitorExperiment(
+                      feature,
+                      kpiName,
+                      Specialization.RealtimeMonitor,
+                      processSettings
+                    )
+                    .map(_.void)
                 case RunBandit(_, _) => ???
               }).map { pipe =>
                 checkExpiration[Message].andThen(pipe)

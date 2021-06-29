@@ -35,7 +35,7 @@ object BayesianBanditClient {
       import org.http4s.{Method, Uri}
       import Method._
 
-      def init(banditSpec: ConversionBanditSpec): F[ConversionBandit] =
+      def init(banditSpec: BanditSpec): F[ConversionBandit] =
         c.expect(
           POST(
             banditSpec,

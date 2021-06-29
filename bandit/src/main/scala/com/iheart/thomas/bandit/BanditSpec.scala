@@ -6,15 +6,11 @@ import java.time.OffsetDateTime
 import com.iheart.thomas.abtest.model.{GroupMeta, GroupSize}
 import com.iheart.thomas.bandit.bayesian.BanditSettings
 
-case class BanditSpec[S](
+case class BanditSpec(
     arms: List[ArmSpec],
     start: OffsetDateTime,
-    settings: BanditSettings[S]) {
+    settings: BanditSettings) {
   def feature: FeatureName = settings.feature
-}
-
-object BanditSpec {
-  case object EmptySubSettings
 }
 
 case class ArmSpec(
