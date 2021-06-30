@@ -27,7 +27,7 @@ trait BayesianMABRepo[F[_]] {
   type Bandit = BayesianMAB
   def init(banditSpec: BanditSpec): F[Bandit]
 
-  def currentState(featureName: FeatureName): F[Bandit]
+  def get(featureName: FeatureName): F[Bandit]
 
   def getAll: F[Vector[Bandit]]
 
@@ -113,7 +113,7 @@ object BayesianMABRepo {
           ).parTupled.void
         }
 
-      def currentState(featureName: FeatureName): F[Bandit] =
+      def get(featureName: FeatureName): F[Bandit] =
         settingsDao.get(featureName).flatMap { bs =>
           (
             abtestAPI
@@ -188,43 +188,8 @@ object BayesianMABRepo {
             } yield updated
         }
 
-        def updateIteration(bandit: Bandit): F[Bandit] = ???
-//          for {
-//            ro <-
-//              bandit.settings.iterationDuration
-//                .flatTraverse(id =>
-//                  stateDao.newIteration(
-//                    bandit.feature,
-//                    id,
-//                    (oldHistory, oldArms) => {
-//
-//                      def newHistory(arm: ArmState[R]): (ArmName, R) = {
-//                        val weightedHistoryO =
-//                          for {
-//                            oldR <- oldHistory.flatMap(_.get(arm.name))
-//                            oldWeight <- bandit.settings.oldHistoryWeight
-//                          } yield RS.applyWeight(oldR, oldWeight) |+| RS.applyWeight(
-//                            arm.kpiStats,
-//                            1d - oldWeight
-//                          )
-//
-//                        (arm.name, weightedHistoryO.getOrElse(arm.kpiStats))
-//                      }
-//
-//                      (
-//                        oldArms.map(newHistory).toMap,
-//                        emptyArmState(oldArms.map(_.name))
-//                      ).pure[F]
-//                    }
-//                  )
-//                )
-//
-//            _ <- ro.traverse(r => log(NewIterationStarted(r)))
-//
-//          } yield ro.fold(bandit)(r => bandit.copy(state = r))
-
         for {
-          current <- currentState(feature)
+          current <- get(feature)
           settings <- settingsDao.get(feature)
           er <- kpiEvaluator(settings.stateKey, None)
           evaluation <- er.map(_._1).liftTo[F](EvaluationUnavailable)
@@ -246,7 +211,6 @@ object BayesianMABRepo {
                 .map(newTest =>
                   current.copy(abtest = newTest, state = Some(newState))
                 )
-                .flatMap(updateIteration)
             else
               F.pure(current.copy(state = Some(newState)))
 
