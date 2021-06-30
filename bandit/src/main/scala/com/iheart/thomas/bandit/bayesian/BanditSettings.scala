@@ -4,6 +4,7 @@ package bayesian
 import com.iheart.thomas.{FeatureName, GroupName}
 import com.iheart.thomas.abtest.model.GroupSize
 import com.iheart.thomas.analysis.KPIName
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{Key, Specialization}
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -40,4 +41,6 @@ case class BanditSettings(
     oldHistoryWeight: Option[Weight] = None,
     reservedGroups: Set[GroupName] = Set.empty,
     eventChunkSize: Int = 1,
-    updatePolicyEveryNChunk: Int = 1)
+    updatePolicyEveryNChunk: Int = 1) {
+  lazy val stateKey: Key = Key(feature, kpiName, Specialization.BanditCurrent)
+}

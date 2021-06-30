@@ -11,6 +11,7 @@ import com.iheart.thomas.analysis.{
   KPIName,
   KPIRepo,
   KPIStats,
+  Probability,
   QueryAccumulativeKPI
 }
 import com.iheart.thomas.stream.{Job, JobDAO}
@@ -127,6 +128,22 @@ object MapBasedDAOs {
           }
 
         } yield r
+
+      def updateOptimumLikelihood(
+          key: Key,
+          likelihoods: scala.collection.immutable.Map[ArmName, Probability]
+        ): F[ExperimentKPIState[KS]] =
+        get(key).flatMap { s =>
+          val newArms = s.arms.map(arm =>
+            arm.copy(likelihoodOptimum = likelihoods.get(arm.name))
+          )
+          update(
+            s.copy(
+              arms = newArms
+            )
+          )
+        }
+
     }
 
   def conversionKPIAlg[F[_]](

@@ -16,7 +16,7 @@
 //    def processBandits(
 //        feature: FeatureName
 //      ): F[Pipe[F, Message, Unit]] = ???
-////      allKPIProcessAlg.monitorExperiment(feature)
+//      allKPIProcessAlg.monitorExperiment(feature)
 //
 //  }
 //}

@@ -10,7 +10,7 @@ package object bayesian {
     BayesianMABAlg[F, Conversions]
 
   type ConversionBandit =
-    BayesianMAB[Conversions]
+    BayesianMABDepr[Conversions]
   type ConversionBandits = Vector[ConversionBandit]
 
 }

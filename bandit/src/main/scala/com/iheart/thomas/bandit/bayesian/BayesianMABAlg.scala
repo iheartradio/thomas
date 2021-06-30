@@ -29,7 +29,7 @@ trait BayesianMABAlg[F[_], R <: KPIStats] {
       rewardState: Map[ArmName, R]
     ): F[BanditState[R]]
 
-  type Bandit = BayesianMAB[R]
+  type Bandit = BayesianMABDepr[R]
   def init(banditSpec: BanditSpec): F[Bandit]
 
   def currentState(featureName: FeatureName): F[Bandit]
@@ -112,7 +112,7 @@ object BayesianMABAlg {
       def findAll(time: Option[OffsetDateTime]): F[Vector[Bandit]] = {
         def getBandit(abtest: Entity[Abtest]): F[Bandit] =
           (settingsDao.get(abtest.data.feature), stateDao.get(abtest.data.feature))
-            .mapN(BayesianMAB(abtest, _, _))
+            .mapN(BayesianMABDepr(abtest, _, _))
 
         abtestAPI //todo: this search depends how the bandit was initialized, if the abtest is created before the state, this will have concurrency problem.
           .getAllTestsBySpecialization(
@@ -142,7 +142,7 @@ object BayesianMABAlg {
             ),
           settingsDao.get(featureName),
           stateDao.get(featureName)
-        ).mapN(BayesianMAB.apply _)
+        ).mapN(BayesianMABDepr.apply _)
       }
 
       def update(banditSettings: BanditSettings): F[BanditSettings] = {
@@ -175,7 +175,7 @@ object BayesianMABAlg {
             createTestSpec[F](banditSpec).flatMap(
               abtestAPI.create(_, false)
             )
-          ).mapN((state, settings, a) => BayesianMAB(a, settings, state))
+          ).mapN((state, settings, a) => BayesianMABDepr(a, settings, state))
             .onError { case _ =>
               delete(banditSpec.feature)
             }
@@ -277,7 +277,7 @@ object BayesianMABAlg {
                   )
                 ).pure[F]
               )
-          _ <- log(Calculated(newState))
+          _ <- log(CalculatedDeprecated(newState))
           hasEnoughSamples =
             current.state.historical.isDefined || newState.arms
               .forall { r =>

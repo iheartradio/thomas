@@ -41,7 +41,7 @@ object ConversionBanditUpdater {
       ) { (memo, current) =>
         val old = memo._1
 
-        def banditIdentifier(b: BayesianMAB[_]) =
+        def banditIdentifier(b: BayesianMABDepr[_]) =
           (b.abtest.data.groups.map(_.name).toSet, b.settings)
 
         (

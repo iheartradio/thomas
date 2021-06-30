@@ -13,7 +13,7 @@ import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.bandit.bayesian.{
   BanditSettings,
   BanditState,
-  BayesianMAB,
+  BayesianMABDepr,
   BayesianMABAlg,
   ConversionBandit
 }

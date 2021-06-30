@@ -35,6 +35,6 @@ object Formats {
     j.format[BanditState[Conversions]]
 
   implicit val jfBMAB: Format[ConversionBandit] =
-    j.format[BayesianMAB[Conversions]]
+    j.format[BayesianMABDepr[Conversions]]
 
 }

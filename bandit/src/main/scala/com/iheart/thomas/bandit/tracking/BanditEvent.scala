@@ -3,6 +3,7 @@ package bandit.tracking
 
 import com.iheart.thomas.abtest.model.Abtest
 import com.iheart.thomas.analysis.KPIStats
+import com.iheart.thomas.analysis.monitor.{ExperimentKPIState}
 import com.iheart.thomas.bandit.bayesian.BanditState
 import com.iheart.thomas.tracking.Event
 
@@ -17,7 +18,10 @@ object BanditEvent {
     case class NewIterationStarted(currentState: BanditState[_ <: KPIStats])
         extends BanditEvent
 
-    case class Calculated(newState: BanditState[_ <: KPIStats]) extends BanditEvent
+    case class CalculatedDeprecated(newState: BanditState[_ <: KPIStats])
+        extends BanditEvent
+
+    case class Calculated(newState: ExperimentKPIState[KPIStats]) extends BanditEvent
 
     case class Reallocated(test: Abtest) extends BanditEvent
 

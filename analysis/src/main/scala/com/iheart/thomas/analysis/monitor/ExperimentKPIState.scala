@@ -100,6 +100,11 @@ trait ExperimentKPIStateDAO[F[_], KS <: KPIStats] {
     )(ifEmpty: => (ArmsState[KS], Period)
     ): F[ExperimentKPIState[KS]]
 
+  def updateOptimumLikelihood(
+      key: Key,
+      likelihoods: Map[ArmName, Probability]
+    ): F[ExperimentKPIState[KS]]
+
   def delete(key: Key): F[Option[ExperimentKPIState[KS]]]
 
 }
@@ -110,23 +115,35 @@ trait AllExperimentKPIStateRepo[F[_]] {
   def all: F[Vector[ExperimentKPIState[KPIStats]]]
   def find(key: Key): F[Option[ExperimentKPIState[KPIStats]]]
   def get(key: Key): F[ExperimentKPIState[KPIStats]]
+  def updateOptimumLikelihood(
+      key: Key,
+      likelihoods: Map[ArmName, Probability]
+    ): F[ExperimentKPIState[KPIStats]]
 }
 
 object AllExperimentKPIStateRepo {
   implicit def default[F[_]: MonadThrow](
       implicit cRepo: ExperimentKPIStateDAO[F, Conversions],
-      pRepo: ExperimentKPIStateDAO[F, PerUserSamplesLnSummary]
+      pRepo: ExperimentKPIStateDAO[F, PerUserSamplesLnSummary],
+      kPIRepo: AllKPIRepo[F]
     ): AllExperimentKPIStateRepo[F] =
     new AllExperimentKPIStateRepo[F] {
+      class PerformPartial[A](key: Key) {
+        def apply[B <: A, C <: A](ifC: F[B], ifA: F[C]): F[A] =
+          kPIRepo.get(key.kpi).flatMap {
+            case _: ConversionKPI   => ifC.widen
+            case _: AccumulativeKPI => ifA.widen
+          }
+      }
+      def perform[A](key: Key): PerformPartial[A] =
+        new PerformPartial[A](key)
 
-      def delete(key: Key): F[Option[ExperimentKPIState[KPIStats]]] =
-        cRepo
-          .delete(key)
-          .flatMap(r =>
-            r.fold(pRepo.delete(key).widen[Option[ExperimentKPIState[KPIStats]]])(
-              _ => r.pure[F].widen
-            )
-          )
+      def delete(key: Key): F[Option[ExperimentKPIState[KPIStats]]] = {
+        perform[Option[ExperimentKPIState[KPIStats]]](key)(
+          cRepo.delete(key),
+          pRepo.delete(key)
+        )
+      }
 
       def all: F[Vector[ExperimentKPIState[KPIStats]]] =
         for {
@@ -136,18 +153,24 @@ object AllExperimentKPIStateRepo {
           .widen[ExperimentKPIState[KPIStats]])
 
       def find(key: Key): F[Option[ExperimentKPIState[KPIStats]]] =
-        cRepo
-          .find(key)
-          .flatMap(r =>
-            r.fold(pRepo.find(key).widen[Option[ExperimentKPIState[KPIStats]]])(_ =>
-              r.pure[F].widen
-            )
-          )
+        perform[Option[ExperimentKPIState[KPIStats]]](key)(
+          cRepo.find(key),
+          pRepo.find(key)
+        )
 
       def get(key: Key): F[ExperimentKPIState[KPIStats]] =
         find(key).flatMap(
           _.liftTo[F](NotFound(key.toStringKey + " is not found in DB"))
         )
 
+      def updateOptimumLikelihood(
+          key: Key,
+          likelihoods: Map[ArmName, Probability]
+        ): F[ExperimentKPIState[KPIStats]] = perform[ExperimentKPIState[KPIStats]](
+        key
+      )(
+        cRepo.updateOptimumLikelihood(key, likelihoods),
+        pRepo.updateOptimumLikelihood(key, likelihoods)
+      )
     }
 }
