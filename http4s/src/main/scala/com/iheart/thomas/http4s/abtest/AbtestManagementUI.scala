@@ -40,7 +40,7 @@ import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import scala.util.control.NoStackTrace
 
 class AbtestManagementUI[F[_]: Async: Timer](
-    alg: AbtestAlg[F],
+    private[http4s] val alg: AbtestAlg[F],
     authAlg: AuthenticationAlg[F, AuthImp]
   )(implicit cfg: AdminUIConfig)
     extends AuthedEndpointsUtils[F, AuthImp]

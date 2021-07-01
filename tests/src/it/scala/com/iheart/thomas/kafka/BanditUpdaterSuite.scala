@@ -8,7 +8,7 @@ import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.bayesian.models.BetaModel
 import com.iheart.thomas.bandit.{ArmSpec, BanditSpec, ArmState}
 import com.iheart.thomas.bandit.bayesian.BanditSettings
-import com.iheart.thomas.stream.ConversionBanditUpdater
+import com.iheart.thomas.stream.ConversionBanditUpdaterDepr
 import com.iheart.thomas.testkit.Resources
 import com.iheart.thomas.tracking.EventLogger
 import fs2.Stream
@@ -105,8 +105,8 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
           title = "for integration tests",
           author = "Test Runner",
           kpiName = kpi.name,
-          eventChunkSize = chunkSize,
-          updatePolicyEveryNChunk = numOfChunksPerReallocate
+          stateMonitorEventChunkSize = chunkSize,
+          updatePolicyEveryNStateUpdate = numOfChunksPerReallocate
         )
       )
     )

@@ -40,7 +40,7 @@ class ConversionBMABAlgSuite
     forAll { (distribution: Map[GroupName, Probability]) =>
       val precision = BigDecimal(0.01)
       val availableSize = BigDecimal(0.8)
-      val groups = BayesianMABAlg
+      val groups = BayesianMABAlgDepr
         .allocateGroupSize(distribution, precision, None, availableSize)
 
       groups.size shouldBe distribution.size
@@ -70,7 +70,7 @@ class ConversionBMABAlgSuite
     val distribution: Map[GroupName, Probability] =
       Map("A" -> Probability(0.001), "B" -> Probability(0.999))
     val precision = BigDecimal(0.01)
-    val groups = BayesianMABAlg
+    val groups = BayesianMABAlgDepr
       .allocateGroupSize(distribution, precision, Some(0.1d), 1)
 
     groups.toSet shouldBe Set(
@@ -82,7 +82,7 @@ class ConversionBMABAlgSuite
 
   test("abtestSpecFromBanditSpec distributes sizes evenly") {
 
-    val result = BayesianMABAlg
+    val result = BayesianMABAlgDepr
       .createTestSpec[Try](
         BanditSpec(
           arms = List(ArmSpec("A"), ArmSpec("B")),
@@ -97,7 +97,7 @@ class ConversionBMABAlgSuite
 
   test("abtestSpecFromBanditSpec allocate based on initial sizes") {
 
-    val result = BayesianMABAlg
+    val result = BayesianMABAlgDepr
       .createTestSpec[Try](
         BanditSpec(
           arms =

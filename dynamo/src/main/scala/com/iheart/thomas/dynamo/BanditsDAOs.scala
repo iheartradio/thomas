@@ -12,14 +12,15 @@ import com.iheart.thomas.bandit.`package`.ArmState
 import com.iheart.thomas.bandit.bayesian.{
   BanditSettings,
   BanditSettingsDAO,
-  BanditState,
-  StateDAO
+  BanditStateDepr,
+  StateDAODepre
 }
 import org.scanamo.{ConditionNotMet, DynamoFormat}
 import org.scanamo.syntax._
 import org.scanamo.update.UpdateExpression
 
 import concurrent.duration._
+import DynamoFormats._
 
 object BanditsDAOs extends ScanamoManagement {
   val banditStateTableName = "ds-bandit-state"
@@ -38,8 +39,7 @@ object BanditsDAOs extends ScanamoManagement {
     ensureTables(tables, readCapacity, writeCapacity)
 
   implicit def banditSettings[F[_]: Async: Timer](
-      implicit dynamoClient: DynamoDbAsyncClient,
-      bsformat: DynamoFormat[BanditSettings]
+      implicit dynamoClient: DynamoDbAsyncClient
     ): BanditSettingsDAO[F] =
     new ScanamoDAOHelperStringKey[F, BanditSettings](
       banditSettingsTableName,
@@ -49,21 +49,21 @@ object BanditsDAOs extends ScanamoManagement {
 
   implicit def banditState[F[_]: Async, R <: KPIStats](
       implicit dynamoClient: DynamoDbAsyncClient,
-      bsformat: DynamoFormat[BanditState[R]],
+      bsformat: DynamoFormat[BanditStateDepr[R]],
       armformat: DynamoFormat[ArmState[R]],
       rFormat: DynamoFormat[R],
       T: Timer[F]
-    ): StateDAO[F, R] =
-    new ScanamoDAOHelperStringKey[F, BanditState[R]](
+    ): StateDAODepre[F, R] =
+    new ScanamoDAOHelperStringKey[F, BanditStateDepr[R]](
       banditStateTableName,
       banditKeyName,
       dynamoClient
-    ) with StateDAO[F, R] {
+    ) with StateDAODepre[F, R] {
 
       def updateArms(
           featureName: FeatureName,
           update: List[ArmState[R]] => F[List[ArmState[R]]]
-        ): F[BanditState[R]] =
+        ): F[BanditStateDepr[R]] =
         updateSafe(featureName) { bs =>
           update(bs.arms).map(ua => Some(set("arms", ua)))
         }.map(r => r._2.getOrElse(r._1))
@@ -73,7 +73,7 @@ object BanditsDAOs extends ScanamoManagement {
           expirationDuration: FiniteDuration,
           updateArmsHistory: (Option[Map[ArmName, R]],
               List[ArmState[R]]) => F[(Map[ArmName, R], List[ArmState[R]])]
-        ): F[Option[BanditState[R]]] =
+        ): F[Option[BanditStateDepr[R]]] =
         updateSafe(featureName) { bs =>
           for {
             epochMS <- T.clock.realTime(TimeUnit.MILLISECONDS)
@@ -98,8 +98,8 @@ object BanditsDAOs extends ScanamoManagement {
       def updateSafe(
           featureName: FeatureName,
           keepRetrying: Boolean = true
-        )(update: BanditState[R] => F[Option[UpdateExpression]]
-        ): F[(BanditState[R], Option[BanditState[R]])] = {
+        )(update: BanditStateDepr[R] => F[Option[UpdateExpression]]
+        ): F[(BanditStateDepr[R], Option[BanditStateDepr[R]])] = {
         val updateF = for {
           existing <- get(featureName)
           updatedExpO <- update(existing)

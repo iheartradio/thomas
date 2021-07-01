@@ -12,9 +12,9 @@ import com.iheart.thomas.analysis._
 import com.iheart.thomas.bandit.BanditSpec
 import com.iheart.thomas.bandit.bayesian.{
   BanditSettings,
-  BanditState,
+  BanditStateDepr,
   BayesianMABDepr,
-  BayesianMABAlg,
+  BayesianMABAlgDepr,
   ConversionBandit
 }
 import com.iheart.thomas.tracking.EventLogger
@@ -35,7 +35,7 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
           "B" -> Initiated
         ).iterator
       )
-      ConversionBanditUpdater
+      ConversionBanditUpdaterDepr
         .toConversion[IO](10)(input)
         .compile
         .toList
@@ -86,13 +86,13 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
       )
 
     def mockCbm(lists: Vector[ConversionBandit]*) =
-      new BayesianMABAlg[IO, Conversions, BanditSettings.Conversion] {
+      new BayesianMABAlgDepr[IO, Conversions, BanditSettings.Conversion] {
         val i = new java.util.concurrent.atomic.AtomicInteger(0)
 
         def updateRewardState(
             featureName: FeatureName,
             rewardState: Map[ArmName, Conversions]
-          ): IO[BanditState[Conversions]] = ???
+          ): IO[BanditStateDepr[Conversions]] = ???
 
         def init(banditSpec: BanditSpec[BanditSettings.Conversion]): IO[Bandit] = ???
 
@@ -116,7 +116,7 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
 
     "doesn't change when there is not change" in {
       implicit val cbm = mockCbm(Vector(mockBandit("f1")), Vector(mockBandit("f1")))
-      ConversionBanditUpdater
+      ConversionBanditUpdaterDepr
         .runningBandits[IO](25.milliseconds)
         .interruptAfter(75.milliseconds)
         .compile
@@ -133,7 +133,7 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
         Vector(mockBandit("f1")),
         Vector(mockBandit("f1", eventChunkSize = 4))
       )
-      ConversionBanditUpdater
+      ConversionBanditUpdaterDepr
         .runningBandits[IO](25.milliseconds)
         .interruptAfter(75.milliseconds)
         .compile
@@ -151,7 +151,7 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
         Vector(mockBandit("f1")),
         Vector(mockBandit("f1"), mockBandit("f2"))
       )
-      ConversionBanditUpdater
+      ConversionBanditUpdaterDepr
         .runningBandits[IO](25.milliseconds)
         .interruptAfter(75.milliseconds)
         .compile
@@ -169,7 +169,7 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
         Vector(mockBandit("f1"), mockBandit("f2")),
         Vector(mockBandit("f1"))
       )
-      ConversionBanditUpdater
+      ConversionBanditUpdaterDepr
         .runningBandits[IO](25.milliseconds)
         .interruptAfter(75.milliseconds)
         .compile
@@ -187,7 +187,7 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
         Vector(mockBandit("f1", groups = List("A", "B"))),
         Vector(mockBandit("f1", groups = List("A", "B", "C")))
       )
-      ConversionBanditUpdater
+      ConversionBanditUpdaterDepr
         .runningBandits[IO](25.milliseconds)
         .interruptAfter(75.milliseconds)
         .compile
@@ -205,7 +205,7 @@ class ConversionBanditUpdaterSuite extends AsyncIOSpec with Matchers {
         Vector(mockBandit("f1", groups = List("A", "B"))),
         Vector(mockBandit("f1", groups = List("B", "A")))
       )
-      ConversionBanditUpdater
+      ConversionBanditUpdaterDepr
         .runningBandits[IO](25.milliseconds)
         .interruptAfter(75.milliseconds)
         .compile

@@ -88,6 +88,7 @@ object JobAlg {
       timer: Timer[F],
       dao: JobDAO[F],
       kpiPipes: AllKPIProcessAlg[F, Message],
+      banditProcessAlg: BanditProcessAlg[F, Message],
       config: Config,
       logger: EventLogger[F],
       messageSubscriber: MessageSubscriber[F, Message]
@@ -151,7 +152,8 @@ object JobAlg {
                       processSettings
                     )
                     .map(_.void)
-                case RunBandit(_, _) => ???
+                case RunBandit(fn, _) =>
+                  banditProcessAlg.process(fn, processSettings)
               }).map { pipe =>
                 checkExpiration[Message].andThen(pipe)
               }

@@ -6,7 +6,7 @@ import com.iheart.thomas.abtest.model.GroupSize
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{Key, Specialization}
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 /** @param feature
   *   @param title
@@ -37,10 +37,12 @@ case class BanditSettings(
     historyRetention: Option[FiniteDuration] = None,
     initialSampleSize: Int = 0,
     maintainExplorationSize: Option[GroupSize] = None,
-    iterationDuration: Option[FiniteDuration] = None,
-    oldHistoryWeight: Option[Weight] = None,
+    iterationDuration: Option[FiniteDuration] = None, //todo: remove this
+    oldHistoryWeight: Option[Weight] = None, //todo: remove this
     reservedGroups: Set[GroupName] = Set.empty,
-    eventChunkSize: Int = 1,
-    updatePolicyEveryNChunk: Int = 1) {
+    stateMonitorEventChunkSize: Int = 1000,
+    stateMonitorFrequency: FiniteDuration = 1.minute,
+    updatePolicyEveryNStateUpdate: Int = 100,
+    updatePolicyFrequency: FiniteDuration = 1.hour) {
   lazy val stateKey: Key = Key(feature, kpiName, Specialization.BanditCurrent)
 }

@@ -30,7 +30,7 @@ object BayesianBanditClient {
       rootUrl: String
     ): ConversionBMABAlg[F] =
     new PlayJsonHttp4sClient[F](c)
-      with BayesianMABAlg[F, Conversions, BanditSettings.Conversion] {
+      with BayesianMABAlgDepr[F, Conversions, BanditSettings.Conversion] {
 
       import org.http4s.{Method, Uri}
       import Method._
@@ -49,7 +49,7 @@ object BayesianBanditClient {
       def updateRewardState(
           featureName: FeatureName,
           r: Map[ArmName, Conversions]
-        ): F[BanditState[Conversions]] =
+        ): F[BanditStateDepr[Conversions]] =
         c.expect(
           PUT(
             r,

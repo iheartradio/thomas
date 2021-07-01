@@ -40,7 +40,7 @@ abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
     implicit val eStateDAO = MapBasedDAOs.experimentStateDAO[IO, Conversions]
     implicit val aStateDAO =
       MapBasedDAOs.experimentStateDAO[IO, PerUserSamplesLnSummary]
-
+    implicit val nullBSProcessAlg: BanditProcessAlg[IO, JValue] = null
     PubSub.create[IO](event("type" -> "init")).flatMap { implicit pubSub =>
       f(ckpiDAO, JobAlg[IO, JValue], pubSub)
     }

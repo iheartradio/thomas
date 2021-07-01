@@ -10,7 +10,7 @@ import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.analysis.ConversionEvent
 import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
 import com.iheart.thomas.bandit.tracking.BanditEvent
-import com.iheart.thomas.stream.ConversionBanditUpdater
+import com.iheart.thomas.stream.ConversionBanditUpdaterDepr
 import com.iheart.thomas.tracking.EventLogger
 import fs2.concurrent.SignallingRef
 import fs2.kafka.{AutoOffsetReset, ConsumerSettings, Deserializer, KafkaConsumer}
@@ -78,7 +78,7 @@ object BanditUpdater {
               .flatTap(name => log.debug(s"Starting Consumer $name"))
           )
           .flatMap { name =>
-            ConversionBanditUpdater
+            ConversionBanditUpdaterDepr
               .updatePipes(
                 name,
                 cfg.allowedBanditsStaleness,

@@ -5,7 +5,7 @@ import cats.NonEmptyParallel
 import cats.effect._
 import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.analysis.Conversions
-import com.iheart.thomas.bandit.bayesian.{BayesianMABAlg, ConversionBMABAlg}
+import com.iheart.thomas.bandit.bayesian.{BayesianMABAlgDepr, ConversionBMABAlg}
 import com.iheart.thomas.dynamo.DynamoFormats._
 import com.iheart.thomas.tracking.EventLogger
 import com.typesafe.config.Config
@@ -31,7 +31,7 @@ object ConversionBMABAlgResource {
     lazy val refreshPeriod =
       0.seconds //No cache is needed for abtests in Conversion API
     AbtestAlg.defaultResource[F](refreshPeriod).map { implicit abtestAlg =>
-      BayesianMABAlg[F, Conversions]
+      BayesianMABAlgDepr[F, Conversions]
     }
   }
 

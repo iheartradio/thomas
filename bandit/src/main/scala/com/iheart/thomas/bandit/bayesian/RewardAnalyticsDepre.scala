@@ -7,7 +7,7 @@ import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.bayesian.models.BetaModel
 import com.iheart.thomas.analysis.bayesian._
 
-trait RewardAnalytics[F[_], R] {
+trait RewardAnalyticsDepre[F[_], R] {
   def sampleSize(r: R): Long
   def distribution(
       kpiName: KPIName,
@@ -18,7 +18,7 @@ trait RewardAnalytics[F[_], R] {
 
 }
 
-object RewardAnalytics {
+object RewardAnalyticsDepre {
   implicit def metricDataConversions[F[_]: FlatMap](
       implicit kpiAlg: KPIRepo[F, ConversionKPI],
       evaluator: ModelEvaluator[
@@ -26,8 +26,8 @@ object RewardAnalytics {
         BetaModel,
         Conversions
       ]
-    ): RewardAnalytics[F, Conversions] =
-    new RewardAnalytics[F, Conversions] {
+    ): RewardAnalyticsDepre[F, Conversions] =
+    new RewardAnalyticsDepre[F, Conversions] {
       def sampleSize(r: Conversions): Long = r.total
 
       def distribution(

@@ -7,13 +7,13 @@ import com.iheart.thomas.analysis.monitor.ExperimentKPIState.ArmState
 
 import scala.concurrent.duration.FiniteDuration
 
-private[thomas] trait StateDAO[F[_], R <: KPIStats] {
-  def insert(state: BanditState[R]): F[BanditState[R]]
+private[thomas] trait StateDAODepre[F[_], R <: KPIStats] {
+  def insert(state: BanditStateDepr[R]): F[BanditStateDepr[R]]
 
   def updateArms(
       featureName: FeatureName,
       update: List[ArmState[R]] => F[List[ArmState[R]]]
-    ): F[BanditState[R]]
+    ): F[BanditStateDepr[R]]
 
   /** @param featureName
     *   @param expirationDuration
@@ -25,11 +25,11 @@ private[thomas] trait StateDAO[F[_], R <: KPIStats] {
       expirationDuration: FiniteDuration,
       updateArmsHistory: (Option[Map[ArmName, R]],
           List[ArmState[R]]) => F[(Map[ArmName, R], List[ArmState[R]])]
-    ): F[Option[BanditState[R]]]
+    ): F[Option[BanditStateDepr[R]]]
 
   def remove(featureName: FeatureName): F[Unit]
 
-  def get(featureName: FeatureName): F[BanditState[R]]
+  def get(featureName: FeatureName): F[BanditStateDepr[R]]
 }
 
 private[thomas] trait BanditSettingsDAO[F[_]] {

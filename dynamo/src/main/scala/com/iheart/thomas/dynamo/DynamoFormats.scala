@@ -63,8 +63,8 @@ object DynamoFormats {
   implicit val armPUS: DynamoFormat[ArmState[PerUserSamplesLnSummary]] =
     deriveDynamoFormat[ArmState[PerUserSamplesLnSummary]]
 
-  implicit val dfc: DynamoFormat[BanditState[Conversions]] =
-    deriveDynamoFormat[BanditState[Conversions]]
+  implicit val dfc: DynamoFormat[BanditStateDepr[Conversions]] =
+    deriveDynamoFormat[BanditStateDepr[Conversions]]
 
   implicit val fddf: DynamoFormat[duration.FiniteDuration] =
     DynamoFormat.coercedXmap[FiniteDuration, Long, Throwable](
@@ -72,7 +72,7 @@ object DynamoFormats {
       _.toNanos
     )
 
-  implicit val bss: DynamoFormat[BanditSettings] =
+  implicit val bssFormat: DynamoFormat[BanditSettings] =
     deriveDynamoFormat[BanditSettings]
 
   implicit val authRecordFormat: DynamoFormat[AuthRecord] =

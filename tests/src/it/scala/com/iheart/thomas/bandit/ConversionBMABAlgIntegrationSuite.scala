@@ -15,7 +15,7 @@ import com.iheart.thomas.analysis.{
 }
 import com.iheart.thomas.bandit.bayesian.{
   BanditSettings,
-  BanditState,
+  BanditStateDepr,
   ConversionBMABAlg
 }
 import com.iheart.thomas.mongo
@@ -569,8 +569,7 @@ class ConversionBMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
         iterationDuration = iterationDuration,
         oldHistoryWeight = oldHistoryWeight,
         reservedGroups = reservedGroups,
-        eventChunkSize = 1,
-        updatePolicyEveryNChunk = 1
+        stateMonitorEventChunkSize = 1
       )
     )
 

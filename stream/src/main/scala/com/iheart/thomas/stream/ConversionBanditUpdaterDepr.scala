@@ -13,7 +13,7 @@ import com.iheart.thomas.tracking.EventLogger
 
 import scala.concurrent.duration.FiniteDuration
 
-object ConversionBanditUpdater {
+object ConversionBanditUpdaterDepr {
 
   type Settings = BanditSettings
 
@@ -71,7 +71,7 @@ object ConversionBanditUpdater {
     def updateConversion(
         settings: Settings
       ): Pipe[F, (ArmName, ConversionEvent), Unit] =
-      toConversion[F](settings.eventChunkSize) andThen {
+      toConversion[F](settings.stateMonitorEventChunkSize) andThen {
         _.broadcastTo[F](
           (i: Stream[F, Map[ArmName, Conversions]]) =>
             i.evalMap { r =>
@@ -83,7 +83,7 @@ object ConversionBanditUpdater {
                   .void
             },
           (i: Stream[F, Map[ArmName, Conversions]]) =>
-            i.chunkN(settings.updatePolicyEveryNChunk).evalMap { _ =>
+            i.chunkN(settings.updatePolicyEveryNStateUpdate).evalMap { _ =>
               cbm.updatePolicy(settings.feature).void
             }
         )

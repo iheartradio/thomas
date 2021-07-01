@@ -9,7 +9,7 @@ import lihua.Entity
 case class BayesianMABDepr[R <: KPIStats](
     abtest: Entity[Abtest],
     settings: BanditSettings,
-    state: BanditState[R]) {
+    state: BanditStateDepr[R]) {
   def feature: FeatureName = abtest.data.feature
   def kpiName: KPIName = settings.kpiName
 

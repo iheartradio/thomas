@@ -7,7 +7,7 @@ import com.iheart.thomas.analysis.{KPIStats, Probability}
 import cats.implicits._
 import analysis.monitor.ExperimentKPIState.ArmState
 
-case class BanditState[KS <: KPIStats](
+case class BanditStateDepr[KS <: KPIStats](
     feature: FeatureName,
     arms: List[ArmState[KS]],
     iterationStart: Instant,

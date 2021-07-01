@@ -68,5 +68,12 @@ object JobSpec {
   case class ProcessSettingsOptional(
       frequency: Option[FiniteDuration],
       eventChunkSize: Option[Int],
-      expiration: Option[Instant])
+      expiration: Option[Instant]) {
+    def withDefault(defaultSettings: ProcessSettings): ProcessSettings =
+      ProcessSettings(
+        frequency.getOrElse(defaultSettings.frequency),
+        eventChunkSize.getOrElse(defaultSettings.eventChunkSize),
+        expiration orElse defaultSettings.expiration
+      )
+  }
 }

@@ -1,52 +1,49 @@
-package com.iheart.thomas
-package bandit
-package bayesian
+package com.iheart.thomas.bandit.bayesian
 
-import java.time.temporal.ChronoUnit
-import java.time.{OffsetDateTime, ZoneOffset}
-import cats.NonEmptyParallel
 import cats.effect.Timer
 import cats.implicits._
-import com.iheart.thomas.utils.time._
+import cats.MonadThrow
 import com.iheart.thomas.abtest.model.Abtest.Specialization
 import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group, GroupSize}
-import com.iheart.thomas.analysis.{KPIStats, Probability}
-import com.iheart.thomas.bandit.tracking.BanditEvent.BanditPolicyUpdate.Reallocated
+import com.iheart.thomas.analysis.bayesian.KPIEvaluator
+import com.iheart.thomas.analysis.monitor.{
+  AllExperimentKPIStateRepo,
+  ExperimentKPIState
+}
+import com.iheart.thomas.analysis.{AllKPIRepo, KPIStats, Probability}
 import com.iheart.thomas.bandit.tracking.BanditEvent
-import com.iheart.thomas.bandit.{AbtestNotFound, BanditSpec, RewardState}
+import com.iheart.thomas.bandit.{AbtestNotFound, BanditSpec}
+import com.iheart.thomas.tracking.EventLogger
+import com.iheart.thomas.utils.time.now
 import com.iheart.thomas.{FeatureName, GroupName, abtest}
 import lihua.Entity
-import cats.MonadThrow
-import com.iheart.thomas.tracking.EventLogger
 
+import java.time.{OffsetDateTime, ZoneOffset}
 import scala.annotation.tailrec
 
 /** Abtest based Bayesian Multi Arm Bandit Algebra
   */
-trait BayesianMABAlg[F[_], R <: KPIStats] {
-  def updateRewardState(
-      featureName: FeatureName,
-      rewardState: Map[ArmName, R]
-    ): F[BanditState[R]]
-
-  type Bandit = BayesianMABDepr[R]
+trait BayesianMABAlg[F[_]] {
+  type Bandit = BayesianMAB
   def init(banditSpec: BanditSpec): F[Bandit]
 
-  def currentState(featureName: FeatureName): F[Bandit]
+  def get(featureName: FeatureName): F[Bandit]
 
   def getAll: F[Vector[Bandit]]
 
   def runningBandits(time: Option[OffsetDateTime] = None): F[Vector[Bandit]]
 
-  def updatePolicy(featureName: FeatureName): F[Bandit]
+  def updatePolicy(state: ExperimentKPIState[KPIStats]): F[Bandit]
 
   def delete(featureName: FeatureName): F[Unit]
 
   def update(banditSettings: BanditSettings): F[BanditSettings]
 
 }
+
 object BayesianMABAlg {
 
+  case object EvaluationUnavailable extends RuntimeException
   private[bayesian] def createTestSpec[F[_]: MonadThrow](
       from: BanditSpec
     ): F[AbtestSpec] = {
@@ -67,39 +64,18 @@ object BayesianMABAlg {
     ).pure[F]
   }
 
-  implicit def apply[F[_], R <: KPIStats](
-      implicit stateDao: StateDAO[F, R],
+  implicit def apply[F[_]](
+      implicit stateDao: AllExperimentKPIStateRepo[F],
       log: EventLogger[F],
       settingsDao: BanditSettingsDAO[F],
+      kpiEvaluator: KPIEvaluator[F],
+      kpiRepo: AllKPIRepo[F],
       abtestAPI: abtest.AbtestAlg[F],
-      RS: RewardState[R],
       T: Timer[F],
-      P: NonEmptyParallel[F],
-      F: MonadThrow[F],
-      R: RewardAnalytics[F, R]
-    ): BayesianMABAlg[F, R] =
-    new BayesianMABAlg[F, R] {
-
-      def updateRewardState(
-          featureName: FeatureName,
-          rewards: Map[ArmName, R]
-        ): F[BanditState[R]] = {
-        for {
-          updated <-
-            stateDao
-              .updateArms(
-                featureName,
-                _.map { arm =>
-                  arm.copy(
-                    kpiStats = rewards
-                      .get(arm.name)
-                      .fold(arm.kpiStats)(arm.kpiStats |+| _)
-                  )
-                }.pure[F]
-              )
-          _ <- log(BanditEvent.BanditKPIUpdate.Updated(updated))
-        } yield updated
-      }
+//      P: NonEmptyParallel[F],
+      F: MonadThrow[F]
+    ): BayesianMABAlg[F] =
+    new BayesianMABAlg[F] {
 
       def getAll: F[Vector[Bandit]] =
         findAll(None)
@@ -111,8 +87,10 @@ object BayesianMABAlg {
 
       def findAll(time: Option[OffsetDateTime]): F[Vector[Bandit]] = {
         def getBandit(abtest: Entity[Abtest]): F[Bandit] =
-          (settingsDao.get(abtest.data.feature), stateDao.get(abtest.data.feature))
-            .mapN(BayesianMABDepr(abtest, _, _))
+          for {
+            settings <- settingsDao.get(abtest.data.feature)
+            state <- stateDao.find(settings.stateKey)
+          } yield BayesianMAB(abtest, settings, state)
 
         abtestAPI //todo: this search depends how the bandit was initialized, if the abtest is created before the state, this will have concurrency problem.
           .getAllTestsBySpecialization(
@@ -122,174 +100,120 @@ object BayesianMABAlg {
           .flatMap(_.traverse(getBandit))
       }
 
-      def delete(featureName: FeatureName): F[Unit] = {
-        (
-          abtestAPI.getTestsByFeature(featureName).flatMap { tests =>
-            tests.headOption.fold(F.unit)(test => abtestAPI.terminate(test._id).void)
-          },
-          settingsDao.remove(featureName),
-          stateDao.remove(featureName)
-        ).parTupled.void
-      }
+      def delete(featureName: FeatureName): F[Unit] =
+        settingsDao.get(featureName).flatMap { bs =>
+          (
+            abtestAPI.getTestsByFeature(featureName).flatMap { tests =>
+              tests.headOption.fold(F.unit)(test =>
+                abtestAPI.terminate(test._id).void
+              )
+            },
+            settingsDao.remove(featureName),
+            stateDao.delete(bs.stateKey)
+          ).tupled.void
+        }
 
-      def currentState(featureName: FeatureName): F[Bandit] = {
-        (
-          abtestAPI
-            .getTestsByFeature(featureName)
-            .flatMap(
-              _.headOption
-                .liftTo[F](AbtestNotFound(featureName))
-            ),
-          settingsDao.get(featureName),
-          stateDao.get(featureName)
-        ).mapN(BayesianMABDepr.apply _)
-      }
+      def abtest(featureName: FeatureName): F[Entity[Abtest]] =
+        abtestAPI
+          .getTestsByFeature(featureName)
+          .flatMap(
+            _.headOption
+              .liftTo[F](AbtestNotFound(featureName))
+          )
+
+      def get(featureName: FeatureName): F[Bandit] =
+        settingsDao.get(featureName).flatMap { bs =>
+          (abtest(featureName), stateDao.find(bs.stateKey))
+            .mapN(BayesianMAB(_, bs, _))
+        }
 
       def update(banditSettings: BanditSettings): F[BanditSettings] = {
         settingsDao.update(banditSettings)
       }
 
-      private def emptyArmState(armNames: List[ArmName]): List[ArmState[R]] =
-        armNames.map(
-          ArmState(
-            _,
-            RS.empty,
-            None
-          )
-        )
-
       def init(banditSpec: BanditSpec): F[Bandit] = {
-        R.validateKPI(banditSpec.settings.kpiName) >>
+        kpiRepo.get(banditSpec.settings.kpiName) >>
           (
-            stateDao
-              .insert(
-                BanditState[R](
-                  feature = banditSpec.feature,
-                  arms = emptyArmState(banditSpec.arms.map(_.name)),
-                  iterationStart =
-                    banditSpec.start.toInstant.truncatedTo(ChronoUnit.MILLIS),
-                  version = 0L
-                )
-              ),
             settingsDao.insert(banditSpec.settings),
             createTestSpec[F](banditSpec).flatMap(
-              abtestAPI.create(_, false)
+              abtestAPI.create(_, auto = false)
             )
-          ).mapN((state, settings, a) => BayesianMABDepr(a, settings, state))
+          ).mapN((settings, a) => BayesianMAB(a, settings, None))
             .onError { case _ =>
               delete(banditSpec.feature)
             }
       }
 
-      def updatePolicy(feature: FeatureName): F[Bandit] = {
+      def updatePolicy(state: ExperimentKPIState[KPIStats]): F[Bandit] = {
         import BanditEvent.BanditPolicyUpdate._
 
-        def resizeAbtest(bandit: Bandit) = {
+        def resizeAbtest(
+            abtest: Entity[Abtest],
+            state: ExperimentKPIState[_],
+            settings: BanditSettings
+          ) = {
 
-          val reservedGroups = bandit.abtest.data.groups
-            .filter(g => bandit.settings.reservedGroups.contains(g.name))
+          val reservedGroups = abtest.data.groups
+            .filter(g => settings.reservedGroups.contains(g.name))
 
           val newGroups = allocateGroupSize(
-            bandit.state.distribution,
-            bandit.settings.minimumSizeChange,
-            bandit.settings.maintainExplorationSize,
+            state.distribution,
+            settings.minimumSizeChange,
+            settings.maintainExplorationSize,
             availableSize = BigDecimal(1) - reservedGroups.map(_.size).sum
           ) ++ reservedGroups
-          if (newGroups.toSet == bandit.abtest.data.groups.toSet)
-            bandit.pure[F]
+          if (newGroups.toSet == abtest.data.groups.toSet)
+            abtest.pure[F]
           else
             for {
               nowT <- now[F].map(_.atOffset(ZoneOffset.UTC))
-              abtest <- abtestAPI.continue(
-                bandit.abtest.data
+              updated <- abtestAPI.continue(
+                abtest.data
                   .copy(groups = newGroups)
                   .toSpec
                   .copy(
                     start = nowT,
-                    end = bandit.abtest.data.end.map(_.atOffset(ZoneOffset.UTC))
+                    end = abtest.data.end.map(_.atOffset(ZoneOffset.UTC))
                   )
               )
-              _ <- bandit.settings.historyRetention.fold(F.unit)(before =>
+              _ <- settings.historyRetention.fold(F.unit)(before =>
                 abtestAPI
                   .cleanUp(
-                    bandit.feature,
+                    abtest.data.feature,
                     nowT
                       .minus(java.time.Duration.ofMillis(before.toMillis))
                   )
                   .void
               )
-              _ <- log(Reallocated(abtest.data))
-            } yield bandit.copy(abtest = abtest)
-        }
-
-        def updateIteration(bandit: Bandit): F[Bandit] = {
-          for {
-            ro <-
-              bandit.settings.iterationDuration
-                .flatTraverse(id =>
-                  stateDao.newIteration(
-                    bandit.feature,
-                    id,
-                    (oldHistory, oldArms) => {
-
-                      def newHistory(arm: ArmState[R]): (ArmName, R) = {
-                        val weightedHistoryO =
-                          for {
-                            oldR <- oldHistory.flatMap(_.get(arm.name))
-                            oldWeight <- bandit.settings.oldHistoryWeight
-                          } yield RS.applyWeight(oldR, oldWeight) |+| RS.applyWeight(
-                            arm.kpiStats,
-                            1d - oldWeight
-                          )
-
-                        (arm.name, weightedHistoryO.getOrElse(arm.kpiStats))
-                      }
-
-                      (
-                        oldArms.map(newHistory).toMap,
-                        emptyArmState(oldArms.map(_.name))
-                      ).pure[F]
-                    }
-                  )
-                )
-
-            _ <- ro.traverse(r => log(NewIterationStarted(r)))
-
-          } yield ro.fold(bandit)(r => bandit.copy(state = r))
+              _ <- log(Reallocated(updated.data))
+            } yield updated
         }
 
         for {
-          current <- currentState(feature)
-          distribution <- R.distribution(
-            current.kpiName,
-            current.state.rewardState
-              .filterKeys(!current.settings.reservedGroups(_)),
-            current.state.historical
-          )
+          settings <- settingsDao.get(state.key.feature)
+          er <- kpiEvaluator(settings.stateKey, None)
+          evaluation <- er.map(_._1).liftTo[F](EvaluationUnavailable)
           newState <-
             stateDao
-              .updateArms(
-                feature,
-                _.map(arm =>
-                  arm.copy(
-                    likelihoodOptimum =
-                      distribution.get(arm.name) orElse arm.likelihoodOptimum
-                  )
-                ).pure[F]
+              .updateOptimumLikelihood(
+                settings.stateKey,
+                evaluation.map(e => (e.name, e.probabilityBeingOptimal)).toMap
               )
-          _ <- log(CalculatedDeprecated(newState))
+          _ <- log(Calculated(newState))
           hasEnoughSamples =
-            current.state.historical.isDefined || newState.arms
+            newState.arms
               .forall { r =>
-                r.sampleSize > current.settings.initialSampleSize
+                r.sampleSize > settings.initialSampleSize
               }
-          updatedBandit <-
-            if (hasEnoughSamples)
-              resizeAbtest(current.copy(state = newState)).flatMap(updateIteration)
-            else
-              F.pure(current.copy(state = newState))
 
-        } yield updatedBandit
+          currentTest <- abtest(settings.feature)
+          updatedTest <-
+            if (hasEnoughSamples)
+              resizeAbtest(currentTest, newState, settings)
+            else
+              F.pure(currentTest)
+
+        } yield BayesianMAB(updatedTest, settings, state = Some(newState))
 
       }
 
