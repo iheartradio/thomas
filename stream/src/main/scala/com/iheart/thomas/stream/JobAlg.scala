@@ -11,6 +11,7 @@ import com.iheart.thomas.stream.JobEvent.RunningJobsUpdated
 import com.iheart.thomas.stream.JobSpec.{
   MonitorTest,
   ProcessSettings,
+  ProcessSettingsOptional,
   RunBandit,
   UpdateKPIPrior
 }
@@ -114,17 +115,17 @@ object JobAlg {
           .eval(JobRunnerConfig.fromConfig(config))
           .flatMap { cfg =>
             def jobPipe(job: Job): F[Pipe[F, Message, Unit]] = {
-              val processSettings = (
+              def processSettings(settings: ProcessSettingsOptional) = (
                 ProcessSettings(
-                  frequency = job.spec.processSettings.frequency
+                  frequency = settings.frequency
                     .getOrElse(cfg.jobProcessFrequency),
-                  eventChunkSize = job.spec.processSettings.eventChunkSize
+                  eventChunkSize = settings.eventChunkSize
                     .getOrElse(cfg.maxChunkSize),
-                  expiration = job.spec.processSettings.expiration
+                  expiration = settings.expiration
                 )
               )
 
-              def checkExpiration[A]: Pipe[F, A, A] =
+              def checkExpiration[A](settings: ProcessSettings): Pipe[F, A, A] =
                 (input: Stream[F, A]) => {
                   def checkJobComplete(exp: Instant) =
                     Stream
@@ -134,28 +135,30 @@ object JobAlg {
                         if (completed) stop(job.key)
                         else F.unit
                       }
-                  processSettings.expiration.fold(input)(exp =>
+                  settings.expiration.fold(input)(exp =>
                     input
                       .interruptWhen(checkJobComplete(exp))
                   )
                 }
 
               (job.spec match {
-                case UpdateKPIPrior(kpiName, _) =>
-                  kpiPipes.updatePrior(kpiName, processSettings)
-                case MonitorTest(feature, kpiName, _) =>
+                case UpdateKPIPrior(kpiName, s) =>
+                  val settings = processSettings(s)
+                  kpiPipes.updatePrior(kpiName, settings).map((_, settings))
+                case MonitorTest(feature, kpiName, s) =>
+                  val settings = processSettings(s)
                   kpiPipes
                     .monitorExperiment(
                       feature,
                       kpiName,
                       Specialization.RealtimeMonitor,
-                      processSettings
+                      settings
                     )
-                    .map(_.void)
-                case RunBandit(fn, _) =>
-                  banditProcessAlg.process(fn, processSettings)
-              }).map { pipe =>
-                checkExpiration[Message].andThen(pipe)
+                    .map(p => (p.void, settings))
+                case RunBandit(fn) =>
+                  banditProcessAlg.process(fn)
+              }).map { case (pipe, settings) =>
+                checkExpiration[Message](settings).andThen(pipe)
               }
             }
 

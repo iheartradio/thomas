@@ -1,7 +1,6 @@
 package com.iheart.thomas
 package stream
 import com.iheart.thomas.analysis.KPIName
-import com.iheart.thomas.stream.JobSpec.ProcessSettingsOptional
 
 import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
@@ -9,7 +8,6 @@ import scala.concurrent.duration.FiniteDuration
 sealed trait JobSpec extends Serializable with Product {
   def key: String
   def description: String
-  def processSettings: ProcessSettingsOptional
 }
 
 object JobSpec {
@@ -50,8 +48,7 @@ object JobSpec {
   }
 
   case class RunBandit(
-      featureName: FeatureName,
-      processSettings: ProcessSettingsOptional)
+      featureName: FeatureName)
       extends JobSpec {
     val key = "Run_Bandit_" + featureName
 

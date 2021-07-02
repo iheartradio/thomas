@@ -11,9 +11,8 @@ import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Specialization
 
 trait BanditProcessAlg[F[_], Message] {
   def process(
-      feature: FeatureName,
-      processSettings: ProcessSettings
-    ): F[Pipe[F, Message, Unit]]
+      feature: FeatureName
+    ): F[(Pipe[F, Message, Unit], ProcessSettings)]
 }
 
 object BanditProcessAlg {
@@ -23,27 +22,34 @@ object BanditProcessAlg {
     ): BanditProcessAlg[F, Message] = new BanditProcessAlg[F, Message] {
 
     def process(
-        feature: FeatureName,
-        processSettings: ProcessSettings
-      ): F[Pipe[F, Message, Unit]] = {
+        feature: FeatureName
+      ): F[(Pipe[F, Message, Unit], ProcessSettings)] = {
       for {
         bandit <- banditAlg.get(feature)
+        settings = ProcessSettings(
+          bandit.settings.stateMonitorFrequency,
+          bandit.settings.stateMonitorEventChunkSize,
+          None
+        )
         monitorPipe <- allKPIProcessAlg.monitorExperiment(
           feature,
           bandit.kpiName,
           Specialization.BanditCurrent,
-          processSettings
+          settings
         )
       } yield {
-        monitorPipe.andThen { states =>
-          states
-            .groupWithin(
-              bandit.settings.updatePolicyEveryNStateUpdate,
-              bandit.settings.updatePolicyFrequency
-            )
-            .evalMapFilter(_.last.traverse(banditAlg.updatePolicy))
-            .void
-        }
+        (
+          monitorPipe.andThen { states =>
+            states
+              .groupWithin(
+                bandit.settings.updatePolicyEveryNStateUpdate,
+                bandit.settings.updatePolicyFrequency
+              )
+              .evalMapFilter(_.last.traverse(banditAlg.updatePolicy))
+              .void
+          },
+          settings
+        )
       }
     }
   }
