@@ -32,6 +32,20 @@ case class ExperimentKPIState[+KS <: KPIStats](
   def getArm(armName: ArmName): Option[ArmState[KS]] =
     arms.find(_.name === armName)
 
+  def asConversions: Option[ExperimentKPIState[Conversions]] =
+    arms.head.kpiStats match {
+      case _: Conversions =>
+        Some(asInstanceOf[ExperimentKPIState[Conversions]])
+      case _ => None
+    }
+
+  def asPerUserSamplesLnSummary
+      : Option[ExperimentKPIState[PerUserSamplesLnSummary]] =
+    arms.head.kpiStats match {
+      case _: PerUserSamplesLnSummary =>
+        Some(asInstanceOf[ExperimentKPIState[PerUserSamplesLnSummary]])
+      case _ => None
+    }
 }
 
 object ExperimentKPIState {
@@ -115,6 +129,7 @@ trait AllExperimentKPIStateRepo[F[_]] {
   def all: F[Vector[ExperimentKPIState[KPIStats]]]
   def find(key: Key): F[Option[ExperimentKPIState[KPIStats]]]
   def get(key: Key): F[ExperimentKPIState[KPIStats]]
+
   def updateOptimumLikelihood(
       key: Key,
       likelihoods: Map[ArmName, Probability]

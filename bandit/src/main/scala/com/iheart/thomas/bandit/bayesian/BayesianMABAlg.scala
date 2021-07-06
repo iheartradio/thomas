@@ -43,7 +43,6 @@ trait BayesianMABAlg[F[_]] {
 
 object BayesianMABAlg {
 
-  case object EvaluationUnavailable extends RuntimeException
   private[bayesian] def createTestSpec[F[_]: MonadThrow](
       from: BanditSpec
     ): F[AbtestSpec] = {
@@ -191,8 +190,10 @@ object BayesianMABAlg {
 
         for {
           settings <- settingsDao.get(state.key.feature)
-          er <- kpiEvaluator(settings.stateKey, None)
-          evaluation <- er.map(_._1).liftTo[F](EvaluationUnavailable)
+          evaluation <- kpiEvaluator(
+            state,
+            Some(state.arms.map(_.name).filterNot(settings.reservedGroups))
+          )
           newState <-
             stateDao
               .updateOptimumLikelihood(
