@@ -14,7 +14,7 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 import scala.util.Try
 
-class ConversionBMABAlgSuite
+class BayesianMABAlgSuite
     extends AnyFunSuiteLike
     with Matchers
     with ScalaCheckDrivenPropertyChecks {
@@ -28,19 +28,20 @@ class ConversionBMABAlgSuite
   }
 
   def createSettings =
-    BanditSettings[BanditSettings.Conversion](
+    BanditSettings(
       "feature",
       "title",
       "author",
       KPIName("kpi"),
-      distSpecificSettings = BanditSettings.Conversion(1, 1)
+      stateMonitorEventChunkSize = 1,
+      updatePolicyEveryNStateUpdate = 1
     )
 
   test("allocateGroupSize allocates using available size") {
     forAll { (distribution: Map[GroupName, Probability]) =>
       val precision = BigDecimal(0.01)
       val availableSize = BigDecimal(0.8)
-      val groups = BayesianMABAlgDepr
+      val groups = BayesianMABAlg
         .allocateGroupSize(distribution, precision, None, availableSize)
 
       groups.size shouldBe distribution.size
@@ -70,7 +71,7 @@ class ConversionBMABAlgSuite
     val distribution: Map[GroupName, Probability] =
       Map("A" -> Probability(0.001), "B" -> Probability(0.999))
     val precision = BigDecimal(0.01)
-    val groups = BayesianMABAlgDepr
+    val groups = BayesianMABAlg
       .allocateGroupSize(distribution, precision, Some(0.1d), 1)
 
     groups.toSet shouldBe Set(
@@ -82,7 +83,7 @@ class ConversionBMABAlgSuite
 
   test("abtestSpecFromBanditSpec distributes sizes evenly") {
 
-    val result = BayesianMABAlgDepr
+    val result = BayesianMABAlg
       .createTestSpec[Try](
         BanditSpec(
           arms = List(ArmSpec("A"), ArmSpec("B")),
@@ -97,7 +98,7 @@ class ConversionBMABAlgSuite
 
   test("abtestSpecFromBanditSpec allocate based on initial sizes") {
 
-    val result = BayesianMABAlgDepr
+    val result = BayesianMABAlg
       .createTestSpec[Try](
         BanditSpec(
           arms =

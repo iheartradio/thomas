@@ -4,14 +4,13 @@ package cli
 import com.monovore.decline.{Command, Opts}
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
-import concurrent.ExecutionContext.Implicits.global
+
 object Main extends IOApp {
   def run(args: List[String]): IO[ExitCode] = {
     val cmd: Command[IO[String]] = Command("thomas", "Thomas cli")(
       Opts.subcommands(
         new GroupMetaCommands[IO].groupMetaCommand,
-        new EligibilityControlCommand[IO].userMetaCriteriaCommand,
-        BayesianMABCommands.conversionBMABCommand[IO]
+        new EligibilityControlCommand[IO].userMetaCriteriaCommand
       )
     )
 

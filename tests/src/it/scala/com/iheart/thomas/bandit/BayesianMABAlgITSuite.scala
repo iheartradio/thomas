@@ -15,7 +15,6 @@ import com.iheart.thomas.analysis.{
 }
 import com.iheart.thomas.bandit.bayesian.{
   BanditSettings,
-  BanditStateDepr,
   BayesianMAB,
   BayesianMABAlg
 }
@@ -37,7 +36,7 @@ import com.stripe.rainier.sampler.RNG
 
 import concurrent.duration._
 
-class BayesianMABAlgSuite extends BayesianMABAlgSuiteBase {
+class BayesianMABAlgITSuite extends BayesianMABAlgITSuiteBase {
 
   import testkit.Resources._
 
@@ -316,7 +315,7 @@ class BayesianMABAlgSuite extends BayesianMABAlgSuiteBase {
 
 }
 
-class BayesianMABAlgSuiteBase extends AnyFunSuiteLike with Matchers {
+class BayesianMABAlgITSuiteBase extends AnyFunSuiteLike with Matchers {
 
   import testkit.Resources._
 

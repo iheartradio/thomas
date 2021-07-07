@@ -63,9 +63,6 @@ object DynamoFormats {
   implicit val armPUS: DynamoFormat[ArmState[PerUserSamplesLnSummary]] =
     deriveDynamoFormat[ArmState[PerUserSamplesLnSummary]]
 
-  implicit val dfc: DynamoFormat[BanditStateDepr[Conversions]] =
-    deriveDynamoFormat[BanditStateDepr[Conversions]]
-
   implicit val fddf: DynamoFormat[duration.FiniteDuration] =
     DynamoFormat.coercedXmap[FiniteDuration, Long, Throwable](
       FiniteDuration(_, TimeUnit.NANOSECONDS),

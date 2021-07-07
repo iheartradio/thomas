@@ -46,3 +46,17 @@ case class BanditSettings(
     updatePolicyFrequency: FiniteDuration = 1.hour) {
   lazy val stateKey: Key = Key(feature, kpiName, Specialization.BanditCurrent)
 }
+
+private[thomas] trait BanditSettingsDAO[F[_]] {
+  def insert(
+      state: BanditSettings
+    ): F[BanditSettings]
+
+  def remove(featureName: FeatureName): F[Unit]
+
+  def get(featureName: FeatureName): F[BanditSettings]
+
+  def update(
+      settings: BanditSettings
+    ): F[BanditSettings]
+}

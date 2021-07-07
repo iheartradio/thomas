@@ -5,7 +5,6 @@ import com.iheart.thomas.analysis.{Conversions, KPIName, Probability}
 import com.iheart.thomas.bandit.bayesian._
 import _root_.play.api.libs.json.{Format, Json}
 import io.estatico.newtype.ops._
-import lihua.playJson.Formats._
 import com.iheart.thomas.abtest.json.play.Formats._
 import _root_.play.api.libs.json.Json.WithDefaultValues
 object Formats {
@@ -30,11 +29,5 @@ object Formats {
 
   implicit val jfBS: Format[BanditSpec] =
     j.format[BanditSpec]
-
-  implicit val jfBSC: Format[BanditStateDepr[Conversions]] =
-    j.format[BanditStateDepr[Conversions]]
-
-  implicit val jfBMAB: Format[ConversionBandit] =
-    j.format[BayesianMABDepr[Conversions]]
 
 }
