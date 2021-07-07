@@ -114,6 +114,12 @@ object AdminUI {
       )
     ) *>
       Resource.eval(
+        dynamo.BanditsDAOs.ensureBanditTables[F](
+          cfg.adminTablesReadCapacity,
+          cfg.adminTablesWriteCapacity
+        )
+      ) *>
+      Resource.eval(
         dynamo.AnalysisDAOs.ensureAnalysisTables[F](
           cfg.adminTablesReadCapacity,
           cfg.adminTablesWriteCapacity
@@ -122,14 +128,21 @@ object AdminUI {
         Resource.eval(AuthDependencies[F](cfg.key)).flatMap { deps =>
           import deps._
           import dynamo.AdminDAOs._
+          import dynamo.BanditsDAOs._
           implicit val authAlg = AuthenticationAlg[F, BCrypt, AuthImp]
           val authUI = new UI(Some(cfg.initialAdminUsername), cfg.initialRole)
-
           import dynamo.AnalysisDAOs._
           import JsonMessageSubscriber._
-          AbtestManagementUI.fromMongo[F](config).map { amUI =>
-            new AdminUI(amUI, authUI, new analysis.UI[F], new stream.UI[F])
-          }
+
+          AbtestManagementUI
+            .fromMongo[F](config)
+            .map { amUI =>
+              implicit val abtestAlg = amUI.alg
+
+              com.iheart.thomas.bandit.bayesian.BayesianMABAlg.apply[F]
+
+              new AdminUI(amUI, authUI, new analysis.UI[F], new stream.UI[F])
+            }
         }
       }
   }

@@ -6,6 +6,7 @@ import com.iheart.thomas.admin.{AuthRecord, PassResetToken, Role, User}
 import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.bayesian.models._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.ArmState
 import com.iheart.thomas.bandit.bayesian._
 import com.iheart.thomas.stream.JobSpec.ProcessSettingsOptional
 import com.iheart.thomas.stream._
@@ -62,20 +63,14 @@ object DynamoFormats {
   implicit val armPUS: DynamoFormat[ArmState[PerUserSamplesLnSummary]] =
     deriveDynamoFormat[ArmState[PerUserSamplesLnSummary]]
 
-  implicit val dfc: DynamoFormat[BanditState[Conversions]] =
-    deriveDynamoFormat[BanditState[Conversions]]
-
   implicit val fddf: DynamoFormat[duration.FiniteDuration] =
     DynamoFormat.coercedXmap[FiniteDuration, Long, Throwable](
       FiniteDuration(_, TimeUnit.NANOSECONDS),
       _.toNanos
     )
 
-  implicit val bssc: DynamoFormat[BanditSettings.Conversion] =
-    deriveDynamoFormat[BanditSettings.Conversion]
-
-  implicit val bss: DynamoFormat[BanditSettings[BanditSettings.Conversion]] =
-    deriveDynamoFormat[BanditSettings[BanditSettings.Conversion]]
+  implicit val bssFormat: DynamoFormat[BanditSettings] =
+    deriveDynamoFormat[BanditSettings]
 
   implicit val authRecordFormat: DynamoFormat[AuthRecord] =
     deriveDynamoFormat[AuthRecord]
@@ -124,25 +119,16 @@ object DynamoFormats {
   implicit val estateKeyFormat: DynamoFormat[ExperimentKPIState.Key] =
     DynamoFormat.xmap[ExperimentKPIState.Key, String](
       s =>
-        ExperimentKPIState
-          .parseKey(s)
+        ExperimentKPIState.Key
+          .parse(s)
           .toRight(
             TypeCoercionError(new Exception("Invalid key format in DB: " + s))
           ),
       _.toStringKey
     )
-
-  implicit val armStateConversionFormat
-      : DynamoFormat[ExperimentKPIState.ArmState[Conversions]] =
-    deriveDynamoFormat[ExperimentKPIState.ArmState[Conversions]]
-
   implicit val ekpiStateConversionFormat
       : DynamoFormat[ExperimentKPIState[Conversions]] =
     deriveDynamoFormat[ExperimentKPIState[Conversions]]
-
-  implicit val armStatePerUserSamplesFormat
-      : DynamoFormat[ExperimentKPIState.ArmState[PerUserSamplesLnSummary]] =
-    deriveDynamoFormat[ExperimentKPIState.ArmState[PerUserSamplesLnSummary]]
 
   implicit val ekpiStatePerUserSamplesFormat
       : DynamoFormat[ExperimentKPIState[PerUserSamplesLnSummary]] =

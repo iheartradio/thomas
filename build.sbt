@@ -66,7 +66,7 @@ addCommandAlias(
 )
 addCommandAlias(
   "compileAll",
-  s";tests/Test/compile;tests/IntegrationTest/compile"
+  s";tests/Test/compile;tests/IntegrationTest/compile;thomas/Test/compile"
 )
 addCommandAlias(
   "it",
@@ -171,7 +171,6 @@ lazy val core = project
     name := "thomas-core",
     rootSettings,
     taglessSettings,
-    libs.testDependencies("scalacheck-1-14"),
     libs.dependencies(
       "cats-core",
       "monocle-macro",
@@ -225,7 +224,7 @@ lazy val lihuaMongo = project
   )
 
 lazy val bandit = project
-  .dependsOn(analysis, core % "compile->compile;test->test")
+  .dependsOn(analysis)
   .aggregate(analysis)
   .settings(
     name := "thomas-bandit",
@@ -247,6 +246,7 @@ lazy val analysis = project
       "rainier-core",
       "cats-effect",
       "newtype",
+      "enumeratum",
       "breeze",
       "commons-math3",
       "play-json-derived-codecs"
@@ -376,8 +376,7 @@ lazy val http4s = project
       "tsec-signatures",
       "tsec-jwt-mac",
       "tsec-jwt-sig",
-      "tsec-http4s",
-      "enumeratum"
+      "tsec-http4s"
     )
   )
 
@@ -434,6 +433,7 @@ lazy val tests = project
     IntegrationTest / parallelExecution := false,
     IntegrationTest / compile / scalacOptions ~= lessStrictScalaChecks,
     noPublishSettings,
+    libs.testDependencies("scalacheck-1-14"),
     libs.dependency("cats-effect-testing-scalatest", Some(IntegrationTest.name)),
     libs.dependency("log4j-core", Some(IntegrationTest.name)),
     libs.dependency("akka-slf4j", Some(IntegrationTest.name)),

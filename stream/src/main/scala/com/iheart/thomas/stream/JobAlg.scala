@@ -6,10 +6,12 @@ import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
 import com.iheart.thomas.utils.time.InstantOps
 import com.iheart.thomas.analysis.KPIName
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Specialization
 import com.iheart.thomas.stream.JobEvent.RunningJobsUpdated
 import com.iheart.thomas.stream.JobSpec.{
   MonitorTest,
   ProcessSettings,
+  ProcessSettingsOptional,
   RunBandit,
   UpdateKPIPrior
 }
@@ -23,6 +25,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
 import pureconfig.generic.auto._
+import PipeSyntax._
 
 trait JobAlg[F[_]] {
 
@@ -86,6 +89,7 @@ object JobAlg {
       timer: Timer[F],
       dao: JobDAO[F],
       kpiPipes: AllKPIProcessAlg[F, Message],
+      banditProcessAlg: BanditProcessAlg[F, Message],
       config: Config,
       logger: EventLogger[F],
       messageSubscriber: MessageSubscriber[F, Message]
@@ -111,17 +115,17 @@ object JobAlg {
           .eval(JobRunnerConfig.fromConfig(config))
           .flatMap { cfg =>
             def jobPipe(job: Job): F[Pipe[F, Message, Unit]] = {
-              val processSettings = (
+              def processSettings(settings: ProcessSettingsOptional) = (
                 ProcessSettings(
-                  frequency = job.spec.processSettings.frequency
+                  frequency = settings.frequency
                     .getOrElse(cfg.jobProcessFrequency),
-                  eventChunkSize = job.spec.processSettings.eventChunkSize
+                  eventChunkSize = settings.eventChunkSize
                     .getOrElse(cfg.maxChunkSize),
-                  expiration = job.spec.processSettings.expiration
+                  expiration = settings.expiration
                 )
               )
 
-              def checkExpiration[A]: Pipe[F, A, A] =
+              def checkExpiration[A](settings: ProcessSettings): Pipe[F, A, A] =
                 (input: Stream[F, A]) => {
                   def checkJobComplete(exp: Instant) =
                     Stream
@@ -131,22 +135,30 @@ object JobAlg {
                         if (completed) stop(job.key)
                         else F.unit
                       }
-                  processSettings.expiration.fold(input)(exp =>
+                  settings.expiration.fold(input)(exp =>
                     input
                       .interruptWhen(checkJobComplete(exp))
                   )
                 }
 
               (job.spec match {
-                case UpdateKPIPrior(kpiName, _) =>
-                  kpiPipes.updatePrior(kpiName, processSettings)
-
-                case MonitorTest(feature, kpiName, _) =>
-                  kpiPipes.monitorExperiment(feature, kpiName, processSettings)
-
-                case RunBandit(_, _) => ???
-              }).map { pipe =>
-                checkExpiration[Message].andThen(pipe)
+                case UpdateKPIPrior(kpiName, s) =>
+                  val settings = processSettings(s)
+                  kpiPipes.updatePrior(kpiName, settings).map((_, settings))
+                case MonitorTest(feature, kpiName, s) =>
+                  val settings = processSettings(s)
+                  kpiPipes
+                    .monitorExperiment(
+                      feature,
+                      kpiName,
+                      Specialization.RealtimeMonitor,
+                      settings
+                    )
+                    .map(p => (p.void, settings))
+                case RunBandit(fn) =>
+                  banditProcessAlg.process(fn)
+              }).map { case (pipe, settings) =>
+                checkExpiration[Message](settings).andThen(pipe)
               }
             }
 

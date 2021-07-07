@@ -5,16 +5,16 @@ import java.time.Instant
 import cats.effect.{IO, Resource}
 import cats.implicits._
 import com.iheart.thomas.abtest.AbtestAlg
-import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
+import com.iheart.thomas.bandit.bayesian.BayesianMABAlg
 import com.iheart.thomas.{dynamo, mongo}
 import com.typesafe.config.ConfigFactory
 import _root_.play.api.libs.json.Json
-import com.iheart.thomas.analysis.{ConversionKPI, KPIRepo}
+import com.iheart.thomas.analysis.monitor.ExperimentKPIStateDAO
+import com.iheart.thomas.analysis.{ConversionKPI, Conversions, KPIRepo}
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.http4s.AuthImp
 import com.iheart.thomas.http4s.auth.AuthenticationAlg
 import com.iheart.thomas.tracking.EventLogger
-import dynamo.DynamoFormats._
 
 import scala.concurrent.duration._
 import dynamo.AnalysisDAOs._
@@ -56,7 +56,12 @@ object Resources {
       implicit logger: EventLogger[IO] = EventLogger.noop[IO]
     ): Resource[
     IO,
-    (ConversionBMABAlg[IO], AbtestAlg[IO], KPIRepo[IO, ConversionKPI])
+    (
+        BayesianMABAlg[IO],
+        AbtestAlg[IO],
+        KPIRepo[IO, ConversionKPI],
+        ExperimentKPIStateDAO[IO, Conversions]
+    )
   ] =
     (mangoDAOs, localDynamoR).tupled
       .flatMap { deps =>
@@ -66,6 +71,7 @@ object Resources {
           (
             implicitly,
             abtestAlg,
+            implicitly,
             implicitly
           )
         }

@@ -6,7 +6,6 @@ import java.time.Instant
 import breeze.stats.distributions.Bernoulli
 import cats.Id
 import cats.implicits._
-import com.iheart.thomas.bandit.BanditSpec.EmptySubSettings
 
 import scala.util.Random
 import syntax.all._
@@ -37,8 +36,8 @@ class EpsilonGreedyAlgorithm[RewardStateT](
 
   }
 
-  def initialState(spec: BanditSpec[EmptySubSettings.type]): State = {
-    val allArms = spec.arms.map(a => ArmState(a.name, 0d, 0L))
+  def initialState(spec: BanditSpec): State = {
+    val allArms = spec.arms.map(a => SingleChoiceArmState(a.name, 0d, 0L))
     SingleChoiceBanditState[RewardStateT](
       spec = spec,
       chosenArm = allArms.head,

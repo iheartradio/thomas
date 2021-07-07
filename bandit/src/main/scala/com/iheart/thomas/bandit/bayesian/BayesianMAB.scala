@@ -1,16 +1,16 @@
-package com.iheart.thomas.bandit
+package com.iheart.thomas
+package bandit
 package bayesian
 
-import com.iheart.thomas.FeatureName
 import com.iheart.thomas.abtest.model.Abtest
-import com.iheart.thomas.analysis.KPIName
+import com.iheart.thomas.analysis.{KPIName, KPIStats}
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState
 import lihua.Entity
 
-case class BayesianMAB[R, S](
+case class BayesianMAB(
     abtest: Entity[Abtest],
-    settings: BanditSettings[S],
-    state: BanditState[R]) {
+    settings: BanditSettings,
+    state: Option[ExperimentKPIState[KPIStats]]) {
   def feature: FeatureName = abtest.data.feature
   def kpiName: KPIName = settings.kpiName
-
 }

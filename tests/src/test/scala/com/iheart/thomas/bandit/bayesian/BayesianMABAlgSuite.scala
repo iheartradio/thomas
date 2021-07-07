@@ -14,7 +14,7 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 import scala.util.Try
 
-class ConversionBMABAlgSuite
+class BayesianMABAlgSuite
     extends AnyFunSuiteLike
     with Matchers
     with ScalaCheckDrivenPropertyChecks {
@@ -28,12 +28,13 @@ class ConversionBMABAlgSuite
   }
 
   def createSettings =
-    BanditSettings[BanditSettings.Conversion](
+    BanditSettings(
       "feature",
       "title",
       "author",
       KPIName("kpi"),
-      distSpecificSettings = BanditSettings.Conversion(1, 1)
+      stateMonitorEventChunkSize = 1,
+      updatePolicyEveryNStateUpdate = 1
     )
 
   test("allocateGroupSize allocates using available size") {

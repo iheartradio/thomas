@@ -6,11 +6,12 @@ import cats.{Foldable, Monoid}
 import cats.effect.{Concurrent, Timer}
 import cats.implicits._
 import com.iheart.thomas.analysis.bayesian.Posterior
-import com.iheart.thomas.analysis.monitor.ExperimentKPIStateDAO
+import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{
   ArmState,
   ArmsState,
-  Key
+  Key,
+  Specialization
 }
 import com.iheart.thomas.analysis.{
   Aggregation,
@@ -35,8 +36,9 @@ trait AllKPIProcessAlg[F[_], Message] {
   def monitorExperiment(
       feature: FeatureName,
       kpiName: KPIName,
+      specialization: Specialization,
       settings: ProcessSettings
-    ): F[Pipe[F, Message, Unit]]
+    ): F[Pipe[F, Message, ExperimentKPIState[KPIStats]]]
 
 }
 
@@ -49,8 +51,9 @@ trait KPIProcessAlg[F[_], Message, K <: KPI] {
   def monitorExperiment(
       kpi: K,
       feature: FeatureName,
+      specialization: Specialization,
       settings: ProcessSettings
-    ): Pipe[F, Message, Unit]
+    ): Pipe[F, Message, ExperimentKPIState[KPIStats]]
 }
 
 object KPIProcessAlg {
@@ -131,27 +134,29 @@ object KPIProcessAlg {
       def monitorExperiment(
           kpi: K,
           feature: FeatureName,
+          specialization: Specialization,
           settings: ProcessSettings
-        ): Pipe[F, Message, Unit] = { (input: Stream[F, Message]) =>
-        input
-          .through(
-            eventSource.events(kpi, feature) andThen JobAlg.chunkEvents(settings)
-          )
-          .evalMapFilter { chunk =>
-            (
-              statsOf(chunk),
-              Period.of(chunk, (_: ArmKPIEvents[Event]).timeStamp)
-            ).traverseN { (chunkStats, chunkPeriod) =>
-              stateDAO.upsert(Key(feature, kpi.name)) { (existing, existingPeriod) =>
-                (
-                  updateArms(chunkStats, existing),
-                  chunkPeriod |+| existingPeriod
-                )
-              }((chunkStats, chunkPeriod))
-            }
+        ): Pipe[F, Message, ExperimentKPIState[KPIStats]] = {
+        (input: Stream[F, Message]) =>
+          input
+            .through(
+              eventSource.events(kpi, feature) andThen JobAlg.chunkEvents(settings)
+            )
+            .evalMapFilter { chunk =>
+              (
+                statsOf(chunk),
+                Period.of(chunk, (_: ArmKPIEvents[Event]).timeStamp)
+              ).traverseN { (chunkStats, chunkPeriod) =>
+                stateDAO.upsert(Key(feature, kpi.name, specialization)) {
+                  (existing, existingPeriod) =>
+                    (
+                      updateArms(chunkStats, existing),
+                      chunkPeriod |+| existingPeriod
+                    )
+                }((chunkStats, chunkPeriod))
+              }
 
-          }
-          .void
+            }
 
       }
     }
@@ -180,13 +185,14 @@ object AllKPIProcessAlg {
       def monitorExperiment(
           feature: FeatureName,
           kpiName: KPIName,
+          specialization: Specialization,
           settings: ProcessSettings
-        ): F[Pipe[F, Message, Unit]] =
+        ): F[Pipe[F, Message, ExperimentKPIState[KPIStats]]] =
         allKPIRepo.get(kpiName).map {
           case kpi: ConversionKPI =>
-            convProcessAlg.monitorExperiment(kpi, feature, settings)
+            convProcessAlg.monitorExperiment(kpi, feature, specialization, settings)
           case kpi: QueryAccumulativeKPI =>
-            accumProcessAlg.monitorExperiment(kpi, feature, settings)
+            accumProcessAlg.monitorExperiment(kpi, feature, specialization, settings)
         }
 
     }

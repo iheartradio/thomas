@@ -4,8 +4,9 @@ package bayesian
 import com.iheart.thomas.{FeatureName, GroupName}
 import com.iheart.thomas.abtest.model.GroupSize
 import com.iheart.thomas.analysis.KPIName
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{Key, Specialization}
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 /** @param feature
   *   @param title
@@ -26,10 +27,8 @@ import scala.concurrent.duration.FiniteDuration
   *   @param maintainExplorationSize
   * @param reservedGroups
   *   reserve some arms from being changed by the bandit alg (useful for A/B tests)
-  * @param distSpecificSettings
-  *   @tparam SpecificSettings
   */
-case class BanditSettings[SpecificSettings](
+case class BanditSettings(
     feature: FeatureName,
     title: String,
     author: String,
@@ -38,13 +37,26 @@ case class BanditSettings[SpecificSettings](
     historyRetention: Option[FiniteDuration] = None,
     initialSampleSize: Int = 0,
     maintainExplorationSize: Option[GroupSize] = None,
-    iterationDuration: Option[FiniteDuration] = None,
-    oldHistoryWeight: Option[Weight] = None,
+    iterationDuration: Option[FiniteDuration] = None, //todo: remove this
+    oldHistoryWeight: Option[Weight] = None, //todo: remove this
     reservedGroups: Set[GroupName] = Set.empty,
-    distSpecificSettings: SpecificSettings)
+    stateMonitorEventChunkSize: Int = 1000,
+    stateMonitorFrequency: FiniteDuration = 1.minute,
+    updatePolicyEveryNStateUpdate: Int = 100,
+    updatePolicyFrequency: FiniteDuration = 1.hour) {
+  lazy val stateKey: Key = Key(feature, kpiName, Specialization.BanditCurrent)
+}
 
-object BanditSettings {
-  case class Conversion(
-      eventChunkSize: Int,
-      updatePolicyEveryNChunk: Int)
+private[thomas] trait BanditSettingsDAO[F[_]] {
+  def insert(
+      state: BanditSettings
+    ): F[BanditSettings]
+
+  def remove(featureName: FeatureName): F[Unit]
+
+  def get(featureName: FeatureName): F[BanditSettings]
+
+  def update(
+      settings: BanditSettings
+    ): F[BanditSettings]
 }

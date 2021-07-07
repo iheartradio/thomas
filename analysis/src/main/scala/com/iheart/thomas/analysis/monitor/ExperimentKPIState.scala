@@ -10,9 +10,12 @@ import cats.{Functor, MonadThrow}
 import cats.effect.Timer
 import com.iheart.thomas.abtest.Error.NotFound
 import com.iheart.thomas.utils.time.Period
+import enumeratum._
 
 import java.time.Instant
 import ExperimentKPIState.ArmsState
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Specialization.RealtimeMonitor
+
 case class ExperimentKPIState[+KS <: KPIStats](
     key: Key,
     arms: ArmsState[KS],
@@ -29,15 +32,51 @@ case class ExperimentKPIState[+KS <: KPIStats](
   def getArm(armName: ArmName): Option[ArmState[KS]] =
     arms.find(_.name === armName)
 
+  def asConversions: Option[ExperimentKPIState[Conversions]] =
+    arms.head.kpiStats match {
+      case _: Conversions =>
+        Some(asInstanceOf[ExperimentKPIState[Conversions]])
+      case _ => None
+    }
+
+  def asPerUserSamplesLnSummary
+      : Option[ExperimentKPIState[PerUserSamplesLnSummary]] =
+    arms.head.kpiStats match {
+      case _: PerUserSamplesLnSummary =>
+        Some(asInstanceOf[ExperimentKPIState[PerUserSamplesLnSummary]])
+      case _ => None
+    }
 }
 
 object ExperimentKPIState {
   type ArmsState[+KS <: KPIStats] = NonEmptyList[ArmState[KS]]
-
   case class Key(
       feature: FeatureName,
-      kpi: KPIName) {
-    def toStringKey = feature + "|" + kpi.n
+      kpi: KPIName,
+      specialization: Specialization = RealtimeMonitor) {
+    lazy val toStringKey: String =
+      kpi.n + "|" + feature + "|" + specialization.entryName
+  }
+  object Key {
+    def parse(string: String): Option[Key] = {
+      string.split('|').toList match {
+        case kn :: fn :: sp :: Nil =>
+          Specialization.withNameOption(sp).map {
+            Key(fn, KPIName(kn), _)
+          }
+        case _ => None
+      }
+    }
+  }
+
+  sealed trait Specialization extends EnumEntry
+
+  object Specialization extends Enum[Specialization] {
+
+    val values = findValues
+    case object RealtimeMonitor extends Specialization
+    case object BanditCurrent extends Specialization
+    case object BanditHistory extends Specialization
   }
 
   def init[F[_]: Timer: Functor, KS <: KPIStats](
@@ -49,20 +88,15 @@ object ExperimentKPIState {
       .now[F]
       .map(now => ExperimentKPIState[KS](key, arms, dataPeriod, now, now))
 
-  def parseKey(string: String): Option[Key] = {
-    val split = string.split('|')
-    if (split.length != 2) None
-    else Some(Key(split.head, KPIName(split.last)))
-  }
-
   case class ArmState[+KS <: KPIStats](
       name: ArmName,
       kpiStats: KS,
       likelihoodOptimum: Option[Probability]) {
-    def readyForEvaluation: Boolean = {
+
+    def sampleSize: Long = {
       kpiStats match {
-        case c: Conversions                   => c.total > 100
-        case samples: PerUserSamplesLnSummary => samples.count > 1000
+        case c: Conversions                   => c.total
+        case samples: PerUserSamplesLnSummary => samples.count
       }
     }
   }
@@ -80,6 +114,11 @@ trait ExperimentKPIStateDAO[F[_], KS <: KPIStats] {
     )(ifEmpty: => (ArmsState[KS], Period)
     ): F[ExperimentKPIState[KS]]
 
+  def updateOptimumLikelihood(
+      key: Key,
+      likelihoods: Map[ArmName, Probability]
+    ): F[ExperimentKPIState[KS]]
+
   def delete(key: Key): F[Option[ExperimentKPIState[KS]]]
 
 }
@@ -90,23 +129,36 @@ trait AllExperimentKPIStateRepo[F[_]] {
   def all: F[Vector[ExperimentKPIState[KPIStats]]]
   def find(key: Key): F[Option[ExperimentKPIState[KPIStats]]]
   def get(key: Key): F[ExperimentKPIState[KPIStats]]
+
+  def updateOptimumLikelihood(
+      key: Key,
+      likelihoods: Map[ArmName, Probability]
+    ): F[ExperimentKPIState[KPIStats]]
 }
 
 object AllExperimentKPIStateRepo {
   implicit def default[F[_]: MonadThrow](
       implicit cRepo: ExperimentKPIStateDAO[F, Conversions],
-      pRepo: ExperimentKPIStateDAO[F, PerUserSamplesLnSummary]
+      pRepo: ExperimentKPIStateDAO[F, PerUserSamplesLnSummary],
+      kPIRepo: AllKPIRepo[F]
     ): AllExperimentKPIStateRepo[F] =
     new AllExperimentKPIStateRepo[F] {
+      class PerformPartial[A](key: Key) {
+        def apply[B <: A, C <: A](ifC: F[B], ifA: F[C]): F[A] =
+          kPIRepo.get(key.kpi).flatMap {
+            case _: ConversionKPI   => ifC.widen
+            case _: AccumulativeKPI => ifA.widen
+          }
+      }
+      def perform[A](key: Key): PerformPartial[A] =
+        new PerformPartial[A](key)
 
-      def delete(key: Key): F[Option[ExperimentKPIState[KPIStats]]] =
-        cRepo
-          .delete(key)
-          .flatMap(r =>
-            r.fold(pRepo.delete(key).widen[Option[ExperimentKPIState[KPIStats]]])(
-              _ => r.pure[F].widen
-            )
-          )
+      def delete(key: Key): F[Option[ExperimentKPIState[KPIStats]]] = {
+        perform[Option[ExperimentKPIState[KPIStats]]](key)(
+          cRepo.delete(key),
+          pRepo.delete(key)
+        )
+      }
 
       def all: F[Vector[ExperimentKPIState[KPIStats]]] =
         for {
@@ -116,18 +168,24 @@ object AllExperimentKPIStateRepo {
           .widen[ExperimentKPIState[KPIStats]])
 
       def find(key: Key): F[Option[ExperimentKPIState[KPIStats]]] =
-        cRepo
-          .find(key)
-          .flatMap(r =>
-            r.fold(pRepo.find(key).widen[Option[ExperimentKPIState[KPIStats]]])(_ =>
-              r.pure[F].widen
-            )
-          )
+        perform[Option[ExperimentKPIState[KPIStats]]](key)(
+          cRepo.find(key),
+          pRepo.find(key)
+        )
 
       def get(key: Key): F[ExperimentKPIState[KPIStats]] =
         find(key).flatMap(
           _.liftTo[F](NotFound(key.toStringKey + " is not found in DB"))
         )
 
+      def updateOptimumLikelihood(
+          key: Key,
+          likelihoods: Map[ArmName, Probability]
+        ): F[ExperimentKPIState[KPIStats]] = perform[ExperimentKPIState[KPIStats]](
+        key
+      )(
+        cRepo.updateOptimumLikelihood(key, likelihoods),
+        pRepo.updateOptimumLikelihood(key, likelihoods)
+      )
     }
 }

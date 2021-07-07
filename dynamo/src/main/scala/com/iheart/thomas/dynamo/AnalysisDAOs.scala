@@ -1,6 +1,7 @@
 package com.iheart.thomas.dynamo
 
 import cats.effect.{Async, Concurrent, Timer}
+import com.iheart.thomas.ArmName
 import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{
   ArmState,
@@ -94,6 +95,16 @@ object AnalysisDAOs extends ScanamoManagement {
 
       protected def stringKey(k: Key) = k.toStringKey
       import retry._
+      def updateOptimumLikelihood(
+          key: Key,
+          likelihoods: Map[ArmName, Probability]
+        ): F[ExperimentKPIState[KS]] =
+        atomicUpdate(key) { state =>
+          val newArms = state.arms.map(arm =>
+            arm.copy(likelihoodOptimum = likelihoods.get(arm.name))
+          )
+          set("arms", newArms)
+        }
 
       def upsert(
           key: Key
