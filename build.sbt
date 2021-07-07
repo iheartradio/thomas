@@ -445,7 +445,7 @@ def dockerCompose(
     env: String = ""
   ) = {
   val upCommand = if (upOrDown) "up -d" else "down"
-  s"docker compose --env-file ./.env$env $upCommand" !
+  s"docker-compose --env-file ./.env$env $upCommand" !
 }
 
 lazy val noPublishing = Seq(publish / skip := true)
