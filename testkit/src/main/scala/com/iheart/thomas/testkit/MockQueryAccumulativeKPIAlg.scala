@@ -94,7 +94,6 @@ object MockQueryAccumulativeKPIAlg {
           case (fn, am, data) if (fn == feature) => (am, data)
         }
         .pure[F]
-
     }
   }
 }

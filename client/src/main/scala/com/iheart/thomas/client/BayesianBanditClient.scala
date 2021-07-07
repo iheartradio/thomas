@@ -30,7 +30,7 @@ object BayesianBanditClient {
       rootUrl: String
     ): ConversionBMABAlg[F] =
     new PlayJsonHttp4sClient[F](c)
-    with BayesianMABAlg[F, Conversions, BanditSettings.Conversion] {
+      with BayesianMABAlg[F, Conversions, BanditSettings.Conversion] {
 
       import org.http4s.{Method, Uri}
       import Method._
@@ -94,13 +94,12 @@ object BayesianBanditClient {
 
       def delete(feature: FeatureName): F[Unit] =
         c.successful(
-            DELETE(
-              Uri.unsafeFromString(
-                rootUrl + "/features/" + feature
-              )
+          DELETE(
+            Uri.unsafeFromString(
+              rootUrl + "/features/" + feature
             )
           )
-          .ensure(UnexpectedResult)(identity)
+        ).ensure(UnexpectedResult)(identity)
           .void
 
     }

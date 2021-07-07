@@ -23,8 +23,8 @@ lazy val libs = {
     .add(   name = "cats-testkit-scalatest",version = "2.1.4",  org = org.typelevel.typeLevelOrg)
     .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
     .add(   name = "cats-retry",            version = "2.1.0",  org = "com.github.cb372")
-    .addJVM(name = "decline",               version = "2.0.0",  org = "com.monovore")
-    .addJVM(name = "embedded-kafka",        version = "2.8.0",  org = "io.github.embeddedkafka")
+    .addJVM(name = "decline",               version = "2.1.0",  org = "com.monovore")
+    .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
     .addJVM(name = "evilplot",              version = "0.8.1",  org = "io.github.cibotech")
     .addJVM(name = "fs2-kafka",             version = "1.4.1",  org = "com.github.fd4s")
     .addModule("http4s", "http4s-twirl")
@@ -36,7 +36,7 @@ lazy val libs = {
     .addJVM(name = "mau",                   version = "0.2.2",  org = "com.kailuowang")
     .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
     .add(   name = "play-json",             version = "2.7.4",  org = "com.typesafe.play")
-    .addJVM(name = "play-json-derived-codecs", version = "7.0.0", org = "org.julienrf")
+    .addJVM(name = "play-json-derived-codecs", version = "10.0.2", org = "org.julienrf")
     .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
     .addJVM(name = "rainier",               version = "0.3.3-Kai",  org ="com.kailuowang", "rainier-core", "rainier-cats")
     .addJVM(name = "reactivemongo",         version = reactiveMongoVer, org = "org.reactivemongo", "reactivemongo", "reactivemongo-bson-api", "reactivemongo-iteratees" )
@@ -49,7 +49,7 @@ lazy val libs = {
     .add(   name = "spark",                 version = "2.4.5",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
     .addJVM(name = "tsec",                  version = "0.2.1",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
-    .add   (name = "enumeratum",            version = "1.6.1",  org = "com.beachape" )
+    .add   (name = "enumeratum",            version = "1.7.0",  org = "com.beachape" )
     .add(   name = "jawn-ast",              version = "1.0.0",  org = org.typelevel.typeLevelOrg)
 
 }
@@ -156,7 +156,8 @@ lazy val cli = project
       s"release/thomas-cli_${version.value}.jar"
     ),
     assembly / assemblyMergeStrategy := {
-      case "module-info.class" => MergeStrategy.discard
+      case "module-info.class"             => MergeStrategy.discard
+      case "scala/annotation/nowarn.class" => MergeStrategy.discard
       case x =>
         val oldStrategy = (assembly / assemblyMergeStrategy).value
         oldStrategy(x)

@@ -51,8 +51,8 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
 
   val toEvent = (fn: FeatureName, _: KPIName) =>
     IO.pure { (input: Stream[IO, (FeatureName, ArmName, ConversionEvent)]) =>
-      input.collect {
-        case (`fn`, am, ce) => (am, ce)
+      input.collect { case (`fn`, am, ce) =>
+        (am, ce)
       }
     }
 
@@ -77,7 +77,8 @@ class BanditUpdaterSuiteBase extends AnyFreeSpec with Matchers with EmbeddedKafk
                 kafka = KafkaConfig(
                   server,
                   topic,
-                  "test-bandits"
+                  "test-bandits",
+                  1
                 )
               ),
               toEvent

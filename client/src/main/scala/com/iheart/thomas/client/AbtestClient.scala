@@ -127,7 +127,7 @@ class Http4SAbtestClient[F[_]: Sync](
     ): F[TestsData] = {
     val url = stringToUri(urls.testsData) +?
       ("atEpochMilli", at.toEpochMilli.toString) +?? ("durationMillisecond",
-    duration.map(_.toMillis.toString))
+      duration.map(_.toMillis.toString))
 
     expect(GET(url))
   }
@@ -187,8 +187,7 @@ object AbtestClient {
 
   trait HttpServiceUrls {
 
-    /**
-      * Service URL corresponding to `[[abtest.AbtestAlg]].getAllTestsCached`
+    /** Service URL corresponding to `[[abtest.AbtestAlg]].getAllTestsCached`
       */
     def tests: String
 
@@ -203,9 +202,9 @@ object AbtestClient {
     def featureTests(featureName: FeatureName): String
   }
 
-  /**
-    * service urls based on play example routes
-    * @param root protocal + host + rootpath e.g. "http://localhost/internal"
+  /** service urls based on play example routes
+    * @param root
+    *   protocal + host + rootpath e.g. "http://localhost/internal"
     */
   class HttpServiceUrlsPlay(root: String) extends HttpServiceUrls {
 
@@ -233,9 +232,9 @@ object AbtestClient {
       errs.toList.mkString(s"Error parsing json ($body):\n ", "; ", "")
   }
 
-  /**
-    * Shortcuts for getting the assigned group only.
-    * @param serviceUrl for getting all running tests as of `time`
+  /** Shortcuts for getting the assigned group only.
+    * @param serviceUrl
+    *   for getting all running tests as of `time`
     */
   def testsData[F[_]: ConcurrentEffect](
       serviceUrl: String,

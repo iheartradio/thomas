@@ -69,18 +69,17 @@ object AdminDAOs extends ScanamoManagement {
         val cond = streamJobKeyName === job.key
         val setV = set("checkedOut", Some(at))
         sc.exec(
-            job.checkedOut
-              .fold(
-                table
-                  .when(attributeNotExists("checkedOut"))
-                  .update(cond, setV)
-              )(c =>
-                table
-                  .when("checkedOut" === c)
-                  .update(cond, setV)
-              )
-          )
-          .map(_.toOption)
+          job.checkedOut
+            .fold(
+              table
+                .when(attributeNotExists("checkedOut"))
+                .update(cond, setV)
+            )(c =>
+              table
+                .when("checkedOut" === c)
+                .update(cond, setV)
+            )
+        ).map(_.toOption)
       }
 
       def setStarted(

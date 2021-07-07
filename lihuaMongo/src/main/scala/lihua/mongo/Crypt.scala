@@ -9,5 +9,6 @@ trait Crypt[F[_]] {
 }
 
 object Crypt {
-  implicit val functorKInstanceForCrypt: FunctorK[Crypt] = cats.tagless.Derive.functorK[Crypt]
+  implicit val functorKInstanceForCrypt: FunctorK[Crypt] =
+    cats.tagless.Derive.functorK[Crypt]
 }

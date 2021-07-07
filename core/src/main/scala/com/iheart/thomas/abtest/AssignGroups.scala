@@ -12,7 +12,7 @@ import cats.Monad
 import cats.implicits._
 import com.iheart.thomas.abtest.model._
 import henkan.convert.Syntax._
-import TimeUtil._
+import utils.time._
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.control.NoStackTrace
@@ -56,28 +56,27 @@ object AssignGroups {
     query.at.map(_.toInstant.pure[F]).getOrElse(nowF).flatMap { targetTime =>
       if (tests.withinTolerance(consistencyTolerance, targetTime)) {
         tests.data
-          .traverseFilter {
-            case (test, feature) =>
-              (
-                test.data.hasEligibilityControl,
-                query.eligibilityControlFilter
-              ) match {
-                case (true, EligibilityControlFilter.Off) |
-                    (false, EligibilityControlFilter.On) =>
-                  F.pure(none[(FeatureName, AssignmentResult)])
-                case _ =>
-                  assign[F](test.data, feature, query).map(
-                    _.map(gn =>
-                      (
-                        feature.name,
-                        AssignmentResult(
-                          gn,
-                          test.data.getGroupMetas.get(gn)
-                        )
+          .traverseFilter { case (test, feature) =>
+            (
+              test.data.hasEligibilityControl,
+              query.eligibilityControlFilter
+            ) match {
+              case (true, EligibilityControlFilter.Off) |
+                  (false, EligibilityControlFilter.On) =>
+                F.pure(none[(FeatureName, AssignmentResult)])
+              case _ =>
+                assign[F](test.data, feature, query).map(
+                  _.map(gn =>
+                    (
+                      feature.name,
+                      AssignmentResult(
+                        gn,
+                        test.data.getGroupMetas.get(gn)
                       )
                     )
                   )
-              }
+                )
+            }
           }
           .map(_.toMap)
       } else

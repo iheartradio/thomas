@@ -16,7 +16,7 @@ import tsec.passwordhashers.jca.BCrypt
 import cats.MonadThrow
 
 import scala.util.control.NoStackTrace
-import TimeUtil._
+import utils.time._
 import concurrent.duration._
 trait AuthenticationAlg[F[_], Auth] {
 
@@ -36,6 +36,10 @@ trait AuthenticationAlg[F[_], Auth] {
       username: Username,
       roleO: Option[Role]
     ): F[User]
+
+  def deleteUser(
+      username: Username
+    ): F[Unit]
 
   def remove(username: String): F[Unit]
 
@@ -139,7 +143,7 @@ object AuthenticationAlg {
         )(implicit T: Timer[F]
         ): F[PassResetToken] =
         for {
-          now <- TimeUtil.now[F]
+          now <- utils.time.now[F]
           token = PassResetToken(
             SecureRandomIdGenerator(32).generate,
             now.plusDuration(24.hours)
@@ -160,7 +164,7 @@ object AuthenticationAlg {
         ): F[User] =
         for {
           user <- userDAO.get(username)
-          now <- TimeUtil.now[F]
+          now <- utils.time.now[F]
           _ <- F.unit.ensure(InvalidToken)(_ =>
             user.resetToken.fold(false)(_.value === token)
           )
@@ -170,10 +174,11 @@ object AuthenticationAlg {
           newHash <- hashPassword(newPass, AuthError.PasswordTooWeak(user.username))
           r <- userDAO.update(user.copy(resetToken = None, hash = newHash))
         } yield r
+
+      def deleteUser(username: Username): F[Unit] = userDAO.remove(username)
     }
 
-  /**
-    * using dynamo BCyrpt and HMACSHA256
+  /** using dynamo BCyrpt and HMACSHA256
     */
   def default[F[_]: Concurrent](
       key: String

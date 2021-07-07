@@ -6,7 +6,7 @@ import java.time.{OffsetDateTime, ZoneOffset}
 import cats.NonEmptyParallel
 import cats.effect.Timer
 import cats.implicits._
-import com.iheart.thomas.TimeUtil._
+import com.iheart.thomas.utils.time._
 import com.iheart.thomas.abtest.model.Abtest.Specialization
 import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group, GroupSize}
 import com.iheart.thomas.analysis.Probability
@@ -20,10 +20,9 @@ import com.iheart.thomas.tracking.EventLogger
 
 import scala.annotation.tailrec
 
-/**
-  * Abtest based Bayesian Multi Arm Bandit Algebra
+/** Abtest based Bayesian Multi Arm Bandit Algebra
   * @tparam F
-  * @tparam R
+  *   @tparam R
   */
 trait BayesianMABAlg[F[_], R, S] {
   def updateRewardState(
@@ -178,9 +177,8 @@ object BayesianMABAlg {
               abtestAPI.create(_, false)
             )
           ).mapN((state, settings, a) => BayesianMAB(a, settings, state))
-            .onError {
-              case _ =>
-                delete(banditSpec.feature)
+            .onError { case _ =>
+              delete(banditSpec.feature)
             }
       }
 

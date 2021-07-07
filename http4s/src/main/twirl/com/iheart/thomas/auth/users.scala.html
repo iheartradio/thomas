@@ -24,6 +24,7 @@ msgO: Option[String]
                 <th scope="col">Username</th>
                 <th scope="col">Role</th>
                 <th scope="col">Reset Password</th>
+                <th scope="col"></th>
             </tr>
             </thead>
             <tbody>
@@ -49,6 +50,12 @@ msgO: Option[String]
                 <td class="pt-3">
                     <a href="@env.routes.users/@user.username/reset-pass-link" >Generate Password Reset Link</a>
 
+                </td>
+                <td class="pt-3">
+                    <a href="@env.routes.users/@user.username/delete"
+                       onclick="return confirm('Please confirm you want to delete user @user.username')">
+                        <i class="bi bi-trash"></i>
+                    </a>
                 </td>
             </tr>
             }

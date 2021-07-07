@@ -46,6 +46,10 @@ class UI[F[_]: Async: Timer, Auth](
         r <- SeeOther(reverseRoutes.users.location)
       } yield r
 
+    case GET -> Root / "users" / username / "delete" asAuthed _ =>
+      alg.deleteUser(username) *>
+        SeeOther(reverseRoutes.users.location)
+
     case req @ GET -> Root / "users" / username / "reset-pass-link" asAuthed (u) =>
       for {
         token <- alg.generateResetToken(username)
@@ -182,8 +186,7 @@ object UI extends {
     object tokenP extends QueryParamDecoderMatcher[String]("token")
   }
 
-  /**
-    * @return
+  /** @return
     */
   def default[F[_]: Async: Timer](
       authDeps: AuthDependencies[AuthImp],

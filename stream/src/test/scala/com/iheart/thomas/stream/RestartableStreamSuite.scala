@@ -62,10 +62,9 @@ class RestartableStreamSuite extends AsyncIOSpec with Matchers {
         rs <- IO.delay(startCount.get())
       } yield (c, rs)
 
-      r.asserting {
-        case (count, restartCount) =>
-          restartCount shouldBe 1
-          count.last shouldBe (130 +- 5)
+      r.asserting { case (count, restartCount) =>
+        restartCount shouldBe 1
+        count.last shouldBe (130 +- 5)
       }
 
     }

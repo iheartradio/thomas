@@ -1,19 +1,20 @@
-package com.iheart.thomas.testkit
+package com.iheart.thomas
+package testkit
 
 import cats.effect.{Sync, Timer}
 import cats.implicits._
-import com.iheart.thomas.TimeUtil
 import com.iheart.thomas.abtest.Error.NotFound
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmsState, Key}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
 import com.iheart.thomas.analysis.{
-  QueryAccumulativeKPI,
   ConversionKPI,
   KPIName,
   KPIRepo,
-  KPIStats
+  KPIStats,
+  QueryAccumulativeKPI
 }
 import com.iheart.thomas.stream.{Job, JobDAO}
+import com.iheart.thomas.utils.time.Period
 
 import java.time.Instant
 import scala.collection.concurrent._
@@ -102,24 +103,30 @@ object MapBasedDAOs {
     new MapBasedDAOs[F, ExperimentKPIState[KS], Key](_.key)
       with ExperimentKPIStateDAO[F, KS] {
 
-      def update(
-          key: ExperimentKPIState.Key
-        )(updateArms: List[ArmState[KS]] => List[ArmState[KS]]
+      def upsert(
+          key: Key
+        )(updateF: (ArmsState[KS], Period) => (ArmsState[KS], Period)
+        )(ifEmpty: => (ArmsState[KS], Period)
         ): F[ExperimentKPIState[KS]] =
         for {
-          now <- TimeUtil.now[F]
-          s <- get(key)
-          r <- update(
-            s.copy(
-              arms = updateArms(s.arms),
-              lastUpdated = now
+          now <- utils.time.now[F]
+          so <- find(key)
+          r <- so.fold(
+            ExperimentKPIState
+              .init[F, KS](key, ifEmpty._1, ifEmpty._2)
+              .flatMap(insert)
+          ) { s =>
+            val (newArms, newPeriod) = updateF(s.arms, s.dataPeriod)
+            update(
+              s.copy(
+                arms = newArms,
+                dataPeriod = newPeriod,
+                lastUpdated = now
+              )
             )
-          )
+          }
+
         } yield r
-
-      def init(key: Key): F[ExperimentKPIState[KS]] =
-        ensure(key)(ExperimentKPIState.init[F, KS](key))
-
     }
 
   def conversionKPIAlg[F[_]](

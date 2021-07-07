@@ -15,7 +15,7 @@ import com.iheart.thomas.analysis.{
 }
 import cats.implicits._
 import fs2.Stream
-import com.iheart.thomas.TimeUtil
+import com.iheart.thomas.utils.time
 import com.iheart.thomas.analysis.bayesian.{KPIIndicator, Variable}
 import com.iheart.thomas.stream.JobSpec.ProcessSettings
 import com.iheart.thomas.testkit.MockQueryAccumulativeKPIAlg.MockData
@@ -40,6 +40,7 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
           KPIRepo[IO, QueryAccumulativeKPI]) => IO[A]
     ): IO[A] = {
 
+    implicit val eventLogger = EventLogger.noop[IO]
     implicit val aKpiDAO = MapBasedDAOs.queryAccumulativeKPIAlg[IO]
     implicit val aStateDAO =
       MapBasedDAOs.experimentStateDAO[IO, PerUserSamplesLnSummary]
@@ -91,7 +92,7 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
   "update prior according to data" in {
     val kpi =
       Factory.kpi(testKPIName, blindPrior, MockQueryAccumulativeKPIAlg.mockQueryName)
-    val n = 5000
+    val n = 10000
     val dist = breeze.stats.distributions.LogNormal(1d, 0.3d)
     val data = dist.sample(n).toArray
 
@@ -109,7 +110,7 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
       )
     ) { (alg, repo) =>
       (for {
-        _ <- process(kpi, alg, duration = 100.millis)
+        _ <- process(kpi, alg, duration = 200.millis)
         k <- repo.get(testKPIName)
       } yield k).asserting { k =>
         val meanStats = meanAndVariance(KPIIndicator.sample(k.model))

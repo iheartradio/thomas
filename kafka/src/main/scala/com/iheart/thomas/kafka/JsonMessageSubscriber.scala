@@ -22,7 +22,7 @@ object JsonMessageSubscriber {
           val consumerSettings =
             ConsumerSettings[F, Unit, String]
               .withEnableAutoCommit(true)
-              .withAutoOffsetReset(AutoOffsetReset.Earliest)
+              .withAutoOffsetReset(AutoOffsetReset.Latest)
               .withBootstrapServers(cfg.kafkaServers)
               .withGroupId(cfg.groupId)
 
@@ -30,23 +30,24 @@ object JsonMessageSubscriber {
             .stream[F]
             .using(consumerSettings)
             .evalTap(_.subscribeTo(cfg.topic))
-            .map {
-              _.stream.evalMap { r =>
-                ast.JParser
-                  .parseFromString(r.record.value)
-                  .fold(
-                    e =>
-                      log
-                        .error(
-                          s"kafka message json parse error. $e \n json: ${r.record.value}"
-                        )
-                        .as(none[JValue]),
-                    j => Option(j).pure[F]
-                  )
-              }.flattenOption
+            .flatMap {
+              _.stream
+                .parEvalMap(cfg.parseParallelization) { r =>
+                  ast.JParser
+                    .parseFromString(r.record.value)
+                    .fold(
+                      e =>
+                        log
+                          .error(
+                            s"kafka message json parse error. $e \n json: ${r.record.value}"
+                          )
+                          .as(none[JValue]),
+                      j => Option(j).pure[F]
+                    )
+                }
+                .flattenOption
 
             }
-            .flatten
 
         }
     }

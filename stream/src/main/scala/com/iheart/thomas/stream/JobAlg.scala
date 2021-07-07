@@ -1,10 +1,12 @@
-package com.iheart.thomas.stream
+package com.iheart.thomas
+package stream
 
 import cats.Functor
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
-import com.iheart.thomas.TimeUtil.InstantOps
+import com.iheart.thomas.utils.time.InstantOps
 import com.iheart.thomas.analysis.KPIName
+import com.iheart.thomas.stream.JobEvent.RunningJobsUpdated
 import com.iheart.thomas.stream.JobSpec.{
   MonitorTest,
   ProcessSettings,
@@ -12,7 +14,6 @@ import com.iheart.thomas.stream.JobSpec.{
   UpdateKPIPrior
 }
 import com.iheart.thomas.tracking.EventLogger
-import com.iheart.thomas.{FeatureName, TimeUtil}
 import com.typesafe.config.Config
 import fs2._
 import pureconfig.ConfigSource
@@ -25,14 +26,13 @@ import pureconfig.generic.auto._
 
 trait JobAlg[F[_]] {
 
-  /**
-    * Creates a job if the job key is not already in the job list
-    * @return Some(job) if successful, None otherwise.
+  /** Creates a job if the job key is not already in the job list
+    * @return
+    *   Some(job) if successful, None otherwise.
     */
   def schedule(spec: JobSpec): F[Option[Job]]
 
-  /**
-    * Stops and removes a job
+  /** Stops and removes a job
     */
   def stop(jobKey: String): F[Unit]
 
@@ -53,10 +53,10 @@ trait JobAlg[F[_]] {
   def monitors(feature: FeatureName): F[Vector[JobInfo[MonitorTest]]] =
     findInfo((m: MonitorTest) => m.feature == feature)
 
-  /**
-    * Find job according to spec. Since you can't run two jobs with the same key, find ignores the rest of the spec.
+  /** Find job according to spec. Since you can't run two jobs with the same key,
+    * find ignores the rest of the spec.
     * @param spec
-    * @return
+    *   @return
     */
   def find(spec: JobSpec): F[Option[Job]]
 
@@ -65,10 +65,9 @@ trait JobAlg[F[_]] {
 object JobAlg {
   def chunkEvents[F[_]: Timer: Concurrent, E](
       processSettings: ProcessSettings
-    ): Pipe[F, List[E], Chunk[E]] =
-    (input: Stream[F, List[E]]) =>
+    ): Pipe[F, E, Chunk[E]] =
+    (input: Stream[F, E]) =>
       input
-        .flatMap(le => Stream.fromIterator(le.iterator))
         .groupWithin(
           processSettings.eventChunkSize,
           processSettings.frequency
@@ -155,7 +154,7 @@ object JobAlg {
               Stream
                 .fixedDelay[F](cfg.jobCheckFrequency)
                 .evalMap(_ =>
-                  TimeUtil.now[F].flatMap { now =>
+                  utils.time.now[F].flatMap { now =>
                     dao.all.map(_.filter { j =>
                       j.checkedOut.fold(true)(lastCheckedOut =>
                         now.isAfter(
@@ -168,7 +167,7 @@ object JobAlg {
                   }
                 ) //todo: be resilient against DB error with logging.
 
-            val runningJobs = availableJobs
+            val runningJobs: Stream[F, Vector[Job]] = availableJobs
               .evalScan(
                 (
                   Vector.empty[Job], //previous set of Jobs
@@ -179,7 +178,7 @@ object JobAlg {
               ) { (memo, newAvailable) =>
                 val currentlyRunning = memo._1
                 for {
-                  now <- TimeUtil.now[F]
+                  now <- utils.time.now[F]
                   updatedRunning <-
                     currentlyRunning.traverseFilter(dao.updateCheckedOut(_, now))
                   newlyCheckedout <-
@@ -202,36 +201,46 @@ object JobAlg {
               .mapFilter(_._2)
 
             runningJobs.switchMap { jobs =>
-              Stream
-                .eval(jobs.traverse(j => jobPipe(j)))
-                .flatMap { pipes =>
-                  (if (cfg.logEveryMessage)
-                     messageSubscriber.subscribe
-                       .flatTap(m =>
-                         Stream.eval(logger(JobEvent.MessageReceived(m)))
-                       )
-                   else messageSubscriber.subscribe)
-                    .broadcastTo(pipes: _*)
-                }
+              Stream.eval(logger(RunningJobsUpdated(jobs))) *>
+                Stream
+                  .eval(jobs.traverse(j => jobPipe(j)))
+                  .flatMap { pipes =>
+                    val logPipeO: Option[Pipe[F, Message, Unit]] =
+                      cfg.logEveryNMessage.map { n =>
+                        (_: Stream[F, Message]).chunkN(n).evalMap { c =>
+                          c.head
+                            .traverse(m =>
+                              logger(JobEvent.MessagesReceived(m, c.size))
+                            )
+                            .void
+                        }
+                      }
+
+                    messageSubscriber.subscribe
+                      .broadcastTo((pipes ++ logPipeO.toList): _*)
+                  }
             }
           }
 
     }
 }
 
-/**
-  *
-  * @param jobCheckFrequency how often it checks new available jobs or running jobs being stoped.
-  * @param jobProcessFrequency how often it does the task of a job.
-  * @param jobObsoleteCount the threshold over which times a job misses being checkedOut will be count as obsolete and available for worker to pick up.
-  * @param maxChunkSize when messages accumulate over maxChunkSize, they will be processed for the job.
+/** @param jobCheckFrequency
+  *   how often it checks new available jobs or running jobs being stopped.
+  * @param jobProcessFrequency
+  *   how often it does the task of a job.
+  * @param jobObsoleteCount
+  *   the threshold over which times a job misses being checkedOut will be count as
+  *   obsolete and available for worker to pick up.
+  * @param maxChunkSize
+  *   when messages accumulate over maxChunkSize, they will be processed for the job.
   */
 case class JobRunnerConfig(
     jobCheckFrequency: FiniteDuration,
     jobObsoleteCount: Long,
     maxChunkSize: Int,
     jobProcessFrequency: FiniteDuration,
-    logEveryMessage: Boolean = false)
+    logEveryNMessage: Option[Int] = None)
 
 object JobRunnerConfig {
   def fromConfig[F[_]: Sync](cfg: Config): F[JobRunnerConfig] = {
