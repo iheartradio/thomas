@@ -20,6 +20,7 @@ object Authorization {
           has(ManageFeature(feature)) ||
             atLeast(Tester)
         case ManageUsers      => user.isAdmin
+        case ManageBandits    => banditsManagerRoles.contains(user.role)
         case ManageBackground => backgroundManagerRoles.contains(user.role)
         case ManageAnalysis   => analysisManagerRoles.contains(user.role)
       }
@@ -33,6 +34,7 @@ object Authorization {
 
   val testManagerRoles = List(Admin, Tester, Developer)
   val analysisManagerRoles = List(Admin, Analyst)
+  val banditsManagerRoles = List(Admin, Scientist)
 
   val backgroundManagerRoles = List(Admin)
 
@@ -41,6 +43,7 @@ object Authorization {
   sealed trait Permission
 
   case object ManageUsers extends Permission
+  case object ManageBandits extends Permission
   case object ManageBackground extends Permission
   case object ManageAnalysis extends Permission
   case object CreateNewFeature extends Permission

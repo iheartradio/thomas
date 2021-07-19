@@ -42,6 +42,9 @@
       @if(env.currentUser.has(ManageUsers)) {
         @navItem("Users", env.routes.users)
       }
+      @if(env.currentUser.has(ManageBandits)) {
+        @navItem("Bandits", env.routes.bandits)
+      }
       @if(env.currentUser.has(ManageBackground)) {
         @navItem("Background", env.routes.background)
       }

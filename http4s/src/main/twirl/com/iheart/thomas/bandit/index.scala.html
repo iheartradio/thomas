@@ -1,0 +1,14 @@
+@import com.iheart.thomas.bandit.bayesian._
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.http4s.UIEnv
+
+@(
+bandits: Vector[BayesianMAB]
+)(implicit env: UIEnv)
+
+
+@topNav("Bandit", "Bandit") {
+  @for(bandit <- bandits) {
+     @bandit.feature
+  }
+}
