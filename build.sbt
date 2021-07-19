@@ -32,7 +32,7 @@ lazy val libs = {
     .add(   name = "jawn",                  version = "1.0.0",  org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
     .addJVM(name = "log4cats",              version = "1.2.0",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
-    .addJava(name ="logback-classic",       version = "1.2.3",  org = "ch.qos.logback")
+    .addJava(name ="logback-classic",       version = "1.2.4",  org = "ch.qos.logback")
     .addJVM(name = "mau",                   version = "0.2.2",  org = "com.kailuowang")
     .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
     .add(   name = "play-json",             version = "2.7.4",  org = "com.typesafe.play")
