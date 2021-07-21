@@ -9,8 +9,8 @@ import lihua.Entity
 
 case class BayesianMAB(
     abtest: Entity[Abtest],
-    settings: BanditSettings,
+    spec: BanditSpec,
     state: Option[ExperimentKPIState[KPIStats]]) {
   def feature: FeatureName = abtest.data.feature
-  def kpiName: KPIName = settings.kpiName
+  def kpiName: KPIName = spec.kpiName
 }

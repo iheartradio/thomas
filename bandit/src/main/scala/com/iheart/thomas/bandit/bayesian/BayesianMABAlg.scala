@@ -1,4 +1,6 @@
-package com.iheart.thomas.bandit.bayesian
+package com.iheart.thomas
+package bandit
+package bayesian
 
 import cats.effect.Timer
 import cats.implicits._
@@ -12,11 +14,10 @@ import com.iheart.thomas.analysis.monitor.{
 }
 import com.iheart.thomas.analysis.{AllKPIRepo, KPIStats, Probability}
 import com.iheart.thomas.bandit.tracking.BanditEvent
-import com.iheart.thomas.bandit.{AbtestNotFound, BanditSpec}
 import com.iheart.thomas.tracking.EventLogger
 import com.iheart.thomas.utils.time.now
-import com.iheart.thomas.{FeatureName, GroupName, abtest}
 import lihua.Entity
+import utils.time._
 
 import java.time.{OffsetDateTime, ZoneOffset}
 import scala.annotation.tailrec
@@ -37,14 +38,15 @@ trait BayesianMABAlg[F[_]] {
 
   def delete(featureName: FeatureName): F[Unit]
 
-  def update(banditSettings: BanditSettings): F[BanditSettings]
+  def update(banditSpec: BanditSpec): F[BanditSpec]
 
 }
 
 object BayesianMABAlg {
 
   private[bayesian] def createTestSpec[F[_]: MonadThrow](
-      from: BanditSpec
+      from: BanditSpec,
+      start: OffsetDateTime
     ): F[AbtestSpec] = {
     val defaultSize = (1d - from.arms
       .flatMap(_.initialSize)
@@ -53,12 +55,12 @@ object BayesianMABAlg {
     AbtestSpec(
       name = "Abtest for Bayesian MAB " + from.feature,
       feature = from.feature,
-      author = from.settings.author,
-      start = from.start,
+      author = from.author,
+      start = start,
       end = None,
-      groups = from.arms.map(as =>
-        Group(as.name, as.initialSize.getOrElse(defaultSize), as.meta)
-      ),
+      groups = from.arms
+        .map(as => Group(as.name, as.initialSize.getOrElse(defaultSize), as.meta))
+        .toList,
       specialization = Some(Specialization.MultiArmBandit)
     ).pure[F]
   }
@@ -66,12 +68,11 @@ object BayesianMABAlg {
   implicit def apply[F[_]](
       implicit stateDao: AllExperimentKPIStateRepo[F],
       log: EventLogger[F],
-      settingsDao: BanditSettingsDAO[F],
+      specDao: BanditSpecDAO[F],
       kpiEvaluator: KPIEvaluator[F],
       kpiRepo: AllKPIRepo[F],
       abtestAPI: abtest.AbtestAlg[F],
       T: Timer[F],
-//      P: NonEmptyParallel[F],
       F: MonadThrow[F]
     ): BayesianMABAlg[F] =
     new BayesianMABAlg[F] {
@@ -87,7 +88,7 @@ object BayesianMABAlg {
       def findAll(time: Option[OffsetDateTime]): F[Vector[Bandit]] = {
         def getBandit(abtest: Entity[Abtest]): F[Bandit] =
           for {
-            settings <- settingsDao.get(abtest.data.feature)
+            settings <- specDao.get(abtest.data.feature)
             state <- stateDao.find(settings.stateKey)
           } yield BayesianMAB(abtest, settings, state)
 
@@ -100,14 +101,14 @@ object BayesianMABAlg {
       }
 
       def delete(featureName: FeatureName): F[Unit] =
-        settingsDao.get(featureName).flatMap { bs =>
+        specDao.get(featureName).flatMap { bs =>
           (
             abtestAPI.getTestsByFeature(featureName).flatMap { tests =>
               tests.headOption.fold(F.unit)(test =>
                 abtestAPI.terminate(test._id).void
               )
             },
-            settingsDao.remove(featureName),
+            specDao.remove(featureName),
             stateDao.delete(bs.stateKey)
           ).tupled.void
         }
@@ -121,27 +122,29 @@ object BayesianMABAlg {
           )
 
       def get(featureName: FeatureName): F[Bandit] =
-        settingsDao.get(featureName).flatMap { bs =>
+        specDao.get(featureName).flatMap { bs =>
           (abtest(featureName), stateDao.find(bs.stateKey))
             .mapN(BayesianMAB(_, bs, _))
         }
 
-      def update(banditSettings: BanditSettings): F[BanditSettings] = {
-        settingsDao.update(banditSettings)
+      def update(banditSpec: BanditSpec): F[BanditSpec] = {
+        specDao.update(banditSpec)
       }
 
-      def init(banditSpec: BanditSpec): F[Bandit] = {
-        kpiRepo.get(banditSpec.settings.kpiName) >>
-          (
-            settingsDao.insert(banditSpec.settings),
-            createTestSpec[F](banditSpec).flatMap(
-              abtestAPI.create(_, auto = false)
-            )
-          ).mapN((settings, a) => BayesianMAB(a, settings, None))
-            .onError { case _ =>
-              delete(banditSpec.feature)
-            }
-      }
+      def init(banditSpec: BanditSpec): F[Bandit] =
+        now[F].flatMap { start =>
+          kpiRepo.get(banditSpec.kpiName) >>
+            (
+              specDao.insert(banditSpec),
+              createTestSpec[F](banditSpec, start.toOffsetDateTimeSystemDefault)
+                .flatMap(
+                  abtestAPI.create(_, auto = false)
+                )
+            ).mapN((settings, a) => BayesianMAB(a, settings, None))
+              .onError { case _ =>
+                delete(banditSpec.feature)
+              }
+        }
 
       def updatePolicy(state: ExperimentKPIState[KPIStats]): F[Bandit] = {
         import BanditEvent.BanditPolicyUpdate._
@@ -149,7 +152,7 @@ object BayesianMABAlg {
         def resizeAbtest(
             abtest: Entity[Abtest],
             state: ExperimentKPIState[_],
-            settings: BanditSettings
+            settings: BanditSpec
           ) = {
 
           val reservedGroups = abtest.data.groups
@@ -189,7 +192,7 @@ object BayesianMABAlg {
         }
 
         for {
-          settings <- settingsDao.get(state.key.feature)
+          settings <- specDao.get(state.key.feature)
           evaluation <- kpiEvaluator(
             state,
             Some(state.arms.map(_.name).filterNot(settings.reservedGroups))

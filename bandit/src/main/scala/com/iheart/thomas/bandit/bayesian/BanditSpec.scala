@@ -17,28 +17,22 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
   *   statistics change
   * @param initialSampleSize
   *   the sample size from which the allocation starts.
-  * @param iterationDuration
-  *   bandit can evolve metrics statics by iteration,
-  * i.e. retire old metrics data 2 iterations ago
-  * @param oldHistoryWeight
-  *   historical metrics data from 2 iterations ago can be kept with a weight to be
-  *   combined with metrics from 1 iteration ago.
   * @param historyRetention
-  *   @param maintainExplorationSize
-  * @param reservedGroups
-  *   reserve some arms from being changed by the bandit alg (useful for A/B tests)
+  *   for how long retired ab test versions are being kept
+  * @param maintainExplorationSize
+  *   @param reservedGroups reserve some arms from being changed by the bandit alg
+  *   (useful for A/B tests)
   */
-case class BanditSettings(
+case class BanditSpec(
     feature: FeatureName,
     title: String,
     author: String,
     kpiName: KPIName,
+    arms: Seq[ArmSpec],
     minimumSizeChange: Double = 0.001,
     historyRetention: Option[FiniteDuration] = None,
     initialSampleSize: Int = 0,
     maintainExplorationSize: Option[GroupSize] = None,
-    iterationDuration: Option[FiniteDuration] = None, //todo: remove this
-    oldHistoryWeight: Option[Weight] = None, //todo: remove this
     reservedGroups: Set[GroupName] = Set.empty,
     stateMonitorEventChunkSize: Int = 1000,
     stateMonitorFrequency: FiniteDuration = 1.minute,
@@ -47,16 +41,16 @@ case class BanditSettings(
   lazy val stateKey: Key = Key(feature, kpiName, Specialization.BanditCurrent)
 }
 
-private[thomas] trait BanditSettingsDAO[F[_]] {
+private[thomas] trait BanditSpecDAO[F[_]] {
   def insert(
-      state: BanditSettings
-    ): F[BanditSettings]
+      state: BanditSpec
+    ): F[BanditSpec]
 
   def remove(featureName: FeatureName): F[Unit]
 
-  def get(featureName: FeatureName): F[BanditSettings]
+  def get(featureName: FeatureName): F[BanditSpec]
 
   def update(
-      settings: BanditSettings
-    ): F[BanditSettings]
+      settings: BanditSpec
+    ): F[BanditSpec]
 }

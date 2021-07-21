@@ -3,7 +3,7 @@ package http4s
 package bandit
 
 import cats.effect.Async
-import com.iheart.thomas.bandit.html.index
+import com.iheart.thomas.bandit.html._
 import com.iheart.thomas.bandit.bayesian.BayesianMABAlg
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
@@ -26,6 +26,10 @@ class UI[F[_]: Async](implicit alg: BayesianMABAlg[F], aCfg: AdminUIConfig)
         bandits <- alg.getAll
         r <- Ok(index(bandits)(UIEnv(u)))
       } yield r
+
+    case GET -> `rootPath` / "new" / "form" asAuthed (u) =>
+      Ok(newBandit(UIEnv(u)))
+
   }
 }
 

@@ -1,15 +1,14 @@
 package com.iheart.thomas
-package bandit.bayesian
+package bandit
+package bayesian
 
 import java.time.OffsetDateTime
-import com.iheart.thomas.GroupName
 import com.iheart.thomas.analysis.{KPIName, Probability}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import cats.implicits._
 import com.iheart.thomas.abtest.model.Group
-import com.iheart.thomas.bandit.{ArmSpec, BanditSpec}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 import scala.util.Try
@@ -27,12 +26,13 @@ class BayesianMABAlgSuite
     }.toMap)
   }
 
-  def createSettings =
-    BanditSettings(
+  def createSpec(arms: Seq[ArmSpec]) =
+    BanditSpec(
       "feature",
       "title",
       "author",
       KPIName("kpi"),
+      arms,
       stateMonitorEventChunkSize = 1,
       updatePolicyEveryNStateUpdate = 1
     )
@@ -85,11 +85,8 @@ class BayesianMABAlgSuite
 
     val result = BayesianMABAlg
       .createTestSpec[Try](
-        BanditSpec(
-          arms = List(ArmSpec("A"), ArmSpec("B")),
-          OffsetDateTime.now,
-          createSettings
-        )
+        createSpec(arms = List(ArmSpec("A"), ArmSpec("B"))),
+        OffsetDateTime.now
       )
 
     result.isSuccess shouldBe true
@@ -100,12 +97,10 @@ class BayesianMABAlgSuite
 
     val result = BayesianMABAlg
       .createTestSpec[Try](
-        BanditSpec(
-          arms =
-            List(ArmSpec("A", initialSize = Some(0.3)), ArmSpec("B"), ArmSpec("C")),
-          OffsetDateTime.now,
-          createSettings
-        )
+        createSpec(arms =
+          List(ArmSpec("A", initialSize = Some(0.3)), ArmSpec("B"), ArmSpec("C"))
+        ),
+        OffsetDateTime.now
       )
 
     result.isSuccess shouldBe true

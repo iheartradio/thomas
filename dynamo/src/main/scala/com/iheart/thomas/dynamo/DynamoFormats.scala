@@ -7,12 +7,14 @@ import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.bayesian.models._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.ArmState
+import com.iheart.thomas.bandit.ArmSpec
 import com.iheart.thomas.bandit.bayesian._
 import com.iheart.thomas.stream.JobSpec.ProcessSettingsOptional
 import com.iheart.thomas.stream._
 import utils.time.Period
 import io.estatico.newtype.ops._
 import org.scanamo.{DynamoFormat, TypeCoercionError}
+import play.api.libs.json.{JsObject, JsResultException, Json}
 
 import java.time.OffsetDateTime
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
@@ -39,6 +41,13 @@ object DynamoFormats {
         (s: String) =>
           OffsetDateTime.parse(s, DateTimeFormatter.ISO_OFFSET_DATE_TIME),
         _.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+      )
+
+  implicit val dfJsObject: DynamoFormat[JsObject] =
+    DynamoFormat
+      .coercedXmap[JsObject, String, JsResultException](
+        (s: String) => Json.parse(s).as[JsObject],
+        _.toString()
       )
 
   implicit def nonEmptyDynamoFormat[A: DynamoFormat]: DynamoFormat[NonEmptyList[A]] =
@@ -69,8 +78,11 @@ object DynamoFormats {
       _.toNanos
     )
 
-  implicit val bssFormat: DynamoFormat[BanditSettings] =
-    deriveDynamoFormat[BanditSettings]
+  implicit val bsArmSpecFormat: DynamoFormat[ArmSpec] =
+    deriveDynamoFormat[ArmSpec]
+
+  implicit val bssFormat: DynamoFormat[BanditSpec] =
+    deriveDynamoFormat[BanditSpec]
 
   implicit val authRecordFormat: DynamoFormat[AuthRecord] =
     deriveDynamoFormat[AuthRecord]

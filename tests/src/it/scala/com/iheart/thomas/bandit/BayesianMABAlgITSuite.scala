@@ -13,11 +13,7 @@ import com.iheart.thomas.analysis.{
   KPIRepo,
   Probability
 }
-import com.iheart.thomas.bandit.bayesian.{
-  BanditSettings,
-  BayesianMAB,
-  BayesianMABAlg
-}
+import com.iheart.thomas.bandit.bayesian.{BanditSpec, BayesianMAB, BayesianMABAlg}
 import com.iheart.thomas.mongo
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
@@ -49,7 +45,7 @@ class BayesianMABAlgITSuite extends BayesianMABAlgITSuiteBase {
       } yield (is, current)
     }
     init.state should be(empty)
-    init.settings.title shouldBe spec.settings.title
+    init.spec.title shouldBe spec.title
     init.abtest.data.specialization shouldBe Some(
       MultiArmBandit
     )
@@ -62,11 +58,11 @@ class BayesianMABAlgITSuite extends BayesianMABAlgITSuiteBase {
   }
 
   test("invalid init should not leave corrupt data") {
-    val spec = createSpec(start = OffsetDateTime.now.minusDays(1))
+    val spec = createSpec(arms = Seq(ArmSpec("A", Some(1.1))))
     val (init, r) = withAPI { api =>
       for {
         initialTry <- MonadError[IO, Throwable].attempt(api.init(spec).void)
-        r <- api.init(spec.copy(start = OffsetDateTime.now.plusMinutes(1)))
+        r <- api.init(createSpec(arms = Seq(ArmSpec("A", Some(0.3)))))
       } yield (initialTry, r)
     }
     init.isLeft shouldBe true
@@ -358,40 +354,31 @@ class BayesianMABAlgITSuiteBase extends AnyFunSuiteLike with Matchers {
       }),
       Period(Instant.now, Instant.now)
     )
-    dao.upsert(bandit.settings.stateKey)((_, _) => data)(data)
+    dao.upsert(bandit.spec.stateKey)((_, _) => data)(data)
   }
 
   def createSpec(
       feature: FeatureName = "A_new_Feature",
-      arms: List[ArmSpec] = List(ArmSpec("A"), ArmSpec("B")),
+      arms: Seq[ArmSpec] = List(ArmSpec("A"), ArmSpec("B")),
       author: String = "Test Runner",
-      start: OffsetDateTime = OffsetDateTime.now,
       title: String = "for integration tests",
       kpiName: KPIName = kpi.name,
       minimumSizeChange: Double = 0.01,
       initialSampleSize: Int = 0,
       historyRetention: Option[FiniteDuration] = None,
-      iterationDuration: Option[FiniteDuration] = None,
-      oldHistoryWeight: Option[Weight] = None,
       reservedGroups: Set[GroupName] = Set.empty
-    ) =
-    BanditSpec(
-      arms = arms,
-      start = start,
-      settings = BanditSettings(
-        feature = feature,
-        author = author,
-        title = title,
-        kpiName = kpiName,
-        minimumSizeChange = minimumSizeChange,
-        initialSampleSize = initialSampleSize,
-        historyRetention = historyRetention,
-        maintainExplorationSize = None,
-        iterationDuration = iterationDuration,
-        oldHistoryWeight = oldHistoryWeight,
-        reservedGroups = reservedGroups,
-        stateMonitorEventChunkSize = 1
-      )
-    )
+    ) = BanditSpec(
+    feature = feature,
+    author = author,
+    title = title,
+    kpiName = kpiName,
+    arms = arms,
+    minimumSizeChange = minimumSizeChange,
+    initialSampleSize = initialSampleSize,
+    historyRetention = historyRetention,
+    maintainExplorationSize = None,
+    reservedGroups = reservedGroups,
+    stateMonitorEventChunkSize = 1
+  )
 
 }

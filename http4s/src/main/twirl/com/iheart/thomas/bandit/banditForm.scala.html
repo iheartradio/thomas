@@ -1,0 +1,12 @@
+@import com.iheart.thomas.bandit.bayesian._
+@import com.iheart.thomas.analysis.KPIName
+
+
+@(draftO: Option[BanditSpec] = None, kpiNames: Seq[KPIName])
+
+
+@draftO.toString
+
+@kpiNames.mkString
+
+
