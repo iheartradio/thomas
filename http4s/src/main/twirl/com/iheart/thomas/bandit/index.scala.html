@@ -8,6 +8,8 @@ bandits: Vector[BayesianMAB]
 
 
 @topNav("Bandit", "Bandit") {
+
+  <a class="btn btn-primary mt-3 mb-3" role="button" href="new/form">New Bandit</a>
   @for(bandit <- bandits) {
      @bandit.feature
   }

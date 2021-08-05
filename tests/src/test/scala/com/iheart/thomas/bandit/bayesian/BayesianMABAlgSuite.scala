@@ -34,7 +34,7 @@ class BayesianMABAlgSuite
       KPIName("kpi"),
       arms,
       stateMonitorEventChunkSize = 1,
-      updatePolicyEveryNStateUpdate = 1
+      updatePolicyStateChunkSize = 1
     )
 
   test("allocateGroupSize allocates using available size") {

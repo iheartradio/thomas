@@ -2,7 +2,6 @@ package com.iheart.thomas.bandit
 package bayesian
 
 import com.iheart.thomas.{FeatureName, GroupName}
-import com.iheart.thomas.abtest.model.GroupSize
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{Key, Specialization}
 
@@ -32,13 +31,13 @@ case class BanditSpec(
     minimumSizeChange: Double = 0.001,
     historyRetention: Option[FiniteDuration] = None,
     initialSampleSize: Int = 0,
-    maintainExplorationSize: Option[GroupSize] = None,
-    reservedGroups: Set[GroupName] = Set.empty,
     stateMonitorEventChunkSize: Int = 1000,
     stateMonitorFrequency: FiniteDuration = 1.minute,
-    updatePolicyEveryNStateUpdate: Int = 100,
+    updatePolicyStateChunkSize: Int = 100,
     updatePolicyFrequency: FiniteDuration = 1.hour) {
   lazy val stateKey: Key = Key(feature, kpiName, Specialization.BanditCurrent)
+
+  lazy val reservedGroups: Set[GroupName] = arms.filter(_.reserved).map(_.name).toSet
 }
 
 private[thomas] trait BanditSpecDAO[F[_]] {

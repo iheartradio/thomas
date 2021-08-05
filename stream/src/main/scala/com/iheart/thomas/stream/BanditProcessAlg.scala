@@ -42,7 +42,7 @@ object BanditProcessAlg {
           monitorPipe.andThen { states =>
             states
               .groupWithin(
-                bandit.spec.updatePolicyEveryNStateUpdate,
+                bandit.spec.updatePolicyStateChunkSize,
                 bandit.spec.updatePolicyFrequency
               )
               .evalMapFilter(_.last.traverse(banditAlg.updatePolicy))

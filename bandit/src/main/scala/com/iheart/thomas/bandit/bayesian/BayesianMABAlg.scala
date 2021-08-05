@@ -161,7 +161,6 @@ object BayesianMABAlg {
           val newGroups = allocateGroupSize(
             state.distribution,
             settings.minimumSizeChange,
-            settings.maintainExplorationSize,
             availableSize = BigDecimal(1) - reservedGroups.map(_.size).sum
           ) ++ reservedGroups
           if (newGroups.toSet == abtest.data.groups.toSet)
@@ -226,7 +225,6 @@ object BayesianMABAlg {
   private[bayesian] def allocateGroupSize(
       optimalDistribution: Map[GroupName, Probability],
       precision: GroupSize,
-      maintainExplorationSize: Option[GroupSize],
       availableSize: BigDecimal
     ): List[Group] = {
     assert(availableSize <= BigDecimal(1))
@@ -264,10 +262,7 @@ object BayesianMABAlg {
         val (candidates, groups) = mp
         val (groupName, probability) = gp
         val sizeFromOptimalLikelyHood = probability.p * availableSize
-        val targetSize = maintainExplorationSize.fold(sizeFromOptimalLikelyHood)(s =>
-          Math.max(s.toDouble, sizeFromOptimalLikelyHood.toDouble)
-        )
-        val size = findClosest(targetSize, candidates)
+        val size = findClosest(sizeFromOptimalLikelyHood, candidates)
         val newGroups = groups :+ Group(groupName, size, None)
         val remainder = availableSize - newGroups.foldMap(_.size)
         (

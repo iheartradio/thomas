@@ -168,7 +168,12 @@ isShuffled: Boolean = false
     </div>
 
   </div>
-  @armSpecForm(draft.map(_.groups.map(ArmSpec.fromGroup)), groupSizeChangeAllowed)
+  <div class="row" id="test-groups">
+    <div class="col-lg">
+      @armsForm(draft.map(_.groups.map(ArmSpec.fromGroup)), groupSizeChangeAllowed)
+    </div>
+  </div>
+
 </div>
 
 <script>

@@ -6,7 +6,8 @@ import com.iheart.thomas.abtest.model.{Group, GroupMeta, GroupSize}
 case class ArmSpec(
     name: ArmName,
     initialSize: Option[GroupSize] = None,
-    meta: Option[GroupMeta] = None)
+    meta: Option[GroupMeta] = None,
+    reserved: Boolean = false)
 
 object ArmSpec {
   def fromGroup(group: Group): ArmSpec =
