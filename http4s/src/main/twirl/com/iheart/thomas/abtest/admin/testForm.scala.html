@@ -1,6 +1,8 @@
 @import com.iheart.thomas.abtest.model._
 @import com.iheart.thomas.abtest.json.play.Formats._
 @import com.iheart.thomas.http4s.Formatters.{formatDate, formatJSON}
+@import com.iheart.thomas.common.html._
+@import com.iheart.thomas.bandit.ArmSpec
 
 @(
 draft: Option[AbtestSpec],
@@ -10,44 +12,6 @@ groupSizeChangeAllowed: Boolean = true,
 isShuffled: Boolean = false
 )
 
-@group(group: Option[Group]) = {
-
-<div class="row abtest-group mb-3">
-  <div class="col-3">
-    <div class="form-group">
-      <input name="groups[].name" class="form-control size-change"
-             id="testGroupName" type="text"
-             value="@group.map(_.name)"/>
-    </div>
-  </div>
-
-  <div class="col-2">
-    <div class="form-group">
-      <input name="groups[].size" class="form-control size-change"
-             id="testGroupSize" type="number"
-             value="@group.map(_.size)"
-             min="0" max="1" step="any" placeholder="Btw 0 & 1"/>
-    </div>
-  </div>
-
-  <div class="col-7 d-flex flex-row">
-
-    <div class="form-group w-100">
-      <textarea name="groups[].meta" class="form-control size-change"
-                id="testGroupMeta">@group.flatMap(_.meta).map(formatJSON(_))</textarea>
-    </div>
-    <div class="text-center">
-      <button class="btn btn-link remove-item remove-item mt-4 ml-3 size-change"
-              type="button" onclick="thomas.removeParentItem(this, '.abtest-group')" title="Remove Group">
-        <i class="bi bi-trash"></i>
-      </button>
-    </div>
-
-  </div>
-
-
-</div>
-}
 
 @range(rg: Option[GroupRange]) = {
 <div class="d-flex flex-row range-item">
@@ -204,55 +168,7 @@ isShuffled: Boolean = false
     </div>
 
   </div>
-  <div class="row" id="test-groups">
-    <div class="col-lg">
-      <div class="card mt-5">
-        <div class="card-header">
-          <span class="h5">Groups</span>
-        </div>
-        <div class="card-body">
-          <div id="testGroups">
-            <div class="row abtest-group-header">
-              <div class="col-3">
-                <div class="form-group">
-                  <label class="form-label" for="testGroupName">Group Name</label>
-
-                </div>
-              </div>
-
-              <div class="col-2">
-                <div class="form-group">
-                  <label class="form-label" for="testGroupSize">Size</label>
-                </div>
-              </div>
-
-              <div class="col-7">
-
-                <div class="form-group w-100">
-                  <label class="form-label" for="testGroupMeta">Meta</label>
-                </div>
-              </div>
-            </div>
-
-            @for( g <- draft.map(_.groups.map(Some(_))).getOrElse(List(None, None))) {
-            @group(g)
-            }
-          </div>
-          <div class="float-right">
-            <button type="button" id="btn-new-test-group"
-                    onclick="thomas.appendItem('#newTestGroup','#testGroups')"
-                    class="btn btn-secondary size-change">New Group
-            </button>
-          </div>
-          <div id="newTestGroup" style="display: none">
-            @group(None)
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-  </div>
+  @armSpecForm(draft.map(_.groups.map(ArmSpec.fromGroup)), groupSizeChangeAllowed)
 </div>
 
 <script>
@@ -281,11 +197,6 @@ $(document).ready(function() {
   } else {
     $('#testStart').datetimepicker(pickerSettings);
     $('#testEnd').datetimepicker(pickerSettings);
-  }
-
-  @if(!groupSizeChangeAllowed) {
-    $('#test-groups input.size-change').attr('readonly', 'readonly');
-    $('#test-groups button.size-change').hide();
   }
 
 });

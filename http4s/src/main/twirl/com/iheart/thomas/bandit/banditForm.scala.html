@@ -1,12 +1,50 @@
 @import com.iheart.thomas.bandit.bayesian._
 @import com.iheart.thomas.analysis.KPIName
+@import com.iheart.thomas.http4s.UIEnv
 
 
-@(draftO: Option[BanditSpec] = None, kpiNames: Seq[KPIName])
+@(
+draftO: Option[BanditSpec] = None,
+kpis: Seq[KPIName],
+successMsg: Option[String])(implicit env: UIEnv)
+@for(msg <- successMsg) {
+    <div id="success-msg" class="alert alert-success" role="alert">
+        @msg
+    </div>
+}
 
+<input type="hidden" name="author" value="@env.currentUser.username" />
+@for(draft <- draftO) {
+  <input type="hidden" name="feature" value="@draft.feature"/>
+  <div class="row mt-5">
+    <span class="h4">Bandit<span class="text-success"> @draft.feature</span></span>
+  </div>
+}
 
-@draftO.toString
+<div class="row mt-3">
+    <div class="col-md">
+        <div class="form-group">
+            <label class="form-label" for="titleInput">Title</label>
+            <input name="title"
+                   class="form-control"
+                   id="titleInput"
+                   type="text"
+                   required
+                   value="@draftO.map(_.title)"
+            />
+        </div>
 
-@kpiNames.mkString
-
+        <div class="form-group">
+            <label class="form-label" for="kpisSelect" class="sr-only">Select a KPI to start monitoring</label>
+            <select id="kpisSelect" name="kpi" class="form-control form-filter" required>
+                <option value="" disabled selected hidden>
+                    Select a KPI
+                </option>
+                @for(kpi <- kpis.sortBy(_.n)) {
+                <option value="@kpi.n">@kpi.n</option>
+                }
+            </select>
+        </div>
+    </div>
+</div>
 
