@@ -1,9 +1,10 @@
 @import com.iheart.thomas.bandit.bayesian._
+@import com.iheart.thomas.bandit._
 @import com.iheart.thomas.html._
 @import com.iheart.thomas.http4s.UIEnv
 
 @(
-bandits: Vector[BayesianMAB]
+bandits: Seq[(BayesianMAB, BanditStatus)]
 )(implicit env: UIEnv)
 
 
@@ -11,6 +12,39 @@ bandits: Vector[BayesianMAB]
 
   <a class="btn btn-primary mt-3 mb-3" role="button" href="new/form">New Bandit</a>
   @for(bandit <- bandits) {
-     @bandit.feature
+
+
+    <div class="list-group-item mt-2">
+        <div class="row">
+            <div class="col-auto">
+                <span class="fw-light h6">Feature</span>
+                <span class="fw-heavy h4 text-primary">@bandit._1.feature</span>
+                <span>
+                    @bandit._1.spec.title
+                </span>
+            </div>
+            <div class="col-auto me-auto pt-1">
+                <small><span class="fw-light ml-3">
+                  Author: </span>
+                    <span class="fw-heavy"> @bandit._1.spec.author </span>
+                </small>
+            </div>
+            <div class="col-auto pt-1">
+                <small>
+                     @bandit._2 match {
+                       case BanditStatus.Running => {
+                          <i class="bi bi-pause-circle" data-bs-toggle="tooltip"  title="Running"></i>
+                       }
+                       case BanditStatus.Paused => {
+                         <i class="bi bi-play-circle" data-bs-toggle="tooltip" title="Paused"></i>
+                       }
+                       case BanditStatus.Stopped => {
+                         <i class="bi bi-arrow-clockwise" data-bs-toggle="tooltip" title="Stopped"></i>
+                       }
+                     }
+                </small>
+            </div>
+        </div>
+    </div>
   }
 }

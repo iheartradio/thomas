@@ -4,7 +4,7 @@ package bandit
 
 import cats.effect.Async
 import com.iheart.thomas.bandit.html._
-import com.iheart.thomas.bandit.bayesian.{BanditSpec, BayesianMABAlg}
+import com.iheart.thomas.bandit.bayesian.{BanditSpec}
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
 import org.http4s.dsl.Http4sDsl
@@ -19,7 +19,7 @@ import org.http4s.twirl._
 import scala.concurrent.duration.FiniteDuration
 
 class UI[F[_]: Async](
-    implicit alg: BayesianMABAlg[F],
+    implicit alg: ManagerAlg[F],
     kpiRepos: AllKPIRepo[F],
     aCfg: AdminUIConfig)
     extends AuthedEndpointsUtils[F, AuthImp]
@@ -32,7 +32,7 @@ class UI[F[_]: Async](
 
     case GET -> `rootPath` / "" asAuthed (u) =>
       for {
-        bandits <- alg.getAll
+        bandits <- alg.allBandits
         r <- Ok(index(bandits)(UIEnv(u)))
       } yield r
 
