@@ -27,8 +27,8 @@ object BanditProcessAlg {
       for {
         bandit <- banditAlg.get(feature)
         settings = ProcessSettings(
-          bandit.settings.stateMonitorFrequency,
-          bandit.settings.stateMonitorEventChunkSize,
+          bandit.spec.stateMonitorFrequency,
+          bandit.spec.stateMonitorEventChunkSize,
           None
         )
         monitorPipe <- allKPIProcessAlg.monitorExperiment(
@@ -42,8 +42,8 @@ object BanditProcessAlg {
           monitorPipe.andThen { states =>
             states
               .groupWithin(
-                bandit.settings.updatePolicyEveryNStateUpdate,
-                bandit.settings.updatePolicyFrequency
+                bandit.spec.updatePolicyStateChunkSize,
+                bandit.spec.updatePolicyFrequency
               )
               .evalMapFilter(_.last.traverse(banditAlg.updatePolicy))
               .void

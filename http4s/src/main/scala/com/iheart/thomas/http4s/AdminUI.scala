@@ -44,7 +44,8 @@ class AdminUI[F[_]: MonadThrow](
     abtestManagementUI: AbtestManagementUI[F],
     authUI: auth.UI[F, AuthImp],
     analysisUI: analysis.UI[F],
-    streamUI: stream.UI[F]
+    streamUI: stream.UI[F],
+    banditUI: bandit.UI[F]
   )(implicit adminUICfg: AdminUIConfig,
     jobAlg: JobAlg[F],
     authenticator: Authenticator[F, String, User, Token[AuthImp]])
@@ -52,7 +53,7 @@ class AdminUI[F[_]: MonadThrow](
     with Http4sDsl[F] {
 
   val routes = authUI.publicEndpoints <+> liftService(
-    abtestManagementUI.routes <+> authUI.authedService <+> analysisUI.routes <+> streamUI.routes
+    abtestManagementUI.routes <+> authUI.authedService <+> analysisUI.routes <+> streamUI.routes <+> banditUI.routes
   )
 
   val serverErrorHandler: ServiceErrorHandler[F] = { _ =>
@@ -141,7 +142,13 @@ object AdminUI {
 
               com.iheart.thomas.bandit.bayesian.BayesianMABAlg.apply[F]
 
-              new AdminUI(amUI, authUI, new analysis.UI[F], new stream.UI[F])
+              new AdminUI(
+                amUI,
+                authUI,
+                new analysis.UI,
+                new stream.UI,
+                new bandit.UI
+              )
             }
         }
       }

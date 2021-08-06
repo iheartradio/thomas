@@ -38,6 +38,7 @@ trait JobAlg[F[_]] {
   /** Stops and removes a job
     */
   def stop(jobKey: String): F[Unit]
+  def stop(spec: JobSpec): F[Unit] = stop(spec.key)
 
   def runStream: Stream[F, Unit]
 
