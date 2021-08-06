@@ -42,7 +42,7 @@ class BayesianMABAlgSuite
       val precision = BigDecimal(0.01)
       val availableSize = BigDecimal(0.8)
       val groups = BayesianMABAlg
-        .allocateGroupSize(distribution, precision, None, availableSize)
+        .allocateGroupSize(distribution, precision, availableSize)
 
       groups.size shouldBe distribution.size
       val totalSize = groups.foldMap(_.size)
@@ -65,20 +65,6 @@ class BayesianMABAlgSuite
 
         }
     }
-  }
-
-  test("allocateGroupSize respect maintain exploration size") {
-    val distribution: Map[GroupName, Probability] =
-      Map("A" -> Probability(0.001), "B" -> Probability(0.999))
-    val precision = BigDecimal(0.01)
-    val groups = BayesianMABAlg
-      .allocateGroupSize(distribution, precision, Some(0.1d), 1)
-
-    groups.toSet shouldBe Set(
-      Group("A", BigDecimal(0.1), None),
-      Group("B", BigDecimal(0.9), None)
-    )
-
   }
 
   test("abtestSpecFromBanditSpec distributes sizes evenly") {

@@ -271,8 +271,11 @@ class BayesianMABAlgITSuite extends BayesianMABAlgITSuiteBase {
 
   test("updatePolicy ignores reserved groups") {
     val spec = createSpec(
-      arms = List(ArmSpec("A"), ArmSpec("B"), ArmSpec("C", initialSize = Some(0.3))),
-      reservedGroups = Set("C")
+      arms = List(
+        ArmSpec("A"),
+        ArmSpec("B"),
+        ArmSpec("C", initialSize = Some(0.3), reserved = true)
+      )
     )
 
     val current = withAPI { (api, sdao) =>
@@ -365,8 +368,7 @@ class BayesianMABAlgITSuiteBase extends AnyFunSuiteLike with Matchers {
       kpiName: KPIName = kpi.name,
       minimumSizeChange: Double = 0.01,
       initialSampleSize: Int = 0,
-      historyRetention: Option[FiniteDuration] = None,
-      reservedGroups: Set[GroupName] = Set.empty
+      historyRetention: Option[FiniteDuration] = None
     ) = BanditSpec(
     feature = feature,
     author = author,
@@ -376,8 +378,6 @@ class BayesianMABAlgITSuiteBase extends AnyFunSuiteLike with Matchers {
     minimumSizeChange = minimumSizeChange,
     initialSampleSize = initialSampleSize,
     historyRetention = historyRetention,
-    maintainExplorationSize = None,
-    reservedGroups = reservedGroups,
     stateMonitorEventChunkSize = 1
   )
 
