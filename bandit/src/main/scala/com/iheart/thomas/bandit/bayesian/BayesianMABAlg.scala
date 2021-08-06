@@ -48,9 +48,12 @@ object BayesianMABAlg {
       from: BanditSpec,
       start: OffsetDateTime
     ): F[AbtestSpec] = {
-    val defaultSize = (1d - from.arms
-      .flatMap(_.initialSize)
-      .sum) / from.arms.count(_.initialSize.isEmpty).toDouble
+    println(from)
+    val initialSize = if (from.arms.exists(_.initialSize.isEmpty)) {
+      (1d - from.arms
+        .flatMap(_.initialSize)
+        .sum) / from.arms.count(_.initialSize.isEmpty).toDouble
+    } else BigDecimal(0)
 
     AbtestSpec(
       name = "Abtest for Bayesian MAB " + from.feature,
@@ -59,7 +62,7 @@ object BayesianMABAlg {
       start = start,
       end = None,
       groups = from.arms
-        .map(as => Group(as.name, as.initialSize.getOrElse(defaultSize), as.meta))
+        .map(as => Group(as.name, as.initialSize.getOrElse(initialSize), as.meta))
         .toList,
       specialization = Some(Specialization.MultiArmBandit)
     ).pure[F]

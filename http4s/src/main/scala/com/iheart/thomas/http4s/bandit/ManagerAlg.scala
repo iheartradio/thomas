@@ -3,7 +3,7 @@ package com.iheart.thomas.http4s.bandit
 import cats.Monad
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.bandit.BanditStatus
-import com.iheart.thomas.bandit.bayesian.{BayesianMAB, BayesianMABAlg}
+import com.iheart.thomas.bandit.bayesian.{BanditSpec, BayesianMAB, BayesianMABAlg}
 import com.iheart.thomas.stream.{Job, JobAlg}
 import com.iheart.thomas.stream.JobSpec.RunBandit
 import cats.implicits._
@@ -12,6 +12,7 @@ trait ManagerAlg[F[_]] {
   def status(feature: FeatureName): F[BanditStatus]
   def pause(feature: FeatureName): F[Unit]
   def start(feature: FeatureName): F[Option[Job]]
+  def create(bs: BanditSpec): F[BayesianMAB]
   def allBandits: F[Seq[(BayesianMAB, BanditStatus)]]
 }
 
@@ -34,5 +35,7 @@ object ManagerAlg {
 
     def allBandits: F[Seq[(BayesianMAB, BanditStatus)]] =
       alg.getAll.flatMap(_.traverse(b => status(b.feature).map((b, _)))).widen
+
+    def create(bs: BanditSpec): F[BayesianMAB] = alg.init(bs)
   }
 }

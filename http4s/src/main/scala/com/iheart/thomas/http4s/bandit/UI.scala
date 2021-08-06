@@ -4,6 +4,7 @@ package bandit
 
 import cats.effect.Async
 import com.iheart.thomas.bandit.html._
+import com.iheart.thomas.html._
 import com.iheart.thomas.bandit.bayesian.{BanditSpec}
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
@@ -14,6 +15,8 @@ import com.iheart.thomas.abtest.model.{GroupMeta, GroupSize}
 import com.iheart.thomas.analysis.{AllKPIRepo, KPIName}
 import com.iheart.thomas.bandit.ArmSpec
 import org.http4s.FormDataDecoder
+import org.http4s.FormDataDecoder._
+
 import org.http4s.twirl._
 
 import scala.concurrent.duration.FiniteDuration
@@ -24,7 +27,8 @@ class UI[F[_]: Async](
     aCfg: AdminUIConfig)
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
-//  val reverseRoutes = ReverseRoutes(aCfg)
+  val reverseRoutes = ReverseRoutes(aCfg)
+  import UI.decoders._
 
   val rootPath = Root / "bandits"
 
@@ -36,10 +40,25 @@ class UI[F[_]: Async](
         r <- Ok(index(bandits)(UIEnv(u)))
       } yield r
 
+    case req @ POST -> `rootPath` / "" asAuthed (u) =>
+      req.request
+        .as[BanditSpec]
+        .flatMap(bs => alg.create(bs.copy(author = u.username))) *> {
+        Ok(redirect(reverseRoutes.bandits, "Bandit Created"))
+      }
+
     case GET -> `rootPath` / "new" / "form" asAuthed (u) =>
       kpiRepos.all.flatMap { kpis =>
         Ok(newBandit(kpis.map(_.name))(UIEnv(u)))
       }
+
+    case GET -> `rootPath` / feature / "start" asAuthed (_) =>
+      alg.start(feature) *>
+        Ok(redirect(reverseRoutes.bandits, "Bandit Created"))
+
+    case GET -> `rootPath` / feature / "pause" asAuthed (_) =>
+      alg.pause(feature) *>
+        Ok(redirect(reverseRoutes.bandits, "Bandit Paused"))
 
   }
 }
@@ -47,7 +66,6 @@ class UI[F[_]: Async](
 object UI {
   object decoders {
     import CommonFormDecoders._
-    import org.http4s.FormDataDecoder._
     implicit val armSpecQueryDecoder: FormDataDecoder[ArmSpec] = (
       field[ArmName]("name"),
       fieldOptional[GroupSize]("size"),
@@ -66,7 +84,7 @@ object UI {
       field[Int]("initialSampleSize"),
       field[Int]("stateMonitorEventChunkSize"),
       field[FiniteDuration]("stateMonitorFrequency"),
-      field[Int]("updatePolicyEveryNStateUpdate"),
+      field[Int]("updatePolicyStateChunkSize"),
       field[FiniteDuration]("updatePolicyFrequency")
     ).mapN(BanditSpec.apply).sanitized
 
