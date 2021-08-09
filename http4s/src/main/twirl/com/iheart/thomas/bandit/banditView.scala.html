@@ -1,0 +1,60 @@
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.http4s.UIEnv
+@import com.iheart.thomas.http4s.bandit.Bandit
+@import com.iheart.thomas.analysis.KPIName
+@import com.iheart.thomas.bandit._
+@import com.iheart.thomas.analysis.html._
+
+@(bandit: Bandit,  kpis: Seq[KPIName])(implicit env: UIEnv)
+
+
+@topNav("Bandit " + bandit.feature, "Bandit") {
+
+
+<div class="mt-4 mb-4">
+    <span class="h5">Bandit</span>
+    <span class="text-primary">@bandit.feature</span>
+</div>
+<div class="mt-4">
+    <h6>Current Status: <b>@bandit.status</b></h6>
+
+    @bandit.status match {
+       case BanditStatus.Running => {
+        <a href="@env.routes.bandits@bandit.feature/pause" type="button">
+            <i class="bi bi-pause-circle" data-bs-toggle="tooltip"  title="Running"></i> Pause
+        </a>
+        }
+        case BanditStatus.Paused => {
+        <a href="@env.routes.bandits@bandit.feature/start" type="button">
+            <i class="bi bi-play-circle" data-bs-toggle="tooltip" title="Paused"></i> Resume
+        </a>
+        }
+        case BanditStatus.Stopped => {
+        <i class="bi bi-arrow-clockwise" data-bs-toggle="tooltip" title="Stopped"></i> Start
+      }
+    }
+
+</div>
+<form action="@env.routes.bandit(bandit.feature)" method="post">
+    @banditSpecForm(Some(bandit.spec), kpis)
+    <div class="row text-end mt-5">
+        <div class="mr-4">
+            <button type="submit" class="btn btn-primary">Update</button>
+            <button type="reset" class="btn btn-warning ml-2" >Cancel</button>
+        </div>
+    </div>
+</form>
+
+
+<h5>Current State</h5>
+@for(state <- bandit.state) {
+   @kpiState(state, showReset= false)
+}
+
+@if( bandit.state.isEmpty ) {
+  No state reported yet.
+}
+
+<a href="@env.routes.bandits"> << Back to bandits</a>
+}
+

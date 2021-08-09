@@ -32,6 +32,8 @@ class UI[F[_]: Async](
 
   val rootPath = Root / "bandits"
 
+  val kpis = kpiRepos.all.map(_.map(_.name))
+
   val routes = roleBasedService(admin.Authorization.banditsManagerRoles) {
 
     case GET -> `rootPath` / "" asAuthed (u) =>
@@ -43,22 +45,28 @@ class UI[F[_]: Async](
     case req @ POST -> `rootPath` / "" asAuthed (u) =>
       req.request
         .as[BanditSpec]
-        .flatMap(bs => alg.create(bs.copy(author = u.username))) *> {
-        Ok(redirect(reverseRoutes.bandits, "Bandit Created"))
-      }
+        .flatMap { bs =>
+          alg.create(bs.copy(author = u.username)) *>
+            Ok(redirect(reverseRoutes.bandit(bs.feature), "Bandit Created"))
+        }
 
     case GET -> `rootPath` / "new" / "form" asAuthed (u) =>
-      kpiRepos.all.flatMap { kpis =>
-        Ok(newBandit(kpis.map(_.name))(UIEnv(u)))
+      kpis.flatMap { ks =>
+        Ok(newBandit(ks)(UIEnv(u)))
       }
 
     case GET -> `rootPath` / feature / "start" asAuthed (_) =>
       alg.start(feature) *>
-        Ok(redirect(reverseRoutes.bandits, "Bandit Created"))
+        Ok(redirect(reverseRoutes.bandit(feature), "Bandit Created"))
+
+    case GET -> `rootPath` / feature / "" asAuthed (u) =>
+      (kpis, alg.get(feature)).mapN { (ks, b) =>
+        Ok(banditView(b, ks)(UIEnv(u)))
+      }.flatten
 
     case GET -> `rootPath` / feature / "pause" asAuthed (_) =>
       alg.pause(feature) *>
-        Ok(redirect(reverseRoutes.bandits, "Bandit Paused"))
+        Ok(redirect(reverseRoutes.bandit(feature), "Bandit Paused"))
 
   }
 }

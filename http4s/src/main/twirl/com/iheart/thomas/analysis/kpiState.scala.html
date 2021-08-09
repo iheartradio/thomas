@@ -6,7 +6,8 @@
 @(
 state: ExperimentKPIState[KPIStats],
 showCommands: Boolean = true,
-includedArms: Set[ArmName] = Set.empty
+includedArms: Set[ArmName] = Set.empty,
+showReset: Boolean = true
 )(implicit env: UIEnv)
 
 <div class="card">
@@ -51,12 +52,14 @@ includedArms: Set[ArmName] = Set.empty
             <div class="text-end">
                 <button class="btn btn-primary mr-3" title="Detailed Evaluation" type="submit">
                 <i class="bi bi-graph-up" ></i> Evaluate</button>
+                @if(showReset){
                 <a href="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/reset"
                    class="btn btn-warning" title="Reset the state" role="button"
                    onclick="return confirm('Please confirm you want reset @state.key.kpi stats for @state.key.feature ')"
                 >
                     <i class="bi bi-trash" ></i>
                     Reset</a>
+                }
             </div>
         </form>
         }
