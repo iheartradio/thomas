@@ -1,10 +1,9 @@
-@import com.iheart.thomas.bandit.bayesian._
-@import com.iheart.thomas.bandit._
 @import com.iheart.thomas.html._
 @import com.iheart.thomas.http4s.UIEnv
+@import com.iheart.thomas.http4s.bandit.Bandit
 
 @(
-bandits: Seq[(BayesianMAB, BanditStatus)]
+bandits: Seq[Bandit]
 )(implicit env: UIEnv)
 
 
@@ -17,38 +16,24 @@ bandits: Seq[(BayesianMAB, BanditStatus)]
     <div class="list-group-item mt-3">
         <div class="row">
             <div class="col-auto">
-                <div>
-                <span class="fw-light h6">Feature</span>
-                <span class="fw-heavy h4 text-primary">@bandit._1.feature</span>
-                </div>
-                <div>
-                    <small>@bandit._1.spec.title</small>
-                </div>
+                <a href="@env.routes.bandit(bandit.feature)">
+                    <div>
+                        <span class="fw-light h6">Feature</span>
+                        <span class="fw-heavy h4 text-primary">@bandit.feature</span>
+                    </div>
+                    <div>
+                        <small>@bandit.spec.title</small>
+                    </div>
+                </a>
             </div>
             <div class="col-auto me-auto pt-1">
                 <small><span class="fw-light ml-3">
                   Author: </span>
-                    <span class="fw-heavy"> @bandit._1.spec.author </span>
+                    <span class="fw-heavy"> @bandit.spec.author </span>
                 </small>
             </div>
             <div class="col-auto pt-1">
-                <small>
-                     @bandit._2 match {
-                       case BanditStatus.Running => {
-                         <a href="@env.routes.bandits@bandit._1.feature/pause" type="button">
-                          <i class="bi bi-pause-circle" data-bs-toggle="tooltip"  title="Running"></i>
-                         </a>
-                       }
-                       case BanditStatus.Paused => {
-                            <a href="@env.routes.bandits@bandit._1.feature/start" type="button">
-                               <i class="bi bi-play-circle" data-bs-toggle="tooltip" title="Paused"></i>
-                            </a>
-                       }
-                       case BanditStatus.Stopped => {
-                         <i class="bi bi-arrow-clockwise" data-bs-toggle="tooltip" title="Stopped"></i>
-                       }
-                     }
-                </small>
+                <small> @bandit.status </small>
             </div>
         </div>
     </div>

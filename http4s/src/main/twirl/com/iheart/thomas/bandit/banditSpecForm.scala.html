@@ -2,6 +2,7 @@
 @import com.iheart.thomas.analysis.KPIName
 @import com.iheart.thomas.common.html._
 @import com.iheart.thomas.http4s.UIEnv
+@import com.iheart.thomas.utils.time._
 
 
 @(
@@ -57,7 +58,7 @@ successMsg: Option[String] = None)(implicit env: UIEnv)
                     Select a KPI
                 </option>
                 @for(kpi <- kpis.sortBy(_.n)) {
-                    <option value="@kpi.n">@kpi.n</option>
+                    <option value="@kpi.n" @if(draftO.fold(false)(_.kpiName == kpi)) { selected } >@kpi.n</option>
                 }
             </select>
         </div>
@@ -94,7 +95,7 @@ successMsg: Option[String] = None)(implicit env: UIEnv)
                    id="historyRetentionInput"
                    type="text"
                    required
-                   value="@draftO.map(_.historyRetention.toString).getOrElse("72h")"
+                   value="@draftO.flatMap(_.historyRetention).fold("72h")(_.pretty)"
             />
         </div>
 
@@ -116,7 +117,7 @@ successMsg: Option[String] = None)(implicit env: UIEnv)
                    id="updatePolicyFrequencyInput"
                    type="text"
                    required
-                   value="@draftO.map(_.updatePolicyFrequency.toString).getOrElse("1h")"
+                   value="@draftO.map(_.updatePolicyFrequency).fold("1h")(_.pretty)"
             />
         </div>
         <div class="form-group  mt-3">
@@ -137,7 +138,7 @@ successMsg: Option[String] = None)(implicit env: UIEnv)
                    id="stateMonitorFrequencyInput"
                    type="text"
                    required
-                   value="@draftO.map(_.stateMonitorFrequency.toString).getOrElse("1m")"
+                   value="@draftO.map(_.stateMonitorFrequency).fold("1 m")(_.pretty)"
             />
         </div>
     </div>
