@@ -65,7 +65,13 @@ var thomas = {
      $(selected + " option").click((ev) => {
         ev.preventDefault();
         var newElem = moveTo(ev.target, candidates);
+        $(selected + " option").prop("selected", true);
         newElem.prop("selected", false);
+        return false;
+     });
+
+     $(selected).change((ev) => {
+        ev.preventDefault();
         $(selected + " option").prop("selected", true);
         return false;
      });
