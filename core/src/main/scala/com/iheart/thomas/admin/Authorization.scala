@@ -16,8 +16,10 @@ object Authorization {
         case CreateNewFeature => atLeast(Developer)
         case ManageFeature(feature) =>
           user.isAdmin || feature.developers.contains(user.username)
+        case OperateFeature(feature) =>
+          has(ManageFeature(feature)) || feature.operators.contains(user.username)
         case ManageTestSettings(feature: Feature) =>
-          has(ManageFeature(feature)) ||
+          has(OperateFeature(feature)) ||
             atLeast(Tester)
         case ManageUsers      => user.isAdmin
         case ManageBandits    => banditsManagerRoles.contains(user.role)
@@ -49,6 +51,7 @@ object Authorization {
   case object CreateNewFeature extends Permission
 
   case class ManageFeature(feature: Feature) extends Permission
+  case class OperateFeature(feature: Feature) extends Permission
 
   case class ManageTestSettings(feature: Feature) extends Permission
 

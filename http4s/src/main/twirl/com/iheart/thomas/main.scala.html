@@ -42,8 +42,33 @@ var thomas = {
   appendItem: function(newItemContainer, appendToDiv) {
     $(newItemContainer).children().clone().appendTo(appendToDiv);
   },
+
   removeParentItem: function(item, parentId) {
     $(item).parents(parentId).remove();
+  },
+
+  twoLists: function(selected, candidates) {
+     var moveTo = function(elem, target) {
+        var newElem = $(elem).clone();
+        $(target).append(newElem);
+        $(elem).remove();
+        return newElem;
+     };
+
+     $(candidates).change((ev) => {
+        ev.preventDefault();
+        var newElem = moveTo(candidates + " option:selected", selected);
+        newElem.prop("selected", true).click(() => moveTo(newElem, candidates));
+        return false;
+     });
+
+     $(selected + " option").click((ev) => {
+        ev.preventDefault();
+        var newElem = moveTo(ev.target, candidates);
+        newElem.prop("selected", false);
+        $(selected + " option").prop("selected", true);
+        return false;
+     });
   }
 };
 

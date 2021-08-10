@@ -118,13 +118,19 @@ class AbtestManagementUI[F[_]: Async: Timer](
       for {
         tests <- alg.getTestsByFeature(feature.name)
         allUsers <- authAlg.allUsers
+        eligibleManagers = allUsers.filter(_.atLeast(testManagerRoles: _*))
         r <- Ok(
           featureForm(
             feature,
             tests.size,
             msg.flatMap(_.left.toOption),
             msg.flatMap(_.right.toOption),
-            (allUsers.map(_.username).toSet -- feature.developers.toSet).toList
+            (eligibleManagers
+              .map(_.username)
+              .toSet -- feature.developers.toSet).toList,
+            (eligibleManagers
+              .map(_.username)
+              .toSet -- feature.operators.toSet).toList
           )(UIEnv(u))
         )
       } yield r
@@ -517,15 +523,18 @@ object AbtestManagementUI {
         list[(String, String)]("overrides").map(_.toMap),
         fieldEither[Boolean]("overrideEligibility").default(false),
         fieldEither[Map[String, String]]("batchOverrides").default(Map.empty),
-        listOf[String]("developers")
-      ).mapN { (name, desc, overrides, oEFlag, batchOverrides, developers) =>
-        Feature(
-          name = name,
-          description = desc,
-          overrides = overrides ++ batchOverrides,
-          overrideEligibility = oEFlag,
-          developers = developers
-        )
+        listOf[String]("developers"),
+        listOf[String]("operators")
+      ).mapN {
+        (name, desc, overrides, oEFlag, batchOverrides, developers, operators) =>
+          Feature(
+            name = name,
+            description = desc,
+            overrides = overrides ++ batchOverrides,
+            overrideEligibility = oEFlag,
+            developers = developers,
+            operators = operators
+          )
       }.sanitized
     }
   }
