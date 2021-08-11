@@ -165,6 +165,10 @@ package model {
 
   }
 
+  object AbtestSpec {
+    implicit val eq: Eq[AbtestSpec] = Eq.fromUniversalEquals
+  }
+
   object Abtest {
 
     sealed trait Specialization extends Serializable with Product
@@ -216,7 +220,8 @@ package model {
       overrides: Overrides,
       overrideEligibility: Boolean = false,
       lockedAt: Option[Instant] = None,
-      developers: List[Username] = Nil) {
+      developers: List[Username] = Nil,
+      operators: List[Username] = Nil) {
 
     def nonTestSettingsChangedFrom(that: Feature) =
       copy(overrides = Map.empty, overrideEligibility = false) !=

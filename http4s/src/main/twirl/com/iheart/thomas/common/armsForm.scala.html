@@ -5,7 +5,8 @@
 draftArms: Option[Seq[ArmSpec]],
 groupSizeChangeAllowed: Boolean = true,
 armLabel: String = "Group",
-showReserved: Boolean = false
+showReserved: Boolean = false,
+metaChangeOnly: Boolean = false
 )
 
 @arm(as: Option[ArmSpec]) = {
@@ -13,7 +14,7 @@ showReserved: Boolean = false
 <div class="row abtest-group mb-3">
     <div class="col-3">
         <div class="form-group">
-            <input name="groups[].name" class="form-control size-change"
+            <input name="groups[].name" class="form-control size-change essential"
                    id="testGroupName" type="text"
                    value="@as.map(_.name)"/>
         </div>
@@ -21,7 +22,7 @@ showReserved: Boolean = false
 
     <div class="col-2">
         <div class="form-group">
-            <input name="groups[].size" class="form-control size-change"
+            <input name="groups[].size" class="form-control size-change essential"
                    id="testGroupSize" type="number"
                    value="@as.map(_.initialSize)"
                    min="0" max="1" step="any" placeholder="Btw 0 & 1"/>
@@ -46,7 +47,7 @@ showReserved: Boolean = false
 
         }
         <div class="text-center">
-            <button class="btn btn-link remove-item remove-item mt-4 ml-3 size-change"
+            <button class="btn btn-link remove-item remove-item mt-4 ml-3 size-change essential"
                     type="button" onclick="thomas.removeParentItem(this, '.abtest-group')" title="Remove @armLabel">
                 <i class="bi bi-trash"></i>
             </button>
@@ -107,15 +108,37 @@ showReserved: Boolean = false
 
 @if(!groupSizeChangeAllowed) {
 <script>
-
-
     $(document).ready(function() {
-
-        $('#test-groups input.size-change').attr('readonly', 'readonly');
+        thomas.readonly('#test-groups input.size-change');
         $('#test-groups button.size-change').hide();
-
-
     });
-
 </script>
 }
+
+@if(metaChangeOnly) {
+<script>
+    $(document).ready(function() {
+        thomas.readonly('#test-groups input.essential');
+        $('#test-groups button.essential').hide();
+    });
+</script>
+}
+
+
+<script>
+    var thomasCheckMeta = function() {
+        function countWithValue(selector) {
+            return $(selector).filter( function(item) { return $(this).val().trim() != '';  }).length;
+        }
+        var numWithMeta = countWithValue("textarea#testGroupMeta");
+        if(numWithMeta == 0) return true;
+        var numOfNamedGroups = countWithValue("input#testGroupName");
+        if( numOfNamedGroups != numWithMeta) {
+          alert("All groups must have group meta set, or none of them with group meta set.");
+          return false
+        }
+
+        return true;
+    };
+
+</script>

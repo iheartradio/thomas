@@ -35,7 +35,7 @@ followUpCandidateO: Option[Entity[Abtest]] = None
   }
 } else {
 
-<form action="@env.routes.features/@feature/tests" method="post">
+<form action="@env.routes.features/@feature/tests" method="post"  onsubmit="return thomasCheckMeta()">
   @testForm(draft, errorMsg)
   <div class="row text-end mt-5">
     <div class="mr-4">
