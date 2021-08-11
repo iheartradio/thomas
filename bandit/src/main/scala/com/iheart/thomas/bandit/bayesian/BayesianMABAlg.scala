@@ -48,7 +48,6 @@ object BayesianMABAlg {
       from: BanditSpec,
       start: OffsetDateTime
     ): F[AbtestSpec] = {
-    println(from)
     val initialSize = if (from.arms.exists(_.initialSize.isEmpty)) {
       (1d - from.arms
         .flatMap(_.initialSize)

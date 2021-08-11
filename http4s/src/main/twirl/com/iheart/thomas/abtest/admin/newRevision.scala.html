@@ -24,7 +24,7 @@ operatingSettingsOnly: Boolean)(implicit env: UIEnv)
   <div class="row text-end mt-5">
     <div class="mr-4">
       <button type="submit" class="btn btn-primary"
-         onclick="return confirm('The test @fromTest.data.name (@fromTest._id) will be terminated, if not already end, at the scheduled start time of this new revision. Do you want to proceed?')"
+         onclick="return (thomasCheckMeta() && confirm('The test @fromTest.data.name (@fromTest._id) will be terminated, if not already end, at the scheduled start time of this new revision. Do you want to proceed?'))"
       >Create</button>
       <button type="button" class="btn btn-warning ml-2" onclick="history.back()">Cancel</button>
     </div>

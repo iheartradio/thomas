@@ -13,7 +13,7 @@ operatingSettingsOnly: Boolean)(implicit env: UIEnv)
 
 @topNav("A/B Test for feature " + test.data.feature, "A/B Tests") {
 
-<form action="@env.routes.tests/@test._id" method="post">
+<form action="@env.routes.tests/@test._id" method="post" onsubmit="return thomasCheckMeta()">
 
   <div class="mt-4 mb-4">
     <span class="h5">

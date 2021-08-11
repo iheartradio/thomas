@@ -123,3 +123,22 @@ metaChangeOnly: Boolean = false
     });
 </script>
 }
+
+
+<script>
+    var thomasCheckMeta = function() {
+        function countWithValue(selector) {
+            return $(selector).filter( function(item) { return $(this).val().trim() != '';  }).length;
+        }
+        var numWithMeta = countWithValue("textarea#testGroupMeta");
+        if(numWithMeta == 0) return true;
+        var numOfNamedGroups = countWithValue("input#testGroupName");
+        if( numOfNamedGroups != numWithMeta) {
+          alert("All groups must have group meta set, or none of them with group meta set.");
+          return false
+        }
+
+        return true;
+    };
+
+</script>

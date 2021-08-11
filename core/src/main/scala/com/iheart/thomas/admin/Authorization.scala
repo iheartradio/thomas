@@ -33,22 +33,21 @@ object Authorization {
         case ManageAnalysis   => analysisManagerRoles.contains(user.role)
 
         case ChangeTest(feature, existing, newSpec) =>
-          println("new spec " + newSpec)
           has(ManageFeature(feature)) ||
-          (has(OperateFeature(feature)) && {
-            def nonOperativeSettings(spec: AbtestSpec): AbtestSpec =
-              spec.copy(
-                author = "",
-                start = OffsetDateTime.MIN,
-                userMetaCriteria = None,
-                groups = spec.groups.map(_.copy(meta = None)),
-                alternativeIdName = None,
-                requiredTags = Nil
+            (has(OperateFeature(feature)) && {
+              def nonOperativeSettings(spec: AbtestSpec): AbtestSpec =
+                spec.copy(
+                  author = "",
+                  start = OffsetDateTime.MIN,
+                  userMetaCriteria = None,
+                  groups = spec.groups.map(_.copy(meta = None)),
+                  alternativeIdName = None,
+                  requiredTags = Nil
+                )
+              nonOperativeSettings(existing.data.toSpec) === nonOperativeSettings(
+                newSpec
               )
-            nonOperativeSettings(existing.data.toSpec) === nonOperativeSettings(
-              newSpec
-            )
-          })
+            })
       }
 
     def managing(features: Seq[Feature]): Seq[Feature] =
