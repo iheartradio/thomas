@@ -7,7 +7,8 @@
 @(
 fromTest: Entity[Abtest],
 draft: Option[AbtestSpec],
-errorMsg: Option[String] = None)(implicit env: UIEnv)
+errorMsg: Option[String] = None,
+operatingSettingsOnly: Boolean)(implicit env: UIEnv)
 
 @topNav("Create A New Test", "A/B Tests") {
 <form action="./new_revision" method="post">
@@ -19,7 +20,7 @@ errorMsg: Option[String] = None)(implicit env: UIEnv)
     <span class="h4 text-primary" title="This is feature name for the test.">
       @featureTestsLink(fromTest.data.feature)</span>
   </div>
-  @testForm(draft, errorMsg)
+  @testForm(draft, errorMsg, operatingSettingsOnly = operatingSettingsOnly)
   <div class="row text-end mt-5">
     <div class="mr-4">
       <button type="submit" class="btn btn-primary"

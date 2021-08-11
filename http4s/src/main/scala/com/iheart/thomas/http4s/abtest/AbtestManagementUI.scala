@@ -145,13 +145,25 @@ class AbtestManagementUI[F[_]: Async: Timer](
       } yield TestInfo(test, otherFeatureTests)
 
     implicit class UserAuthSyntax(user: User) {
-      def canEdit(testId: String): F[Unit] =
-        get(testId).flatMap(canEdit(_))
 
-      def canEdit(test: Entity[Abtest]): F[Unit] =
+      def canManageFeature(testId: String): F[Unit] =
+        for {
+          test <- get(testId)
+          feature <- alg
+            .getFeature(test.data.feature)
+          _ <- user.check[F](ManageFeature(feature))
+        } yield ()
+
+      //fails if use has no permission to change at all.
+      def canManage(test: Entity[Abtest]): F[Boolean] =
         alg
           .getFeature(test.data.feature)
-          .flatMap(feature => user.check[F](ManageFeature(feature)))
+          .flatMap(feature =>
+            user.check[F](
+              OperateFeature(feature)
+            ) *>
+              user.has(ManageFeature(feature)).pure[F]
+          )
 
       def canAddTest(fn: FeatureName): F[Unit] =
         alg
@@ -161,6 +173,12 @@ class AbtestManagementUI[F[_]: Async: Timer](
               user.check[F](ManageFeature(f))
             )
           )
+
+      def canChangeTest(test: Entity[Abtest], newSpec: AbtestSpec): F[Unit] = {
+        alg
+          .getFeature(test.data.feature)
+          .flatMap(feature => user.check[F](ChangeTest(feature, test, newSpec)))
+      }
     }
 
     roleBasedService(admin.Authorization.testManagerRoles) {
@@ -178,19 +196,36 @@ class AbtestManagementUI[F[_]: Async: Timer](
             }
 
       case GET -> Root / "tests" / testId / "new_revision" asAuthed u =>
-        get(testId).flatMap(test =>
-          u.canEdit(test) *> Ok(
-            newRevision(
-              test,
-              Some(
-                test.data.toSpec.copy(
-                  start = OffsetDateTime.now,
-                  end = None
-                )
+        get(testId).flatMap { test =>
+          u.canManage(test)
+            .flatMap(canManage =>
+              Ok(
+                newRevision(
+                  test,
+                  Some(
+                    test.data.toSpec.copy(
+                      start = OffsetDateTime.now,
+                      end = None
+                    )
+                  ),
+                  operatingSettingsOnly = !canManage
+                )(UIEnv(u))
               )
-            )(UIEnv(u))
-          )
-        )
+            )
+        }
+
+      case GET -> Root / "tests" / testId / "edit" asAuthed u =>
+        getTestInfo(testId).flatMap { ti =>
+          u.canManage(ti.test).flatMap { canManage =>
+            Ok(
+              editTest(
+                test = ti.test,
+                followUpO = ti.followUpO,
+                operatingSettingsOnly = !canManage
+              )(UIEnv(u))
+            )
+          }
+        }
 
       case se @ POST -> Root / "features" / feature asAuthed u =>
         se.request
@@ -218,38 +253,74 @@ class AbtestManagementUI[F[_]: Async: Timer](
             }
           )
 
+      //create a new revision for a test
       case se @ POST -> Root / "tests" / testId / "new_revision" asAuthed u =>
         get(testId).flatMap { fromTest =>
           se.request
             .as[SpecForm]
             .redeemWith(
-              e => BadRequest(editTest(fromTest, Some(displayError(e)))(UIEnv(u))),
+              e => BadRequest(errorMsg(displayError(e))),
               _.toAbtestSpec[F](u, fromTest.data.feature).flatMap { spec =>
-                u.canEdit(fromTest) *>
+                u.canChangeTest(fromTest, spec) *>
                   (if (fromTest.data.end.fold(true)(_.isAfter(spec.startI)))
                      alg.continue(spec)
                    else alg.create(spec, false))
                     .flatMap(redirectToTest)
                     .handleErrorWith(e =>
-                      BadRequest(
-                        newRevision(fromTest, Some(spec), Some(displayError(e)))(
-                          UIEnv(u)
+                      u.canManage(fromTest)
+                        .flatMap(canManage =>
+                          BadRequest(
+                            newRevision(
+                              fromTest,
+                              Some(spec),
+                              Some(displayError(e)),
+                              operatingSettingsOnly = !canManage
+                            )(
+                              UIEnv(u)
+                            )
+                          )
                         )
-                      )
                     )
               }
             )
         }
 
-      case GET -> Root / "tests" / testId / "edit" asAuthed u =>
-        getTestInfo(testId).flatMap { ti =>
-          u.canEdit(ti.test) *> Ok(
-            editTest(test = ti.test, followUpO = ti.followUpO)(UIEnv(u))
-          )
+      //modify a scheduled test
+      case se @ POST -> Root / "tests" / testId asAuthed u =>
+        get(testId).flatMap { test =>
+          se.request
+            .as[SpecForm]
+            .redeemWith(
+              e => BadRequest(errorMsg(displayError(e))),
+              _.toAbtestSpec[F](u, test.data.feature).flatMap { spec =>
+                u.canChangeTest(test, spec) *>
+                  alg
+                    .updateTest(
+                      testId.coerce[EntityId],
+                      spec
+                    )
+                    .flatMap(redirectToTest)
+                    .handleErrorWith(e =>
+                      u.canManage(test)
+                        .flatMap(canManage =>
+                          BadRequest(
+                            editTest(
+                              test,
+                              Some(displayError(e)),
+                              Some(spec),
+                              operatingSettingsOnly = !canManage
+                            )(
+                              UIEnv(u)
+                            )
+                          )
+                        )
+                    )
+              }
+            )
         }
 
       case GET -> Root / "tests" / testId / "delete" asAuthed u =>
-        u.canEdit(testId) *>
+        u.canManageFeature(testId) *>
           alg.terminate(testId.coerce[EntityId]).flatMap { ot =>
             val message = ot.fold(s"deleted test $testId")(t =>
               s"terminated running test for feature ${t.data.feature}"
@@ -258,32 +329,7 @@ class AbtestManagementUI[F[_]: Async: Timer](
             Ok(redirect(reverseRoutes.tests, s"Successfully $message."))
           }
 
-      case se @ POST -> Root / "tests" / testId asAuthed u =>
-        get(testId).flatMap { test =>
-          u.canEdit(test) *>
-            se.request
-              .as[SpecForm]
-              .redeemWith(
-                e =>
-                  get(testId).flatMap { t =>
-                    BadRequest(editTest(t, Some(displayError(e)))(UIEnv(u)))
-                  },
-                _.toAbtestSpec[F](u, test.data.feature).flatMap { spec =>
-                  alg
-                    .updateTest(
-                      testId.coerce[EntityId],
-                      spec
-                    )
-                    .flatMap(redirectToTest)
-                    .handleErrorWith(e =>
-                      BadRequest(
-                        editTest(test, Some(displayError(e)), Some(spec))(UIEnv(u))
-                      )
-                    )
-                }
-              )
-        }
-
+      //Add new test to a feature
       case se @ POST -> Root / "features" / feature / "tests" asAuthed u =>
         se.request
           .as[SpecForm]

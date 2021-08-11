@@ -1,8 +1,14 @@
 package com.iheart.thomas.admin
 import Role._
-import com.iheart.thomas.abtest.model.Feature
+import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Feature}
+
 import scala.util.control.NoStackTrace
 import cats.MonadThrow
+import cats.implicits._
+import lihua.Entity
+
+import java.time.OffsetDateTime
+
 object Authorization {
   implicit class userAuthorizationSyntax(private val user: User) extends AnyVal {
 
@@ -25,6 +31,24 @@ object Authorization {
         case ManageBandits    => banditsManagerRoles.contains(user.role)
         case ManageBackground => backgroundManagerRoles.contains(user.role)
         case ManageAnalysis   => analysisManagerRoles.contains(user.role)
+
+        case ChangeTest(feature, existing, newSpec) =>
+          println("new spec " + newSpec)
+          has(ManageFeature(feature)) ||
+          (has(OperateFeature(feature)) && {
+            def nonOperativeSettings(spec: AbtestSpec): AbtestSpec =
+              spec.copy(
+                author = "",
+                start = OffsetDateTime.MIN,
+                userMetaCriteria = None,
+                groups = spec.groups.map(_.copy(meta = None)),
+                alternativeIdName = None,
+                requiredTags = Nil
+              )
+            nonOperativeSettings(existing.data.toSpec) === nonOperativeSettings(
+              newSpec
+            )
+          })
       }
 
     def managing(features: Seq[Feature]): Seq[Feature] =
@@ -52,6 +76,12 @@ object Authorization {
 
   case class ManageFeature(feature: Feature) extends Permission
   case class OperateFeature(feature: Feature) extends Permission
+
+  case class ChangeTest(
+      feature: Feature,
+      existing: Entity[Abtest],
+      newSpec: AbtestSpec)
+      extends Permission
 
   case class ManageTestSettings(feature: Feature) extends Permission
 

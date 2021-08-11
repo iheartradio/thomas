@@ -165,6 +165,10 @@ package model {
 
   }
 
+  object AbtestSpec {
+    implicit val eq: Eq[AbtestSpec] = Eq.fromUniversalEquals
+  }
+
   object Abtest {
 
     sealed trait Specialization extends Serializable with Product
