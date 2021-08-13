@@ -229,12 +229,12 @@ package model {
   }
 
   /** @param userId
-    *   @param at
+    * @param at
     * @param tags
-    *   @param meta
+    * @param meta
     * @param features
-    *   @param eligibilityControlFilter indicate whether to include tests with
-    *   eligibility control
+    * @param eligibilityControlFilter
+    *   indicate whether to include tests with eligibility control
     */
   case class UserGroupQuery(
       userId: Option[UserId],

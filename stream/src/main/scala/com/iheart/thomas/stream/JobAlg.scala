@@ -60,7 +60,7 @@ trait JobAlg[F[_]] {
   /** Find job according to spec. Since you can't run two jobs with the same key,
     * find ignores the rest of the spec.
     * @param spec
-    *   @return
+    * @return
     */
   def find(spec: JobSpec): F[Option[Job]]
 
