@@ -36,8 +36,10 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
   def testQueryAccumulativeKPI[A](
       kpi: QueryAccumulativeKPI,
       data: List[MockData[PerUserSamples]]
-    )(f: (KPIProcessAlg[IO, Unit, QueryAccumulativeKPI],
-          KPIRepo[IO, QueryAccumulativeKPI]) => IO[A]
+    )(f: (
+          KPIProcessAlg[IO, Unit, QueryAccumulativeKPI],
+          KPIRepo[IO, QueryAccumulativeKPI]
+      ) => IO[A]
     ): IO[A] = {
 
     implicit val eventLogger = EventLogger.noop[IO]
