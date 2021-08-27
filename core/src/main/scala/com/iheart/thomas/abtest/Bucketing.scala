@@ -22,7 +22,8 @@ private[thomas] object Bucketing {
     BigInt(1, md5(s))
 
   /** @param s
-    *   @return Between 0 and 1
+    * @return
+    *   Between 0 and 1
     */
   def md5Double(s: String): Double = {
     (BigDecimal(md5BigInt(s), MathContext.DECIMAL32) / max128BitValue).doubleValue()
