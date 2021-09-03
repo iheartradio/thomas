@@ -24,8 +24,10 @@ trait MessageProcessor[F[_]] {
 
 object MessageProcessor {
   def apply[F[_], Message](
-      toEvent: (FeatureName,
-          KPIName) => F[Pipe[F, Message, (ArmName, ConversionEvent)]]
+      toEvent: (
+          FeatureName,
+          KPIName
+      ) => F[Pipe[F, Message, (ArmName, ConversionEvent)]]
     )(implicit ev: RecordDeserializer[F, Message]
     ): MessageProcessor[F] {
     type RawMessage = Message;

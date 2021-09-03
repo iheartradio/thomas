@@ -8,9 +8,9 @@ import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{Key, Specializatio
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 /** @param feature
-  *   @param title
+  * @param title
   * @param author
-  *   @param kpiName
+  * @param kpiName
   * @param minimumSizeChange
   *   the minimum threshold of group size change. to avoid small fluctuation on
   *   statistics change
@@ -19,8 +19,8 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
   * @param historyRetention
   *   for how long retired ab test versions are being kept
   * @param maintainExplorationSize
-  *   @param reservedGroups reserve some arms from being changed by the bandit alg
-  *   (useful for A/B tests)
+  * @param reservedGroups
+  *   reserve some arms from being changed by the bandit alg (useful for A/B tests)
   */
 case class BanditSpec(
     feature: FeatureName,
