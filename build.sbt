@@ -13,7 +13,7 @@ val gh = GitHubSettings(
 )
 
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
-val reactiveMongoVer = "1.0.6"
+val reactiveMongoVer = "1.0.7"
 // format: off
 lazy val libs = {
   org.typelevel.libraries
