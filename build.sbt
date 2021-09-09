@@ -17,13 +17,13 @@ val reactiveMongoVer = "1.0.6"
 // format: off
 lazy val libs = {
   org.typelevel.libraries
-    .addJVM(name = "akka-slf4j",            version = "2.6.14",  org = "com.typesafe.akka")
+    .addJVM(name = "akka-slf4j",            version = "2.6.16",  org = "com.typesafe.akka")
     .addJVM(name = "breeze",                version = "1.2",    org ="org.scalanlp", "breeze", "breeze-viz")
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
     .addJVM(name = "decline",               version = "2.1.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
     .addJVM(name = "evilplot",              version = "0.8.1",  org = "io.github.cibotech")
-    .addJVM(name = "fs2-kafka",             version = "1.4.1",  org = "com.github.fd4s")
+    .addJVM(name = "fs2-kafka",             version = "2.2.0",  org = "com.github.fd4s")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .addJVM(name = "log4cats",              version = "2.1.1",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
@@ -462,7 +462,8 @@ lazy val commonSettings = addCompilerPlugins(
   Compile / console / scalacOptions ~= lessStrictScalaChecks,
   Test / compile / scalacOptions ~= lessStrictScalaChecks,
   scalacOptions += s"-Xlint:-package-object-classes",
-  Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
+  Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
+  ThisBuild / evictionErrorLevel := Level.Info //thanks to akka depending on java8 compat 0.8.0
 )
 
 lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =
