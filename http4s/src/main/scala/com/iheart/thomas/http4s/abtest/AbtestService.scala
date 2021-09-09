@@ -2,7 +2,6 @@ package com.iheart.thomas
 package http4s.abtest
 
 import java.time.Instant
-
 import _root_.play.api.libs.json.Json.toJson
 import _root_.play.api.libs.json._
 import cats.effect.{Async, Concurrent, Resource, Timer}
@@ -18,19 +17,18 @@ import com.typesafe.config.Config
 import lihua.EntityId
 import lihua.mongo.JsonFormats._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.dsl.impl.{
-  OptionalQueryParamDecoderMatcher,
-  QueryParamDecoderMatcher
-}
+import org.http4s.dsl.impl.{OptionalQueryParamDecoderMatcher, QueryParamDecoderMatcher}
 import org.http4s.implicits._
 import org.http4s.play._
 import org.http4s.server.Router
 import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes, Response}
 import AbtestService.validationErrorMsg
+import org.typelevel.log4cats.Logger
+
 import scala.concurrent.ExecutionContext
 
 class AbtestService[F[_]: Async](
-    api: AbtestAlg[F])
+    api: AbtestAlg[F])(implicit logger: Logger[F])
     extends Http4sDsl[F] {
 
   implicit val jsonObjectEncoder: EntityEncoder[F, JsObject] =
@@ -66,6 +64,7 @@ class AbtestService[F[_]: Async](
           BadRequest(errorsJson(detail.toList.map(validationErrorMsg)))
         case APINotFound(_) => NotFound()
         case FailedToPersist(msg) =>
+          logger.error("DB failure" + msg) *>
           serverError("Failed to save to DB: " + msg)
         case e @ DBException(_, _) => serverError("DB Error" + e.getMessage)
         case DBLastError(t)        => serverError("DB Operation Rejected" + t)
@@ -258,7 +257,7 @@ object AbtestService {
     case EmptyUserId => s"User id cannot be an empty string."
   }
 
-  def fromMongo[F[_]: Timer](
+  def fromMongo[F[_]: Timer: Logger](
       configResourceName: Option[String] = None
     )(implicit F: Concurrent[F],
       ex: ExecutionContext
@@ -266,7 +265,7 @@ object AbtestService {
     MongoResources.cfg[F](configResourceName).flatMap(fromMongo[F](_))
   }
 
-  def fromMongo[F[_]: Timer](
+  def fromMongo[F[_]: Timer: Logger](
       cfg: Config
     )(implicit F: Concurrent[F],
       ex: ExecutionContext

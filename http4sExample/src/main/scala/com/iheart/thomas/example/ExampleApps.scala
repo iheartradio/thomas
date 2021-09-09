@@ -12,6 +12,8 @@ import org.http4s.server.blaze._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object ExampleAbtestServerApp extends IOApp {
+  implicit val logger = Slf4jLogger.getLogger[IO]
+
   def run(args: List[String]): IO[ExitCode] =
     AbtestService.fromMongo[IO]().use { s =>
       BlazeServerBuilder[IO](global)
