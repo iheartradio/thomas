@@ -125,7 +125,7 @@ class AbtestService[F[_]: Async](
   def readonly: HttpRoutes[F] =
     HttpRoutes.of[F] {
       case GET -> Root / "health" =>
-        respond(api.warmUp.as(Map("status" -> "healthy")))
+        respond(api.warmUp.as(Map("status" -> "healthy", "version" -> BuildInfo.version)))
 
       case GET -> Root / "tests" / "history" / LongVar(at) =>
         respond(api.getAllTestsEpoch(Some(at)))
