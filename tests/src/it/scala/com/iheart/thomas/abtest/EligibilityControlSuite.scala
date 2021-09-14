@@ -2,11 +2,12 @@ package com.iheart.thomas.abtest
 
 import cats.effect.testing.scalatest.AsyncIOSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 import cats.implicits._
 import TestUtils._
 import com.iheart.thomas.abtest.model.UserMetaCriterion._
 
-class EligibilityControlSuite extends AsyncIOSpec with Matchers {
+class EligibilityControlSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
 
   "AbtestAlg" - {
     "Matching Meta Integration" - {

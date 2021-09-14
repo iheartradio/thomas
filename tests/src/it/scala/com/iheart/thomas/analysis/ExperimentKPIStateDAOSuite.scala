@@ -5,6 +5,7 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.effect.{IO, Resource}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 import cats.implicits._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{
   ArmState,
@@ -20,7 +21,7 @@ import com.iheart.thomas.utils.time.Period
 import java.time.Instant
 import concurrent.duration._
 
-abstract class ExperimentKPIStateDAOSuite extends AsyncIOSpec with Matchers {
+abstract class ExperimentKPIStateDAOSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
 
   def stateOf(events: List[(String, ConversionEvent)]) =
     KPIProcessAlg

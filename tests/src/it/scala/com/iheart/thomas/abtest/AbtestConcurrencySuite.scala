@@ -4,11 +4,12 @@ import java.time.OffsetDateTime
 
 import cats.effect.testing.scalatest.AsyncIOSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 import TestUtils._
 import cats.effect.IO
 import cats.implicits._
 import cats.effect.implicits._
-class AbtestConcurrencySuite extends AsyncIOSpec with Matchers {
+class AbtestConcurrencySuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
   "AbtestAlg" - {
     "Cannot create two tests for a new feature simultaneously" in {
       withAlg { alg =>

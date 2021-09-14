@@ -20,13 +20,12 @@ import com.typesafe.config.Config
 import fs2._
 import pureconfig.ConfigSource
 
-import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
 import pureconfig.generic.auto._
 import PipeSyntax._
-
+import utils.time._
 trait JobAlg[F[_]] {
 
   /** Creates a job if the job key is not already in the job list
@@ -127,17 +126,14 @@ object JobAlg {
 
               def checkExpiration[A](settings: ProcessSettings): Pipe[F, A, A] =
                 (input: Stream[F, A]) => {
-                  def checkJobComplete(exp: Instant) =
-                    Stream
-                      .fixedDelay(cfg.jobCheckFrequency)
-                      .evalMap(_ => exp.passed)
-                      .evalTap { completed =>
-                        if (completed) stop(job.key)
-                        else F.unit
-                      }
                   settings.expiration.fold(input)(exp =>
-                    input
-                      .interruptWhen(checkJobComplete(exp))
+                    Stream.eval(utils.time.now[F]).flatMap { now =>
+                     if(exp.isAfter(now))
+                      input
+                        .interruptAfter(now.durationTo(exp))
+                     else
+                       input.interruptWhen(Stream.emit(true))
+                    }
                   )
                 }
 
@@ -158,7 +154,9 @@ object JobAlg {
                 case RunBandit(fn) =>
                   banditProcessAlg.process(fn)
               }).map { case (pipe, settings) =>
-                checkExpiration[Message](settings).andThen(pipe)
+                checkExpiration[Message](settings).andThen(_.flatTap(m => Stream.eval(F.delay(println(m))))).andThen(pipe).andThen { in =>
+                  in.flatTap(_ => Stream.eval(F.delay(println("processed")))).onComplete(Stream.eval(stop(job.key)))
+                }
               }
             }
 
@@ -212,6 +210,8 @@ object JobAlg {
               }
               .mapFilter(_._2)
 
+            val voidPipe : Pipe[F, Message, Unit] = _.void
+
             runningJobs.switchMap { jobs =>
               Stream.eval(logger(RunningJobsUpdated(jobs))) *>
                 Stream
@@ -229,7 +229,7 @@ object JobAlg {
                       }
 
                     messageSubscriber.subscribe
-                      .broadcastThrough((pipes ++ logPipeO.toList): _*)
+                      .broadcastThrough((voidPipe +: (pipes ++ logPipeO.toVector)): _*)
                   }
             }
           }

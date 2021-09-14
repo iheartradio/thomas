@@ -2,6 +2,7 @@ package com.iheart.thomas.abtest
 
 import cats.effect.testing.scalatest.AsyncIOSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 import TestUtils._
 import cats.implicits._
 import com.iheart.thomas.{GroupName, UserId}
@@ -13,7 +14,7 @@ import com.iheart.thomas.abtest.model.{
 }
 import lihua.Entity
 
-class ContinuationSuite extends AsyncIOSpec with Matchers {
+class ContinuationSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
   def getGroupAssignment(
       test: Entity[Abtest],
       ids: List[UserId]
