@@ -18,12 +18,13 @@ import com.iheart.thomas.abtest.model.{
 }
 import com.iheart.thomas.testkit.Factory.{now, _}
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 import cats.implicits._
 import utils.time._
 import cats.MonadError
 
 import concurrent.duration._
-class AbtestAlgSuite extends AsyncIOSpec with Matchers {
+class AbtestAlgSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
 
   val F = MonadError[IO, Throwable]
 

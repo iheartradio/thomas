@@ -1,7 +1,7 @@
 package lihua
 package mongo
 
-import cats.effect.{Async, IO}
+import cats.effect.{Async}
 import play.api.libs.json.Format
 import cats.implicits._
 import reactivemongo.api.Collation
@@ -30,10 +30,9 @@ abstract class DAOFactoryWithEnsure[A: Format, DAOF[_], F[_]](
       collection: BSONCollection
     )(implicit ec: ExecutionContext
     ): F[Unit] = {
-    implicit val cs = IO.contextShift(ec)
-    F.liftIO(IO.fromFuture(IO(collection.create().recover {
+    F.fromFuture(F.delay(collection.create().recover {
       case CommandException.Code(48 /*NamespaceExists*/ ) => ()
-    })))
+    }))
   }
 
   def create(

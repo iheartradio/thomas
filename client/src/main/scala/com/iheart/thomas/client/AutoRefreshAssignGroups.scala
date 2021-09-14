@@ -4,11 +4,11 @@ package client
 import java.time.Instant
 
 import com.iheart.thomas.abtest.{AssignGroups, TestsData}
-import cats.effect.{ConcurrentEffect, Resource, Timer}
+import cats.effect.{Async, Resource}
 import com.iheart.thomas.abtest.model.UserGroupQuery
 import mau.RefreshRef
 import cats.implicits._
-import com.iheart.thomas.abtest.AssignGroups.{AssignmentResult}
+import com.iheart.thomas.abtest.AssignGroups.AssignmentResult
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -23,10 +23,10 @@ object AutoRefreshAssignGroups {
       staleTimeout: FiniteDuration,
       testsRange: Option[FiniteDuration])
 
-  def resource[F[_]: Timer](
+  def resource[F[_]: Async](
       dataProvider: abtest.DataProvider[F],
       config: Config
-    )(implicit F: ConcurrentEffect[F],
+    )(implicit
       nowF: F[Instant]
     ): Resource[F, AutoRefreshAssignGroups[F]] =
     resource[F](
@@ -49,12 +49,12 @@ object AutoRefreshAssignGroups {
     * @return
     *   A Resource of An [[AutoRefreshAssignGroups]]
     */
-  def resource[F[_]: Timer](
+  def resource[F[_]](
       dataProvider: abtest.DataProvider[F],
       refreshPeriod: FiniteDuration,
       staleTimeout: FiniteDuration,
       testsRange: Option[FiniteDuration]
-    )(implicit F: ConcurrentEffect[F],
+    )(implicit F: Async[F],
       nowF: F[Instant]
     ): Resource[F, AutoRefreshAssignGroups[F]] = {
     RefreshRef

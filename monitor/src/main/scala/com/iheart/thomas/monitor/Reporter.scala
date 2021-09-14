@@ -9,7 +9,7 @@ import cats.implicits._
   * @tparam F
   */
 trait Reporter[F[_]] {
-  def report(event: MonitorEvent): F[Fiber[F, Unit]]
+  def report(event: MonitorEvent): F[Fiber[F, Throwable, Unit]]
 
 }
 

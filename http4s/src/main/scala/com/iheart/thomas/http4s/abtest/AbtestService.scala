@@ -2,14 +2,13 @@ package com.iheart.thomas
 package http4s.abtest
 
 import java.time.Instant
-
 import _root_.play.api.libs.json.Json.toJson
 import _root_.play.api.libs.json._
-import cats.effect.{Async, Concurrent, Resource, Timer}
+import cats.effect.{Async, Resource}
 import cats.implicits._
 import com.iheart.thomas.abtest.Error._
 import com.iheart.thomas.abtest.json.play.Formats._
-import com.iheart.thomas.abtest.model.{AbtestSpec, GroupMeta, UserGroupQuery}
+import com.iheart.thomas.abtest.model.{AbtestSpec, GroupMeta, UserGroupQuery, UserGroupQueryResult}
 import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 import com.iheart.thomas.abtest.{AbtestAlg, Error}
 import Error.{NotFound => APINotFound}
@@ -18,19 +17,18 @@ import com.typesafe.config.Config
 import lihua.EntityId
 import lihua.mongo.JsonFormats._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.dsl.impl.{
-  OptionalQueryParamDecoderMatcher,
-  QueryParamDecoderMatcher
-}
+import org.http4s.dsl.impl.{OptionalQueryParamDecoderMatcher, QueryParamDecoderMatcher}
 import org.http4s.implicits._
 import org.http4s.play._
 import org.http4s.server.Router
 import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes, Response}
 import AbtestService.validationErrorMsg
+import com.iheart.thomas.tracking.{Event, EventLogger}
+
 import scala.concurrent.ExecutionContext
 
 class AbtestService[F[_]: Async](
-    api: AbtestAlg[F])
+    api: AbtestAlg[F])(implicit logger: EventLogger[F])
     extends Http4sDsl[F] {
 
   implicit val jsonObjectEncoder: EntityEncoder[F, JsObject] =
@@ -121,13 +119,13 @@ class AbtestService[F[_]: Async](
 
   def public =
     HttpRoutes.of[F] { case req @ POST -> Root / "users" / "groups" / "query" =>
-      req.as[UserGroupQuery] >>= (ugq => respond(api.getGroupsWithMeta(ugq)))
+      req.as[UserGroupQuery] >>= (ugq => respond(api.getGroupsWithMeta(ugq).flatTap(r => logger(AbTestRequestServed(ugq, r)))))
     }
 
   def readonly: HttpRoutes[F] =
     HttpRoutes.of[F] {
       case GET -> Root / "health" =>
-        respond(api.warmUp.as(Map("status" -> "healthy")))
+        respond(api.warmUp.as(Map("status" -> "healthy", "version" -> BuildInfo.version)))
 
       case GET -> Root / "tests" / "history" / LongVar(at) =>
         respond(api.getAllTestsEpoch(Some(at)))
@@ -169,7 +167,6 @@ class AbtestService[F[_]: Async](
 
       case GET -> Root / "features" / feature / "overrides" =>
         respond(api.getOverrides(feature))
-
     }
 
   def managing =
@@ -258,17 +255,17 @@ object AbtestService {
     case EmptyUserId => s"User id cannot be an empty string."
   }
 
-  def fromMongo[F[_]: Timer](
+  def fromMongo[F[_]: Async: EventLogger](
       configResourceName: Option[String] = None
-    )(implicit F: Concurrent[F],
+    )(implicit
       ex: ExecutionContext
     ): Resource[F, AbtestService[F]] = {
     MongoResources.cfg[F](configResourceName).flatMap(fromMongo[F](_))
   }
 
-  def fromMongo[F[_]: Timer](
+  def fromMongo[F[_]: Async: EventLogger](
       cfg: Config
-    )(implicit F: Concurrent[F],
+    )(implicit
       ex: ExecutionContext
     ): Resource[F, AbtestService[F]] = {
 
@@ -290,3 +287,5 @@ object AbtestService {
         extends OptionalQueryParamDecoderMatcher[Long]("durationMillisecond")
   }
 }
+
+case class AbTestRequestServed(req: UserGroupQuery, result: UserGroupQueryResult) extends Event

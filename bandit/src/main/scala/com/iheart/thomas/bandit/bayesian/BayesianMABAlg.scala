@@ -2,7 +2,7 @@ package com.iheart.thomas
 package bandit
 package bayesian
 
-import cats.effect.Timer
+import cats.effect.Clock
 import cats.implicits._
 import cats.MonadThrow
 import com.iheart.thomas.abtest.model.Abtest.Specialization
@@ -74,7 +74,7 @@ object BayesianMABAlg {
       kpiEvaluator: KPIEvaluator[F],
       kpiRepo: AllKPIRepo[F],
       abtestAPI: abtest.AbtestAlg[F],
-      T: Timer[F],
+      T: Clock[F],
       F: MonadThrow[F]
     ): BayesianMABAlg[F] =
     new BayesianMABAlg[F] {

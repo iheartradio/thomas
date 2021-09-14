@@ -2,13 +2,7 @@ package com.iheart.thomas
 package http4s
 
 import com.iheart.thomas.http4s.abtest.AbtestManagementUI
-import com.iheart.thomas.http4s.auth.{
-  AuthDependencies,
-  AuthedEndpointsUtils,
-  AuthenticationAlg,
-  Token,
-  UI
-}
+import com.iheart.thomas.http4s.auth.{AuthDependencies, AuthedEndpointsUtils, AuthenticationAlg, Token, UI}
 import org.http4s.dsl.Http4sDsl
 import cats.implicits._
 import com.iheart.thomas.dynamo
@@ -18,10 +12,9 @@ import com.iheart.thomas.admin.{Role, User}
 import com.typesafe.config.Config
 import org.http4s.Response
 import org.http4s.server.{Router, ServiceErrorHandler}
-import org.http4s.server.blaze.BlazeServerBuilder
 import pureconfig.error.{CannotConvert, FailureReason}
 import pureconfig.{ConfigReader, ConfigSource}
-import pureconfig.module.catseffect._
+import pureconfig.module.catseffect.syntax._
 import cats.MonadThrow
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.kafka.JsonMessageSubscriber
@@ -39,6 +32,7 @@ import com.iheart.thomas.stream.ArmParser.JValueArmParser
 import com.iheart.thomas.analysis.AccumulativeKPIQueryRepo
 import com.iheart.thomas.stream.TimeStampParser.JValueTimeStampParser
 import com.iheart.thomas.tracking.EventLogger
+import org.http4s.blaze.server.BlazeServerBuilder
 
 class AdminUI[F[_]: MonadThrow](
     abtestManagementUI: AbtestManagementUI[F],
@@ -100,7 +94,7 @@ object AdminUI {
   }
 
   def resource[
-      F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger
+      F[_]: Async:  Logger: EventLogger
         : AccumulativeKPIQueryRepo: JValueArmParser: JValueTimeStampParser
     ](implicit dc: DynamoDbAsyncClient,
       cfg: AdminUIConfig,
@@ -155,7 +149,7 @@ object AdminUI {
   }
 
   def resourceFromDynamo[
-      F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger
+      F[_]: Async: Logger: EventLogger
         : AccumulativeKPIQueryRepo: JValueArmParser: JValueTimeStampParser
     ](implicit
       cfg: Config,
@@ -169,8 +163,7 @@ object AdminUI {
   /** Provides a server that serves the Admin UI
     */
   def serverResourceAutoLoadConfig[
-      F[_]: ConcurrentEffect
-        : Timer: ContextShift: EventLogger
+      F[_]: Async : EventLogger
         : AccumulativeKPIQueryRepo
         : JValueArmParser: JValueTimeStampParser
     ](implicit dc: DynamoDbAsyncClient,
@@ -186,7 +179,7 @@ object AdminUI {
   /** Provides a server that serves the Admin UI
     */
   def serverResource[
-      F[_]: ConcurrentEffect: Timer: ContextShift: EventLogger
+      F[_]: Async: EventLogger
         : AccumulativeKPIQueryRepo: JValueArmParser: JValueTimeStampParser
     ](implicit
       adminCfg: AdminUIConfig,
@@ -194,7 +187,6 @@ object AdminUI {
       dc: DynamoDbAsyncClient,
       executionContext: ExecutionContext
     ): Resource[F, ExitCode] = {
-    import org.http4s.server.blaze._
     import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
     Resource.eval(Slf4jLogger.create[F]).flatMap { implicit logger =>
       for {

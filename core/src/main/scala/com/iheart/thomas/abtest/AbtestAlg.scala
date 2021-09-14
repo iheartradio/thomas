@@ -7,13 +7,12 @@ package com.iheart.thomas
 package abtest
 
 import java.time.{Instant, OffsetDateTime, ZoneOffset}
-
 import _root_.play.api.libs.json._
 import cats._
 import cats.implicits._
 import cats.tagless.FunctorK
 import Error._
-import cats.effect.{Concurrent, Resource, Timer}
+import cats.effect.{Async, Resource}
 import com.iheart.thomas.abtest.AssignGroups.AssignmentResult
 import model.Abtest.{Specialization, Status}
 import model._
@@ -164,18 +163,17 @@ object AbtestAlg {
   implicit val functorKInstance: FunctorK[AbtestAlg] =
     cats.tagless.Derive.functorK[AbtestAlg]
 
-  def defaultResource[F[_]: Timer](
+  def defaultResource[F[_]: Async](
       refreshPeriod: FiniteDuration
     )(implicit
       abTestDao: EntityDAO[F, Abtest, JsObject],
       featureDao: EntityDAO[F, Feature, JsObject],
-      F: Concurrent[F],
       eligibilityControl: EligibilityControl[F]
     ): Resource[F, AbtestAlg[F]] =
     RefreshRef
       .resource[F, TestsData]
       .map { implicit rr =>
-        implicit val nowF = F.delay(Instant.now)
+        implicit val nowF = utils.time.now[F]
         new DefaultAbtestAlg[F](refreshPeriod)
       }
       .evalTap(_.warmUp)

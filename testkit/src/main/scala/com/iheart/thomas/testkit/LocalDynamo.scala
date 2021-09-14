@@ -2,7 +2,7 @@ package com.iheart.thomas
 package testkit
 
 import cats.Parallel
-import cats.effect.{Concurrent, Resource, Sync}
+import cats.effect.{Async, Resource, Sync}
 import com.iheart.thomas.dynamo.ScanamoManagement
 import org.scanamo.LocalDynamoDB
 import cats.implicits._
@@ -25,7 +25,7 @@ object LocalDynamo extends ScanamoManagement {
 
   def clientWithTables[F[_]: Parallel](
       tables: (String, Seq[(String, ScalarAttributeType)])*
-    )(implicit F: Concurrent[F]
+    )(implicit F: Async[F]
     ): Resource[F, DynamoDbAsyncClient] =
     client[F](8043).flatTap { client =>
       Resource.make {

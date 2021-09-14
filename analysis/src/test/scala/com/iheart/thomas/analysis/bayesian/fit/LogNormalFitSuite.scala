@@ -11,6 +11,7 @@ import com.stripe.rainier.core.LogNormal
 import com.stripe.rainier.sampler._
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit

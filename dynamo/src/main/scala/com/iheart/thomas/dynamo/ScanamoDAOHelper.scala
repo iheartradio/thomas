@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package dynamo
 
-import cats.effect.{Async, Concurrent, Timer}
+import cats.effect.Async
 import cats.implicits._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.dynamodb.model.{
@@ -179,7 +179,7 @@ trait AtomicUpdatable[F[_], A, K] {
       k: K,
       retryPolicy: Option[RetryPolicy[F]] = None
     )(updateExpression: A => UpdateExpression
-    )(implicit T: Timer[F],
+    )(implicit
       F: Async[F],
       A: WithTimeStamp[A]
     ): F[A] = atomicUpsert(k, retryPolicy)(updateExpression)(
@@ -195,7 +195,7 @@ trait AtomicUpdatable[F[_], A, K] {
       retryPolicy: Option[RetryPolicy[F]] = None
     )(updateExpression: A => UpdateExpression
     )(ifEmpty: F[A]
-    )(implicit T: Timer[F],
+    )(implicit
       F: Async[F],
       A: WithTimeStamp[A]
     ): F[A] = {
@@ -219,13 +219,13 @@ trait AtomicUpdatable[F[_], A, K] {
       }
 
     retryPolicy.fold(upsertF)(rp =>
-      retryingOnSomeErrors(
+      retryingOnSomeErrors.apply[F, Throwable](
         rp,
         { (e: Throwable) =>
-          e match {
+          (e match {
             case ScanamoError(ConditionNotMet(_)) => true
             case _                                => false
-          }
+          }).pure[F]
         },
         (_: Throwable, _) => Async[F].unit
       )(upsertF)
@@ -267,16 +267,17 @@ trait ScanamoManagement {
   }
 
   private def lift[F[_], A](
-      fcf: => CompletableFuture[A]
-    )(implicit F: Concurrent[F]
-    ): F[A] =
-    F.delay(fcf).flatMap { cf =>
-      F.cancelable(cb => {
+                             fcf: => CompletableFuture[A]
+                           )(implicit F: Async[F]
+                           ): F[A] =
+
+    F.async(cb => {
+      F.delay(fcf).map { cf =>
         cf.handle[Unit](new BiFunction[A, Throwable, Unit] {
           override def apply(
-              result: A,
-              err: Throwable
-            ): Unit =
+                              result: A,
+                              err: Throwable
+                            ): Unit =
             err match {
               case null                     => cb(Right(result))
               case _: CancellationException => ()
@@ -285,11 +286,11 @@ trait ScanamoManagement {
               case ex => cb(Left(ex))
             }
         })
-        F.delay(cf.cancel(true)).void
-      })
-    }
+        Some(F.delay(cf.cancel(true)).void)
+      }
+    })
 
-  def createTable[F[_]: Concurrent](
+  def createTable[F[_]: Async](
       client: DynamoDbAsyncClient,
       tableName: String,
       keyAttributes: Seq[(String, ScalarAttributeType)],
@@ -314,7 +315,7 @@ trait ScanamoManagement {
         )
     ).void
 
-  def ensureTables[F[_]: Concurrent](
+  def ensureTables[F[_]: Async](
       tables: List[(String, (String, ScalarAttributeType))],
       readCapacityUnits: Long,
       writeCapacityUnits: Long
@@ -330,7 +331,7 @@ trait ScanamoManagement {
       )
     }.void
 
-  def ensureTable[F[_]: Concurrent](
+  def ensureTable[F[_]: Async](
       client: DynamoDbAsyncClient,
       tableName: String,
       keyAttributes: Seq[(String, ScalarAttributeType)],
