@@ -5,6 +5,7 @@ import analysis._
 import cats.Id
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 import cats.implicits._
 import com.iheart.thomas.analysis.{ConversionMessageQuery, Criteria, MessageQuery}
 import org.typelevel.jawn.ast._

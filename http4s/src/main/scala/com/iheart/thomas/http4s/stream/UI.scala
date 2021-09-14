@@ -12,6 +12,7 @@ import com.iheart.thomas.html.redirect
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import org.http4s.twirl._
 import com.iheart.thomas.stream.html._
+import org.http4s.Uri.Path.Segment
 
 class UI[F[_]: Async](
     implicit
@@ -20,7 +21,7 @@ class UI[F[_]: Async](
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
 
-  val rootPath = Root / "stream"
+  val rootPath = Root / Segment("stream")
   val reverseRoutes = implicitly[ReverseRoutes]
 
   val readonlyRoutes = roleBasedService(admin.Authorization.backgroundManagerRoles) {

@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package dynamo
 
-import cats.effect.{Async, Concurrent, Timer}
+import cats.effect.Async
 import com.iheart.thomas.bandit.bayesian.{BanditSpec, BanditSpecDAO}
 import com.iheart.thomas.dynamo.DynamoFormats._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
@@ -15,14 +15,14 @@ object BanditsDAOs extends ScanamoManagement {
   val tables =
     List((banditStateTableName, banditKey), (banditSpecTableName, banditKey))
 
-  def ensureBanditTables[F[_]: Concurrent](
+  def ensureBanditTables[F[_]: Async](
       readCapacity: Long,
       writeCapacity: Long
     )(implicit dc: DynamoDbAsyncClient
     ): F[Unit] =
     ensureTables(tables, readCapacity, writeCapacity)
 
-  implicit def banditSpec[F[_]: Async: Timer](
+  implicit def banditSpec[F[_]: Async](
       implicit dynamoClient: DynamoDbAsyncClient
     ): BanditSpecDAO[F] =
     new ScanamoDAOHelperStringKey[F, BanditSpec](

@@ -4,7 +4,7 @@ package abtest
 
 import java.time.OffsetDateTime
 import cats.data.Validated.Valid
-import cats.effect.{Async, Concurrent, Resource, Timer}
+import cats.effect.{Async, Resource, Clock}
 import cats.implicits._
 import com.iheart.thomas.{FeatureName, GroupName}
 import com.iheart.thomas.abtest.AbtestAlg
@@ -39,7 +39,7 @@ import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 
 import scala.util.control.NoStackTrace
 
-class AbtestManagementUI[F[_]: Async: Timer](
+class AbtestManagementUI[F[_]: Async](
     private[http4s] val alg: AbtestAlg[F],
     authAlg: AuthenticationAlg[F, AuthImp]
   )(implicit cfg: AdminUIConfig)
@@ -436,9 +436,9 @@ object AbtestManagementUI {
       }
   }
 
-  def fromMongo[F[_]: Timer](
+  def fromMongo[F[_]: Async](
       cfgResourceName: Option[String] = None
-    )(implicit F: Concurrent[F],
+    )(implicit
       ex: ExecutionContext,
       cfg: AdminUIConfig,
       authAlg: AuthenticationAlg[F, AuthImp]
@@ -448,9 +448,9 @@ object AbtestManagementUI {
       .map(new AbtestManagementUI(_, authAlg))
   }
 
-  def fromMongo[F[_]: Timer](
+  def fromMongo[F[_]: Async](
       cfg: Config
-    )(implicit F: Concurrent[F],
+    )(implicit
       ex: ExecutionContext,
       acfg: AdminUIConfig,
       authAlg: AuthenticationAlg[F, AuthImp]
@@ -514,7 +514,7 @@ object AbtestManagementUI {
         userMetaCriteria: UserMetaCriteria = None,
         reshuffle: Boolean = false,
         segmentRanges: List[GroupRange] = Nil) {
-      def toAbtestSpec[F[_]: Functor: Timer](
+      def toAbtestSpec[F[_]: Functor: Clock](
           u: User,
           feature: FeatureName
         ) = {

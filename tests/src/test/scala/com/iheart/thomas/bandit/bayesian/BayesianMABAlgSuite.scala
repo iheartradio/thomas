@@ -7,6 +7,7 @@ import com.iheart.thomas.analysis.{KPIName, Probability}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 import cats.implicits._
 import com.iheart.thomas.abtest.model.Group
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks

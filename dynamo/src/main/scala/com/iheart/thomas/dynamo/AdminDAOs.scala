@@ -1,6 +1,6 @@
 package com.iheart.thomas.dynamo
 
-import cats.effect.{Async, Concurrent}
+import cats.effect.Async
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.admin.{AuthRecord, AuthRecordDAO, User, UserDAO}
 import DynamoFormats._
@@ -29,7 +29,7 @@ object AdminDAOs extends ScanamoManagement {
     (streamJobTableName, streamJobKey)
   )
 
-  def ensureAuthTables[F[_]: Concurrent](
+  def ensureAuthTables[F[_]: Async](
       readCapacity: Long,
       writeCapacity: Long
     )(implicit dc: DynamoDbAsyncClient

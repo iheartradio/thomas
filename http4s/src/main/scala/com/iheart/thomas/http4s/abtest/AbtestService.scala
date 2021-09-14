@@ -4,7 +4,7 @@ package http4s.abtest
 import java.time.Instant
 import _root_.play.api.libs.json.Json.toJson
 import _root_.play.api.libs.json._
-import cats.effect.{Async, Concurrent, Resource, Timer}
+import cats.effect.{Async, Resource}
 import cats.implicits._
 import com.iheart.thomas.abtest.Error._
 import com.iheart.thomas.abtest.json.play.Formats._
@@ -167,7 +167,6 @@ class AbtestService[F[_]: Async](
 
       case GET -> Root / "features" / feature / "overrides" =>
         respond(api.getOverrides(feature))
-
     }
 
   def managing =
@@ -256,17 +255,17 @@ object AbtestService {
     case EmptyUserId => s"User id cannot be an empty string."
   }
 
-  def fromMongo[F[_]: Timer: EventLogger](
+  def fromMongo[F[_]: Async: EventLogger](
       configResourceName: Option[String] = None
-    )(implicit F: Concurrent[F],
+    )(implicit
       ex: ExecutionContext
     ): Resource[F, AbtestService[F]] = {
     MongoResources.cfg[F](configResourceName).flatMap(fromMongo[F](_))
   }
 
-  def fromMongo[F[_]: Timer: EventLogger](
+  def fromMongo[F[_]: Async: EventLogger](
       cfg: Config
-    )(implicit F: Concurrent[F],
+    )(implicit
       ex: ExecutionContext
     ): Resource[F, AbtestService[F]] = {
 

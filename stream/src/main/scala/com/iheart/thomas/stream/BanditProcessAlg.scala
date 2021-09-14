@@ -1,7 +1,7 @@
 package com.iheart.thomas.stream
 
 import cats.MonadThrow
-import cats.effect.{Timer, Concurrent}
+import cats.effect.Temporal
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.bandit.bayesian.BayesianMABAlg
 import com.iheart.thomas.stream.JobSpec.ProcessSettings
@@ -16,7 +16,7 @@ trait BanditProcessAlg[F[_], Message] {
 }
 
 object BanditProcessAlg {
-  implicit def default[F[_]: MonadThrow: Timer: Concurrent, Message](
+  implicit def default[F[_]: MonadThrow: Temporal, Message](
       implicit allKPIProcessAlg: AllKPIProcessAlg[F, Message],
       banditAlg: BayesianMABAlg[F]
     ): BanditProcessAlg[F, Message] = new BanditProcessAlg[F, Message] {

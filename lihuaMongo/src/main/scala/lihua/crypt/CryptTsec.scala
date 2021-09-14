@@ -1,7 +1,7 @@
 package lihua
 package crypt
 
-import cats.effect.{IO, Sync}
+import cats.effect.{ExitCode, IO, IOApp, Sync}
 import lihua.mongo.Crypt
 import tsec.cipher.symmetric.PlainText
 import tsec.common._
@@ -40,7 +40,7 @@ class CryptTsec[F[_]](key: String)(implicit F: Sync[F]) extends Crypt[F] {
 
 }
 
-object CryptTsec {
+object CryptTsec extends IOApp {
   def apply[F[_]: Sync](key: String): Crypt[F] = new CryptTsec[F](key)
 
   def genKey[F[_]: Sync]: F[String] =
@@ -48,7 +48,7 @@ object CryptTsec {
 
   case object Base64Error extends RuntimeException
 
-  def main(args: Array[String]): Unit = {
+  def run(args: List[String]): IO[ExitCode] = {
     val command = args.headOption match {
       case Some("genKey") => genKey[IO]
       case Some("encrypt") =>
@@ -67,6 +67,6 @@ object CryptTsec {
       case _ => IO.pure("usage: [genKey|encrypt]")
     }
 
-    command.attempt.map(_.fold(println, println)).unsafeRunSync()
+    command.attempt.flatMap(_.fold(s => IO(println(s)), s => IO(println(s)))).as(ExitCode.Success)
   }
 }
