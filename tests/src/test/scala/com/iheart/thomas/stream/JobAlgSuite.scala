@@ -34,7 +34,7 @@ abstract class JobAlgSuiteBase extends AsyncFreeSpec with AsyncIOSpec with Match
       f: (KPIRepo[IO, ConversionKPI], JobAlg[IO], PubSub[IO]) => IO[A]
     )(implicit config: Config = cfg
     ): IO[A] = {
-    implicit val logger = EventLogger.stdout[IO]
+    implicit val logger = EventLogger.noop[IO]
     implicit val ckpiDAO = MapBasedDAOs.conversionKPIAlg[IO]
     implicit val aKpiDAO = MapBasedDAOs.queryAccumulativeKPIAlg[IO]
     implicit val jobDAO = MapBasedDAOs.streamJobDAO[IO]
@@ -126,7 +126,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
         Stream(
           alg.runStream,
           pubSub
-            .publish(event("action" -> "click"), event("action" -> "display"))
+            .publishS(event("action" -> "click"), event("action" -> "display"))
 
             .delayBy(200.millis)
         ).parJoin(2).interruptAfter(1.second).compile.drain *>
@@ -166,14 +166,14 @@ class JobAlgSuite extends JobAlgSuiteBase {
           _ <- Stream(
             alg.runStream,
             pubSub
-              .publish(
+              .publishS(
                 event("action" -> "click"),
                 event("action" -> "display")
               )
               .delayBy(200.milliseconds),
             Stream.eval(alg.stop(job.get.key)).delayBy(500.milliseconds),
             pubSub
-              .publish(event("action" -> "click"), event("action" -> "display"))
+              .publishS(event("action" -> "click"), event("action" -> "display"))
               .delayBy(800.milliseconds)
           ).parJoin(4)
 
@@ -191,7 +191,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
         Stream(
           alg.runStream,
           pubSub
-            .publish(
+            .publishS(
               event("action" -> "click"),
               event("action" -> "display")
             )
@@ -212,7 +212,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
         Stream(
           alg.runStream,
           pubSub
-            .publish(
+            .publishS(
               event("action" -> "click"),
               event("action" -> "display")
             )
@@ -225,7 +225,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
             )
             .delayBy(500.milliseconds),
           pubSub
-            .publish(
+            .publishS(
               event("action" -> "display"),
               event("action" -> "display")
             )
@@ -287,7 +287,7 @@ class JobS extends JobAlgSuiteBase {
       Stream(
         alg.runStream,
         pubSub
-          .publish(
+          .publishS(
             event("action" -> "click"),
             event("action" -> "display")
           )
@@ -300,7 +300,7 @@ class JobS extends JobAlgSuiteBase {
           )
           .delayBy(500.milliseconds),
         pubSub
-          .publish(
+          .publishS(
             event("action" -> "display"),
             event("action" -> "display")
           )

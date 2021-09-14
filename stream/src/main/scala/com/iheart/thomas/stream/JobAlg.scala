@@ -154,9 +154,9 @@ object JobAlg {
                 case RunBandit(fn) =>
                   banditProcessAlg.process(fn)
               }).map { case (pipe, settings) =>
-                checkExpiration[Message](settings).andThen(_.flatTap(m => Stream.eval(F.delay(println(m))))).andThen(pipe).andThen { in =>
-                  in.flatTap(_ => Stream.eval(F.delay(println("processed")))).onComplete(Stream.eval(stop(job.key)))
-                }
+                checkExpiration[Message](settings).andThen(pipe).andThen(
+                  _.onComplete(Stream.eval(stop(job.key)))
+                )
               }
             }
 
