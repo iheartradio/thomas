@@ -7,13 +7,13 @@ import cats.implicits._
 import ExperimentKPIState.{ArmState, Key}
 import cats.data.NonEmptyList
 import cats.{Functor, MonadThrow}
-import cats.effect.Timer
 import com.iheart.thomas.abtest.Error.NotFound
 import com.iheart.thomas.utils.time.Period
 import enumeratum._
 
 import java.time.Instant
 import ExperimentKPIState.ArmsState
+import cats.effect.kernel.Clock
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Specialization.RealtimeMonitor
 
 case class ExperimentKPIState[+KS <: KPIStats](
@@ -79,7 +79,7 @@ object ExperimentKPIState {
     case object BanditHistory extends Specialization
   }
 
-  def init[F[_]: Timer: Functor, KS <: KPIStats](
+  def init[F[_]: Clock: Functor, KS <: KPIStats](
       key: Key,
       arms: NonEmptyList[ArmState[KS]],
       dataPeriod: Period

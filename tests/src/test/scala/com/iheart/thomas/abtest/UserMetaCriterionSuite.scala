@@ -3,6 +3,7 @@ package com.iheart.thomas.abtest
 import model.UserMetaCriterion._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 
 class UserMetaCriterionSuite extends AnyFreeSpec with Matchers {
 

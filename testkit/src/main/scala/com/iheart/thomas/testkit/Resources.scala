@@ -23,9 +23,6 @@ import dynamo.BanditsDAOs._
 object Resources {
 
   import concurrent.ExecutionContext.Implicits.global
-  implicit private val cs = IO.contextShift(global)
-  val timer = IO.timer(global)
-  implicit private val _timer = timer
 
   val defaultNowF = IO.delay(Instant.now)
   lazy val mangoDAOs =

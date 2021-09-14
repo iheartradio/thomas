@@ -8,6 +8,12 @@ case class BetaModel(
     alpha: Double,
     beta: Double) {
   lazy val prediction = Beta(alpha, beta).latent
+
+  override def toString: String = {
+    val converted = alpha - 1d
+    val total = beta - 1 + converted
+    s"Beta Model based on converted: $converted total: $total"
+  }
 }
 
 object BetaModel {

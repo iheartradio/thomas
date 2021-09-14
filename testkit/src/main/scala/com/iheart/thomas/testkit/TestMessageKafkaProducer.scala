@@ -30,9 +30,9 @@ object TestMessageKafkaProducer extends IOApp {
             ProducerSettings[IO, String, String]
               .withBootstrapServers("127.0.0.1:9092")
           Stream
-            .fixedDelay(100.millis)
+            .fixedDelay[IO](100.millis)
             .flatMap { _ =>
-              Stream.fromIterator[IO](messages.iterator).map { value =>
+              Stream.fromIterator[IO](messages.iterator, 1).map { value =>
                 val record = ProducerRecord(cfg.topic, "k", value)
                 ProducerRecords.one(record)
               }

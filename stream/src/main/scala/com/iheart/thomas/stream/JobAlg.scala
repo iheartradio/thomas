@@ -2,7 +2,7 @@ package com.iheart.thomas
 package stream
 
 import cats.Functor
-import cats.effect.{Concurrent, Sync, Timer}
+import cats.effect.{Temporal, Async, Sync}
 import cats.implicits._
 import com.iheart.thomas.utils.time.InstantOps
 import com.iheart.thomas.analysis.KPIName
@@ -20,13 +20,12 @@ import com.typesafe.config.Config
 import fs2._
 import pureconfig.ConfigSource
 
-import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
 import pureconfig.generic.auto._
 import PipeSyntax._
-
+import utils.time._
 trait JobAlg[F[_]] {
 
   /** Creates a job if the job key is not already in the job list
@@ -67,7 +66,7 @@ trait JobAlg[F[_]] {
 }
 
 object JobAlg {
-  def chunkEvents[F[_]: Timer: Concurrent, E](
+  def chunkEvents[F[_]: Temporal, E](
       processSettings: ProcessSettings
     ): Pipe[F, E, Chunk[E]] =
     (input: Stream[F, E]) =>
@@ -86,8 +85,7 @@ object JobAlg {
       with NoStackTrace
 
   implicit def apply[F[_], Message](
-      implicit F: Concurrent[F],
-      timer: Timer[F],
+      implicit F: Async[F],
       dao: JobDAO[F],
       kpiPipes: AllKPIProcessAlg[F, Message],
       banditProcessAlg: BanditProcessAlg[F, Message],
@@ -128,17 +126,14 @@ object JobAlg {
 
               def checkExpiration[A](settings: ProcessSettings): Pipe[F, A, A] =
                 (input: Stream[F, A]) => {
-                  def checkJobComplete(exp: Instant) =
-                    Stream
-                      .fixedDelay(cfg.jobCheckFrequency)
-                      .evalMap(_ => exp.passed)
-                      .evalTap { completed =>
-                        if (completed) stop(job.key)
-                        else F.unit
-                      }
                   settings.expiration.fold(input)(exp =>
-                    input
-                      .interruptWhen(checkJobComplete(exp))
+                    Stream.eval(utils.time.now[F]).flatMap { now =>
+                     if(exp.isAfter(now))
+                      input
+                        .interruptAfter(now.durationTo(exp))
+                     else
+                       input.interruptWhen(Stream.emit(true))
+                    }
                   )
                 }
 
@@ -159,7 +154,9 @@ object JobAlg {
                 case RunBandit(fn) =>
                   banditProcessAlg.process(fn)
               }).map { case (pipe, settings) =>
-                checkExpiration[Message](settings).andThen(pipe)
+                checkExpiration[Message](settings).andThen(pipe).andThen(
+                  _.onComplete(Stream.eval(stop(job.key)))
+                )
               }
             }
 
@@ -213,6 +210,8 @@ object JobAlg {
               }
               .mapFilter(_._2)
 
+            val voidPipe : Pipe[F, Message, Unit] = _.void
+
             runningJobs.switchMap { jobs =>
               Stream.eval(logger(RunningJobsUpdated(jobs))) *>
                 Stream
@@ -230,7 +229,7 @@ object JobAlg {
                       }
 
                     messageSubscriber.subscribe
-                      .broadcastTo((pipes ++ logPipeO.toList): _*)
+                      .broadcastThrough((voidPipe +: (pipes ++ logPipeO.toVector)): _*)
                   }
             }
           }
@@ -257,7 +256,7 @@ case class JobRunnerConfig(
 
 object JobRunnerConfig {
   def fromConfig[F[_]: Sync](cfg: Config): F[JobRunnerConfig] = {
-    import pureconfig.module.catseffect._
+    import pureconfig.module.catseffect.syntax._
     ConfigSource.fromConfig(cfg).at("thomas.stream.job").loadF[F, JobRunnerConfig]
   }
 }

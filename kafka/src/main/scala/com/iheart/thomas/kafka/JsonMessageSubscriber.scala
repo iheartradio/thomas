@@ -1,6 +1,6 @@
 package com.iheart.thomas.kafka
 
-import cats.effect.{ConcurrentEffect, ContextShift, Timer}
+import cats.effect.Async
 import cats.implicits._
 import com.iheart.thomas.stream.MessageSubscriber
 import com.typesafe.config.Config
@@ -12,7 +12,7 @@ import org.typelevel.jawn.ast.JValue
 
 object JsonMessageSubscriber {
 
-  implicit def apply[F[_]: ConcurrentEffect: Timer: ContextShift](
+  implicit def apply[F[_]: Async](
       implicit config: Config,
       log: Logger[F]
     ): MessageSubscriber[F, JValue] =
@@ -27,8 +27,7 @@ object JsonMessageSubscriber {
               .withGroupId(cfg.groupId)
 
           fs2.kafka.KafkaConsumer
-            .stream[F]
-            .using(consumerSettings)
+            .stream(consumerSettings)
             .evalTap(_.subscribeTo(cfg.topic))
             .flatMap {
               _.stream

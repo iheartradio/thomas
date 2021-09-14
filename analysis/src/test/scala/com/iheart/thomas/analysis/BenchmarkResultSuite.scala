@@ -3,6 +3,7 @@ package com.iheart.thomas.analysis
 import com.iheart.thomas.analysis.bayesian.BenchmarkResult
 import syntax.AllSyntax
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.funsuite.AnyFunSuiteLike
 
 class BenchmarkResultSuite extends AnyFunSuiteLike with Matchers with AllSyntax {

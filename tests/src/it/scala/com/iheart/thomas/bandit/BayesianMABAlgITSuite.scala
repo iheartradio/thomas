@@ -17,6 +17,7 @@ import com.iheart.thomas.bandit.bayesian.{BanditSpec, BayesianMAB, BayesianMABAl
 import com.iheart.thomas.mongo
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.funsuite.AnyFunSuiteLike
 import _root_.play.api.libs.json.{JsObject, Json}
 import cats.implicits._
@@ -25,7 +26,6 @@ import com.iheart.thomas.abtest.model.{AbtestSpec, Group}
 import com.iheart.thomas.analysis.bayesian.models.BetaModel
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
-import com.iheart.thomas.testkit.Resources.timer
 import com.iheart.thomas.tracking.EventLogger
 import com.iheart.thomas.utils.time.Period
 import com.stripe.rainier.sampler.RNG
@@ -91,7 +91,7 @@ class BayesianMABAlgITSuite extends BayesianMABAlgITSuiteBase {
         b3 <- api.init(spec3)
         _ <- abtestAlg.create(regularAb, false)
         _ <- abtestAlg.terminate(b3.abtest._id)
-        _ <- timer.sleep(200.milliseconds)
+        _ <- IO.sleep(200.milliseconds)
         running <- api.runningBandits()
       } yield running
     }
@@ -145,7 +145,7 @@ class BayesianMABAlgITSuite extends BayesianMABAlgITSuiteBase {
         _ <- api.updatePolicy(s)
         _ <- api.updatePolicy(s)
         _ <- api.updatePolicy(s)
-        _ <- timer.sleep(300.milliseconds)
+        _ <- IO.sleep(300.milliseconds)
         _ <- api.updatePolicy(s)
         tests <- abtestAlg.getTestsByFeature(spec.feature)
 
@@ -328,19 +328,17 @@ class BayesianMABAlgITSuiteBase extends AnyFunSuiteLike with Matchers {
   )
 
   def withAPI[A](
-      f: (
-          BayesianMABAlg[IO],
-          KPIRepo[IO, ConversionKPI],
-          AbtestAlg[IO],
-          ExperimentKPIStateDAO[IO, Conversions]
-      ) => IO[A]
-    ): A =
+      f: (BayesianMABAlg[IO], KPIRepo[IO, ConversionKPI], AbtestAlg[IO],
+          ExperimentKPIStateDAO[IO, Conversions]) => IO[A]
+    ): A = {
+    import cats.effect.unsafe.implicits.global
     apis
       .use { case (alg, abtestAlg, conversionKPIAlg, conversionStateDAO) =>
         conversionKPIAlg
           .create(kpi) >> f(alg, conversionKPIAlg, abtestAlg, conversionStateDAO)
       }
       .unsafeRunSync()
+  }
 
   def withAPI[A](f: BayesianMABAlg[IO] => IO[A]): A =
     withAPI((api, _, _, _) => f(api))

@@ -2,7 +2,7 @@ package com.iheart.thomas
 package http4s
 package auth
 
-import cats.effect.{Concurrent, Timer}
+import cats.effect.{Async, Clock}
 import com.iheart.thomas.dynamo
 import com.iheart.thomas.admin.{PassResetToken, Role, User, UserDAO}
 import tsec.authentication.Authenticator
@@ -48,14 +48,14 @@ trait AuthenticationAlg[F[_], Auth] {
 
   def generateResetToken(
       username: Username
-    )(implicit T: Timer[F]
+    )(implicit T: Clock[F]
     ): F[PassResetToken]
 
   def resetPass(
       newPass: String,
       token: String,
       username: Username
-    )(implicit T: Timer[F]
+    )(implicit T: Clock[F]
     ): F[User]
 }
 
@@ -140,7 +140,7 @@ object AuthenticationAlg {
 
       def generateResetToken(
           username: Username
-        )(implicit T: Timer[F]
+        )(implicit T: Clock[F]
         ): F[PassResetToken] =
         for {
           now <- utils.time.now[F]
@@ -160,7 +160,7 @@ object AuthenticationAlg {
           newPass: String,
           token: String,
           username: Username
-        )(implicit T: Timer[F]
+        )(implicit T: Clock[F]
         ): F[User] =
         for {
           user <- userDAO.get(username)
@@ -180,7 +180,7 @@ object AuthenticationAlg {
 
   /** using dynamo BCyrpt and HMACSHA256
     */
-  def default[F[_]: Concurrent](
+  def default[F[_]: Async](
       key: String
     )(implicit dc: DynamoDbAsyncClient
     ): F[AuthenticationAlg[F, AuthImp]] =

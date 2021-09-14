@@ -25,11 +25,12 @@ import com.stripe.rainier.core.{LogNormal, Normal}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import com.typesafe.config.Config
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 import org.typelevel.jawn.ast.JValue
 
 import java.time.Instant
 import concurrent.duration._
-class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
+class KPIProcessAlgSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
 
   val testKPIName = KPIName("test")
 
@@ -70,7 +71,7 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
       duration: FiniteDuration = 150.millis
     ): IO[Unit] =
     Stream
-      .fromIterator[IO](Iterator(()))
+      .fromIterator[IO](Iterator(()), 1)
       .through(alg.updatePrior(kpi, ps))
       .interruptAfter(duration)
       .compile

@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package cli
 
-import cats.effect.ConcurrentEffect
+import cats.effect.Async
 import cats.implicits._
 import com.iheart.thomas.abtest.json.play.Formats._
 import com.iheart.thomas.abtest.model.UserMetaCriterion
@@ -10,7 +10,7 @@ import com.iheart.thomas.cli.SharedOpts._
 import com.monovore.decline._
 import _root_.play.api.libs.json.Json.{prettyPrint, toJson}
 
-class EligibilityControlCommand[F[_]](implicit F: ConcurrentEffect[F]) {
+class EligibilityControlCommand[F[_]](implicit F: Async[F]) {
 
   val showCommand = Command("show", "show current user metas filters") {
     (tidOrFnOps, AbtestHttpClientOpts.opts[F]).mapN { (tidOrF, client) =>

@@ -6,6 +6,7 @@ import cats.Id
 import com.iheart.thomas.analysis.bayesian.models.LogNormalModel
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 
 class ModelEvaluatorSuite extends AnyFreeSpecLike with Matchers {
 
