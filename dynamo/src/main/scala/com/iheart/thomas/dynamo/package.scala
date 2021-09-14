@@ -37,7 +37,7 @@ object `package` {
 
   def client[F[_]: Sync](cfg: ConfigSource): Resource[F, DynamoDbAsyncClient] = {
     import pureconfig.generic.auto._
-    import pureconfig.module.catseffect._
+    import pureconfig.module.catseffect.syntax._
     Resource
       .eval(cfg.loadF[F, ClientConfig])
       .flatMap(client[F](_))

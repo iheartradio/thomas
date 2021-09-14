@@ -2,7 +2,7 @@ package com.iheart.thomas
 package stream
 
 import cats.Functor
-import cats.effect.{Concurrent, Sync, Timer}
+import cats.effect.{Temporal, Async, Sync}
 import cats.implicits._
 import com.iheart.thomas.utils.time.InstantOps
 import com.iheart.thomas.analysis.KPIName
@@ -67,7 +67,7 @@ trait JobAlg[F[_]] {
 }
 
 object JobAlg {
-  def chunkEvents[F[_]: Timer: Concurrent, E](
+  def chunkEvents[F[_]: Temporal, E](
       processSettings: ProcessSettings
     ): Pipe[F, E, Chunk[E]] =
     (input: Stream[F, E]) =>
@@ -86,8 +86,7 @@ object JobAlg {
       with NoStackTrace
 
   implicit def apply[F[_], Message](
-      implicit F: Concurrent[F],
-      timer: Timer[F],
+      implicit F: Async[F],
       dao: JobDAO[F],
       kpiPipes: AllKPIProcessAlg[F, Message],
       banditProcessAlg: BanditProcessAlg[F, Message],
@@ -230,7 +229,7 @@ object JobAlg {
                       }
 
                     messageSubscriber.subscribe
-                      .broadcastTo((pipes ++ logPipeO.toList): _*)
+                      .broadcastThrough((pipes ++ logPipeO.toList): _*)
                   }
             }
           }
@@ -257,7 +256,7 @@ case class JobRunnerConfig(
 
 object JobRunnerConfig {
   def fromConfig[F[_]: Sync](cfg: Config): F[JobRunnerConfig] = {
-    import pureconfig.module.catseffect._
+    import pureconfig.module.catseffect.syntax._
     ConfigSource.fromConfig(cfg).at("thomas.stream.job").loadF[F, JobRunnerConfig]
   }
 }

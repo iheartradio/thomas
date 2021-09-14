@@ -1,13 +1,10 @@
 package com.iheart.thomas.dynamo
 
-import cats.effect.{Async, Concurrent, Timer}
+import cats.effect.Async
+import cats.effect.kernel.Clock
 import com.iheart.thomas.ArmName
 import com.iheart.thomas.analysis._
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{
-  ArmState,
-  ArmsState,
-  Key
-}
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, ArmsState, Key}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
 import com.iheart.thomas.dynamo.DynamoFormats._
 import com.iheart.thomas.utils.time.Period
@@ -37,7 +34,7 @@ object AnalysisDAOs extends ScanamoManagement {
       (perUserSamplesKPIStateTableName, experimentKPIStateKey)
     )
 
-  def ensureAnalysisTables[F[_]: Concurrent](
+  def ensureAnalysisTables[F[_]: Async](
       readCapacity: Long = 2,
       writeCapacity: Long = 2
     )(implicit dc: DynamoDbAsyncClient
@@ -67,19 +64,19 @@ object AnalysisDAOs extends ScanamoManagement {
   implicit def expStateTimeStamp: WithTimeStamp[ExperimentKPIState[_]] =
     (a: ExperimentKPIState[_]) => a.lastUpdated
 
-  implicit def experimentKPIStateConversionDAO[F[_]: Async: Timer](
+  implicit def experimentKPIStateConversionDAO[F[_]: Async](
       implicit dynamoClient: DynamoDbAsyncClient
     ): ExperimentKPIStateDAO[F, Conversions] =
     experimentKPIStateDAO[F, Conversions](conversionKPIStateTableName)
 
-  implicit def experimentKPIStatePerUserSamplesDAO[F[_]: Async: Timer](
+  implicit def experimentKPIStatePerUserSamplesDAO[F[_]: Async](
       implicit dynamoClient: DynamoDbAsyncClient
     ): ExperimentKPIStateDAO[F, PerUserSamplesLnSummary] =
     experimentKPIStateDAO[F, PerUserSamplesLnSummary](
       perUserSamplesKPIStateTableName
     )
 
-  def experimentKPIStateDAO[F[_]: Timer, KS <: KPIStats](
+  def experimentKPIStateDAO[F[_]: Clock, KS <: KPIStats](
       tableName: String
     )(implicit dynamoClient: DynamoDbAsyncClient,
       dynamoFormat: DynamoFormat[ExperimentKPIState[KS]],

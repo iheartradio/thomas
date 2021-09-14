@@ -3,26 +3,12 @@ package stream
 
 import cats.data.NonEmptyList
 import cats.{Foldable, Monoid}
-import cats.effect.{Concurrent, Timer}
+import cats.effect.Temporal
 import cats.implicits._
 import com.iheart.thomas.analysis.bayesian.Posterior
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{
-  ArmState,
-  ArmsState,
-  Key,
-  Specialization
-}
-import com.iheart.thomas.analysis.{
-  Aggregation,
-  AllKPIRepo,
-  ConversionKPI,
-  KPI,
-  KPIName,
-  KPIRepo,
-  KPIStats,
-  QueryAccumulativeKPI
-}
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, ArmsState, Key, Specialization}
+import com.iheart.thomas.analysis.{Aggregation, AllKPIRepo, ConversionKPI, KPI, KPIName, KPIRepo, KPIStats, QueryAccumulativeKPI}
 import com.iheart.thomas.stream.JobSpec.ProcessSettings
 import com.iheart.thomas.utils.time.Period
 import fs2.{Pipe, Stream}
@@ -97,7 +83,7 @@ object KPIProcessAlg {
   }
 
   implicit def default[
-      F[_]: Concurrent: Timer,
+      F[_]: Temporal,
       K <: KPI,
       Message,
       Event,
@@ -164,7 +150,7 @@ object KPIProcessAlg {
 
 object AllKPIProcessAlg {
 
-  implicit def default[F[_]: Timer: Concurrent, Message](
+  implicit def default[F[_]: Temporal, Message](
       implicit
       convProcessAlg: KPIProcessAlg[F, Message, ConversionKPI],
       accumProcessAlg: KPIProcessAlg[F, Message, QueryAccumulativeKPI],
