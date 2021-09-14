@@ -4,13 +4,12 @@ import cats.effect.{Concurrent, Fiber}
 import org.typelevel.log4cats.Logger
 import cats.implicits._
 
-/**
-  * Fire and forget reporter
+/** Fire and forget reporter
   *
   * @tparam F
   */
 trait Reporter[F[_]] {
-  def report(event: MonitorEvent): F[Fiber[F, Unit]]
+  def report(event: MonitorEvent): F[Fiber[F, Throwable, Unit]]
 
 }
 

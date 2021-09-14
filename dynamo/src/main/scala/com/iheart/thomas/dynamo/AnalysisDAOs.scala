@@ -1,10 +1,13 @@
 package com.iheart.thomas.dynamo
 
-import cats.effect.{Async, Concurrent, Timer}
+import cats.effect.Async
+import cats.effect.kernel.Clock
+import com.iheart.thomas.ArmName
 import com.iheart.thomas.analysis._
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, ArmsState, Key}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
 import com.iheart.thomas.dynamo.DynamoFormats._
+import com.iheart.thomas.utils.time.Period
 import org.scanamo.DynamoFormat
 import org.scanamo.syntax._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
@@ -31,7 +34,7 @@ object AnalysisDAOs extends ScanamoManagement {
       (perUserSamplesKPIStateTableName, experimentKPIStateKey)
     )
 
-  def ensureAnalysisTables[F[_]: Concurrent](
+  def ensureAnalysisTables[F[_]: Async](
       readCapacity: Long = 2,
       writeCapacity: Long = 2
     )(implicit dc: DynamoDbAsyncClient
@@ -61,23 +64,24 @@ object AnalysisDAOs extends ScanamoManagement {
   implicit def expStateTimeStamp: WithTimeStamp[ExperimentKPIState[_]] =
     (a: ExperimentKPIState[_]) => a.lastUpdated
 
-  implicit def experimentKPIStateConversionDAO[F[_]: Async: Timer](
+  implicit def experimentKPIStateConversionDAO[F[_]: Async](
       implicit dynamoClient: DynamoDbAsyncClient
     ): ExperimentKPIStateDAO[F, Conversions] =
     experimentKPIStateDAO[F, Conversions](conversionKPIStateTableName)
 
-  implicit def experimentKPIStatePerUserSamplesDAO[F[_]: Async: Timer](
+  implicit def experimentKPIStatePerUserSamplesDAO[F[_]: Async](
       implicit dynamoClient: DynamoDbAsyncClient
     ): ExperimentKPIStateDAO[F, PerUserSamplesLnSummary] =
     experimentKPIStateDAO[F, PerUserSamplesLnSummary](
       perUserSamplesKPIStateTableName
     )
 
-  def experimentKPIStateDAO[F[_]: Async: Timer, KS <: KPIStats](
+  def experimentKPIStateDAO[F[_]: Clock, KS <: KPIStats](
       tableName: String
     )(implicit dynamoClient: DynamoDbAsyncClient,
       dynamoFormat: DynamoFormat[ExperimentKPIState[KS]],
-      armFormat: DynamoFormat[ArmState[KS]]
+      armFormat: DynamoFormat[ArmState[KS]],
+      F: Async[F]
     ): ExperimentKPIStateDAO[F, KS] =
     new ScanamoDAOHelperStringFormatKey[F, ExperimentKPIState[KS], Key](
       tableName,
@@ -88,21 +92,29 @@ object AnalysisDAOs extends ScanamoManagement {
 
       protected def stringKey(k: Key) = k.toStringKey
       import retry._
-      def update(
-          key: Key
-        )(updateArms: List[ArmState[KS]] => List[ArmState[KS]]
-        ): F[ExperimentKPIState[KS]] = {
-
-        atomicUpdate(key, Some(RetryPolicies.constantDelay[F](40.milliseconds))) {
-          state =>
-            set("arms", updateArms(state.arms))
+      def updateOptimumLikelihood(
+          key: Key,
+          likelihoods: Map[ArmName, Probability]
+        ): F[ExperimentKPIState[KS]] =
+        atomicUpdate(key) { state =>
+          val newArms = state.arms.map(arm =>
+            arm.copy(likelihoodOptimum = likelihoods.get(arm.name))
+          )
+          set("arms", newArms)
         }
-      }
 
-      def init(
+      def upsert(
           key: Key
+        )(update: (ArmsState[KS], Period) => (ArmsState[KS], Period)
+        )(ifEmpty: => (ArmsState[KS], Period)
         ): F[ExperimentKPIState[KS]] = {
-        ensure(key)(ExperimentKPIState.init[F, KS](key))
+
+        atomicUpsert(key, Some(RetryPolicies.constantDelay[F](40.milliseconds))) {
+          state =>
+            val (updatedArms, updatedPeriod) = update(state.arms, state.dataPeriod)
+            set("arms", updatedArms) and
+              set("dataPeriod", updatedPeriod)
+        }(F.defer(ExperimentKPIState.init[F, KS](key, ifEmpty._1, ifEmpty._2)))
       }
 
     }

@@ -18,16 +18,17 @@ import com.iheart.thomas.analysis.{
 import com.iheart.thomas.stream.JobSpec.{ProcessSettingsOptional, UpdateKPIPrior}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 import org.typelevel.jawn.ast.{JObject, JString, JValue}
 import testkit.MapBasedDAOs
 import fs2.Stream
 
 import java.time.Instant
 import concurrent.duration._
-import com.iheart.thomas.testkit.ExampleArmParse._
+import com.iheart.thomas.testkit.ExampleParsers._
 import com.iheart.thomas.tracking.EventLogger
 
-abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
+abstract class JobAlgSuiteBase extends AsyncFreeSpec with AsyncIOSpec with Matchers {
   import testkit.MockQueryAccumulativeKPIAlg._
   def withAlg[A](
       f: (KPIRepo[IO, ConversionKPI], JobAlg[IO], PubSub[IO]) => IO[A]
@@ -40,8 +41,8 @@ abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
     implicit val eStateDAO = MapBasedDAOs.experimentStateDAO[IO, Conversions]
     implicit val aStateDAO =
       MapBasedDAOs.experimentStateDAO[IO, PerUserSamplesLnSummary]
-
-    PubSub.create[IO](event("type" -> "init")).flatMap { implicit pubSub =>
+    implicit val nullBSProcessAlg: BanditProcessAlg[IO, JValue] = null
+    PubSub.create[IO].flatMap { implicit pubSub =>
       f(ckpiDAO, JobAlg[IO, JValue], pubSub)
     }
 
@@ -78,11 +79,16 @@ abstract class JobAlgSuiteBase extends AsyncIOSpec with Matchers {
     )
   )
 
-  def event(vs: (String, String)*) =
-    JObject.fromSeq(vs.toList.map {
-      case (k, v) =>
-        k -> (JString(v): JValue)
-    })
+  def event(vs: (String, String)*): JObject = event(Instant.now, vs: _*)
+
+  def event(timeStamp: Instant, vs: (String, String)*): JObject =
+    JObject.fromSeq(
+      (("timeStamp" -> timeStamp.toEpochMilli.toString) :: vs.toList).map {
+        case (k, v) =>
+          k -> (JString(v): JValue)
+      }
+    )
+
   def settings(exp: Instant) = ProcessSettingsOptional(None, None, Some(exp))
 }
 
@@ -96,8 +102,8 @@ class JobAlgSuite extends JobAlgSuiteBase {
         )
         jobs <- alg.allJobs
 
-      } yield (job, jobs)).asserting {
-        case (job, jobs) => jobs.contains(job.get) shouldBe true
+      } yield (job, jobs)).asserting { case (job, jobs) =>
+        jobs.contains(job.get) shouldBe true
       }
 
     }
@@ -120,7 +126,8 @@ class JobAlgSuite extends JobAlgSuiteBase {
         Stream(
           alg.runStream,
           pubSub
-            .publish(event("action" -> "click"), event("action" -> "display"))
+            .publishS(event("action" -> "click"), event("action" -> "display"))
+
             .delayBy(200.millis)
         ).parJoin(2).interruptAfter(1.second).compile.drain *>
         kpiDAO
@@ -135,16 +142,15 @@ class JobAlgSuite extends JobAlgSuiteBase {
           UpdateKPIPrior(kpiA.name, settings(Instant.now.plusSeconds(2)))
         ) *>
         (for {
-          start <- TimeUtil.now[IO]
+          start <- utils.time.now[IO]
           _ <-
             alg.runStream
               .interruptAfter(1.second)
               .compile
               .drain
           jobs <- alg.allJobs
-        } yield (start, jobs)).asserting {
-          case (start, jobs) =>
-            jobs.head.checkedOut.get.isAfter(start.plusMillis(700)) shouldBe true
+        } yield (start, jobs)).asserting { case (start, jobs) =>
+          jobs.head.checkedOut.get.isAfter(start.plusMillis(700)) shouldBe true
         }
 
     }
@@ -160,14 +166,14 @@ class JobAlgSuite extends JobAlgSuiteBase {
           _ <- Stream(
             alg.runStream,
             pubSub
-              .publish(
+              .publishS(
                 event("action" -> "click"),
                 event("action" -> "display")
               )
               .delayBy(200.milliseconds),
             Stream.eval(alg.stop(job.get.key)).delayBy(500.milliseconds),
             pubSub
-              .publish(event("action" -> "click"), event("action" -> "display"))
+              .publishS(event("action" -> "click"), event("action" -> "display"))
               .delayBy(800.milliseconds)
           ).parJoin(4)
 
@@ -180,12 +186,12 @@ class JobAlgSuite extends JobAlgSuiteBase {
     "remove job when completed" in withAlg { (kpiDAO, alg, pubSub) =>
       kpiDAO.create(kpiA) *>
         alg.schedule(
-          UpdateKPIPrior(kpiA.name, settings(Instant.now.plusMillis(400)))
+          UpdateKPIPrior(kpiA.name, settings(exp = Instant.now.plusMillis(400)))
         ) *>
         Stream(
           alg.runStream,
           pubSub
-            .publish(
+            .publishS(
               event("action" -> "click"),
               event("action" -> "display")
             )
@@ -206,7 +212,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
         Stream(
           alg.runStream,
           pubSub
-            .publish(
+            .publishS(
               event("action" -> "click"),
               event("action" -> "display")
             )
@@ -219,7 +225,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
             )
             .delayBy(500.milliseconds),
           pubSub
-            .publish(
+            .publishS(
               event("action" -> "display"),
               event("action" -> "display")
             )
@@ -240,13 +246,12 @@ class JobAlgSuite extends JobAlgSuiteBase {
           alg.schedule(spec) *>
           alg.runStream.interruptAfter(500.millis).compile.drain *>
           (for {
-            _ <- ioTimer.sleep(300.millis)
-            restartAt <- TimeUtil.now[IO]
+            _ <- IO.sleep(300.millis)
+            restartAt <- utils.time.now[IO]
             _ <- alg.runStream.interruptAfter(500.millis).compile.drain
             jobO <- alg.find(spec)
-          } yield (restartAt, jobO)).asserting {
-            case (restartAt, jobO) =>
-              jobO.flatMap(_.checkedOut).get.isAfter(restartAt) shouldBe true
+          } yield (restartAt, jobO)).asserting { case (restartAt, jobO) =>
+            jobO.flatMap(_.checkedOut).get.isAfter(restartAt) shouldBe true
           }
       }
     }
@@ -259,15 +264,53 @@ class JobAlgSuite extends JobAlgSuiteBase {
           alg.schedule(spec) *>
           alg.runStream.interruptAfter(500.millis).compile.drain *>
           (for {
-            _ <- ioTimer.sleep(300.millis)
-            restartAt <- TimeUtil.now[IO]
+            _ <- IO.sleep(300.millis)
+            restartAt <- utils.time.now[IO]
             _ <- alg.runStream.interruptAfter(500.millis).compile.drain
             jobO <- alg.find(spec)
-          } yield (restartAt, jobO)).asserting {
-            case (restartAt, jobO) =>
-              jobO.flatMap(_.checkedOut).get.isBefore(restartAt) shouldBe true
+          } yield (restartAt, jobO)).asserting { case (restartAt, jobO) =>
+            jobO.flatMap(_.checkedOut).get.isBefore(restartAt) shouldBe true
           }
       }
     }
   }
+}
+
+class JobS extends JobAlgSuiteBase {
+  "can pickup new job" in withAlg { (kpiDAO, alg, pubSub) =>
+    val kpiC = kpiA.copy(name = KPIName("C"))
+    val kpiB = kpiA.copy(name = KPIName("B"))
+    kpiDAO.create(kpiC) *> kpiDAO.create(kpiB) *>
+      alg.schedule(
+        UpdateKPIPrior(kpiC.name, settings(Instant.now.plusSeconds(100000000L)))
+      ) *>
+      Stream(
+        alg.runStream,
+        pubSub
+          .publishS(
+            event("action" -> "click"),
+            event("action" -> "display")
+          )
+          .delayBy(200.milliseconds),
+        Stream
+          .eval(
+            alg.schedule(
+              UpdateKPIPrior(kpiB.name, settings(Instant.now.plusMillis(100000000L)))
+            )
+          )
+          .delayBy(500.milliseconds),
+        pubSub
+          .publishS(
+            event("action" -> "display"),
+            event("action" -> "display")
+          )
+          .delayBy(900.milliseconds)
+      ).parJoin(4).interruptAfter(3.second).compile.drain *>
+      (kpiDAO.get(kpiC.name), kpiDAO.get(kpiB.name)).tupled.asserting {
+        case (kC, kB) =>
+          kC.model should be(BetaModel(Conversions(1, 3)))
+          kB.model should be(BetaModel(Conversions(0, 2)))
+      }
+  }
+
 }

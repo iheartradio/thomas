@@ -3,7 +3,7 @@ package mongo
 
 import com.typesafe.config.{Config, ConfigFactory}
 import reactivemongo.api._
-import cats.effect.{Async, ContextShift, IO, Resource}
+import cats.effect.{Async, Resource}
 
 import scala.concurrent.{ExecutionContext, Future}
 import net.ceedubs.ficus.Ficus._
@@ -16,21 +16,18 @@ import scala.concurrent.duration.FiniteDuration
 import concurrent.duration._
 import reactivemongo.api.bson.collection.BSONCollection
 
-/**
-  * A MongoDB instance from config
-  * Should be created one per application
+/** A MongoDB instance from config Should be created one per application
   */
-class MongoDB[F[_]: Async] private (
+class MongoDB[F[_]] private (
     private[mongo] val config: MongoDB.MongoConfig,
     connection: MongoConnection,
-    private[mongo] val driver: AsyncDriver) {
+    private[mongo] val driver: AsyncDriver)(implicit F: Async[F]) {
   private def database(
       databaseName: String
     )(implicit ec: ExecutionContext
     ): F[DB] = {
     val dbConfigO = config.dbs.get(s"$databaseName")
     val name = dbConfigO.flatMap(_.name).getOrElse(databaseName)
-    implicit val cs = IO.contextShift(ec)
     toF(connection.database(name))
   }
 
@@ -43,15 +40,13 @@ class MongoDB[F[_]: Async] private (
       config.dbs.get(dbName).flatMap(_.collections.get(collectionName))
     val name = collectionConfig.flatMap(_.name).getOrElse(collectionName)
     val readPreference = collectionConfig.flatMap(_.readPreference)
-    database(dbName).map(
-      db =>
-        db.collection[BSONCollection](
-            name,
-            db.failoverStrategy
-          )
-          .withReadPreference(
-            readPreference.getOrElse(ReadPreference.primary)
-          )
+    database(dbName).map(db =>
+      db.collection[BSONCollection](
+        name,
+        db.failoverStrategy
+      ).withReadPreference(
+        readPreference.getOrElse(ReadPreference.primary)
+      )
     )
   }
 
@@ -59,15 +54,14 @@ class MongoDB[F[_]: Async] private (
       to: FiniteDuration = 2.seconds
     )(implicit ex: ExecutionContext
     ): F[Unit] = {
-    implicit val cs = IO.contextShift(ex)
+    
     toF(driver.close(to))
   }
 
   protected def toF[B](
       f: => Future[B]
-    )(implicit ec: ContextShift[IO]
     ): F[B] =
-    IO.fromFuture(IO(f)).to[F]
+    F.fromFuture(F.delay(f))
 }
 
 object MongoDB {
@@ -78,7 +72,6 @@ object MongoDB {
       sh: ShutdownHook = ShutdownHook.ignore,
       ec: ExecutionContext
     ): F[MongoDB[F]] = {
-    implicit val cs = IO.contextShift(ec)
     for {
       config <- F
         .delay(rootConfig.as[MongoConfig]("mongoDB"))
@@ -107,14 +100,13 @@ object MongoDB {
         failoverStrategy = FailoverStrategy.default.copy(
           initialDelay = config.initialDelay
             .getOrElse(FailoverStrategy.default.initialDelay),
-          retries =
-            config.retries.getOrElse(FailoverStrategy.default.retries)
+          retries = config.retries.getOrElse(FailoverStrategy.default.retries)
         ),
         credentials = creds
       )
-      connection <- IO
-        .fromFuture(IO(d.connect(config.hosts, options)))
-        .to[F]
+      connection <- F
+        .fromFuture(F.delay(d.connect(config.hosts, options)))
+
     } yield {
       val mongoDB = new MongoDB(config, connection, d)
       sh.onShutdown(mongoDB.driver.close())
@@ -136,19 +128,17 @@ object MongoDB {
     )(implicit F: Async[F]
     ): F[Map[String, MongoConnectionOptions.Credential]] =
     config.dbs.toList
-      .traverse {
-        case (k, dbc) =>
-          dbc.credential.traverse { c =>
-            cryptO
-              .fold(F.pure(c.password))(_.decrypt(c.password))
-              .map(
-                p =>
-                  (
-                    dbc.name.getOrElse(k),
-                    MongoConnectionOptions.Credential(c.username, Some(p))
-                  )
+      .traverse { case (k, dbc) =>
+        dbc.credential.traverse { c =>
+          cryptO
+            .fold(F.pure(c.password))(_.decrypt(c.password))
+            .map(p =>
+              (
+                dbc.name.getOrElse(k),
+                MongoConnectionOptions.Credential(c.username, Some(p))
               )
-          }
+            )
+        }
       }
       .map { l =>
         val map = l.flatten.toMap

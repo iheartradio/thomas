@@ -2,13 +2,7 @@ package com.iheart.thomas
 package http4s
 
 import com.iheart.thomas.http4s.abtest.AbtestManagementUI
-import com.iheart.thomas.http4s.auth.{
-  AuthDependencies,
-  AuthedEndpointsUtils,
-  AuthenticationAlg,
-  Token,
-  UI
-}
+import com.iheart.thomas.http4s.auth.{AuthDependencies, AuthedEndpointsUtils, AuthenticationAlg, Token, UI}
 import org.http4s.dsl.Http4sDsl
 import cats.implicits._
 import com.iheart.thomas.dynamo
@@ -18,10 +12,9 @@ import com.iheart.thomas.admin.{Role, User}
 import com.typesafe.config.Config
 import org.http4s.Response
 import org.http4s.server.{Router, ServiceErrorHandler}
-import org.http4s.server.blaze.BlazeServerBuilder
 import pureconfig.error.{CannotConvert, FailureReason}
 import pureconfig.{ConfigReader, ConfigSource}
-import pureconfig.module.catseffect._
+import pureconfig.module.catseffect.syntax._
 import cats.MonadThrow
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.kafka.JsonMessageSubscriber
@@ -37,13 +30,16 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 import ThrowableExtension._
 import com.iheart.thomas.stream.ArmParser.JValueArmParser
 import com.iheart.thomas.analysis.AccumulativeKPIQueryRepo
+import com.iheart.thomas.stream.TimeStampParser.JValueTimeStampParser
 import com.iheart.thomas.tracking.EventLogger
+import org.http4s.blaze.server.BlazeServerBuilder
 
 class AdminUI[F[_]: MonadThrow](
     abtestManagementUI: AbtestManagementUI[F],
     authUI: auth.UI[F, AuthImp],
     analysisUI: analysis.UI[F],
-    streamUI: stream.UI[F]
+    streamUI: stream.UI[F],
+    banditUI: bandit.UI[F]
   )(implicit adminUICfg: AdminUIConfig,
     jobAlg: JobAlg[F],
     authenticator: Authenticator[F, String, User, Token[AuthImp]])
@@ -51,7 +47,7 @@ class AdminUI[F[_]: MonadThrow](
     with Http4sDsl[F] {
 
   val routes = authUI.publicEndpoints <+> liftService(
-    abtestManagementUI.routes <+> authUI.authedService <+> analysisUI.routes <+> streamUI.routes
+    abtestManagementUI.routes <+> authUI.authedService <+> analysisUI.routes <+> streamUI.routes <+> banditUI.routes
   )
 
   val serverErrorHandler: ServiceErrorHandler[F] = { _ =>
@@ -98,8 +94,8 @@ object AdminUI {
   }
 
   def resource[
-      F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger
-        : AccumulativeKPIQueryRepo: JValueArmParser
+      F[_]: Async:  Logger: EventLogger
+        : AccumulativeKPIQueryRepo: JValueArmParser: JValueTimeStampParser
     ](implicit dc: DynamoDbAsyncClient,
       cfg: AdminUIConfig,
       config: Config,
@@ -113,6 +109,12 @@ object AdminUI {
       )
     ) *>
       Resource.eval(
+        dynamo.BanditsDAOs.ensureBanditTables[F](
+          cfg.adminTablesReadCapacity,
+          cfg.adminTablesWriteCapacity
+        )
+      ) *>
+      Resource.eval(
         dynamo.AnalysisDAOs.ensureAnalysisTables[F](
           cfg.adminTablesReadCapacity,
           cfg.adminTablesWriteCapacity
@@ -121,21 +123,34 @@ object AdminUI {
         Resource.eval(AuthDependencies[F](cfg.key)).flatMap { deps =>
           import deps._
           import dynamo.AdminDAOs._
+          import dynamo.BanditsDAOs._
           implicit val authAlg = AuthenticationAlg[F, BCrypt, AuthImp]
           val authUI = new UI(Some(cfg.initialAdminUsername), cfg.initialRole)
-
           import dynamo.AnalysisDAOs._
           import JsonMessageSubscriber._
-          AbtestManagementUI.fromMongo[F](config).map { amUI =>
-            new AdminUI(amUI, authUI, new analysis.UI[F], new stream.UI[F])
-          }
+
+          AbtestManagementUI
+            .fromMongo[F](config)
+            .map { amUI =>
+              implicit val abtestAlg = amUI.alg
+
+              com.iheart.thomas.bandit.bayesian.BayesianMABAlg.apply[F]
+
+              new AdminUI(
+                amUI,
+                authUI,
+                new analysis.UI,
+                new stream.UI,
+                new bandit.UI
+              )
+            }
         }
       }
   }
 
   def resourceFromDynamo[
-      F[_]: ConcurrentEffect: Timer: Logger: ContextShift: EventLogger
-        : AccumulativeKPIQueryRepo: JValueArmParser
+      F[_]: Async: Logger: EventLogger
+        : AccumulativeKPIQueryRepo: JValueArmParser: JValueTimeStampParser
     ](implicit
       cfg: Config,
       adminUIConfig: AdminUIConfig,
@@ -148,10 +163,9 @@ object AdminUI {
   /** Provides a server that serves the Admin UI
     */
   def serverResourceAutoLoadConfig[
-      F[_]: ConcurrentEffect
-        : Timer: ContextShift: EventLogger
+      F[_]: Async : EventLogger
         : AccumulativeKPIQueryRepo
-        : JValueArmParser
+        : JValueArmParser: JValueTimeStampParser
     ](implicit dc: DynamoDbAsyncClient,
       executionContext: ExecutionContext
     ): Resource[F, ExitCode] = {
@@ -165,15 +179,14 @@ object AdminUI {
   /** Provides a server that serves the Admin UI
     */
   def serverResource[
-      F[_]: ConcurrentEffect: Timer: ContextShift: EventLogger
-        : AccumulativeKPIQueryRepo: JValueArmParser
+      F[_]: Async: EventLogger
+        : AccumulativeKPIQueryRepo: JValueArmParser: JValueTimeStampParser
     ](implicit
       adminCfg: AdminUIConfig,
       config: Config,
       dc: DynamoDbAsyncClient,
       executionContext: ExecutionContext
     ): Resource[F, ExitCode] = {
-    import org.http4s.server.blaze._
     import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
     Resource.eval(Slf4jLogger.create[F]).flatMap { implicit logger =>
       for {

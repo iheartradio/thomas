@@ -13,10 +13,8 @@ successMsg: Option[String] = None
 
 @topNav(s"Editing Accumulative KPI ${kpi.name}", "Analysis") {
 
-<form action="../conversionKPIs/@kpi.name" method="post">
-
+<form action="../accumulativeKPIs/@kpi.name" method="post">
     @accumulativeKPIForm(Some(kpi), successMsg, false, Nil)
-
     <div class="row text-end mt-5">
         <div class="mr-5">
             <button type="submit" class="btn btn-primary">
@@ -25,8 +23,6 @@ successMsg: Option[String] = None
             <a href="@env.routes.analysis" role="button" class="btn btn-warning ml-2">Never Mind</a>
         </div>
     </div>
-
-
 </form>
 
 

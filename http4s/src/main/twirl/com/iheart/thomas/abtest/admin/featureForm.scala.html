@@ -8,7 +8,9 @@
 testsCount: Int,
 errorMsg: Option[String] = None,
 successMsg: Option[String] = None,
-devCandidates: List[Username] = Nil)(implicit env: UIEnv)
+devCandidates: List[Username] = Nil,
+operatorCandidates: List[Username] = Nil,
+)(implicit env: UIEnv)
 
 @overrideItem(oo: Option[(String, String)]) = {
 
@@ -122,14 +124,48 @@ devCandidates: List[Username] = Nil)(implicit env: UIEnv)
 
                                     name="developers" id="feature-developers">
                                 @for(dev <- feature.developers) {
-                                  <option selected="true">@dev</option>
+                                  <option selected>@dev</option>
                                 }
                             </select>
                             @if(env.currentUser.has(ManageFeature(feature))) {
                             <div class="form-group mt-3">
-                                <select class="form-control" onchange="addFeatureDeveloperItem()" name="username" id="add-developer">
+                                <select class="form-control" name="username" id="add-developer">
                                     <option>Select to add as a managing user</option>
                                     @for(candidate <- devCandidates){
+                                    <option>@candidate</option>
+                                    }
+                                </select>
+                            </div>
+                            }
+                        </div>
+
+                    </div>
+                </div>
+                <div class="card mt-4" id="feature-operators-card">
+                    <div class="card-header">
+                        <span class="h5">Operators</span>
+                    </div>
+                    <div class="card-body">
+                        @if(!env.currentUser.has(ManageFeature(feature))) {
+                            @feature.operators.mkString(", ")
+                        }
+                        <div class="form-group
+                             @if(!env.currentUser.has(ManageFeature(feature))) {
+                                d-none
+                             }
+                             ">
+                            <label>click a user to remove</label>
+                            <select class="form-control" multiple
+                                    name="operators" id="feature-operators">
+                                @for(operator <- feature.operators) {
+                                  <option selected>@operator</option>
+                                }
+                            </select>
+                            @if(env.currentUser.has(ManageFeature(feature))) {
+                            <div class="form-group mt-3">
+                                <select class="form-control" name="username" id="add-operator">
+                                    <option>Select to add as an operator</option>
+                                    @for(candidate <- operatorCandidates){
                                     <option>@candidate</option>
                                     }
                                 </select>
@@ -222,7 +258,6 @@ devCandidates: List[Username] = Nil)(implicit env: UIEnv)
                 </div>
                 }
             </div>
-
         </div>
 
     </div>
@@ -246,19 +281,10 @@ devCandidates: List[Username] = Nil)(implicit env: UIEnv)
 @if(env.currentUser.has(ManageFeature(feature))) {
 
 <script>
-    function addFeatureDeveloperItem() {
-       $("#feature-developers").append($("#add-developer option:selected").clone().prop("selected", true));
-       $("#add-developer option:selected").remove();
-    };
 
     $(document).ready(function(){
-        $("#feature-developers").change(function(ev) {
-            ev.preventDefault();
-            $("#add-developer").append($("#feature-developers option:selected").clone().prop("selected", false));
-            $("#feature-developers option:selected").remove()
-            $("#feature-developers option").prop("selected", true)
-            return false;
-        });
+        thomas.twoLists("#feature-developers","#add-developer")
+        thomas.twoLists("#feature-operators","#add-operator")
     });
 
 </script>

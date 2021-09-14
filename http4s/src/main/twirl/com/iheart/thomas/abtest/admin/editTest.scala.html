@@ -8,11 +8,12 @@
 test: Entity[Abtest],
 errMessage: Option[String] = None,
 spec: Option[AbtestSpec] = None,
-followUpO: Option[Entity[Abtest]] = None)(implicit env: UIEnv)
+followUpO: Option[Entity[Abtest]] = None,
+operatingSettingsOnly: Boolean)(implicit env: UIEnv)
 
 @topNav("A/B Test for feature " + test.data.feature, "A/B Tests") {
 
-<form action="@env.routes.tests/@test._id" method="post">
+<form action="@env.routes.tests/@test._id" method="post" onsubmit="return thomasCheckMeta()">
 
   <div class="mt-4 mb-4">
     <span class="h5">
@@ -21,7 +22,7 @@ followUpO: Option[Entity[Abtest]] = None)(implicit env: UIEnv)
     <span class="h4 text-success" title="This is feature name for the test.">
       @featureTestsLink(test.data.feature)</span>
   </div>
-  @testForm(spec.orElse(Some(test.data.toSpec)), errMessage, false, followUpO.isEmpty)
+  @testForm(spec.orElse(Some(test.data.toSpec)), errMessage, false, followUpO.isEmpty, operatingSettingsOnly= operatingSettingsOnly)
 
   <div class="row text-end mt-5">
     <div class="mr-4">

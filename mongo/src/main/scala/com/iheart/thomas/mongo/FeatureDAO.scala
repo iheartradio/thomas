@@ -7,7 +7,7 @@ package com.iheart
 package thomas
 package mongo
 
-import cats.effect.{Async, IO}
+import cats.effect.Async
 import cats.implicits._
 import com.iheart.thomas.abtest.model._
 import com.iheart.thomas.abtest.json.play.Formats._
@@ -17,25 +17,23 @@ import reactivemongo.api.indexes.IndexType
 
 import scala.concurrent.ExecutionContext
 
-class FeatureDAOFactory[F[_]: Async](implicit ec: ExecutionContext)
+class FeatureDAOFactory[F[_]](implicit ec: ExecutionContext, F: Async[F])
     extends EitherTDAOFactory[Feature, F]("abtest", "feature") {
   def ensure(collection: BSONCollection): F[Unit] = {
-    implicit val contextShiftIO = IO.contextShift(ec)
 
-    IO.fromFuture(
-        IO(
-          collection.indexesManager
-            .ensure(
-              index(
-                Seq(
-                  ("name", IndexType.Ascending)
-                ),
-                unique = true
-              )
+    F.fromFuture(
+      F.delay(
+        collection.indexesManager
+          .ensure(
+            index(
+              Seq(
+                ("name", IndexType.Ascending)
+              ),
+              unique = true
             )
-            .void
-        )
+          )
+          .void
       )
-      .to[F]
+    )
   }
 }

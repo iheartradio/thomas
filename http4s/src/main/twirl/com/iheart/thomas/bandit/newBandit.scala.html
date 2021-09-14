@@ -1,0 +1,23 @@
+@import com.iheart.thomas.html._
+@import com.iheart.thomas.http4s.UIEnv
+@import com.iheart.thomas.analysis.KPIName
+
+@(kpis: Seq[KPIName])(implicit env: UIEnv)
+
+
+@topNav("New Bandit", "Bandit") {
+<div class="mt-4 mb-4">
+   <span class="h5">Creating a new multi-arm bandit</span>
+</div>
+<form action="@env.routes.bandits" method="post">
+   @banditSpecForm(None, kpis)
+   <div class="row text-end mt-5">
+      <div class="mr-4">
+         <button type="submit" class="btn btn-primary">Submit</button>
+         <a role="button" class="btn btn-warning ml-2" href="@env.routes.bandits" >Cancel</a>
+      </div>
+   </div>
+</form>
+
+
+}

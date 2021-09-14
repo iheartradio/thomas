@@ -1,0 +1,152 @@
+@import com.iheart.thomas.bandit.bayesian._
+@import com.iheart.thomas.analysis.KPIName
+@import com.iheart.thomas.common.html._
+@import com.iheart.thomas.http4s.UIEnv
+@import com.iheart.thomas.utils.time._
+
+
+@(
+draftO: Option[BanditSpec] = None,
+kpis: Seq[KPIName],
+successMsg: Option[String] = None)(implicit env: UIEnv)
+@for(msg <- successMsg) {
+    <div id="success-msg" class="alert alert-success" role="alert">
+        @msg
+    </div>
+}
+
+<input type="hidden" name="author" value="@env.currentUser.username" />
+@for(draft <- draftO) {
+  <input type="hidden" name="feature" value="@draft.feature"/>
+  <div class="row mt-5">
+    <span class="h4">Bandit<span class="text-success">@draft.feature</span></span>
+  </div>
+}
+@if(draftO.isEmpty) {
+
+}
+<div class="row mt-3">
+    <div class="col-7">
+        @if(draftO.isEmpty) {
+        <div class="form-group mt-3">
+            <label class="form-label" for="featureInput">Feature Name</label>
+            <input name="feature"
+                   class="form-control"
+                   id="featureInput"
+                   type="text"
+                   required
+            />
+        </div>
+
+        }
+
+        <div class="form-group mt-3">
+            <label class="form-label" for="titleInput">Title</label>
+            <input name="title"
+                   class="form-control"
+                   id="titleInput"
+                   type="text"
+                   required
+                   value="@draftO.map(_.title)"
+            />
+        </div>
+
+        <div class="form-group mt-3">
+            <label class="form-label" for="kpisSelect" class="sr-only">Select a KPI to start monitoring</label>
+            <select id="kpisSelect" name="kpiName" class="form-control form-filter" required>
+                <option value="" disabled selected hidden>
+                    Select a KPI
+                </option>
+                @for(kpi <- kpis.sortBy(_.n)) {
+                    <option value="@kpi.n" @if(draftO.fold(false)(_.kpiName == kpi)) { selected } >@kpi.n</option>
+                }
+            </select>
+        </div>
+
+        @armsForm(draftO.map(_.arms), armLabel = "Arm", showReserved = true)
+    </div>
+
+    <div class="col-5">
+        <div class="form-group mt-3">
+            <label class="form-label" for="minimumSizeChangeInput">Arm Size Change Threshold</label>
+            <input name="minimumSizeChange"
+                   class="form-control"
+                   id="minimumSizeChangeInput"
+                   type="number"
+                   required
+                   value="@draftO.map(_.minimumSizeChange).getOrElse(0.05)"
+            />
+        </div>
+        <div class="form-group  mt-3">
+            <label class="form-label" for="initialSampleSizeInput">Minimum Sample Size</label>
+            <input name="initialSampleSize"
+                   class="form-control"
+                   id="initialSampleSizeInput"
+                   type="number"
+                   required
+                   step="1"
+                   value="@draftO.map(_.initialSampleSize).getOrElse(500)"
+            />
+        </div>
+        <div class="form-group mt-3">
+            <label class="form-label" for="historyRetentionInput">Revision history retention</label>
+            <input name="historyRetention"
+                   class="form-control"
+                   id="historyRetentionInput"
+                   type="text"
+                   required
+                   value="@draftO.flatMap(_.historyRetention).fold("72h")(_.pretty)"
+            />
+        </div>
+
+        <div class="form-group mt-3">
+            <label class="form-label" for="updatePolicyStateChunkSizeInput">Update Policy Every N State Updates</label>
+            <input name="updatePolicyStateChunkSize"
+                   class="form-control"
+                   id="updatePolicyStateChunkSizeInput"
+                   type="number"
+                   required
+                   step="1"
+                   value="@draftO.map(_.updatePolicyStateChunkSize).getOrElse(100)"
+            />
+        </div>
+        <div class="form-group mt-3">
+            <label class="form-label" for="updatePolicyFrequencyInput">Update Policy Frequency</label>
+            <input name="updatePolicyFrequency"
+                   class="form-control"
+                   id="updatePolicyFrequencyInput"
+                   type="text"
+                   required
+                   value="@draftO.map(_.updatePolicyFrequency).fold("1h")(_.pretty)"
+            />
+        </div>
+        <div class="form-group  mt-3">
+            <label class="form-label" for="stateMonitorEventChunkSizeInput">State Monitor Process Chunk Size</label>
+            <input name="stateMonitorEventChunkSize"
+                   class="form-control"
+                   id="stateMonitorEventChunkSizeInput"
+                   type="number"
+                   required
+                   step="1"
+                   value="@draftO.map(_.stateMonitorEventChunkSize).getOrElse(1000)"
+            />
+        </div>
+        <div class="form-group mt-3">
+            <label class="form-label" for="stateMonitorFrequencyInput">State Monitor Process Frequency</label>
+            <input name="stateMonitorFrequency"
+                   class="form-control"
+                   id="stateMonitorFrequencyInput"
+                   type="text"
+                   required
+                   value="@draftO.map(_.stateMonitorFrequency).fold("1 m")(_.pretty)"
+            />
+        </div>
+    </div>
+</div>
+<div class="row mt-3">
+    <div class="col-lg">
+
+    </div>
+
+</div>
+

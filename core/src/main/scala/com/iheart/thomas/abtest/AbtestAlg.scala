@@ -7,14 +7,12 @@ package com.iheart.thomas
 package abtest
 
 import java.time.{Instant, OffsetDateTime, ZoneOffset}
-
 import _root_.play.api.libs.json._
 import cats._
 import cats.implicits._
 import cats.tagless.FunctorK
-import com.iheart.thomas.TimeUtil
 import Error._
-import cats.effect.{Concurrent, Resource, Timer}
+import cats.effect.{Async, Resource}
 import com.iheart.thomas.abtest.AssignGroups.AssignmentResult
 import model.Abtest.{Specialization, Status}
 import model._
@@ -28,9 +26,7 @@ import _root_.play.api.libs.json.Json.JsValueWrapper
 import scala.concurrent.duration._
 import scala.util.Random
 
-/**
-  * Algebra for ABTest API
-  * Final Tagless encoding
+/** Algebra for ABTest API Final Tagless encoding
   * @tparam F
   */
 trait AbtestAlg[F[_]] extends DataProvider[F] {
@@ -42,10 +38,9 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
       auto: Boolean = false
     ): F[Entity[Abtest]]
 
-  /**
-    * Stop a test before it ends
+  /** Stop a test before it ends
     * @param test
-    * @return Some(test) if it already started, None if not started yet.
+    *   @return Some(test) if it already started, None if not started yet.
     */
   def terminate(test: TestId): F[Option[Entity[Abtest]]]
 
@@ -56,10 +51,8 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
       spec: AbtestSpec
     ): F[Entity[Abtest]]
 
-  /**
-    *
-    * @param feature
-    * @return tests for this feature in chronological descending order
+  /** @param feature
+    *   @return tests for this feature in chronological descending order
     */
   def getTestsByFeature(feature: FeatureName): F[Vector[Entity[Abtest]]]
   def getLatestTestByFeature(feature: FeatureName): F[Option[Entity[Abtest]]]
@@ -68,9 +61,10 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
   def getAllFeatureNames: F[List[FeatureName]]
   def getAllFeatures: F[Vector[Feature]]
 
-  /**
-    * Get all the tests
-    * @param time optional time constraint, if set, this will only return tests as of that time.
+  /** Get all the tests
+    * @param time
+    *   optional time constraint, if set, this will only return tests as of that
+    *   time.
     */
   def getAllTests(time: Option[OffsetDateTime]): F[Vector[Entity[Abtest]]]
 
@@ -80,25 +74,27 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
     ): F[Vector[Entity[Abtest]]]
 
   def getAllTestsEpoch(time: Option[Long]): F[Vector[Entity[Abtest]]] =
-    getAllTests(time.map(TimeUtil.toDateTime))
+    getAllTests(time.map(utils.time.toDateTime))
 
   def setOverrideEligibilityIn(
       feature: FeatureName,
       overrideEligibility: Boolean
     ): F[Feature]
 
-  /**
-    * Get all the tests that end after a certain time
-    * @param time optional time constraint, if set, this will only return tests as of that time.
+  /** Get all the tests that end after a certain time
+    * @param time
+    *   optional time constraint, if set, this will only return tests as of that
+    *   time.
     */
   def getAllTestsEndAfter(time: OffsetDateTime): F[Vector[Entity[Abtest]]]
 
   def getAllTestsEndAfter(time: Long): F[Vector[Entity[Abtest]]] =
-    getAllTestsEndAfter(TimeUtil.toDateTime(time))
+    getAllTestsEndAfter(utils.time.toDateTime(time))
 
-  /**
-    * Get all the tests together with their Feature cached.
-    * @param time optional time constraint, if set, this will only return tests as of that time.
+  /** Get all the tests together with their Feature cached.
+    * @param time
+    *   optional time constraint, if set, this will only return tests as of that
+    *   time.
     */
   def getAllTestsCached(
       time: Option[OffsetDateTime]
@@ -107,7 +103,7 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
   def getAllTestsCachedEpoch(
       time: Option[Long]
     ): F[Vector[(Entity[Abtest], Feature)]] =
-    getAllTestsCached(time.map(TimeUtil.toDateTime))
+    getAllTestsCached(time.map(utils.time.toDateTime))
 
   def addOverrides(
       featureName: FeatureName,
@@ -154,8 +150,7 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
       auto: Boolean
     ): F[Entity[Abtest]]
 
-  /**
-    * Get the assignments for a list of ids bypassing the eligibility control
+  /** Get the assignments for a list of ids bypassing the eligibility control
     */
   def getGroupAssignments(
       ids: List[String],
@@ -168,18 +163,17 @@ object AbtestAlg {
   implicit val functorKInstance: FunctorK[AbtestAlg] =
     cats.tagless.Derive.functorK[AbtestAlg]
 
-  def defaultResource[F[_]: Timer](
+  def defaultResource[F[_]: Async](
       refreshPeriod: FiniteDuration
     )(implicit
       abTestDao: EntityDAO[F, Abtest, JsObject],
       featureDao: EntityDAO[F, Feature, JsObject],
-      F: Concurrent[F],
       eligibilityControl: EligibilityControl[F]
     ): Resource[F, AbtestAlg[F]] =
     RefreshRef
       .resource[F, TestsData]
       .map { implicit rr =>
-        implicit val nowF = F.delay(Instant.now)
+        implicit val nowF = utils.time.now[F]
         new DefaultAbtestAlg[F](refreshPeriod)
       }
       .evalTap(_.warmUp)
@@ -266,8 +260,8 @@ final class DefaultAbtestAlg[F[_]](
     time.fold(
       refreshRef.getOrFetch(refreshPeriod, staleTimeout)(
         nowF.flatMap(getTestsData(_, None))
-      ) {
-        case _ => F.unit //todo: add logging here for Abtest retrieval failure
+      ) { case _ =>
+        F.unit //todo: add logging here for Abtest retrieval failure
       }
     )(getTestsData(_, None))
 
@@ -455,12 +449,11 @@ final class DefaultAbtestAlg[F[_]](
   private def delete(testId: TestId): F[Unit] =
     abTestDao.remove(testId)
 
-  /**
-    *
-    * @param testId
-    * @param auto create a new test if the current one of the testId is no longer mutable
+  /** @param testId
+    *   @param auto create a new test if the current one of the testId is no longer
+    *   mutable
     * @param f
-    * @return
+    *   @return
     */
   private def updateAbtestTrivial(
       testId: TestId,
@@ -524,8 +517,7 @@ final class DefaultAbtestAlg[F[_]](
           test.copy(
             groups = test.groups.map { group =>
               group.copy(
-                meta =
-                  metas.get(group.name) orElse group.meta
+                meta = metas.get(group.name) orElse group.meta
               )
             }
           )
@@ -546,16 +538,15 @@ final class DefaultAbtestAlg[F[_]](
 
   def getGroupsWithMeta(query: UserGroupQuery): F[UserGroupQueryResult] =
     validate(query) >> {
-      getGroupAssignmentsOfWithAt(query).map {
-        case (groupAssignments, at) =>
-          val metas = groupAssignments.collect {
-            case (fn, AssignmentResult(_, Some(meta))) => fn -> meta
-          }
-          UserGroupQueryResult(
-            at,
-            toGroups(groupAssignments),
-            metas
-          )
+      getGroupAssignmentsOfWithAt(query).map { case (groupAssignments, at) =>
+        val metas = groupAssignments.collect {
+          case (fn, AssignmentResult(_, Some(meta))) => fn -> meta
+        }
+        UserGroupQueryResult(
+          at,
+          toGroups(groupAssignments),
+          metas
+        )
       }
     }
 
@@ -569,8 +560,7 @@ final class DefaultAbtestAlg[F[_]](
       toRemove.traverse(t => delete(t._id)).map(_.size)
     }
 
-  /**
-    * bypassing the eligibility control
+  /** bypassing the eligibility control
     */
   def getGroupAssignments(
       ids: List[UserId],
@@ -588,7 +578,7 @@ final class DefaultAbtestAlg[F[_]](
       feature: Entity[Feature],
       gracePeriod: Option[FiniteDuration]
     ): F[Boolean] = {
-    import TimeUtil.InstantOps
+    import utils.time.InstantOps
     val noLock: (String, JsValueWrapper) = "lockedAt" -> Json.obj("$exists" -> false)
     nowF.flatMap { now =>
       val lockCheck: (String, JsValueWrapper) =
@@ -651,8 +641,8 @@ final class DefaultAbtestAlg[F[_]](
     for {
       f <- ensureFeature(spec.feature, List(spec.author))
       _ <- obtainLock(f, gracePeriod)
-        .adaptErr {
-          case e => ConflictCreation(spec.feature, e.getMessage)
+        .adaptErr { case e =>
+          ConflictCreation(spec.feature, e.getMessage)
         }
         .ensure(
           ConflictCreation(
@@ -725,8 +715,8 @@ final class DefaultAbtestAlg[F[_]](
   private def toGroups(
       assignments: Map[FeatureName, AssignmentResult]
     ): Map[FeatureName, GroupName] =
-    assignments.toList.collect {
-      case (k, AssignmentResult(groupName, _)) => (k, groupName)
+    assignments.toList.collect { case (k, AssignmentResult(groupName, _)) =>
+      (k, groupName)
     }.toMap
 
   private def getGroupAssignmentsOfWithAt(
@@ -851,9 +841,8 @@ final class DefaultAbtestAlg[F[_]](
       name: FeatureName,
       developers: List[Username] = Nil
     ): F[Entity[Feature]] =
-    featureDao.byName(name).recoverWith {
-      case Error.NotFound(_) =>
-        featureDao.insert(Feature(name, None, Map(), developers = developers))
+    featureDao.byName(name).recoverWith { case Error.NotFound(_) =>
+      featureDao.insert(Feature(name, None, Map(), developers = developers))
     }
 
   private implicit def errorsToF(possibleErrors: List[ValidationError]): F[Unit] =

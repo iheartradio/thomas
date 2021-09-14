@@ -1,25 +1,16 @@
-package com.iheart.thomas.stream
+package com.iheart.thomas
+package stream
 
+import cats.data.NonEmptyList
 import cats.{Foldable, Monoid}
-import cats.effect.{Concurrent, Timer}
+import cats.effect.Temporal
 import cats.implicits._
 import com.iheart.thomas.analysis.bayesian.Posterior
-import com.iheart.thomas.{ArmName, FeatureName}
-import com.iheart.thomas.analysis.monitor.ExperimentKPIStateDAO
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, Key}
-import com.iheart.thomas.analysis.{
-  Aggregation,
-  AllKPIRepo,
-  ConversionEvent,
-  ConversionKPI,
-  Conversions,
-  KPI,
-  KPIName,
-  KPIRepo,
-  KPIStats,
-  QueryAccumulativeKPI
-}
+import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, ArmsState, Key, Specialization}
+import com.iheart.thomas.analysis.{Aggregation, AllKPIRepo, ConversionKPI, KPI, KPIName, KPIRepo, KPIStats, QueryAccumulativeKPI}
 import com.iheart.thomas.stream.JobSpec.ProcessSettings
+import com.iheart.thomas.utils.time.Period
 import fs2.{Pipe, Stream}
 
 trait AllKPIProcessAlg[F[_], Message] {
@@ -31,8 +22,9 @@ trait AllKPIProcessAlg[F[_], Message] {
   def monitorExperiment(
       feature: FeatureName,
       kpiName: KPIName,
+      specialization: Specialization,
       settings: ProcessSettings
-    ): F[Pipe[F, Message, Unit]]
+    ): F[Pipe[F, Message, ExperimentKPIState[KPIStats]]]
 
 }
 
@@ -45,46 +37,53 @@ trait KPIProcessAlg[F[_], Message, K <: KPI] {
   def monitorExperiment(
       kpi: K,
       feature: FeatureName,
+      specialization: Specialization,
       settings: ProcessSettings
-    ): Pipe[F, Message, Unit]
+    ): Pipe[F, Message, ExperimentKPIState[KPIStats]]
 }
 
 object KPIProcessAlg {
 
-  private[thomas] def updateConversionArms[C[_]: Foldable](
-      events: C[(ArmName, ConversionEvent)]
-    )(existing: List[ArmState[Conversions]]
-    ): List[ArmState[Conversions]] = updateArms(events)(existing)
+  /** package private for testing purpose
+    */
+  private[thomas] def statsOf[C[_]: Foldable, E, KS <: KPIStats](
+      events: C[ArmKPIEvents[E]]
+    )(implicit agg: Aggregation[E, KS]
+    ): Option[ArmsState[KS]] = {
+    NonEmptyList.fromList(
+      events
+        .foldMap { ake => Map(ake.armName -> ake.es) }
+        .toList
+        .map { case (name, es) =>
+          ArmState(name, agg(es), None)
+        }
+    )
 
-  private def updateArms[C[_]: Foldable, E, KS <: KPIStats](
-      events: C[(ArmName, E)]
-    )(existing: List[ArmState[KS]]
-    )(implicit agg: Aggregation[E, KS],
+  }
+
+  private[thomas] def updateArms[KS <: KPIStats](
+      newArmsState: ArmsState[KS],
+      existing: ArmsState[KS]
+    )(implicit
       KS: Monoid[KS]
-    ): List[ArmState[KS]] = {
-    val newStats: Map[ArmName, KS] = events
-      .foldMap { case (an, ce) => Map(an -> List(ce)) }
-      .mapValues(agg(_))
-
-    existing.map {
-      case ArmState(armName, c, l) =>
-        ArmState(
-          armName,
-          c |+| newStats.getOrElse(
-            armName,
-            KS.empty
-          ),
-          l
-        )
-    } ++ newStats.toList.mapFilter {
-      case (name, c) =>
-        if (existing.exists(_.name == name)) None
-        else Some(ArmState(name, c, None))
+    ): ArmsState[KS] = {
+    existing.map { case ArmState(armName, c, l) =>
+      ArmState(
+        armName,
+        c |+| newArmsState
+          .find(_.name == armName)
+          .map(_.kpiStats)
+          .getOrElse(KS.empty),
+        l
+      )
+    } ++ newArmsState.toList.mapFilter { as =>
+      if (existing.exists(_.name == as.name)) None
+      else Some(ArmState(as.name, as.kpiStats, None))
     }
   }
 
   implicit def default[
-      F[_]: Concurrent: Timer,
+      F[_]: Temporal,
       K <: KPI,
       Message,
       Event,
@@ -121,19 +120,29 @@ object KPIProcessAlg {
       def monitorExperiment(
           kpi: K,
           feature: FeatureName,
+          specialization: Specialization,
           settings: ProcessSettings
-        ): Pipe[F, Message, Unit] = { (input: Stream[F, Message]) =>
-        Stream.eval(stateDAO.init(Key(feature, kpi.name))) *>
+        ): Pipe[F, Message, ExperimentKPIState[KPIStats]] = {
+        (input: Stream[F, Message]) =>
           input
             .through(
               eventSource.events(kpi, feature) andThen JobAlg.chunkEvents(settings)
             )
-            .evalMap { chunk =>
-              stateDAO.update(Key(feature, kpi.name))(
-                updateArms(chunk)
-              )
+            .evalMapFilter { chunk =>
+              (
+                statsOf(chunk),
+                Period.of(chunk, (_: ArmKPIEvents[Event]).timeStamp)
+              ).traverseN { (chunkStats, chunkPeriod) =>
+                stateDAO.upsert(Key(feature, kpi.name, specialization)) {
+                  (existing, existingPeriod) =>
+                    (
+                      updateArms(chunkStats, existing),
+                      chunkPeriod |+| existingPeriod
+                    )
+                }((chunkStats, chunkPeriod))
+              }
+
             }
-            .void
 
       }
     }
@@ -141,7 +150,7 @@ object KPIProcessAlg {
 
 object AllKPIProcessAlg {
 
-  implicit def default[F[_]: Timer: Concurrent, Message](
+  implicit def default[F[_]: Temporal, Message](
       implicit
       convProcessAlg: KPIProcessAlg[F, Message, ConversionKPI],
       accumProcessAlg: KPIProcessAlg[F, Message, QueryAccumulativeKPI],
@@ -162,13 +171,14 @@ object AllKPIProcessAlg {
       def monitorExperiment(
           feature: FeatureName,
           kpiName: KPIName,
+          specialization: Specialization,
           settings: ProcessSettings
-        ): F[Pipe[F, Message, Unit]] =
+        ): F[Pipe[F, Message, ExperimentKPIState[KPIStats]]] =
         allKPIRepo.get(kpiName).map {
           case kpi: ConversionKPI =>
-            convProcessAlg.monitorExperiment(kpi, feature, settings)
+            convProcessAlg.monitorExperiment(kpi, feature, specialization, settings)
           case kpi: QueryAccumulativeKPI =>
-            accumProcessAlg.monitorExperiment(kpi, feature, settings)
+            accumProcessAlg.monitorExperiment(kpi, feature, specialization, settings)
         }
 
     }

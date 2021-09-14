@@ -21,10 +21,8 @@ private[thomas] object Bucketing {
   private def md5BigInt(s: String): BigInt =
     BigInt(1, md5(s))
 
-  /**
-    *
-    * @param s
-    * @return Between 0 and 1
+  /** @param s
+    *   @return Between 0 and 1
     */
   def md5Double(s: String): Double = {
     (BigDecimal(md5BigInt(s), MathContext.DECIMAL32) / max128BitValue).doubleValue()
@@ -78,14 +76,13 @@ private[thomas] object Bucketing {
     else if (oldRanges.isEmpty)
       initRanges
     else {
-      val removeOutdatedAssignments = oldRanges.filter {
-        case (n, ranges) => groups.exists(_.name == n) && ranges.map(_.size).sum > 0
+      val removeOutdatedAssignments = oldRanges.filter { case (n, ranges) =>
+        groups.exists(_.name == n) && ranges.map(_.size).sum > 0
       }
-      val groupsInSurplusOrder = groups.sortBy(
-        g =>
-          oldRanges.get(g.name).fold(BigDecimal(0)) { rs =>
-            g.size - rs.foldMap(_.size)
-          }
+      val groupsInSurplusOrder = groups.sortBy(g =>
+        oldRanges.get(g.name).fold(BigDecimal(0)) { rs =>
+          g.size - rs.foldMap(_.size)
+        }
       )
 
       groupsInSurplusOrder.foldLeft(removeOutdatedAssignments) { (assigned, group) =>
@@ -136,7 +133,10 @@ private[thomas] object Bucketing {
             assignment =>
               val assignedSize = assignment.foldMap(_.size)
               if (assignedSize > group.size) {
-                allocate(group.size, assignment) //allocate from the existing assignment
+                allocate(
+                  group.size,
+                  assignment
+                ) //allocate from the existing assignment
               } else
                 assignment ++ allocate(group.size - assignedSize, allAvailable)
           }

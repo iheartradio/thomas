@@ -5,16 +5,18 @@ import java.time.OffsetDateTime
 
 import cats.effect.testing.scalatest.AsyncIOSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 import cats.implicits._
 import TestUtils._
 import com.iheart.thomas.abtest.Error.EmptyUserId
 import com.iheart.thomas.abtest.model.UserMetaCriterion._
 import com.iheart.thomas.abtest.model._
 import play.api.libs.json.Json
+import cats.effect.IO
 
 import scala.concurrent.duration.DurationInt
 
-class AssignmentSuite extends AsyncIOSpec with Matchers {
+class AssignmentSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
 
   "getGroupMeta" - {
     "error out on if the user id is an empty string" in {
@@ -405,7 +407,7 @@ class AssignmentSuite extends AsyncIOSpec with Matchers {
         withAlg { alg =>
           for {
             ab <- alg.create(fakeAb.copy(start = OffsetDateTime.now))
-            _ <- ioTimer.sleep(100.millis)
+            _ <- IO.sleep(100.millis)
             _ <- alg.addGroupMetas(ab._id, Map("A" -> Json.obj("ff" -> "a")), false)
           } yield ()
         }.assertThrows[Error.CannotChangePastTest]
@@ -416,7 +418,7 @@ class AssignmentSuite extends AsyncIOSpec with Matchers {
         withAlg { alg =>
           for {
             ab <- alg.create(fakeAb.copy(start = OffsetDateTime.now))
-            _ <- ioTimer.sleep(100.millis)
+            _ <- IO.sleep(100.millis)
             _ <- alg.addGroupMetas(ab._id, meta, true)
             tests <- alg.getTestsByFeature(ab.data.feature)
           } yield {

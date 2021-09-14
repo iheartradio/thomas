@@ -2,13 +2,12 @@ package com.iheart.thomas.stream
 
 import java.time.Instant
 
-/**
-  * Job to process Stream of messages
+/** Job to process Stream of messages
   *
   * @param spec
-  * @param checkedOut last time a worker reported that it's working on it
-  * @param started latest start time when a worker started working on it.
-  *
+  *   @param checkedOut last time a worker reported that it's working on it
+  * @param started
+  *   latest start time when a worker started working on it.
   */
 case class Job(
     key: String,
@@ -24,21 +23,22 @@ object Job {
   def apply(spec: JobSpec): Job = Job(spec.key, spec, None, None)
 }
 
-/**
-  * A DAO for job.
-  * Implemenation should pass thomas.stream.JobDAOSuite in the tests module.
+/** A DAO for job. Implemenation should pass thomas.stream.JobDAOSuite in the tests
+  * module.
   * @tparam F
   */
 trait JobDAO[F[_]] {
 
-  /**
-    * @return None if job with the same key already exist.
+  /** @return
+    *   None if job with the same key already exist.
     */
   def insertO(job: Job): F[Option[Job]]
 
-  /**
-    * Update checkedOut but fails when the existing data is inconsistent with given `job`
-    * @return None if either the job no longer exist or its signature is different, i.e. checkedOut is inconsistent
+  /** Update checkedOut but fails when the existing data is inconsistent with given
+    * `job`
+    * @return
+    *   None if either the job no longer exist or its signature is different, i.e.
+    *   checkedOut is inconsistent
     */
   def updateCheckedOut(
       job: Job,

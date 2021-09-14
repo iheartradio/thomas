@@ -1,7 +1,6 @@
 package com.iheart.thomas
 package stream
 import com.iheart.thomas.analysis.KPIName
-import com.iheart.thomas.stream.JobSpec.ProcessSettingsOptional
 
 import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
@@ -9,16 +8,14 @@ import scala.concurrent.duration.FiniteDuration
 sealed trait JobSpec extends Serializable with Product {
   def key: String
   def description: String
-  def processSettings: ProcessSettingsOptional
 }
 
 object JobSpec {
   type ErrorMsg = String
 
-  /**
-    * Update a KPI's prior based a sample
+  /** Update a KPI's prior based a sample
     * @param kpiName
-    * @param sampleSize
+    *   @param sampleSize
     */
   case class UpdateKPIPrior(
       kpiName: KPIName,
@@ -51,8 +48,7 @@ object JobSpec {
   }
 
   case class RunBandit(
-      featureName: FeatureName,
-      processSettings: ProcessSettingsOptional)
+      featureName: FeatureName)
       extends JobSpec {
     val key = "Run_Bandit_" + featureName
 
@@ -69,5 +65,12 @@ object JobSpec {
   case class ProcessSettingsOptional(
       frequency: Option[FiniteDuration],
       eventChunkSize: Option[Int],
-      expiration: Option[Instant])
+      expiration: Option[Instant]) {
+    def withDefault(defaultSettings: ProcessSettings): ProcessSettings =
+      ProcessSettings(
+        frequency.getOrElse(defaultSettings.frequency),
+        eventChunkSize.getOrElse(defaultSettings.eventChunkSize),
+        expiration orElse defaultSettings.expiration
+      )
+  }
 }

@@ -1,53 +1,18 @@
 @import com.iheart.thomas.abtest.model._
 @import com.iheart.thomas.abtest.json.play.Formats._
 @import com.iheart.thomas.http4s.Formatters.{formatDate, formatJSON}
+@import com.iheart.thomas.common.html._
+@import com.iheart.thomas.bandit.ArmSpec
 
 @(
 draft: Option[AbtestSpec],
 errorMsg: Option[String] = None,
 readonly: Boolean = false,
 groupSizeChangeAllowed: Boolean = true,
-isShuffled: Boolean = false
+isShuffled: Boolean = false,
+operatingSettingsOnly: Boolean = false
 )
 
-@group(group: Option[Group]) = {
-
-<div class="row abtest-group mb-3">
-  <div class="col-3">
-    <div class="form-group">
-      <input name="groups[].name" class="form-control size-change"
-             id="testGroupName" type="text"
-             value="@group.map(_.name)"/>
-    </div>
-  </div>
-
-  <div class="col-2">
-    <div class="form-group">
-      <input name="groups[].size" class="form-control size-change"
-             id="testGroupSize" type="number"
-             value="@group.map(_.size)"
-             min="0" max="1" step="any" placeholder="Btw 0 & 1"/>
-    </div>
-  </div>
-
-  <div class="col-7 d-flex flex-row">
-
-    <div class="form-group w-100">
-      <textarea name="groups[].meta" class="form-control size-change"
-                id="testGroupMeta">@group.flatMap(_.meta).map(formatJSON(_))</textarea>
-    </div>
-    <div class="text-center">
-      <button class="btn btn-link remove-item remove-item mt-4 ml-3 size-change"
-              type="button" onclick="thomas.removeParentItem(this, '.abtest-group')" title="Remove Group">
-        <i class="bi bi-trash"></i>
-      </button>
-    </div>
-
-  </div>
-
-
-</div>
-}
 
 @range(rg: Option[GroupRange]) = {
 <div class="d-flex flex-row range-item">
@@ -55,7 +20,7 @@ isShuffled: Boolean = false
     <div class="col-md">
       <div class="form-group">
         <label class="form-label" for="testGroupRangeStart">Start</label>
-        <input name="segmentRanges[].start" class="form-control"
+        <input name="segmentRanges[].start" class="form-control non-operative"
                id="testGroupRangeStart" type="number"
                value="@rg.map(_.start)"
                min="0" max="1" step="any" placeholder="Btw 0 & 1" />
@@ -64,7 +29,7 @@ isShuffled: Boolean = false
     <div class="col-md">
       <div class="form-group">
         <label class="form-label" for="testGroupRangeEnd">End</label>
-        <input name="segmentRanges[].end" class="form-control"
+        <input name="segmentRanges[].end" class="form-control non-operative"
                id="testGroupRangeEnd" type="number"
                value="@rg.map(_.end)"
                min="0" max="1" step="any" placeholder="Btw 0 & 1"/>
@@ -72,7 +37,7 @@ isShuffled: Boolean = false
     </div>
   </div>
   <div class="text-center">
-    <button class="btn btn-link remove-item mt-4 ml-3"
+    <button class="btn btn-link remove-item mt-4 ml-3 non-operative"
             type="button" onclick="thomas.removeParentItem(this, '.range-item')" title="Remove Range">
       <i class="bi bi-trash"></i>
     </button>
@@ -95,15 +60,15 @@ isShuffled: Boolean = false
         <div class="card-body">
           <div class="form-group">
             <label class="form-label" for="testName">Name</label>
-            <input name="name" class="form-control" required id="testName" type="text"
+            <input name="name" class="form-control non-operative" required id="testName" type="text"
                    value="@draft.map(_.name)"/>
           </div>
-          <div class="row">
+          <div class="row mt-3">
             <div class="col-md">
-              <div class="form-group">
+              <div class="form-group3">
                 <label class="form-label" for="testStart">Start</label>
                 @if(!readonly) {
-                  <input class="ml-3" type="checkbox" id="immediateStart">
+                  <input class="ml-3 non-operative" type="checkbox" id="immediateStart">
                   <label class="form-label" for="immediateStart">Immediately</label>
                 }
                 <input name="start" class="form-control" id="testStart" type="text"
@@ -112,8 +77,8 @@ isShuffled: Boolean = false
             </div>
             <div class="col-md">
               <div class="form-group">
-                <label class="form-label" for="testEnd">End</label>
-                <input name="end" class="form-control" id="testEnd" type="text"
+                <label class="form-label non-operative" for="testEnd">End</label>
+                <input name="end" class="form-control non-operative" id="testEnd" type="text"
                        value="@draft.flatMap(_.end).map(formatDate)"/>
               </div>
             </div>
@@ -129,11 +94,11 @@ isShuffled: Boolean = false
             <div class="col-md">
               @if(!readonly) {
               <div class="form-group form-check">
-                <input name="reshuffle" class="form-check-input" id="testReshuffle" type="checkbox"
+                <input name="reshuffle" class="form-check-input non-operative" id="testReshuffle" type="checkbox"
                        value="true"
                        @if(draft.map(_.reshuffle).getOrElse(false)) { checked }
                 />
-                <label class="form-label" for="testReshuffle">Reshuffle users from previous test</label>
+                <label class="form-label non-operative" for="testReshuffle">Reshuffle users from previous test</label>
               </div>
               } else if(isShuffled) {
                 <div class="mr-3 text-warning pb-2">
@@ -184,16 +149,16 @@ isShuffled: Boolean = false
         <div class="card-body">
           <div id="testSegmentRanges">
             @for( g <- draft.map(_.segmentRanges).getOrElse(Nil)) {
-            @range(Some(g))
+              @range(Some(g))
             }
           </div>
-          @if(readonly && draft.fold(false)(_.segmentRanges.isEmpty)) {
-          <span class="h6 small text-muted">This test is not mutually exclusive with other tests.</span>
+          @if((readonly || operatingSettingsOnly) && draft.fold(false)(_.segmentRanges.isEmpty)) {
+            <span class="h6 small text-muted">This test is not mutually exclusive with other tests.</span>
           }
           <div class="float-right">
             <button type="button" id="btn-new-test-segment-range"
                     onclick="thomas.appendItem('#newTestSegmentRange','#testSegmentRanges')"
-                    class="btn btn-secondary">New Segment Range
+                    class="btn btn-secondary non-operative">New Segment Range
             </button>
           </div>
           <div id="newTestSegmentRange" style="display: none">
@@ -206,53 +171,10 @@ isShuffled: Boolean = false
   </div>
   <div class="row" id="test-groups">
     <div class="col-lg">
-      <div class="card mt-5">
-        <div class="card-header">
-          <span class="h5">Groups</span>
-        </div>
-        <div class="card-body">
-          <div id="testGroups">
-            <div class="row abtest-group-header">
-              <div class="col-3">
-                <div class="form-group">
-                  <label class="form-label" for="testGroupName">Group Name</label>
-
-                </div>
-              </div>
-
-              <div class="col-2">
-                <div class="form-group">
-                  <label class="form-label" for="testGroupSize">Size</label>
-                </div>
-              </div>
-
-              <div class="col-7">
-
-                <div class="form-group w-100">
-                  <label class="form-label" for="testGroupMeta">Meta</label>
-                </div>
-              </div>
-            </div>
-
-            @for( g <- draft.map(_.groups.map(Some(_))).getOrElse(List(None, None))) {
-            @group(g)
-            }
-          </div>
-          <div class="float-right">
-            <button type="button" id="btn-new-test-group"
-                    onclick="thomas.appendItem('#newTestGroup','#testGroups')"
-                    class="btn btn-secondary size-change">New Group
-            </button>
-          </div>
-          <div id="newTestGroup" style="display: none">
-            @group(None)
-          </div>
-        </div>
-      </div>
+      @armsForm(draft.map(_.groups.map(ArmSpec.fromGroup)), groupSizeChangeAllowed, metaChangeOnly = operatingSettingsOnly)
     </div>
-
-
   </div>
+
 </div>
 
 <script>
@@ -283,10 +205,15 @@ $(document).ready(function() {
     $('#testEnd').datetimepicker(pickerSettings);
   }
 
-  @if(!groupSizeChangeAllowed) {
-    $('#test-groups input.size-change').attr('readonly', 'readonly');
-    $('#test-groups button.size-change').hide();
+  @if(operatingSettingsOnly) {
+    thomas.readonly('#test-form input.non-operative');
+    thomas.readonly('#test-form textarea.non-operative');
+    $('#test-form label.non-operative').addClass("text-muted disabled-input");
+    $('#test-form button.non-operative').hide();
+    $('#test-form .remove-item').hide();
   }
+
+
 
 });
 

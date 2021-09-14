@@ -1,6 +1,6 @@
 package com.iheart.thomas.dynamo
 
-import cats.effect.{Async, Concurrent}
+import cats.effect.Async
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.admin.{AuthRecord, AuthRecordDAO, User, UserDAO}
 import DynamoFormats._
@@ -29,7 +29,7 @@ object AdminDAOs extends ScanamoManagement {
     (streamJobTableName, streamJobKey)
   )
 
-  def ensureAuthTables[F[_]: Concurrent](
+  def ensureAuthTables[F[_]: Async](
       readCapacity: Long,
       writeCapacity: Long
     )(implicit dc: DynamoDbAsyncClient
@@ -69,18 +69,17 @@ object AdminDAOs extends ScanamoManagement {
         val cond = streamJobKeyName === job.key
         val setV = set("checkedOut", Some(at))
         sc.exec(
-            job.checkedOut
-              .fold(
-                table
-                  .when(attributeNotExists("checkedOut"))
-                  .update(cond, setV)
-              )(c =>
-                table
-                  .when("checkedOut" === c)
-                  .update(cond, setV)
-              )
-          )
-          .map(_.toOption)
+          job.checkedOut
+            .fold(
+              table
+                .when(attributeNotExists("checkedOut"))
+                .update(cond, setV)
+            )(c =>
+              table
+                .when("checkedOut" === c)
+                .update(cond, setV)
+            )
+        ).map(_.toOption)
       }
 
       def setStarted(

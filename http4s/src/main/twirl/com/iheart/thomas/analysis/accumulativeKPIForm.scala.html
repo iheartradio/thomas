@@ -87,6 +87,7 @@ queryNames: List[QueryName] = Nil
             <div class="card-body">
                 @for( q <- draftO.map(_.queryName) ) {
                    <span class="text-primary">@q</span>
+                   <input type="hidden" name="queryName" value="@q.n" />
                 }
                 @if(queryNames.nonEmpty) {
                     <label class="form-label" for="queryNameSelect">KPI Query</label>

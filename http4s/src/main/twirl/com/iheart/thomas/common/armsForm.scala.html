@@ -1,0 +1,144 @@
+@import com.iheart.thomas.bandit.ArmSpec
+@import com.iheart.thomas.http4s.Formatters.formatJSON
+
+@(
+draftArms: Option[Seq[ArmSpec]],
+groupSizeChangeAllowed: Boolean = true,
+armLabel: String = "Group",
+showReserved: Boolean = false,
+metaChangeOnly: Boolean = false
+)
+
+@arm(as: Option[ArmSpec]) = {
+
+<div class="row abtest-group mb-3">
+    <div class="col-3">
+        <div class="form-group">
+            <input name="groups[].name" class="form-control size-change essential"
+                   id="testGroupName" type="text"
+                   value="@as.map(_.name)"/>
+        </div>
+    </div>
+
+    <div class="col-2">
+        <div class="form-group">
+            <input name="groups[].size" class="form-control size-change essential"
+                   id="testGroupSize" type="number"
+                   value="@as.map(_.initialSize)"
+                   min="0" max="1" step="any" placeholder="Btw 0 & 1"/>
+        </div>
+    </div>
+
+    <div class="col-7 d-flex flex-row">
+
+        <div class="form-group w-100">
+          <textarea name="groups[].meta" class="form-control size-change"
+                    id="testGroupMeta">@as.flatMap(_.meta).map(formatJSON(_))</textarea>
+          </div>
+
+        @if(showReserved) {
+        <div class="form-group ms-2 form-check">
+            <input name="reserved" class="form-check-input" type="checkbox"
+                   value="true"
+                   @if(as.fold(false)(_.reserved)) { checked }
+            />
+            <label class="form-label">Reserved</label>
+        </div>
+
+        }
+        <div class="text-center">
+            <button class="btn btn-link remove-item remove-item mt-4 ml-3 size-change essential"
+                    type="button" onclick="thomas.removeParentItem(this, '.abtest-group')" title="Remove @armLabel">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+
+    </div>
+
+
+</div>
+}
+
+
+<div class="card mt-5">
+    <div class="card-header">
+        <span class="h5">@{armLabel}s</span>
+    </div>
+    <div class="card-body">
+        <div id="testGroups">
+            <div class="row abtest-group-header">
+                <div class="col-3">
+                    <div class="form-group">
+                        <label class="form-label" for="testGroupName">@armLabel Name</label>
+                    </div>
+                </div>
+                <div class="col-2">
+                    <div class="form-group">
+                        <label class="form-label" for="testGroupSize">Size</label>
+                    </div>
+                </div>
+                <div class="col-7">
+                    <div class="form-group w-100">
+                        <label class="form-label" for="testGroupMeta">Meta</label>
+                    </div>
+                </div>
+            </div>
+            @for( a <- draftArms.toSeq.flatten) {
+                @arm(Some(a))
+            }
+            @if(draftArms.isEmpty) {
+                @arm(None)
+                @arm(None)
+            }
+
+        </div>
+        <div class="float-right">
+            <button type="button" id="btn-new-test-group"
+                    onclick="thomas.appendItem('#newTestGroup','#testGroups')"
+                    class="btn btn-secondary size-change">New @armLabel
+            </button>
+        </div>
+        <div id="newTestGroup" style="display: none">
+            @arm(None)
+        </div>
+    </div>
+</div>
+
+
+
+@if(!groupSizeChangeAllowed) {
+<script>
+    $(document).ready(function() {
+        thomas.readonly('#test-groups input.size-change');
+        $('#test-groups button.size-change').hide();
+    });
+</script>
+}
+
+@if(metaChangeOnly) {
+<script>
+    $(document).ready(function() {
+        thomas.readonly('#test-groups input.essential');
+        $('#test-groups button.essential').hide();
+    });
+</script>
+}
+
+
+<script>
+    var thomasCheckMeta = function() {
+        function countWithValue(selector) {
+            return $(selector).filter( function(item) { return $(this).val().trim() != '';  }).length;
+        }
+        var numWithMeta = countWithValue("textarea#testGroupMeta");
+        if(numWithMeta == 0) return true;
+        var numOfNamedGroups = countWithValue("input#testGroupName");
+        if( numOfNamedGroups != numWithMeta) {
+          alert("All groups must have group meta set, or none of them with group meta set.");
+          return false
+        }
+
+        return true;
+    };
+
+</script>

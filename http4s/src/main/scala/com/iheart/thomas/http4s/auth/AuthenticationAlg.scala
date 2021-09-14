@@ -2,7 +2,7 @@ package com.iheart.thomas
 package http4s
 package auth
 
-import cats.effect.{Concurrent, Timer}
+import cats.effect.{Async, Clock}
 import com.iheart.thomas.dynamo
 import com.iheart.thomas.admin.{PassResetToken, Role, User, UserDAO}
 import tsec.authentication.Authenticator
@@ -16,7 +16,7 @@ import tsec.passwordhashers.jca.BCrypt
 import cats.MonadThrow
 
 import scala.util.control.NoStackTrace
-import TimeUtil._
+import utils.time._
 import concurrent.duration._
 trait AuthenticationAlg[F[_], Auth] {
 
@@ -37,6 +37,10 @@ trait AuthenticationAlg[F[_], Auth] {
       roleO: Option[Role]
     ): F[User]
 
+  def deleteUser(
+      username: Username
+    ): F[Unit]
+
   def remove(username: String): F[Unit]
 
   def logout(token: Token[Auth]): F[Unit]
@@ -44,14 +48,14 @@ trait AuthenticationAlg[F[_], Auth] {
 
   def generateResetToken(
       username: Username
-    )(implicit T: Timer[F]
+    )(implicit T: Clock[F]
     ): F[PassResetToken]
 
   def resetPass(
       newPass: String,
       token: String,
       username: Username
-    )(implicit T: Timer[F]
+    )(implicit T: Clock[F]
     ): F[User]
 }
 
@@ -136,10 +140,10 @@ object AuthenticationAlg {
 
       def generateResetToken(
           username: Username
-        )(implicit T: Timer[F]
+        )(implicit T: Clock[F]
         ): F[PassResetToken] =
         for {
-          now <- TimeUtil.now[F]
+          now <- utils.time.now[F]
           token = PassResetToken(
             SecureRandomIdGenerator(32).generate,
             now.plusDuration(24.hours)
@@ -156,11 +160,11 @@ object AuthenticationAlg {
           newPass: String,
           token: String,
           username: Username
-        )(implicit T: Timer[F]
+        )(implicit T: Clock[F]
         ): F[User] =
         for {
           user <- userDAO.get(username)
-          now <- TimeUtil.now[F]
+          now <- utils.time.now[F]
           _ <- F.unit.ensure(InvalidToken)(_ =>
             user.resetToken.fold(false)(_.value === token)
           )
@@ -170,12 +174,13 @@ object AuthenticationAlg {
           newHash <- hashPassword(newPass, AuthError.PasswordTooWeak(user.username))
           r <- userDAO.update(user.copy(resetToken = None, hash = newHash))
         } yield r
+
+      def deleteUser(username: Username): F[Unit] = userDAO.remove(username)
     }
 
-  /**
-    * using dynamo BCyrpt and HMACSHA256
+  /** using dynamo BCyrpt and HMACSHA256
     */
-  def default[F[_]: Concurrent](
+  def default[F[_]: Async](
       key: String
     )(implicit dc: DynamoDbAsyncClient
     ): F[AuthenticationAlg[F, AuthImp]] =

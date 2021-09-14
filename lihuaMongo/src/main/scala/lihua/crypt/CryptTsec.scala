@@ -1,7 +1,7 @@
 package lihua
 package crypt
 
-import cats.effect.{IO, Sync}
+import cats.effect.{ExitCode, IO, IOApp, Sync}
 import lihua.mongo.Crypt
 import tsec.cipher.symmetric.PlainText
 import tsec.common._
@@ -17,7 +17,6 @@ class CryptTsec[F[_]](key: String)(implicit F: Sync[F]) extends Crypt[F] {
   private val ekeyF: F[SecretKey[AES128CTR]] =
     b64(key).flatMap(AES128CTR.buildKey[F])
 
-
   def b64(s: String): F[Array[Byte]] =
     s.b64Bytes.liftTo[F](Base64Error)
 
@@ -26,9 +25,10 @@ class CryptTsec[F[_]](key: String)(implicit F: Sync[F]) extends Crypt[F] {
   def encrypt(value: String): F[String] =
     for {
       ekey <- ekeyF
-      encrypted <- AES128CTR.genEncryptor[F].encrypt(PlainText(value.utf8Bytes), ekey)
+      encrypted <- AES128CTR
+        .genEncryptor[F]
+        .encrypt(PlainText(value.utf8Bytes), ekey)
     } yield (encrypted.content ++ encrypted.nonce).toB64String
-
 
   def decrypt(value: String): F[String] =
     for {
@@ -40,16 +40,15 @@ class CryptTsec[F[_]](key: String)(implicit F: Sync[F]) extends Crypt[F] {
 
 }
 
-
-object CryptTsec {
+object CryptTsec extends IOApp {
   def apply[F[_]: Sync](key: String): Crypt[F] = new CryptTsec[F](key)
 
-  def genKey[F[_]: Sync] : F[String] =
-      AES128CTR.generateKey[F].map(_.getEncoded.toB64String)
+  def genKey[F[_]: Sync]: F[String] =
+    AES128CTR.generateKey[F].map(_.getEncoded.toB64String)
 
   case object Base64Error extends RuntimeException
 
-  def main(args: Array[String]): Unit = {
+  def run(args: List[String]): IO[ExitCode] = {
     val command = args.headOption match {
       case Some("genKey") => genKey[IO]
       case Some("encrypt") =>
@@ -59,16 +58,15 @@ object CryptTsec {
           r <- CryptTsec[IO](key).encrypt(pass)
         } yield r
 
-
       case Some("decrypt") =>
         for {
-           key <- IO(StdIn.readLine("Enter your key:"))
-           pass <- IO(StdIn.readLine("Enter your text:"))
-           r <- CryptTsec[IO](key).decrypt(pass)
+          key <- IO(StdIn.readLine("Enter your key:"))
+          pass <- IO(StdIn.readLine("Enter your text:"))
+          r <- CryptTsec[IO](key).decrypt(pass)
         } yield r
       case _ => IO.pure("usage: [genKey|encrypt]")
     }
 
-    command.attempt.map(_.fold(println, println)).unsafeRunSync()
+    command.attempt.flatMap(_.fold(s => IO(println(s)), s => IO(println(s)))).as(ExitCode.Success)
   }
 }

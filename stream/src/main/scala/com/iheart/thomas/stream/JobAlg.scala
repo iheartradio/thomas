@@ -1,36 +1,43 @@
-package com.iheart.thomas.stream
+package com.iheart.thomas
+package stream
 
 import cats.Functor
-import cats.effect.{Concurrent, Sync, Timer}
+import cats.effect.{Temporal, Async, Sync}
 import cats.implicits._
-import com.iheart.thomas.TimeUtil.InstantOps
+import com.iheart.thomas.utils.time.InstantOps
 import com.iheart.thomas.analysis.KPIName
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Specialization
 import com.iheart.thomas.stream.JobEvent.RunningJobsUpdated
-import com.iheart.thomas.stream.JobSpec.{MonitorTest, ProcessSettings, RunBandit, UpdateKPIPrior}
+import com.iheart.thomas.stream.JobSpec.{
+  MonitorTest,
+  ProcessSettings,
+  ProcessSettingsOptional,
+  RunBandit,
+  UpdateKPIPrior
+}
 import com.iheart.thomas.tracking.EventLogger
-import com.iheart.thomas.{FeatureName, TimeUtil}
 import com.typesafe.config.Config
 import fs2._
 import pureconfig.ConfigSource
 
-import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
 import pureconfig.generic.auto._
-
+import PipeSyntax._
+import utils.time._
 trait JobAlg[F[_]] {
 
-  /**
-    * Creates a job if the job key is not already in the job list
-    * @return Some(job) if successful, None otherwise.
+  /** Creates a job if the job key is not already in the job list
+    * @return
+    *   Some(job) if successful, None otherwise.
     */
   def schedule(spec: JobSpec): F[Option[Job]]
 
-  /**
-    * Stops and removes a job
+  /** Stops and removes a job
     */
   def stop(jobKey: String): F[Unit]
+  def stop(spec: JobSpec): F[Unit] = stop(spec.key)
 
   def runStream: Stream[F, Unit]
 
@@ -49,22 +56,21 @@ trait JobAlg[F[_]] {
   def monitors(feature: FeatureName): F[Vector[JobInfo[MonitorTest]]] =
     findInfo((m: MonitorTest) => m.feature == feature)
 
-  /**
-    * Find job according to spec. Since you can't run two jobs with the same key, find ignores the rest of the spec.
+  /** Find job according to spec. Since you can't run two jobs with the same key,
+    * find ignores the rest of the spec.
     * @param spec
-    * @return
+    *   @return
     */
   def find(spec: JobSpec): F[Option[Job]]
 
 }
 
 object JobAlg {
-  def chunkEvents[F[_]: Timer: Concurrent, E](
+  def chunkEvents[F[_]: Temporal, E](
       processSettings: ProcessSettings
-    ): Pipe[F, List[E], Chunk[E]] =
-    (input: Stream[F, List[E]]) =>
+    ): Pipe[F, E, Chunk[E]] =
+    (input: Stream[F, E]) =>
       input
-        .flatMap(le => Stream.fromIterator(le.iterator))
         .groupWithin(
           processSettings.eventChunkSize,
           processSettings.frequency
@@ -79,10 +85,10 @@ object JobAlg {
       with NoStackTrace
 
   implicit def apply[F[_], Message](
-      implicit F: Concurrent[F],
-      timer: Timer[F],
+      implicit F: Async[F],
       dao: JobDAO[F],
       kpiPipes: AllKPIProcessAlg[F, Message],
+      banditProcessAlg: BanditProcessAlg[F, Message],
       config: Config,
       logger: EventLogger[F],
       messageSubscriber: MessageSubscriber[F, Message]
@@ -108,42 +114,49 @@ object JobAlg {
           .eval(JobRunnerConfig.fromConfig(config))
           .flatMap { cfg =>
             def jobPipe(job: Job): F[Pipe[F, Message, Unit]] = {
-              val processSettings = (
+              def processSettings(settings: ProcessSettingsOptional) = (
                 ProcessSettings(
-                  frequency = job.spec.processSettings.frequency
+                  frequency = settings.frequency
                     .getOrElse(cfg.jobProcessFrequency),
-                  eventChunkSize = job.spec.processSettings.eventChunkSize
+                  eventChunkSize = settings.eventChunkSize
                     .getOrElse(cfg.maxChunkSize),
-                  expiration = job.spec.processSettings.expiration
+                  expiration = settings.expiration
                 )
               )
 
-              def checkExpiration[A]: Pipe[F, A, A] =
+              def checkExpiration[A](settings: ProcessSettings): Pipe[F, A, A] =
                 (input: Stream[F, A]) => {
-                  def checkJobComplete(exp: Instant) =
-                    Stream
-                      .fixedDelay(cfg.jobCheckFrequency)
-                      .evalMap(_ => exp.passed)
-                      .evalTap { completed =>
-                        if (completed) stop(job.key)
-                        else F.unit
-                      }
-                  processSettings.expiration.fold(input)(exp =>
-                    input
-                      .interruptWhen(checkJobComplete(exp))
+                  settings.expiration.fold(input)(exp =>
+                    Stream.eval(utils.time.now[F]).flatMap { now =>
+                     if(exp.isAfter(now))
+                      input
+                        .interruptAfter(now.durationTo(exp))
+                     else
+                       input.interruptWhen(Stream.emit(true))
+                    }
                   )
                 }
 
               (job.spec match {
-                case UpdateKPIPrior(kpiName, _) =>
-                  kpiPipes.updatePrior(kpiName, processSettings)
-
-                case MonitorTest(feature, kpiName, _) =>
-                  kpiPipes.monitorExperiment(feature, kpiName, processSettings)
-
-                case RunBandit(_, _) => ???
-              }).map { pipe =>
-                checkExpiration[Message].andThen(pipe)
+                case UpdateKPIPrior(kpiName, s) =>
+                  val settings = processSettings(s)
+                  kpiPipes.updatePrior(kpiName, settings).map((_, settings))
+                case MonitorTest(feature, kpiName, s) =>
+                  val settings = processSettings(s)
+                  kpiPipes
+                    .monitorExperiment(
+                      feature,
+                      kpiName,
+                      Specialization.RealtimeMonitor,
+                      settings
+                    )
+                    .map(p => (p.void, settings))
+                case RunBandit(fn) =>
+                  banditProcessAlg.process(fn)
+              }).map { case (pipe, settings) =>
+                checkExpiration[Message](settings).andThen(pipe).andThen(
+                  _.onComplete(Stream.eval(stop(job.key)))
+                )
               }
             }
 
@@ -151,7 +164,7 @@ object JobAlg {
               Stream
                 .fixedDelay[F](cfg.jobCheckFrequency)
                 .evalMap(_ =>
-                  TimeUtil.now[F].flatMap { now =>
+                  utils.time.now[F].flatMap { now =>
                     dao.all.map(_.filter { j =>
                       j.checkedOut.fold(true)(lastCheckedOut =>
                         now.isAfter(
@@ -175,7 +188,7 @@ object JobAlg {
               ) { (memo, newAvailable) =>
                 val currentlyRunning = memo._1
                 for {
-                  now <- TimeUtil.now[F]
+                  now <- utils.time.now[F]
                   updatedRunning <-
                     currentlyRunning.traverseFilter(dao.updateCheckedOut(_, now))
                   newlyCheckedout <-
@@ -197,42 +210,53 @@ object JobAlg {
               }
               .mapFilter(_._2)
 
+            val voidPipe : Pipe[F, Message, Unit] = _.void
+
             runningJobs.switchMap { jobs =>
               Stream.eval(logger(RunningJobsUpdated(jobs))) *>
-              Stream
-                .eval(jobs.traverse(j => jobPipe(j)))
-                .flatMap { pipes =>
-                  (if (cfg.logEveryMessage)
-                     messageSubscriber.subscribe
-                       .flatTap(m =>
-                         Stream.eval(logger(JobEvent.MessageReceived(m)))
-                       )
-                   else messageSubscriber.subscribe)
-                    .broadcastTo(pipes: _*)
-                }
+                Stream
+                  .eval(jobs.traverse(j => jobPipe(j)))
+                  .flatMap { pipes =>
+                    val logPipeO: Option[Pipe[F, Message, Unit]] =
+                      cfg.logEveryNMessage.map { n =>
+                        (_: Stream[F, Message]).chunkN(n).evalMap { c =>
+                          c.head
+                            .traverse(m =>
+                              logger(JobEvent.MessagesReceived(m, c.size))
+                            )
+                            .void
+                        }
+                      }
+
+                    messageSubscriber.subscribe
+                      .broadcastThrough((voidPipe +: (pipes ++ logPipeO.toVector)): _*)
+                  }
             }
           }
 
     }
 }
 
-/**
-  *
-  * @param jobCheckFrequency how often it checks new available jobs or running jobs being stoped.
-  * @param jobProcessFrequency how often it does the task of a job.
-  * @param jobObsoleteCount the threshold over which times a job misses being checkedOut will be count as obsolete and available for worker to pick up.
-  * @param maxChunkSize when messages accumulate over maxChunkSize, they will be processed for the job.
+/** @param jobCheckFrequency
+  *   how often it checks new available jobs or running jobs being stopped.
+  * @param jobProcessFrequency
+  *   how often it does the task of a job.
+  * @param jobObsoleteCount
+  *   the threshold over which times a job misses being checkedOut will be count as
+  *   obsolete and available for worker to pick up.
+  * @param maxChunkSize
+  *   when messages accumulate over maxChunkSize, they will be processed for the job.
   */
 case class JobRunnerConfig(
     jobCheckFrequency: FiniteDuration,
     jobObsoleteCount: Long,
     maxChunkSize: Int,
     jobProcessFrequency: FiniteDuration,
-    logEveryMessage: Boolean = false)
+    logEveryNMessage: Option[Int] = None)
 
 object JobRunnerConfig {
   def fromConfig[F[_]: Sync](cfg: Config): F[JobRunnerConfig] = {
-    import pureconfig.module.catseffect._
+    import pureconfig.module.catseffect.syntax._
     ConfigSource.fromConfig(cfg).at("thomas.stream.job").loadF[F, JobRunnerConfig]
   }
 }

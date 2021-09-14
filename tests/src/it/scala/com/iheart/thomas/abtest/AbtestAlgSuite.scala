@@ -18,12 +18,13 @@ import com.iheart.thomas.abtest.model.{
 }
 import com.iheart.thomas.testkit.Factory.{now, _}
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 import cats.implicits._
-import TimeUtil._
+import utils.time._
 import cats.MonadError
 
 import concurrent.duration._
-class AbtestAlgSuite extends AsyncIOSpec with Matchers {
+class AbtestAlgSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
 
   val F = MonadError[IO, Throwable]
 
@@ -57,8 +58,8 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
           }
           .asserting {
             case Left(CannotChangeGroupSizeWithFollowUpTest(_)) => succeed
-            case Left(e)                                        => fail(s"incorrect error $e")
-            case Right(_)                                       => fail("Failed to prevent size change")
+            case Left(e)  => fail(s"incorrect error $e")
+            case Right(_) => fail("Failed to prevent size change")
           }
 
       }
@@ -169,9 +170,8 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
 
             } yield (r, t)
           }
-          .asserting {
-            case (r, t) =>
-              r.groups.contains(t.data.feature) shouldBe true
+          .asserting { case (r, t) =>
+            r.groups.contains(t.data.feature) shouldBe true
           }
       }
 
@@ -197,9 +197,8 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
               )
             } yield (r, t)
           }
-          .asserting {
-            case (r, t) =>
-              r.groups.contains(t.data.feature) shouldBe false
+          .asserting { case (r, t) =>
+            r.groups.contains(t.data.feature) shouldBe false
 
           }
       }
@@ -299,8 +298,8 @@ class AbtestAlgSuite extends AsyncIOSpec with Matchers {
                     true
                   )
                   .as("fail")
-                  .recover {
-                    case CannotUpdateExpiredTest(_) => "success"
+                  .recover { case CannotUpdateExpiredTest(_) =>
+                    "success"
                   }
 
             } yield r

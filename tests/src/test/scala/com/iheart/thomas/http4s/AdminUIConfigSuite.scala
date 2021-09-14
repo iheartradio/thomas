@@ -4,8 +4,9 @@ import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.iheart.thomas.admin.Role
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 
-class AdminUIConfigSuite extends AsyncIOSpec with Matchers {
+class AdminUIConfigSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
 
   "AdminUIConfig" - {
     "can read reference conf" in {

@@ -34,7 +34,9 @@ services:
 
   dynamo:
     container_name: thomas-dynamo-${THOMAS_ENV}
-    image: 'misoca/dynamodb-local-persist'
+    build:
+      context: .
+      dockerfile: docker/dynamodb/Dockerfile
     ports:
       - ${THOMAS_DYNAMO_PORT}:8000
     volumes:

@@ -38,7 +38,7 @@ isShuffled: Boolean
 </form>
 
 <div class="row text-end mt-5">
-    @if(env.currentUser.has(ManageFeature(feature))) {
+    @if(env.currentUser.has(OperateFeature(feature))) {
     <div class="mr-4">
         @if(followUpO.isEmpty) {
         <a href="@test._id/new_revision" class="btn btn-primary" role="button">
@@ -49,11 +49,13 @@ isShuffled: Boolean
         <a href="@test._id/edit" class="btn btn-primary" role="button">
             Edit
         </a>
-        <a href="@test._id/delete"
-           onclick="return confirm('Are you sure you would like to delete this test?');"
-           class="btn btn-warning" role="button">
-            Delete
-        </a>
+        @if(env.currentUser.has(ManageFeature(feature))) {
+            <a href="@test._id/delete"
+               onclick="return confirm('Are you sure you would like to delete this test?');"
+               class="btn btn-warning" role="button">
+                Delete
+            </a>
+        }
         } else {
 
         @if(test.data.statusAsOf(Instant.now) == Abtest.Status.InProgress) {
@@ -106,7 +108,7 @@ isShuffled: Boolean
                 <span> <a class="text-primary" href="@env.routes.features/@test.data.feature">@test.data.feature</a> </span>
                 has no overriding assignments.
                 }
-                @if(env.currentUser.has(ManageFeature(feature))) {
+                @if(env.currentUser.has(ManageTestSettings(feature))) {
                 Go to <a class="text-primary" href="@env.routes.features/@test.data.feature">@test.data.feature</a> to edit
                 overrides.</span>
                 }

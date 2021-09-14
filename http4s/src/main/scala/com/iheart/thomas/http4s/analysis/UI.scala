@@ -3,20 +3,7 @@ package http4s
 package analysis
 
 import cats.effect.Async
-import com.iheart.thomas.analysis.{
-  AllKPIRepo,
-  ConversionKPI,
-  ConversionMessageQuery,
-  Criteria,
-  KPIName,
-  KPIRepo,
-  KPIStats,
-  MessageQuery,
-  QueryAccumulativeKPI,
-  AccumulativeKPIQueryRepo,
-  QueryName,
-  bayesian
-}
+import com.iheart.thomas.analysis.{AccumulativeKPIQueryRepo, AllKPIRepo, ConversionKPI, ConversionMessageQuery, Criteria, KPIName, KPIRepo, KPIStats, MessageQuery, QueryAccumulativeKPI, QueryName, bayesian}
 import bayesian.models._
 import com.iheart.thomas.http4s.{AuthImp, ReverseRoutes}
 import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
@@ -29,27 +16,13 @@ import org.http4s.FormDataDecoder
 import FormDataDecoder._
 import com.iheart.thomas.analysis.bayesian.KPIEvaluator
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
-import com.iheart.thomas.analysis.monitor.{
-  AllExperimentKPIStateRepo,
-  ExperimentKPIState
-}
+import com.iheart.thomas.analysis.monitor.{AllExperimentKPIStateRepo, ExperimentKPIState}
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
-import com.iheart.thomas.http4s.analysis.UI.{
-  MonitorInfo,
-  StartMonitorRequest,
-  controlArm,
-  includedArms
-}
+import com.iheart.thomas.http4s.analysis.UI.{MonitorInfo, StartMonitorRequest, controlArm, includedArms}
 import com.iheart.thomas.stream.{JobAlg, JobInfo}
-import com.iheart.thomas.stream.JobSpec.{
-  MonitorTest,
-  ProcessSettingsOptional,
-  UpdateKPIPrior
-}
-import org.http4s.dsl.impl.{
-  OptionalMultiQueryParamDecoderMatcher,
-  OptionalQueryParamDecoderMatcher
-}
+import com.iheart.thomas.stream.JobSpec.{MonitorTest, ProcessSettingsOptional, UpdateKPIPrior}
+import org.http4s.Uri.Path.Segment
+import org.http4s.dsl.impl.{OptionalMultiQueryParamDecoderMatcher, OptionalQueryParamDecoderMatcher}
 import tsec.authentication._
 
 import java.time.Instant
@@ -69,7 +42,7 @@ class UI[F[_]: Async](
     with Http4sDsl[F] {
   val reverseRoutes = ReverseRoutes(aCfg)
   import UI.Decoders._
-  val rootPath = Root / "analysis"
+  val rootPath = Root / Segment("analysis")
 
   val readonlyRoutes = roleBasedService(admin.Authorization.readableRoles) {
 
@@ -138,7 +111,7 @@ class UI[F[_]: Async](
       }
 
     case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "reset" asAuthed (_) =>
-      stateRepo.reset(Key(feature, KPIName(kpi))) *>
+      stateRepo.delete(Key(feature, KPIName(kpi))) *>
         Ok(
           redirect(
             reverseRoutes.analysisOf(feature),

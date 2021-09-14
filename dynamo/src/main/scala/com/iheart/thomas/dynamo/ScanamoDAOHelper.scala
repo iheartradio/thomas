@@ -1,6 +1,7 @@
-package com.iheart.thomas.dynamo
+package com.iheart.thomas
+package dynamo
 
-import cats.effect.{Async, Concurrent, Timer}
+import cats.effect.Async
 import cats.implicits._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.dynamodb.model.{
@@ -13,7 +14,6 @@ import software.amazon.awssdk.services.dynamodb.model.{
   ResourceNotFoundException,
   ScalarAttributeType
 }
-import com.iheart.thomas.TimeUtil
 import com.iheart.thomas.dynamo.ScanamoDAOHelper.NotFound
 import org.scanamo.ops.ScanamoOps
 import org.scanamo.syntax._
@@ -83,8 +83,8 @@ abstract class ScanamoDAOHelper[F[_], A](
   }
 
   def insertO(a: A): F[Option[A]] =
-    insert(a).map(Option(_)).recover {
-      case ScanamoError(ConditionNotMet(_)) => None
+    insert(a).map(Option(_)).recover { case ScanamoError(ConditionNotMet(_)) =>
+      None
     }
 
 }
@@ -143,7 +143,11 @@ abstract class ScanamoDAOHelperStringFormatKey[F[_], A: DynamoFormat, K](
     sc.exec(table.delete(keyName === stringKey(k)))
 
   def update(a: A): F[A] =
-    sc.exec(table.when(attributeExists(keyName)).put(a)).as(a)
+    toF(sc.exec(table.when(attributeExists(keyName)).put(a)))
+      .adaptErr { case ScanamoError(ConditionNotMet(_)) =>
+        NotFound(s"Trying to update $a but it is not found in table $tableName")
+      }
+      .as(a)
 
   def upsert(a: A): F[A] =
     sc.exec(table.put(a)).as(a)
@@ -175,37 +179,56 @@ trait AtomicUpdatable[F[_], A, K] {
       k: K,
       retryPolicy: Option[RetryPolicy[F]] = None
     )(updateExpression: A => UpdateExpression
-    )(implicit T: Timer[F],
+    )(implicit
+      F: Async[F],
+      A: WithTimeStamp[A]
+    ): F[A] = atomicUpsert(k, retryPolicy)(updateExpression)(
+    F.raiseError(
+      NotFound(
+        s"No record to be updated in table $tableName whose $keyName is '${stringKey(k)}'. "
+      )
+    )
+  )
+
+  def atomicUpsert(
+      k: K,
+      retryPolicy: Option[RetryPolicy[F]] = None
+    )(updateExpression: A => UpdateExpression
+    )(ifEmpty: F[A]
+    )(implicit
       F: Async[F],
       A: WithTimeStamp[A]
     ): F[A] = {
-    val updateF = for {
-      existing <- get(k)
-      now <- TimeUtil.now[F]
-      r <- toF(
-        sc.exec(
-          table
-            .when(lastUpdatedFieldName === A.lastUpdated(existing))
-            .update(
-              keyName === stringKey(k),
-              updateExpression(existing)
-                and set(lastUpdatedFieldName, now)
+    val upsertF =
+      find(k).flatMap {
+        case Some(existing) =>
+          utils.time.now[F].flatMap { now =>
+            toF(
+              sc.exec(
+                table
+                  .when(lastUpdatedFieldName === A.lastUpdated(existing))
+                  .update(
+                    keyName === stringKey(k),
+                    updateExpression(existing)
+                      and set(lastUpdatedFieldName, now)
+                  )
+              )
             )
-        )
-      )
-    } yield r
+          }
+        case None => ifEmpty.flatMap(insert)
+      }
 
-    retryPolicy.fold(updateF)(rp =>
-      retryingOnSomeErrors(
+    retryPolicy.fold(upsertF)(rp =>
+      retryingOnSomeErrors.apply[F, Throwable](
         rp,
         { (e: Throwable) =>
-          e match {
+          (e match {
             case ScanamoError(ConditionNotMet(_)) => true
             case _                                => false
-          }
+          }).pure[F]
         },
         (_: Throwable, _) => Async[F].unit
-      )(updateF)
+      )(upsertF)
     )
 
   }
@@ -238,23 +261,23 @@ trait ScanamoManagement {
     val keySchemas = hashKeyWithType._1 -> KeyType.HASH :: rangeKeyWithType.map(
       _._1 -> KeyType.RANGE
     )
-    keySchemas.map {
-      case (symbol, keyType) =>
-        KeySchemaElement.builder.attributeName(symbol).keyType(keyType).build
+    keySchemas.map { case (symbol, keyType) =>
+      KeySchemaElement.builder.attributeName(symbol).keyType(keyType).build
     }.asJava
   }
 
   private def lift[F[_], A](
-      fcf: => CompletableFuture[A]
-    )(implicit F: Concurrent[F]
-    ): F[A] =
-    F.delay(fcf).flatMap { cf =>
-      F.cancelable(cb => {
+                             fcf: => CompletableFuture[A]
+                           )(implicit F: Async[F]
+                           ): F[A] =
+
+    F.async(cb => {
+      F.delay(fcf).map { cf =>
         cf.handle[Unit](new BiFunction[A, Throwable, Unit] {
           override def apply(
-              result: A,
-              err: Throwable
-            ): Unit =
+                              result: A,
+                              err: Throwable
+                            ): Unit =
             err match {
               case null                     => cb(Right(result))
               case _: CancellationException => ()
@@ -263,11 +286,11 @@ trait ScanamoManagement {
               case ex => cb(Left(ex))
             }
         })
-        F.delay(cf.cancel(true)).void
-      })
-    }
+        Some(F.delay(cf.cancel(true)).void)
+      }
+    })
 
-  def createTable[F[_]: Concurrent](
+  def createTable[F[_]: Async](
       client: DynamoDbAsyncClient,
       tableName: String,
       keyAttributes: Seq[(String, ScalarAttributeType)],
@@ -292,24 +315,23 @@ trait ScanamoManagement {
         )
     ).void
 
-  def ensureTables[F[_]: Concurrent](
+  def ensureTables[F[_]: Async](
       tables: List[(String, (String, ScalarAttributeType))],
       readCapacityUnits: Long,
       writeCapacityUnits: Long
     )(implicit dynamo: DynamoDbAsyncClient
     ): F[Unit] =
-    tables.traverse {
-      case (tableName, keyAttribute) =>
-        ensureTable(
-          dynamo,
-          tableName,
-          Seq(keyAttribute),
-          readCapacityUnits,
-          writeCapacityUnits
-        )
+    tables.traverse { case (tableName, keyAttribute) =>
+      ensureTable(
+        dynamo,
+        tableName,
+        Seq(keyAttribute),
+        readCapacityUnits,
+        writeCapacityUnits
+      )
     }.void
 
-  def ensureTable[F[_]: Concurrent](
+  def ensureTable[F[_]: Async](
       client: DynamoDbAsyncClient,
       tableName: String,
       keyAttributes: Seq[(String, ScalarAttributeType)],
@@ -322,25 +344,23 @@ trait ScanamoManagement {
           .tableName(tableName)
           .build
       )
-    ).void.recoverWith {
-      case _: ResourceNotFoundException =>
-        createTable(
-          client,
-          tableName,
-          keyAttributes,
-          readCapacityUnits,
-          writeCapacityUnits
-        )
+    ).void.recoverWith { case _: ResourceNotFoundException =>
+      createTable(
+        client,
+        tableName,
+        keyAttributes,
+        readCapacityUnits,
+        writeCapacityUnits
+      )
     }
   }
 
   private def attributeDefinitions(attributes: Seq[(String, ScalarAttributeType)]) =
-    attributes.map {
-      case (symbol, attributeType) =>
-        AttributeDefinition.builder
-          .attributeName(symbol)
-          .attributeType(attributeType)
-          .build
+    attributes.map { case (symbol, attributeType) =>
+      AttributeDefinition.builder
+        .attributeName(symbol)
+        .attributeType(attributeType)
+        .build
     }.asJava
 }
 

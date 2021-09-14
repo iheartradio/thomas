@@ -4,8 +4,10 @@ import java.time.{Instant, OffsetDateTime}
 import cats.effect.testing.scalatest.AsyncIOSpec
 import TestUtils.{fakeAb, _}
 import cats.data.NonEmptyList
+import cats.effect.IO
 import lihua.{Entity, EntityId}
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 
 import concurrent.duration._
 import cats.implicits._
@@ -13,7 +15,7 @@ import com.iheart.thomas.{FeatureName, UserId}
 import com.iheart.thomas.abtest.model.{Abtest, Group, UserGroupQuery}
 import play.api.libs.json.Json
 
-class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
+class AbtestCRUDSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
 
   "AbtestAlg" - {
     "getTest" - {
@@ -47,10 +49,9 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
             tests <- alg.getTestsByFeature(test1.data.feature)
             notFound <- alg.getTestsByFeature("mismatch")
           } yield (test1, test2, tests, notFound)
-        }.asserting {
-          case (test1, test2, tests, notFound) =>
-            tests.toSet shouldBe Vector(test1, test2).toSet
-            notFound shouldBe Vector.empty
+        }.asserting { case (test1, test2, tests, notFound) =>
+          tests.toSet shouldBe Vector(test1, test2).toSet
+          notFound shouldBe Vector.empty
         }
       }
 
@@ -61,9 +62,8 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
             test2 <- alg.continue(fakeAb(2, 4, test1.data.feature))
             tests <- alg.getTestsByFeature(test1.data.feature)
           } yield (test1, test2, tests)
-        }.asserting {
-          case (test1, test2, tests) =>
-            tests.map(_._id) shouldBe Vector(test2._id, test1._id)
+        }.asserting { case (test1, test2, tests) =>
+          tests.map(_._id) shouldBe Vector(test2._id, test1._id)
         }
       }
 
@@ -74,9 +74,8 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
             test2 <- alg.continue(fakeAb(2, 4, test1.data.feature).copy(end = None))
             tests <- alg.getTestsByFeature(test1.data.feature)
           } yield (test1, test2, tests)
-        }.asserting {
-          case (test1, test2, tests) =>
-            tests.map(_._id) shouldBe Vector(test2._id, test1._id)
+        }.asserting { case (test1, test2, tests) =>
+          tests.map(_._id) shouldBe Vector(test2._id, test1._id)
         }
       }
     }
@@ -92,8 +91,8 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
               None
             )
           } yield (test, testData)
-        }.asserting {
-          case (test, testData) => testData.data.map(_._1) shouldBe Vector(test)
+        }.asserting { case (test, testData) =>
+          testData.data.map(_._1) shouldBe Vector(test)
 
         }
 
@@ -106,9 +105,8 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
             td <- alg.getTestsData(Instant.now.minusMinutes(1), Some(4.minutes))
 
           } yield (test, td)
-        }.asserting {
-          case (test, td) =>
-            td.data.map(_._1) shouldBe Vector(test)
+        }.asserting { case (test, td) =>
+          td.data.map(_._1) shouldBe Vector(test)
         }
       }
 
@@ -422,7 +420,7 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
             test <- alg.create(
               fakeAb.copy(end = Some(OffsetDateTime.now.plusNanos(30000000)))
             )
-            _ <- ioTimer.sleep(50.millis)
+            _ <- IO.sleep(50.millis)
             _ <- alg.terminate(test._id)
             r <- alg.getTest(test._id)
           } yield {

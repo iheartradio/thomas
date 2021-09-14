@@ -26,8 +26,7 @@ trait FitAssessmentAlg[F[_], K] {
 
 trait UpdatableKPI[F[_], K] {
 
-  /**
-    * replace the prior of the KPI with a new prior based on new data
+  /** replace the prior of the KPI with a new prior based on new data
     * @param kpi
     */
   def updateFromData(
@@ -108,14 +107,13 @@ object FitAssessmentAlg {
       } yield {
         val groupMeasurements = allMeasurement.filterKeys(_ != baselineGroup)
 
-        groupMeasurements.map {
-          case (gn, ms) =>
-            val improvement =
-              sampleIndicator(k, ms)
-                .map2(sampleIndicator(k, baselineMeasurements))(_ - _)
-                .predict()
+        groupMeasurements.map { case (gn, ms) =>
+          val improvement =
+            sampleIndicator(k, ms)
+              .map2(sampleIndicator(k, baselineMeasurements))(_ - _)
+              .predict()
 
-            (gn, bayesian.BenchmarkResult(improvement, baselineGroup))
+          (gn, bayesian.BenchmarkResult(improvement, baselineGroup))
         }
       }
     }

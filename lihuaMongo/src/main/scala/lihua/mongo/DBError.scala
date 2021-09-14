@@ -3,10 +3,7 @@ package mongo
 
 import cats.data.NonEmptyList
 
-sealed trait DBError
-    extends RuntimeException
-    with Product
-    with Serializable
+sealed trait DBError extends RuntimeException with Product with Serializable
 
 object DBError {
   case object NotFound extends DBError
@@ -22,8 +19,7 @@ object DBError {
   }
   case class DBLastError(override val getMessage: String) extends DBError
 
-  case class WriteError(details: NonEmptyList[WriteErrorDetail])
-      extends DBError {
+  case class WriteError(details: NonEmptyList[WriteErrorDetail]) extends DBError {
     override def getMessage: String = details.toString()
   }
 

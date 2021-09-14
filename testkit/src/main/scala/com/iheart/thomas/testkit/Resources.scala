@@ -5,16 +5,16 @@ import java.time.Instant
 import cats.effect.{IO, Resource}
 import cats.implicits._
 import com.iheart.thomas.abtest.AbtestAlg
-import com.iheart.thomas.bandit.bayesian.ConversionBMABAlg
+import com.iheart.thomas.bandit.bayesian.BayesianMABAlg
 import com.iheart.thomas.{dynamo, mongo}
 import com.typesafe.config.ConfigFactory
 import _root_.play.api.libs.json.Json
-import com.iheart.thomas.analysis.{ConversionKPI, KPIRepo}
+import com.iheart.thomas.analysis.monitor.ExperimentKPIStateDAO
+import com.iheart.thomas.analysis.{ConversionKPI, Conversions, KPIRepo}
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.http4s.AuthImp
 import com.iheart.thomas.http4s.auth.AuthenticationAlg
 import com.iheart.thomas.tracking.EventLogger
-import dynamo.DynamoFormats._
 
 import scala.concurrent.duration._
 import dynamo.AnalysisDAOs._
@@ -23,23 +23,18 @@ import dynamo.BanditsDAOs._
 object Resources {
 
   import concurrent.ExecutionContext.Implicits.global
-  implicit private val cs = IO.contextShift(global)
-  val timer = IO.timer(global)
-  implicit private val _timer = timer
 
   val defaultNowF = IO.delay(Instant.now)
   lazy val mangoDAOs =
     Resource.eval(IO(ConfigFactory.load(getClass.getClassLoader))).flatMap {
       config =>
-        mongo.daosResource[IO](config).flatMap {
-          case daos =>
-            Resource
-              .make(IO.pure(daos)) {
-                case (abtestDAO, featureDAO) =>
-                  List(abtestDAO, featureDAO)
-                    .traverse(_.removeAll(Json.obj()))
-                    .void
-              }
+        mongo.daosResource[IO](config).flatMap { case daos =>
+          Resource
+            .make(IO.pure(daos)) { case (abtestDAO, featureDAO) =>
+              List(abtestDAO, featureDAO)
+                .traverse(_.removeAll(Json.obj()))
+                .void
+            }
         }
     }
 
@@ -52,14 +47,18 @@ object Resources {
         tables.map(_.map(Seq(_))): _*
       )
 
-  /**
-    * An ConversionAPI resource that cleans up after
+  /** An ConversionAPI resource that cleans up after
     */
   def apis(
       implicit logger: EventLogger[IO] = EventLogger.noop[IO]
     ): Resource[
     IO,
-    (ConversionBMABAlg[IO], AbtestAlg[IO], KPIRepo[IO, ConversionKPI])
+    (
+        BayesianMABAlg[IO],
+        AbtestAlg[IO],
+        KPIRepo[IO, ConversionKPI],
+        ExperimentKPIStateDAO[IO, Conversions]
+    )
   ] =
     (mangoDAOs, localDynamoR).tupled
       .flatMap { deps =>
@@ -69,6 +68,7 @@ object Resources {
           (
             implicitly,
             abtestAlg,
+            implicitly,
             implicitly
           )
         }

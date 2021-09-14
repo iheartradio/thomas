@@ -6,6 +6,8 @@ import com.iheart.thomas.kafka.KafkaConfig
 import com.typesafe.config.ConfigFactory
 import fs2.kafka.{KafkaProducer, ProducerRecord, ProducerRecords, ProducerSettings}
 import fs2.Stream
+
+import java.time.Instant
 import concurrent.duration._
 import scala.util.{Random, Try}
 
@@ -28,9 +30,9 @@ object TestMessageKafkaProducer extends IOApp {
             ProducerSettings[IO, String, String]
               .withBootstrapServers("127.0.0.1:9092")
           Stream
-            .fixedDelay(100.millis)
+            .fixedDelay[IO](100.millis)
             .flatMap { _ =>
-              Stream.fromIterator[IO](messages.iterator).map { value =>
+              Stream.fromIterator[IO](messages.iterator, 1).map { value =>
                 val record = ProducerRecord(cfg.topic, "k", value)
                 ProducerRecords.one(record)
               }
@@ -48,9 +50,8 @@ object TestMessageKafkaProducer extends IOApp {
       groups: Seq[(FeatureName, GroupName)]
     ) = {
     val groupValues = groups
-      .map {
-        case (fn, gn) =>
-          s""" "$fn" : "$gn" """
+      .map { case (fn, gn) =>
+        s""" "$fn" : "$gn" """
       }
       .mkString(""",
           | """.stripMargin)
@@ -58,11 +59,10 @@ object TestMessageKafkaProducer extends IOApp {
     s"""
       |{ 
       |   $eventString,
-      |   
       |   "treatment-groups": {
-      |      $groupValues 
+      |      $groupValues,
+      |      timeStamp: ${Instant.now.toEpochMilli}
       |    }
-      |     
       |}
       |""".stripMargin
   }

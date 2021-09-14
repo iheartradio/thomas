@@ -1,34 +1,24 @@
-package com.iheart.thomas.stream
+package com.iheart.thomas
+package stream
 
-import cats.{Monad, MonadThrow}
-import cats.effect.Timer
-import com.iheart.thomas.{ArmName, FeatureName, TimeUtil}
-import com.iheart.thomas.analysis.{
-  AccumulativeKPIQueryRepo,
-  KPI,
-  PerUserSamples,
-  PerUserSamplesQuery,
-  QueryAccumulativeKPI,
-  QueryName
-}
+import cats.data.NonEmptyChain
+import cats.MonadThrow
+import cats.effect.Temporal
+import com.iheart.thomas.analysis.{AccumulativeKPIQueryRepo, KPI, PerUserSamples, PerUserSamplesQuery, QueryAccumulativeKPI, QueryName}
 import fs2.{Pipe, Stream}
 import cats.implicits._
-import com.iheart.thomas.stream.JobEvent.{
-  EventQueryInitiated,
-  EventsQueried,
-  EventsQueriedForFeature
-}
+import com.iheart.thomas.stream.JobEvent.{EventQueryInitiated, EventsQueried, EventsQueriedForFeature, MessagesParseError}
 import com.iheart.thomas.tracking.EventLogger
 
 import java.time.Instant
 import scala.util.control.NoStackTrace
 
 trait KPIEventSource[F[_], K <: KPI, Message, Event] {
-  def events(k: K): Pipe[F, Message, List[Event]]
+  def events(k: K): Pipe[F, Message, Event]
   def events(
       k: K,
       feature: FeatureName
-    ): Pipe[F, Message, List[(ArmName, Event)]]
+    ): Pipe[F, Message, ArmKPIEvents[Event]]
 }
 
 object KPIEventSource {
@@ -39,41 +29,51 @@ object KPIEventSource {
       Event
     ]: KPIEventSource[F, K, Message, Event] =
     new KPIEventSource[F, K, Message, Event] {
-      def events(k: K): Pipe[F, Message, List[Event]] = _ => Stream.empty
+      def events(k: K): Pipe[F, Message, Event] = _ => Stream.empty
       def events(
           k: K,
           feature: FeatureName
-        ): Pipe[F, Message, List[(ArmName, Event)]] = _ => Stream.empty
+        ): Pipe[F, Message, ArmKPIEvents[Event]] = _ => Stream.empty
     }
 
-  implicit def fromParsers[F[_]: Monad, K <: KPI, Message, Event](
+  implicit def fromParsers[F[_]: MonadThrow, K <: KPI, Message, Event](
       implicit eventParser: KpiEventParser[F, Message, Event, K],
-      armParser: ArmParser[F, Message]
+      armParser: ArmParser[F, Message],
+      logger: EventLogger[F],
+      timeStampParser: TimeStampParser[F, Message]
     ): KPIEventSource[F, K, Message, Event] =
     new KPIEventSource[F, K, Message, Event] {
-      def events(k: K): Pipe[F, Message, List[Event]] = {
+      def events(k: K): Pipe[F, Message, Event] = {
         val parser = eventParser(k)
-        (_: Stream[F, Message]).evalMap(parser)
+        (_: Stream[F, Message]).evalMap(parser).flatMap(l => Stream(l: _*))
       }
 
       def events(
           k: K,
           feature: FeatureName
-        ): Pipe[F, Message, List[(ArmName, Event)]] = {
+        ): Pipe[F, Message, ArmKPIEvents[Event]] = {
         val parser = eventParser(k)
         (input: Stream[F, Message]) =>
           input
-            .evalMap { m =>
-              armParser.parseArm(m, feature).flatMap { armO =>
-                armO.toList.flatTraverse { arm =>
-                  parser(m).map(_.map((arm, _)))
+            .evalMapFilter { m =>
+              armParser
+                .parse(m, feature)
+                .flatMap { armO =>
+                  armO.flatTraverse { arm =>
+                    (parser(m), timeStampParser(m))
+                      .mapN { (es, ts) =>
+                        NonEmptyChain.fromSeq(es).map(ArmKPIEvents(arm, _, ts))
+                      }
+                  }
                 }
-              }
+                .recoverWith { case e: Throwable =>
+                  logger(MessagesParseError(e, m)) *> none.pure[F]
+                }
             }
       }
     }
 
-  implicit def fromAlg[F[_]: MonadThrow: Timer, Message](
+  implicit def fromAlg[F[_]: MonadThrow: Temporal, Message](
       implicit alg: AccumulativeKPIQueryRepo[F],
       logger: EventLogger[F]
     ): KPIEventSource[F, QueryAccumulativeKPI, Message, PerUserSamples] = {
@@ -91,7 +91,7 @@ object KPIEventSource {
                 .flatMap(_.liftTo[F](UnknownQueryName(k.queryName)))
             )
             .flatMap { query =>
-              val signalF = TimeUtil
+              val signalF = utils.time
                 .now[F]
                 .map((query, _))
 
@@ -104,30 +104,44 @@ object KPIEventSource {
 
         def events(
             k: QueryAccumulativeKPI
-          ): Pipe[F, Message, List[PerUserSamples]] =
+          ): Pipe[F, Message, PerUserSamples] =
           _ =>
-            pulse(k).evalMap { case (query, now) =>
-              query(k, now).flatTap { r =>
-                logger(EventsQueried(k, r.length))
+            pulse(k)
+              .evalMap { case (query, at) =>
+                query(k, at).flatTap { r =>
+                  logger(EventsQueried(k, r.map(_.values.length).sum))
+                }
               }
-            }
+              .flatMap(Stream(_: _*))
 
         def events(
             k: QueryAccumulativeKPI,
             feature: FeatureName
-          ): Pipe[F, Message, List[(ArmName, PerUserSamples)]] =
+          ): Pipe[F, Message, ArmKPIEvents[PerUserSamples]] =
           _ =>
-            pulse(k).evalMap { case (query, now) =>
-              query(k, feature, now).flatTap { r =>
-                logger(
-                  EventsQueriedForFeature(k, feature, r.map(_.map(_.values.length)))
-                )
+            pulse(k)
+              .evalMap { case (query, at) =>
+                query(k, feature, at)
+                  .map(_.map { case (arm, samples) =>
+                    ArmKPIEvents(arm, NonEmptyChain(samples), at)
+                  })
+                  .flatTap { r =>
+                    logger(
+                      EventsQueriedForFeature(
+                        k,
+                        feature,
+                        r.map(ae => (ae.armName, ae.es.head.values.length))
+                      )
+                    )
+                  }
               }
-            }
+              .flatMap(l => Stream(l: _*))
       }
   }
 
   case class UnknownQueryName(q: QueryName)
       extends RuntimeException
-      with NoStackTrace
+      with NoStackTrace {
+    override def getMessage: FeatureName = s"Cannot find query with name $q"
+  }
 }

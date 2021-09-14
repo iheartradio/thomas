@@ -15,7 +15,7 @@ import com.iheart.thomas.analysis.{
 }
 import cats.implicits._
 import fs2.Stream
-import com.iheart.thomas.TimeUtil
+import com.iheart.thomas.utils.time
 import com.iheart.thomas.analysis.bayesian.{KPIIndicator, Variable}
 import com.iheart.thomas.stream.JobSpec.ProcessSettings
 import com.iheart.thomas.testkit.MockQueryAccumulativeKPIAlg.MockData
@@ -25,11 +25,12 @@ import com.stripe.rainier.core.{LogNormal, Normal}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import com.typesafe.config.Config
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 import org.typelevel.jawn.ast.JValue
 
 import java.time.Instant
 import concurrent.duration._
-class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
+class KPIProcessAlgSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
 
   val testKPIName = KPIName("test")
 
@@ -68,7 +69,7 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
       duration: FiniteDuration = 150.millis
     ): IO[Unit] =
     Stream
-      .fromIterator[IO](Iterator(()))
+      .fromIterator[IO](Iterator(()), 1)
       .through(alg.updatePrior(kpi, ps))
       .interruptAfter(duration)
       .compile
@@ -92,7 +93,7 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
   "update prior according to data" in {
     val kpi =
       Factory.kpi(testKPIName, blindPrior, MockQueryAccumulativeKPIAlg.mockQueryName)
-    val n = 5000
+    val n = 10000
     val dist = breeze.stats.distributions.LogNormal(1d, 0.3d)
     val data = dist.sample(n).toArray
 
@@ -110,7 +111,7 @@ class KPIProcessAlgSuite extends AsyncIOSpec with Matchers {
       )
     ) { (alg, repo) =>
       (for {
-        _ <- process(kpi, alg, duration = 100.millis)
+        _ <- process(kpi, alg, duration = 200.millis)
         k <- repo.get(testKPIName)
       } yield k).asserting { k =>
         val meanStats = meanAndVariance(KPIIndicator.sample(k.model))
