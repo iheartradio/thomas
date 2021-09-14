@@ -10,11 +10,12 @@ import com.iheart.thomas.stream.JobSpec.{ProcessSettingsOptional, UpdateKPIPrior
 import com.iheart.thomas.testkit.MapBasedDAOs
 import com.iheart.thomas.testkit.Resources.localDynamoR
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 
 import java.time.{Instant, LocalDate, LocalDateTime, OffsetDateTime, ZoneOffset}
 
 abstract class JobDAOSuite(daoR: Resource[IO, JobDAO[IO]])
-    extends AsyncIOSpec
+    extends AsyncFreeSpec with AsyncIOSpec
     with Matchers {
 
   val jobSpec = UpdateKPIPrior(

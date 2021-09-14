@@ -17,40 +17,34 @@ val reactiveMongoVer = "1.0.6"
 // format: off
 lazy val libs = {
   org.typelevel.libraries
-    .addJVM(name = "akka-slf4j",            version = "2.6.14",  org = "com.typesafe.akka")
+    .addJVM(name = "akka-slf4j",            version = "2.6.16",  org = "com.typesafe.akka")
     .addJVM(name = "breeze",                version = "1.2",    org ="org.scalanlp", "breeze", "breeze-viz")
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
-    .add(   name = "cats-testkit-scalatest",version = "2.1.4",  org = org.typelevel.typeLevelOrg)
-    .add(   name = "cats-effect-testing-scalatest",    version = "0.4.0",  org = "com.codecommit")
-    .add(   name = "cats-retry",            version = "2.1.0",  org = "com.github.cb372")
     .addJVM(name = "decline",               version = "2.1.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
     .addJVM(name = "evilplot",              version = "0.8.1",  org = "io.github.cibotech")
-    .addJVM(name = "fs2-kafka",             version = "1.4.1",  org = "com.github.fd4s")
-    .addModule("http4s", "http4s-twirl")
+    .addJVM(name = "fs2-kafka",             version = "2.2.0",  org = "com.github.fd4s")
+    .add(name = "fs2",             version = "3.1.2")
+    .add(name = "cats-effect",             version = "3.2.8")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
-    .add(   name = "jawn",                  version = "1.0.0",  org = org.typelevel.typeLevelOrg, "jawn-parser", "jawn-ast")
-    .addJVM(name = "log4cats",              version = "1.2.0",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
+    .addJVM(name = "log4cats",              version = "2.1.1",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
-    .addJava(name ="logback-classic",       version = "1.2.6",  org = "ch.qos.logback")
-    .addJVM(name = "mau",                   version = "0.2.2",  org = "com.kailuowang")
+    .addJava(name ="logback-classic",       version = "1.2.5",  org = "ch.qos.logback")
+    .addJVM(name = "mau",                   version = "0.3.0",  org = "com.kailuowang")
     .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
     .add(   name = "play-json",             version = "2.7.4",  org = "com.typesafe.play")
     .addJVM(name = "play-json-derived-codecs", version = "10.0.2", org = "org.julienrf")
-    .add(   name = "pureconfig",            version = "0.12.1", org = "com.github.pureconfig", "pureconfig-cats-effect", "pureconfig-generic")
     .addJVM(name = "rainier",               version = "0.3.3-Kai",  org ="com.kailuowang", "rainier-core", "rainier-cats")
     .addJVM(name = "reactivemongo",         version = reactiveMongoVer, org = "org.reactivemongo", "reactivemongo", "reactivemongo-bson-api", "reactivemongo-iteratees" )
     .addJVM(name = "reactivemongo-play-json-compat", version = reactiveMongoVer + "-play27", org = "org.reactivemongo")
-    .addJVM(name = "scala-java8-compat",    version = "0.9.1",  org = "org.scala-lang.modules")
+    .addJVM(name = "scala-java8-compat",    version = "1.0.0",  org = "org.scala-lang.modules")
     .addJVM(name = "scala-view",            version = "0.5",    org = "com.github.darrenjw")
     .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
-    .addJVM(name = "scanamo",               version = "1.0.0-M15", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
+    .addJVM(name = "scanamo",               version = "0.0.0+50-c6364289-SNAPSHOT", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
     .add(   name = "spark",                 version = "2.4.5",  org = "org.apache.spark", "spark-sql", "spark-core")
-    .addJVM(name = "tempus",                version = "0.1.0",  org = "com.kailuowang", "tempus-core")
-    .addJVM(name = "tsec",                  version = "0.2.1",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
+    .addJVM(name = "tsec",                  version = "0.4.0",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
     .add   (name = "enumeratum",            version = "1.7.0",  org = "com.beachape" )
-    .add(   name = "jawn-ast",              version = "1.0.0",  org = org.typelevel.typeLevelOrg)
 
 }
 // format: on
@@ -470,7 +464,8 @@ lazy val commonSettings = addCompilerPlugins(
   Compile / console / scalacOptions ~= lessStrictScalaChecks,
   Test / compile / scalacOptions ~= lessStrictScalaChecks,
   scalacOptions += s"-Xlint:-package-object-classes",
-  Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oDF")
+  Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
+  ThisBuild / evictionErrorLevel := Level.Info //thanks to akka depending on java8 compat 0.8.0
 )
 
 lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =

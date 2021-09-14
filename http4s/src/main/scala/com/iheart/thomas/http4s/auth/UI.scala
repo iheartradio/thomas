@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package http4s
 package auth
-import cats.effect.{Async, Timer}
+import cats.effect.Async
 import cats.implicits._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.admin.Role
@@ -23,7 +23,7 @@ import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 
 import scala.util.control.NoStackTrace
 
-class UI[F[_]: Async: Timer, Auth](
+class UI[F[_]: Async, Auth](
     initialAdminUsername: Option[String],
     initialRole: Role
   )(implicit alg: AuthenticationAlg[F, Auth],
@@ -57,7 +57,7 @@ class UI[F[_]: Async: Timer, Auth](
           html.resetPassLink(
             username,
             req.request.uri
-              .withPath(s"${reverseRoutes.users}/$username/reset-pass")
+              .withPath(Path.unsafeFromString(s"${reverseRoutes.users}/$username/reset-pass"))
               .withQueryParam("token", token.value)
               .toString
           )(UIEnv(u))
@@ -188,7 +188,7 @@ object UI extends {
 
   /** @return
     */
-  def default[F[_]: Async: Timer](
+  def default[F[_]: Async](
       authDeps: AuthDependencies[AuthImp],
       initialAdminUsername: Option[String],
       initialRole: Role

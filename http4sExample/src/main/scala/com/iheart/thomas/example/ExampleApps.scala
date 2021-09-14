@@ -5,9 +5,9 @@ import cats.effect._
 import com.iheart.thomas.http4s.AdminUI
 import com.iheart.thomas.http4s.abtest.AbtestService
 import com.iheart.thomas.tracking.EventLogger
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import testkit.{LocalDynamo, MockQueryAccumulativeKPIAlg}
-import org.http4s.server.blaze._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

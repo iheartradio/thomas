@@ -3,7 +3,7 @@ package mongo
 
 import com.typesafe.config.{Config, ConfigFactory}
 import reactivemongo.api._
-import cats.effect.{Async, ContextShift, IO, Resource}
+import cats.effect.{Async, Resource}
 
 import scala.concurrent.{ExecutionContext, Future}
 import net.ceedubs.ficus.Ficus._
@@ -18,17 +18,16 @@ import reactivemongo.api.bson.collection.BSONCollection
 
 /** A MongoDB instance from config Should be created one per application
   */
-class MongoDB[F[_]: Async] private (
+class MongoDB[F[_]] private (
     private[mongo] val config: MongoDB.MongoConfig,
     connection: MongoConnection,
-    private[mongo] val driver: AsyncDriver) {
+    private[mongo] val driver: AsyncDriver)(implicit F: Async[F]) {
   private def database(
       databaseName: String
     )(implicit ec: ExecutionContext
     ): F[DB] = {
     val dbConfigO = config.dbs.get(s"$databaseName")
     val name = dbConfigO.flatMap(_.name).getOrElse(databaseName)
-    implicit val cs = IO.contextShift(ec)
     toF(connection.database(name))
   }
 
@@ -55,15 +54,14 @@ class MongoDB[F[_]: Async] private (
       to: FiniteDuration = 2.seconds
     )(implicit ex: ExecutionContext
     ): F[Unit] = {
-    implicit val cs = IO.contextShift(ex)
+    
     toF(driver.close(to))
   }
 
   protected def toF[B](
       f: => Future[B]
-    )(implicit ec: ContextShift[IO]
     ): F[B] =
-    IO.fromFuture(IO(f)).to[F]
+    F.fromFuture(F.delay(f))
 }
 
 object MongoDB {
@@ -74,7 +72,6 @@ object MongoDB {
       sh: ShutdownHook = ShutdownHook.ignore,
       ec: ExecutionContext
     ): F[MongoDB[F]] = {
-    implicit val cs = IO.contextShift(ec)
     for {
       config <- F
         .delay(rootConfig.as[MongoConfig]("mongoDB"))
@@ -107,9 +104,9 @@ object MongoDB {
         ),
         credentials = creds
       )
-      connection <- IO
-        .fromFuture(IO(d.connect(config.hosts, options)))
-        .to[F]
+      connection <- F
+        .fromFuture(F.delay(d.connect(config.hosts, options)))
+
     } yield {
       val mongoDB = new MongoDB(config, connection, d)
       sh.onShutdown(mongoDB.driver.close())

@@ -6,6 +6,7 @@ import com.iheart.thomas.analysis.bayesian.models.BetaModel
 import com.iheart.thomas.analysis.{ConversionKPI, KPIName}
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 
 class DecoderSuite extends AnyFunSuiteLike with Matchers {
 

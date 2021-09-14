@@ -1,7 +1,7 @@
 package com.iheart.thomas.utils
 
 import cats.Functor
-import cats.effect.Timer
+import cats.effect.Clock
 
 import java.time.format.DateTimeFormatter
 import java.time._
@@ -40,7 +40,7 @@ package object time {
 
     /** Whether the instant has passed according to the Timer
       */
-    def passed[F[_]: Timer: Functor]: F[Boolean] =
+    def passed[F[_]: Clock: Functor]: F[Boolean] =
       now[F].map(_.isAfter(me))
 
   }
@@ -141,7 +141,7 @@ package object time {
         })
       ).map(_.atOffset(defaultOffset))
 
-  def now[F[_]: Functor](implicit T: Timer[F]): F[Instant] =
-    T.clock.realTime(TimeUnit.MILLISECONDS).map(Instant.ofEpochMilli)
+  def now[F[_]: Functor](implicit F: Clock[F]): F[Instant] =
+    F.realTime.map(f => Instant.ofEpochMilli(f.toMillis))
 
 }

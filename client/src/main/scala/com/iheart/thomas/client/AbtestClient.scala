@@ -7,7 +7,6 @@ package com.iheart.thomas
 package client
 
 import java.time.Instant
-
 import cats.{Functor, MonadError, MonadThrow}
 import cats.effect._
 import com.iheart.thomas.abtest.model._
@@ -21,6 +20,7 @@ import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 import scala.concurrent.ExecutionContext
 import scala.util.control.NoStackTrace
 import com.iheart.thomas.client.AbtestClient.HttpServiceUrls
+import org.http4s.blaze.client.BlazeClientBuilder
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -90,7 +90,7 @@ trait AbtestClient[F[_]] extends ReadOnlyAbtestClient[F] {
 
 import org.http4s.client.{Client => HClient}
 
-class Http4SAbtestClient[F[_]: Sync](
+class Http4SAbtestClient[F[_]: Async](
     c: HClient[F],
     urls: HttpServiceUrls)
     extends PlayJsonHttp4sClient[F](c)
@@ -103,7 +103,7 @@ class Http4SAbtestClient[F[_]: Sync](
   def tests(asOf: Option[Instant] = None): F[Vector[(Entity[Abtest], Feature)]] = {
     val baseUrl: Uri = Uri.unsafeFromString(urls.tests)
     expect(
-      GET(baseUrl +?? ("at", asOf.map(ao => ao.toEpochMilli.toString)))
+      GET(baseUrl +?? ("at" -> asOf.map(ao => ao.toEpochMilli.toString)))
     )
   }
 
@@ -126,17 +126,14 @@ class Http4SAbtestClient[F[_]: Sync](
       duration: Option[FiniteDuration]
     ): F[TestsData] = {
     val url = stringToUri(urls.testsData) +?
-      ("atEpochMilli", at.toEpochMilli.toString) +?? ("durationMillisecond",
+      ("atEpochMilli" -> at.toEpochMilli.toString) +?? ("durationMillisecond" ->
       duration.map(_.toMillis.toString))
 
     expect(GET(url))
   }
 
   def getTest(tid: TestId): F[Entity[Abtest]] =
-    for {
-      req <- GET(urls.test(tid))
-      test <- c.expect[Entity[Abtest]](req)
-    } yield test
+    c.expect[Entity[Abtest]](GET(urls.test(tid)))
 
   def addGroupMeta(
       tidOrFeature: Either[TestId, FeatureName],
@@ -144,7 +141,7 @@ class Http4SAbtestClient[F[_]: Sync](
       auto: Boolean
     ): F[Entity[Abtest]] =
     tidOrFeatureOp(tidOrFeature) { tid =>
-      expect(PUT(gm, stringToUri(urls.groupMeta(tid)) +? ("auto", auto)))
+      expect(PUT(gm, stringToUri(urls.groupMeta(tid)) +? ("auto" -> auto)))
     }
 
   def removeGroupMetas(
@@ -152,7 +149,7 @@ class Http4SAbtestClient[F[_]: Sync](
       auto: Boolean
     ): F[Entity[Abtest]] =
     tidOrFeatureOp(tidOrFeature) { tid =>
-      expect(DELETE(stringToUri(urls.groupMeta(tid)) +? ("auto", auto)))
+      expect(DELETE(stringToUri(urls.groupMeta(tid)) +? ("auto" -> auto)))
     }
 
   def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]] =
@@ -167,15 +164,14 @@ class Http4SAbtestClient[F[_]: Sync](
 }
 
 object Http4SAbtestClient {
-  import org.http4s.client.blaze.BlazeClientBuilder
-  def resource[F[_]: ConcurrentEffect](
+  def resource[F[_]: Async](
       urls: HttpServiceUrls,
       ec: ExecutionContext
     ): Resource[F, AbtestClient[F]] = {
     BlazeClientBuilder[F](ec).resource.map(cl => new Http4SAbtestClient[F](cl, urls))
   }
 
-  def readOnlyResource[F[_]: ConcurrentEffect](
+  def readOnlyResource[F[_]: Async](
       urls: HttpServiceUrls,
       ec: ExecutionContext
     ): Resource[F, ReadOnlyAbtestClient[F]] = {
@@ -236,7 +232,7 @@ object AbtestClient {
     * @param serviceUrl
     *   for getting all running tests as of `time`
     */
-  def testsData[F[_]: ConcurrentEffect](
+  def testsData[F[_]: Async](
       serviceUrl: String,
       time: Instant
     )(implicit ec: ExecutionContext

@@ -4,8 +4,10 @@ import java.time.{Instant, OffsetDateTime}
 import cats.effect.testing.scalatest.AsyncIOSpec
 import TestUtils.{fakeAb, _}
 import cats.data.NonEmptyList
+import cats.effect.IO
 import lihua.{Entity, EntityId}
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.freespec.AsyncFreeSpec
 
 import concurrent.duration._
 import cats.implicits._
@@ -13,7 +15,7 @@ import com.iheart.thomas.{FeatureName, UserId}
 import com.iheart.thomas.abtest.model.{Abtest, Group, UserGroupQuery}
 import play.api.libs.json.Json
 
-class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
+class AbtestCRUDSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
 
   "AbtestAlg" - {
     "getTest" - {
@@ -418,7 +420,7 @@ class AbtestCRUDSuite extends AsyncIOSpec with Matchers {
             test <- alg.create(
               fakeAb.copy(end = Some(OffsetDateTime.now.plusNanos(30000000)))
             )
-            _ <- ioTimer.sleep(50.millis)
+            _ <- IO.sleep(50.millis)
             _ <- alg.terminate(test._id)
             r <- alg.getTest(test._id)
           } yield {

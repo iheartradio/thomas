@@ -3,7 +3,7 @@ package com.iheart.thomas.http4s
 import cats.effect.{Resource, Sync}
 import com.typesafe.config.Config
 import pureconfig.ConfigSource
-import pureconfig.module.catseffect.CatsEffectConfigSource
+import pureconfig.module.catseffect.syntax._
 
 trait ConfigResource {
   def cfg[F[_]](

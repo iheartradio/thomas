@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package http4s
 
-import cats.effect.{Async, Concurrent, Resource, Timer}
+import cats.effect.{Async, Resource}
 
 import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.mongo.DAOs
@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext
 
 object MongoResources extends ConfigResource {
 
-  def abtestAlg[F[_]: Timer: Concurrent](
+  def abtestAlg[F[_]: Async](
       cfg: Config,
       daos: mongo.DAOs[F]
     ): Resource[F, AbtestAlg[F]] = {
@@ -23,13 +23,13 @@ object MongoResources extends ConfigResource {
     AbtestAlg.defaultResource[F](refreshPeriod)
   }
 
-  def abtestAlg[F[_]: Timer: Concurrent](
+  def abtestAlg[F[_]: Async](
       cfgResourceName: Option[String] = None
     )(implicit ex: ExecutionContext
     ): Resource[F, AbtestAlg[F]] =
     cfg[F](cfgResourceName).flatMap(abtestAlg(_))
 
-  def abtestAlg[F[_]: Timer: Concurrent](
+  def abtestAlg[F[_]: Async](
       cfg: Config
     )(implicit ex: ExecutionContext
     ): Resource[F, AbtestAlg[F]] =

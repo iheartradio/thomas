@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package cli
 
-import cats.effect.ConcurrentEffect
+import cats.effect.Async
 import cats.implicits._
 import com.iheart.thomas.cli.OptsSyntax._
 import com.monovore.decline._
@@ -9,7 +9,7 @@ import _root_.play.api.libs.json.Json.{prettyPrint, toJson}
 import SharedOpts._
 import _root_.play.api.libs.json.JsObject
 
-class GroupMetaCommands[F[_]](implicit F: ConcurrentEffect[F]) {
+class GroupMetaCommands[F[_]](implicit F: Async[F]) {
 
   val showCommand = Command("show", "show group metas") {
     (tidOrFnOps, AbtestHttpClientOpts.opts[F]).mapN { (tidOrF, client) =>

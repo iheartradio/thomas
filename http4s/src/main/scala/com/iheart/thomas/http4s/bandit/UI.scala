@@ -5,7 +5,7 @@ package bandit
 import cats.effect.Async
 import com.iheart.thomas.bandit.html._
 import com.iheart.thomas.html._
-import com.iheart.thomas.bandit.bayesian.{BanditSpec}
+import com.iheart.thomas.bandit.bayesian.BanditSpec
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
 import org.http4s.dsl.Http4sDsl
@@ -16,7 +16,7 @@ import com.iheart.thomas.analysis.{AllKPIRepo, KPIName}
 import com.iheart.thomas.bandit.ArmSpec
 import org.http4s.FormDataDecoder
 import org.http4s.FormDataDecoder._
-
+import org.http4s.Uri.Path.Segment
 import org.http4s.twirl._
 
 import scala.concurrent.duration.FiniteDuration
@@ -30,7 +30,7 @@ class UI[F[_]: Async](
   val reverseRoutes = ReverseRoutes(aCfg)
   import UI.decoders._
 
-  val rootPath = Root / "bandits"
+  val rootPath = Root / Segment("bandits")
 
   val kpis = kpiRepos.all.map(_.map(_.name))
 
