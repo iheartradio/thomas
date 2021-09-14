@@ -14,7 +14,7 @@ import reactivemongo.play.json.compat._
 import json2bson._
 import bson2json._
 import scala.concurrent.{Future, ExecutionContext => EC}
-import cats.effect.{Async, IO}
+import cats.effect.{Async}
 import cats.{MonadError, ~>}
 import lihua.mongo.AsyncEntityDAO.Result
 import cats.tagless.FunctorK
@@ -34,7 +34,6 @@ class AsyncEntityDAO[T: Format, F[_]: Async](
     extends EntityDAOMonad[AsyncEntityDAO.Result[F, *], T, Query] {
   type R[A] = AsyncEntityDAO.Result[F, A]
   import AsyncEntityDAO.Result._
-  implicit val cs = IO.contextShift(ex)
 
   lazy val writeCollection = collection.withReadPreference(
     ReadPreference.primary
@@ -119,11 +118,11 @@ class AsyncEntityDAO[T: Format, F[_]: Async](
     Cursor.FailOnError()
 
   def of[A](f: => Future[Either[DBError, A]]): Result[F, A] =
-    EitherT(Async[F].liftIO(IO.fromFuture(IO(f.recover {
+    EitherT(Async[F].fromFuture(Async[F].delay(f.recover {
       case l: reactivemongo.api.commands.WriteResult =>
         DBLastError(l.getMessage).asLeft[A]
       case e: Throwable => DBException(e, collection.name).asLeft[A]
-    }))))
+    })))
 }
 
 object AsyncEntityDAO {

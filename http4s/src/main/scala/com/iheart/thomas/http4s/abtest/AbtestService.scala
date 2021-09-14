@@ -167,7 +167,6 @@ class AbtestService[F[_]: Async](
 
       case GET -> Root / "features" / feature / "overrides" =>
         respond(api.getOverrides(feature))
-
     }
 
   def managing =
