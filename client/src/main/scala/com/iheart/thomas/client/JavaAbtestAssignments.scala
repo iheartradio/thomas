@@ -1,3 +1,4 @@
+
 /*
  * Copyright [2018] [iHeartMedia Inc]
  * All rights reserved
@@ -7,8 +8,8 @@ package com.iheart.thomas
 package client
 
 import java.time.{Instant, ZoneOffset}
-
-import cats.effect.{ContextShift, IO}
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import com.iheart.thomas.abtest.AssignGroups
 import com.iheart.thomas.abtest.AssignGroups.AssignmentResult
 import com.iheart.thomas.abtest.model.UserGroupQuery
@@ -20,9 +21,8 @@ class JavaAbtestAssignments private (
     serviceUrl: String,
     asOf: Option[Long]) {
   private val time = asOf.map(Instant.ofEpochSecond).getOrElse(Instant.now)
-  import scala.concurrent.ExecutionContext.Implicits.global
-  implicit val csIo: ContextShift[IO] = IO.contextShift(global)
   implicit val nowF: IO[Instant] = IO.delay(Instant.now)
+  implicit val ex: concurrent.ExecutionContext = global.compute
   val testData =
     AbtestClient.testsData[IO](serviceUrl, time).unsafeRunSync()
 

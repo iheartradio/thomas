@@ -20,6 +20,7 @@ import com.iheart.thomas.dynamo.{AnalysisDAOs, ScanamoManagement}
 import com.iheart.thomas.http4s.MongoResources
 import ThrowableExtension._
 import cats.implicits._
+import concurrent.ExecutionContext.Implicits.global
 
 import scala.util.Random
 object Factory extends IOApp {
@@ -52,7 +53,6 @@ object Factory extends IOApp {
     LocalDynamo
       .client[IO]()
       .flatMap { implicit l =>
-        implicit val ex = executionContext
         for {
           _ <- Resource.eval(
             ScanamoManagement.ensureTables[IO](Resources.tables, 1, 1)

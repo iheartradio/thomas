@@ -1,7 +1,7 @@
 package com.iheart.thomas
 package cli
 
-import cats.effect.ConcurrentEffect
+import cats.effect.Async
 import com.monovore.decline.Opts
 import cats.implicits._
 import com.iheart.thomas.client.AbtestClient.HttpServiceUrlsPlay
@@ -14,7 +14,7 @@ object AbtestHttpClientOpts {
     Opts.option[String]("rootPath", "root path of service in play")
   ).mapN((h, r) => new HttpServiceUrlsPlay(h + "/" + r))
 
-  def opts[F[_]: ConcurrentEffect] = {
+  def opts[F[_]: Async] = {
     serviceUrlsOpts.map { urls =>
       Http4SAbtestClient.resource(urls, concurrent.ExecutionContext.Implicits.global)
     }

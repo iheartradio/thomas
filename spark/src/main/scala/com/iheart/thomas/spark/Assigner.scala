@@ -1,9 +1,9 @@
 package com.iheart.thomas
 package spark
 
-import java.time.Instant
 
-import cats.effect.{ConcurrentEffect, ContextShift, IO}
+import java.time.Instant
+import cats.effect.{Async, IO}
 import com.iheart.thomas.abtest.{AssignGroups, TestsData}
 import com.iheart.thomas.abtest.model.UserGroupQuery
 import com.iheart.thomas.client.AbtestClient
@@ -27,6 +27,7 @@ class Assigner(data: TestsData) extends Serializable {
       userId: String
     ): Option[GroupName] = {
     implicit val nowF = IO.delay(Instant.now)
+    import cats.effect.unsafe.implicits.global
     AssignGroups
       .assign[IO](
         data,
@@ -65,13 +66,13 @@ object Assigner {
       url: String,
       asOf: Option[Long]
     ): Assigner = {
+    import cats.effect.unsafe.implicits.global
+    implicit val ex: ExecutionContext = global.compute
 
-    import scala.concurrent.ExecutionContext.Implicits.global
-    implicit val csIo: ContextShift[IO] = IO.contextShift(global)
     create[IO](url, asOf).unsafeRunSync()
   }
 
-  def create[F[_]: ConcurrentEffect](
+  def create[F[_]: Async](
       url: String,
       asOf: Option[Long]
     )(implicit ec: ExecutionContext
