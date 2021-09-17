@@ -32,8 +32,6 @@ trait BayesianMABAlg[F[_]] {
 
   def getAll: F[Vector[Bandit]]
 
-  def runningBandits(time: Option[OffsetDateTime] = None): F[Vector[Bandit]]
-
   def updatePolicy(state: ExperimentKPIState[KPIStats]): F[Bandit]
 
   def delete(featureName: FeatureName): F[Unit]
@@ -80,11 +78,8 @@ object BayesianMABAlg {
     new BayesianMABAlg[F] {
 
       def getAll: F[Vector[Bandit]] =
-        findAll(None)
-
-      def runningBandits(at: Option[OffsetDateTime]): F[Vector[Bandit]] =
         now[F].flatMap { nowT =>
-          findAll(at.orElse(Some(nowT.atOffset(ZoneOffset.UTC))))
+          findAll(Some(nowT.atOffset(ZoneOffset.UTC)))
         }
 
       def findAll(time: Option[OffsetDateTime]): F[Vector[Bandit]] = {

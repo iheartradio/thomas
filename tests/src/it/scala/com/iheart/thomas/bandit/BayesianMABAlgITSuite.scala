@@ -92,7 +92,7 @@ class BayesianMABAlgITSuite extends BayesianMABAlgITSuiteBase {
         _ <- abtestAlg.create(regularAb, false)
         _ <- abtestAlg.terminate(b3.abtest._id)
         _ <- IO.sleep(200.milliseconds)
-        running <- api.runningBandits()
+        running <- api.getAll
       } yield running
     }
     running.map(_.abtest.data.feature).toSet shouldBe Set(
