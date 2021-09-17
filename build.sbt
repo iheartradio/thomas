@@ -41,8 +41,8 @@ lazy val libs = {
     .addJVM(name = "scala-view",            version = "0.5",    org = "com.github.darrenjw")
     .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
-    .addJVM(name = "scanamo",               version = "0.0.0+50-c6364289-SNAPSHOT", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
-    .add(   name = "spark",                 version = "2.4.8",  org = "org.apache.spark", "spark-sql", "spark-core")
+    .addJVM(name = "scanamo",               version = "1.0.0-M15+111-7b9e8b0b", org ="com.kailuowang", "scanamo-testkit", "scanamo-cats-effect")
+    .add(   name = "spark",                 version = "2.4.5",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tsec",                  version = "0.4.0",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
     .add   (name = "enumeratum",            version = "1.7.0",  org = "com.beachape" )
 
