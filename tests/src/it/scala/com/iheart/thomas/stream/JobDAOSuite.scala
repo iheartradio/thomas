@@ -15,7 +15,8 @@ import org.scalatest.freespec.AsyncFreeSpec
 import java.time.{Instant, LocalDate, LocalDateTime, OffsetDateTime, ZoneOffset}
 
 abstract class JobDAOSuite(daoR: Resource[IO, JobDAO[IO]])
-    extends AsyncFreeSpec with AsyncIOSpec
+    extends AsyncFreeSpec
+    with AsyncIOSpec
     with Matchers {
 
   val jobSpec = UpdateKPIPrior(

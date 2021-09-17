@@ -59,7 +59,7 @@ trait JobAlg[F[_]] {
   /** Find job according to spec. Since you can't run two jobs with the same key,
     * find ignores the rest of the spec.
     * @param spec
-    *   @return
+    * @return
     */
   def find(spec: JobSpec): F[Option[Job]]
 
@@ -128,11 +128,11 @@ object JobAlg {
                 (input: Stream[F, A]) => {
                   settings.expiration.fold(input)(exp =>
                     Stream.eval(utils.time.now[F]).flatMap { now =>
-                     if(exp.isAfter(now))
-                      input
-                        .interruptAfter(now.durationTo(exp))
-                     else
-                       input.interruptWhen(Stream.emit(true))
+                      if (exp.isAfter(now))
+                        input
+                          .interruptAfter(now.durationTo(exp))
+                      else
+                        input.interruptWhen(Stream.emit(true))
                     }
                   )
                 }
@@ -154,9 +154,11 @@ object JobAlg {
                 case RunBandit(fn) =>
                   banditProcessAlg.process(fn)
               }).map { case (pipe, settings) =>
-                checkExpiration[Message](settings).andThen(pipe).andThen(
-                  _.onComplete(Stream.eval(stop(job.key)))
-                )
+                checkExpiration[Message](settings)
+                  .andThen(pipe)
+                  .andThen(
+                    _.onComplete(Stream.eval(stop(job.key)))
+                  )
               }
             }
 
@@ -210,7 +212,7 @@ object JobAlg {
               }
               .mapFilter(_._2)
 
-            val voidPipe : Pipe[F, Message, Unit] = _.void
+            val voidPipe: Pipe[F, Message, Unit] = _.void
 
             runningJobs.switchMap { jobs =>
               Stream.eval(logger(RunningJobsUpdated(jobs))) *>
@@ -229,7 +231,9 @@ object JobAlg {
                       }
 
                     messageSubscriber.subscribe
-                      .broadcastThrough((voidPipe +: (pipes ++ logPipeO.toVector)): _*)
+                      .broadcastThrough(
+                        (voidPipe +: (pipes ++ logPipeO.toVector)): _*
+                      )
                   }
             }
           }

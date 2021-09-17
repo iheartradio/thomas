@@ -328,8 +328,12 @@ class BayesianMABAlgITSuiteBase extends AnyFunSuiteLike with Matchers {
   )
 
   def withAPI[A](
-      f: (BayesianMABAlg[IO], KPIRepo[IO, ConversionKPI], AbtestAlg[IO],
-          ExperimentKPIStateDAO[IO, Conversions]) => IO[A]
+      f: (
+          BayesianMABAlg[IO],
+          KPIRepo[IO, ConversionKPI],
+          AbtestAlg[IO],
+          ExperimentKPIStateDAO[IO, Conversions]
+      ) => IO[A]
     ): A = {
     import cats.effect.unsafe.implicits.global
     apis

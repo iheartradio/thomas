@@ -21,7 +21,10 @@ import com.iheart.thomas.utils.time.Period
 import java.time.Instant
 import concurrent.duration._
 
-abstract class ExperimentKPIStateDAOSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
+abstract class ExperimentKPIStateDAOSuite
+    extends AsyncFreeSpec
+    with AsyncIOSpec
+    with Matchers {
 
   def stateOf(events: List[(String, ConversionEvent)]) =
     KPIProcessAlg
