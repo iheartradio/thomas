@@ -21,7 +21,7 @@ lazy val libs = {
     .addJVM(name = "breeze",                version = "1.2",    org ="org.scalanlp", "breeze", "breeze-viz")
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
     .addJVM(name = "decline",               version = "2.1.0",  org = "com.monovore")
-    .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
+    .addJVM(name = "embedded-kafka",        version = "2.8.1",  org = "io.github.embeddedkafka")
     .addJVM(name = "evilplot",              version = "0.8.1",  org = "io.github.cibotech")
     .addJVM(name = "fs2-kafka",             version = "2.2.0",  org = "com.github.fd4s")
     .add(name = "fs2",             version = "3.1.2")
