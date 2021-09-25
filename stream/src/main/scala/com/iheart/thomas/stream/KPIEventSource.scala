@@ -4,10 +4,22 @@ package stream
 import cats.data.NonEmptyChain
 import cats.MonadThrow
 import cats.effect.Temporal
-import com.iheart.thomas.analysis.{AccumulativeKPIQueryRepo, KPI, PerUserSamples, PerUserSamplesQuery, QueryAccumulativeKPI, QueryName}
+import com.iheart.thomas.analysis.{
+  AccumulativeKPIQueryRepo,
+  KPI,
+  PerUserSamples,
+  PerUserSamplesQuery,
+  QueryAccumulativeKPI,
+  QueryName
+}
 import fs2.{Pipe, Stream}
 import cats.implicits._
-import com.iheart.thomas.stream.JobEvent.{EventQueryInitiated, EventsQueried, EventsQueriedForFeature, MessagesParseError}
+import com.iheart.thomas.stream.JobEvent.{
+  EventQueryInitiated,
+  EventsQueried,
+  EventsQueriedForFeature,
+  MessagesParseError
+}
 import com.iheart.thomas.tracking.EventLogger
 
 import java.time.Instant

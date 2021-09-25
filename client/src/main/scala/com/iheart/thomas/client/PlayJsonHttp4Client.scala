@@ -21,7 +21,8 @@ abstract class PlayJsonHttp4sClient[F[_]: Async](c: org.http4s.client.Client[F])
   implicit def jsObjectEncoder: EntityEncoder[F, JsObject] = jsonEncoder[F].narrow
   implicit def jsonDeoder[A: Reads]: EntityDecoder[F, A] = jsonOf
 
-  def expect[A](reqF: F[Request[F]])(implicit d: EntityDecoder[F, A]): F[A] = reqF.flatMap(expect(_))
+  def expect[A](reqF: F[Request[F]])(implicit d: EntityDecoder[F, A]): F[A] =
+    reqF.flatMap(expect(_))
 
   def expect[A](req: Request[F])(implicit d: EntityDecoder[F, A]): F[A] =
     c.expectOr(req) { err =>

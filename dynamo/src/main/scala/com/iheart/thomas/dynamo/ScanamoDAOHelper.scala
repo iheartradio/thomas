@@ -267,17 +267,16 @@ trait ScanamoManagement {
   }
 
   private def lift[F[_], A](
-                             fcf: => CompletableFuture[A]
-                           )(implicit F: Async[F]
-                           ): F[A] =
-
+      fcf: => CompletableFuture[A]
+    )(implicit F: Async[F]
+    ): F[A] =
     F.async(cb => {
       F.delay(fcf).map { cf =>
         cf.handle[Unit](new BiFunction[A, Throwable, Unit] {
           override def apply(
-                              result: A,
-                              err: Throwable
-                            ): Unit =
+              result: A,
+              err: Throwable
+            ): Unit =
             err match {
               case null                     => cb(Right(result))
               case _: CancellationException => ()

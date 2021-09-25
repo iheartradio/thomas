@@ -127,7 +127,6 @@ class JobAlgSuite extends JobAlgSuiteBase {
           alg.runStream,
           pubSub
             .publishS(event("action" -> "click"), event("action" -> "display"))
-
             .delayBy(200.millis)
         ).parJoin(2).interruptAfter(1.second).compile.drain *>
         kpiDAO
