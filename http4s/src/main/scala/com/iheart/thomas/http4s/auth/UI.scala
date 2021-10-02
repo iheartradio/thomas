@@ -57,7 +57,9 @@ class UI[F[_]: Async, Auth](
           html.resetPassLink(
             username,
             req.request.uri
-              .withPath(Path.unsafeFromString(s"${reverseRoutes.users}/$username/reset-pass"))
+              .withPath(
+                Path.unsafeFromString(s"${reverseRoutes.users}/$username/reset-pass")
+              )
               .withQueryParam("token", token.value)
               .toString
           )(UIEnv(u))

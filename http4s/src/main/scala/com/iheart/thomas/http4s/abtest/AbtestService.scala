@@ -8,7 +8,12 @@ import cats.effect.{Async, Resource}
 import cats.implicits._
 import com.iheart.thomas.abtest.Error._
 import com.iheart.thomas.abtest.json.play.Formats._
-import com.iheart.thomas.abtest.model.{AbtestSpec, GroupMeta, UserGroupQuery, UserGroupQueryResult}
+import com.iheart.thomas.abtest.model.{
+  AbtestSpec,
+  GroupMeta,
+  UserGroupQuery,
+  UserGroupQueryResult
+}
 import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 import com.iheart.thomas.abtest.{AbtestAlg, Error}
 import Error.{NotFound => APINotFound}
@@ -17,7 +22,10 @@ import com.typesafe.config.Config
 import lihua.EntityId
 import lihua.mongo.JsonFormats._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.dsl.impl.{OptionalQueryParamDecoderMatcher, QueryParamDecoderMatcher}
+import org.http4s.dsl.impl.{
+  OptionalQueryParamDecoderMatcher,
+  QueryParamDecoderMatcher
+}
 import org.http4s.implicits._
 import org.http4s.play._
 import org.http4s.server.Router
@@ -28,7 +36,8 @@ import com.iheart.thomas.tracking.{Event, EventLogger}
 import scala.concurrent.ExecutionContext
 
 class AbtestService[F[_]: Async](
-    api: AbtestAlg[F])(implicit logger: EventLogger[F])
+    api: AbtestAlg[F]
+  )(implicit logger: EventLogger[F])
     extends Http4sDsl[F] {
 
   implicit val jsonObjectEncoder: EntityEncoder[F, JsObject] =
@@ -119,13 +128,21 @@ class AbtestService[F[_]: Async](
 
   def public =
     HttpRoutes.of[F] { case req @ POST -> Root / "users" / "groups" / "query" =>
-      req.as[UserGroupQuery] >>= (ugq => respond(api.getGroupsWithMeta(ugq).flatTap(r => logger(AbTestRequestServed(ugq, r)))))
+      req.as[UserGroupQuery] >>= (ugq =>
+        respond(
+          api
+            .getGroupsWithMeta(ugq)
+            .flatTap(r => logger(AbTestRequestServed(ugq, r)))
+        )
+      )
     }
 
   def readonly: HttpRoutes[F] =
     HttpRoutes.of[F] {
       case GET -> Root / "health" =>
-        respond(api.warmUp.as(Map("status" -> "healthy", "version" -> BuildInfo.version)))
+        respond(
+          api.warmUp.as(Map("status" -> "healthy", "version" -> BuildInfo.version))
+        )
 
       case GET -> Root / "tests" / "history" / LongVar(at) =>
         respond(api.getAllTestsEpoch(Some(at)))
@@ -288,4 +305,5 @@ object AbtestService {
   }
 }
 
-case class AbTestRequestServed(req: UserGroupQuery, result: UserGroupQueryResult) extends Event
+case class AbTestRequestServed(req: UserGroupQuery, result: UserGroupQueryResult)
+    extends Event

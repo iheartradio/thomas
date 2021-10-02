@@ -21,7 +21,8 @@ import reactivemongo.api.bson.collection.BSONCollection
 class MongoDB[F[_]] private (
     private[mongo] val config: MongoDB.MongoConfig,
     connection: MongoConnection,
-    private[mongo] val driver: AsyncDriver)(implicit F: Async[F]) {
+    private[mongo] val driver: AsyncDriver
+  )(implicit F: Async[F]) {
   private def database(
       databaseName: String
     )(implicit ec: ExecutionContext
@@ -54,7 +55,7 @@ class MongoDB[F[_]] private (
       to: FiniteDuration = 2.seconds
     )(implicit ex: ExecutionContext
     ): F[Unit] = {
-    
+
     toF(driver.close(to))
   }
 
