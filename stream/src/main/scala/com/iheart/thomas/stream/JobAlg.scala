@@ -261,6 +261,6 @@ case class JobRunnerConfig(
 object JobRunnerConfig {
   def fromConfig[F[_]: Sync](cfg: Config): F[JobRunnerConfig] = {
     import pureconfig.module.catseffect.syntax._
-    ConfigSource.fromConfig(cfg).at("thomas.stream.job").loadF[F, JobRunnerConfig]
+    ConfigSource.fromConfig(cfg).at("thomas.stream.job").loadF[F, JobRunnerConfig]()
   }
 }

@@ -254,7 +254,6 @@ lazy val docs = project
       core,
       analysis,
       cli,
-      spark,
       stream
     )
   )
