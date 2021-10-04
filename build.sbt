@@ -449,7 +449,6 @@ lazy val commonSettings = addCompilerPlugins(
   crossScalaVersions := Seq(scalaVersion.value, "2.13.5"),
   Test / parallelExecution := false,
   releaseCrossBuild := false,
-  crossScalaVersions := Seq(scalaVersion.value),
   developers := List(developerKai),
   Compile / console / scalacOptions ~= lessStrictScalaChecks,
   Test / compile / scalacOptions ~= lessStrictScalaChecks,
