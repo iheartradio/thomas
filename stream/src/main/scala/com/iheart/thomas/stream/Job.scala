@@ -5,7 +5,8 @@ import java.time.Instant
 /** Job to process Stream of messages
   *
   * @param spec
-  *   @param checkedOut last time a worker reported that it's working on it
+  * @param checkedOut
+  *   last time a worker reported that it's working on it
   * @param started
   *   latest start time when a worker started working on it.
   */

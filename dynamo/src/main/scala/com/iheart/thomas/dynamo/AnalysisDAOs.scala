@@ -4,7 +4,11 @@ import cats.effect.Async
 import cats.effect.kernel.Clock
 import com.iheart.thomas.ArmName
 import com.iheart.thomas.analysis._
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, ArmsState, Key}
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{
+  ArmState,
+  ArmsState,
+  Key
+}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
 import com.iheart.thomas.dynamo.DynamoFormats._
 import com.iheart.thomas.utils.time.Period

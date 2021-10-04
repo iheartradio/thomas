@@ -16,7 +16,7 @@ import java.time.Instant
 /** https://stats.stackexchange.com/questions/30369/priors-for-log-normal-models
   *
   * @param name
-  *   @param locationPrior
+  * @param locationPrior
   * @param scaleLnPrior
   */
 case class LogNormalFit(

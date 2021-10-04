@@ -15,7 +15,7 @@ object JobSpec {
 
   /** Update a KPI's prior based a sample
     * @param kpiName
-    *   @param sampleSize
+    * @param sampleSize
     */
   case class UpdateKPIPrior(
       kpiName: KPIName,
