@@ -1,7 +1,6 @@
 package com.iheart.thomas
 package spark
 
-
 import java.time.Instant
 import cats.effect.{Async, IO}
 import com.iheart.thomas.abtest.{AssignGroups, TestsData}

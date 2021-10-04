@@ -47,8 +47,9 @@ object MockQueryAccumulativeKPIAlg {
   }
 
   def apply[F[_]: Applicative](
-      data: List[MockData[PerUserSamples]] =
-        mockLogNormalData(KPIName("testAccumulativeKPI")),
+      data: List[MockData[PerUserSamples]] = mockLogNormalData(
+        KPIName("testAccumulativeKPI")
+      ),
       freq: FiniteDuration = 500.millis
     ): AccumulativeKPIQueryRepo[F] =
     new AccumulativeKPIQueryRepo[F] {

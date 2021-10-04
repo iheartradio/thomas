@@ -97,10 +97,7 @@ object MapBasedDAOs {
 
     }
 
-  def experimentStateDAO[
-      F[_]: Async,
-      KS <: KPIStats
-    ]: ExperimentKPIStateDAO[F, KS] =
+  def experimentStateDAO[F[_]: Async, KS <: KPIStats]: ExperimentKPIStateDAO[F, KS] =
     new MapBasedDAOs[F, ExperimentKPIState[KS], Key](_.key)
       with ExperimentKPIStateDAO[F, KS] {
 

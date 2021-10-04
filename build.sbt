@@ -20,7 +20,8 @@ lazy val libs = {
     .addJVM(name = "akka-slf4j",            version = "2.6.16",  org = "com.typesafe.akka")
     .addJVM(name = "breeze",                version = "1.2",    org ="org.scalanlp", "breeze", "breeze-viz")
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
-    .addJVM(name = "decline",               version = "2.1.0",  org = "com.monovore")
+
+    .addJVM(name = "decline",               version = "2.2.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.8.1",  org = "io.github.embeddedkafka")
     .addJVM(name = "evilplot",              version = "0.8.1",  org = "io.github.cibotech")
     .addJVM(name = "fs2-kafka",             version = "2.2.0",  org = "com.github.fd4s")
@@ -37,7 +38,7 @@ lazy val libs = {
     .addJVM(name = "rainier",               version = "0.3.3-Kai",  org ="com.kailuowang", "rainier-core", "rainier-cats")
     .addJVM(name = "reactivemongo",         version = reactiveMongoVer, org = "org.reactivemongo", "reactivemongo", "reactivemongo-bson-api", "reactivemongo-iteratees" )
     .addJVM(name = "reactivemongo-play-json-compat", version = reactiveMongoVer + "-play27", org = "org.reactivemongo")
-    .addJVM(name = "scala-java8-compat",    version = "1.0.0",  org = "org.scala-lang.modules")
+    .addJVM(name = "scala-java8-compat",    version = "1.0.1",  org = "org.scala-lang.modules")
     .addJVM(name = "scala-view",            version = "0.5",    org = "com.github.darrenjw")
     .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")

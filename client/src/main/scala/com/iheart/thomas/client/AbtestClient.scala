@@ -127,7 +127,7 @@ class Http4SAbtestClient[F[_]: Async](
     ): F[TestsData] = {
     val url = stringToUri(urls.testsData) +?
       ("atEpochMilli" -> at.toEpochMilli.toString) +?? ("durationMillisecond" ->
-      duration.map(_.toMillis.toString))
+        duration.map(_.toMillis.toString))
 
     expect(GET(url))
   }
