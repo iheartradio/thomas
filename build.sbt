@@ -22,7 +22,6 @@ lazy val libs = {
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
     .addJVM(name = "decline",               version = "2.2.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
-    .addJVM(name = "evilplot",              version = "0.8.1",  org = "io.github.cibotech")
     .addJVM(name = "fs2-kafka",             version = "2.2.0",  org = "com.github.fd4s")
     .add(name = "fs2",             version = "3.1.2")
     .add(name = "cats-effect",             version = "3.2.9")
@@ -34,15 +33,14 @@ lazy val libs = {
     .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
     .add(   name = "play-json",             version = "2.7.4",  org = "com.typesafe.play")
     .addJVM(name = "play-json-derived-codecs", version = "10.0.2", org = "org.julienrf")
-    .addJVM(name = "rainier",               version = "0.3.3-Kai",  org ="com.kailuowang", "rainier-core", "rainier-cats")
+    .addJVM(name = "rainier",               version = "0.3.4-Kai",  org ="com.kailuowang", "rainier-core", "rainier-cats")
     .addJVM(name = "reactivemongo",         version = reactiveMongoVer, org = "org.reactivemongo", "reactivemongo", "reactivemongo-bson-api", "reactivemongo-iteratees" )
     .addJVM(name = "reactivemongo-play-json-compat", version = reactiveMongoVer + "-play27", org = "org.reactivemongo")
     .addJVM(name = "scala-java8-compat",    version = "1.0.1",  org = "org.scala-lang.modules")
-    .addJVM(name = "scala-view",            version = "0.5",    org = "com.github.darrenjw")
     .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
     .addJVM(name = "scanamo",               version = "1.0.0-M17", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
-    .add(   name = "spark",                 version = "2.4.5",  org = "org.apache.spark", "spark-sql", "spark-core")
+    .add(   name = "spark",                 version = "2.4.8",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tsec",                  version = "0.4.0",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
     .add   (name = "enumeratum",            version = "1.7.0",  org = "com.beachape" )
 
@@ -52,7 +50,7 @@ lazy val libs = {
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias(
   "validate",
-  s";clean;tests/dependencyServicesUp;test;tests/IntegrationTest/test;tests/dependencyServicesDown"
+  s";+clean;tests/dependencyServicesUp;+test;+tests/IntegrationTest/test;tests/dependencyServicesDown"
 )
 addCommandAlias(
   "quickValidate",
@@ -100,7 +98,6 @@ lazy val dependencyServicesDown =
 lazy val thomas = project
   .in(file("."))
   .aggregate(
-    plot,
     client,
     bandit,
     lihua,
@@ -203,7 +200,6 @@ lazy val lihuaMongo = project
       "cats-effect",
       "reactivemongo",
       "reactivemongo-bson-api",
-      "reactivemongo-iteratees",
       "reactivemongo-play-json-compat",
       "newtype",
       "play-json",
@@ -245,14 +241,6 @@ lazy val analysis = project
       "commons-math3",
       "play-json-derived-codecs"
     )
-  )
-
-lazy val plot = project
-  .dependsOn(analysis)
-  .settings(name := "thomas-plot")
-  .settings(rootSettings)
-  .settings(
-    libs.dependencies("evilplot", "scala-view")
   )
 
 lazy val docs = project
@@ -341,6 +329,7 @@ lazy val spark = project
   .settings(name := "thomas-spark")
   .settings(rootSettings)
   .settings(
+    crossScalaVersions := Seq(scalaVersion.value),
     libs.dependency("spark-sql", Some("provided")),
     libs.testDependencies("cats-testkit-scalatest")
   )
@@ -456,7 +445,8 @@ lazy val commonSettings = addCompilerPlugins(
   "kind-projector"
 ) ++ sharedCommonSettings ++ Seq(
   organization := "com.iheart",
-  scalaVersion := "2.12.12",
+  scalaVersion := "2.12.14",
+  crossScalaVersions := Seq(scalaVersion.value, "2.13.5"),
   Test / parallelExecution := false,
   releaseCrossBuild := false,
   crossScalaVersions := Seq(scalaVersion.value),

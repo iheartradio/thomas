@@ -72,7 +72,7 @@ package object mongo {
       e: F[EntityDAO[AsyncEntityDAO.Result[F, *], A, Query]]
     )(implicit F: MonadError[F, Throwable]
     ): F[EntityDAO[F, A, JsObject]] = {
-    val functorK = implicitly[FunctorK[EntityDAO[?[_], A, JsObject]]]
+    val functorK = implicitly[FunctorK[EntityDAO[*[_], A, JsObject]]]
     e.map(od => functorK.mapK(od.contramap(Query.fromSelector))(toF[F]))
   }
 
