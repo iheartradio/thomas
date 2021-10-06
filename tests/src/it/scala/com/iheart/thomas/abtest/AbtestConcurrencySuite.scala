@@ -1,14 +1,12 @@
 package com.iheart.thomas.abtest
 
-import java.time.OffsetDateTime
-
-import cats.effect.testing.scalatest.AsyncIOSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
-import TestUtils._
 import cats.effect.IO
-import cats.implicits._
 import cats.effect.implicits._
+import cats.effect.testing.scalatest.AsyncIOSpec
+import cats.implicits._
+import com.iheart.thomas.abtest.TestUtils._
+import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
 class AbtestConcurrencySuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
   "AbtestAlg" - {
     "Cannot create two tests for a new feature simultaneously" in {

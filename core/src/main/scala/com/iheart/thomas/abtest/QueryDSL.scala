@@ -20,23 +20,23 @@ object QueryDSL {
         duration: Option[FiniteDuration]
       ): JsObject =
       Json.obj(
-        "start" → Json.obj("$lte" → duration.fold(time)(time.plusDuration))
+        "start" -> Json.obj("$lte" -> duration.fold(time)(time.plusDuration))
       ) ++ endTimeAfter(time)
 
     def endTimeAfter(time: Instant): JsObject =
       Json.obj(
         "$or" -> Json.arr(
-          Json.obj("end" → Json.obj("$gt" → time)),
-          Json.obj("end" → Json.obj("$exists" → false))
+          Json.obj("end" -> Json.obj("$gt" -> time)),
+          Json.obj("end" -> Json.obj("$exists" -> false))
         )
       )
   }
 
   implicit class ExtendedOps[F[_]](self: EntityDAO[F, Feature, JsObject]) {
 
-    def byName(name: FeatureName): F[Entity[Feature]] = self.findOne('name -> name)
+    def byName(name: FeatureName): F[Entity[Feature]] = self.findOne(Symbol("name") -> name)
     def byNameOption(name: FeatureName): F[Option[Entity[Feature]]] =
-      self.findOneOption('name -> name)
+      self.findOneOption(Symbol("name") -> name)
   }
 
   implicit def fromField1[A: Writes](tp: (Symbol, A)): JsObject =

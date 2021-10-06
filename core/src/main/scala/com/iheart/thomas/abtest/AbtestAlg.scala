@@ -571,7 +571,7 @@ final class DefaultAbtestAlg[F[_]](
     ): F[List[(UserId, GroupName)]] =
     for {
       test <- getTestByFeature(featureName, at)
-      feature <- featureDao.findOne('name -> featureName)
+      feature <- featureDao.findOne(Symbol("name") -> featureName)
     } yield (ids.flatMap { uid =>
       Bucketing.getGroup(uid, test.data).map((uid, _))
     }.toMap ++ feature.data.overrides).toList
@@ -591,7 +591,7 @@ final class DefaultAbtestAlg[F[_]](
             Json.obj(noLock),
             Json.obj(
               "lockedAt" ->
-                Json.obj("$lt" -> now.plusDuration(gp.inverse))
+                Json.obj("$lt" -> now.plusDuration(gp.inverse()))
             )
           )
         }

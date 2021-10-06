@@ -49,14 +49,11 @@ abstract class ScanamoDAOHelper[F[_], A](
 
   protected val sc = ScanamoCats[F](client)
 
-  protected def execTraversableOnce[TO[_], T](
-      ops: ScanamoOps[TO[Either[DynamoReadError, T]]]
-    )(implicit ev: TO[Either[DynamoReadError, T]] <:< TraversableOnce[
-        Either[DynamoReadError, T]
-      ]
+  protected def execList[T](
+      ops: ScanamoOps[List[Either[DynamoReadError, T]]]
     ): F[Vector[T]] =
     sc.exec(ops)
-      .flatMap(t => ev(t).toVector.traverse(_.leftMap(ScanamoError(_)).liftTo[F]))
+      .flatMap(_.toVector.traverse(_.leftMap(ScanamoError(_)).liftTo[F]))
 
   protected def toF[E <: org.scanamo.ScanamoError, T](e: F[Either[E, T]]): F[T] =
     e.flatMap(_.leftMap(ScanamoError(_)).liftTo[F])
@@ -137,7 +134,7 @@ abstract class ScanamoDAOHelperStringFormatKey[F[_], A: DynamoFormat, K](
   def find(k: K): F[Option[A]] =
     toFOption(sc.exec(table.get(keyName === stringKey(k))))
 
-  def all: F[Vector[A]] = execTraversableOnce(table.scan())
+  def all: F[Vector[A]] = execList(table.scan())
 
   def remove(k: K): F[Unit] =
     sc.exec(table.delete(keyName === stringKey(k)))
@@ -254,7 +251,7 @@ object ScanamoDAOHelper {
 }
 
 trait ScanamoManagement {
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   private def keySchema(attributes: Seq[(String, ScalarAttributeType)]) = {
     val hashKeyWithType :: rangeKeyWithType = attributes.toList

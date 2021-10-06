@@ -25,7 +25,7 @@ import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
 import pureconfig.generic.auto._
 import PipeSyntax._
-import utils.time._
+
 trait JobAlg[F[_]] {
 
   /** Creates a job if the job key is not already in the job list
@@ -261,6 +261,6 @@ case class JobRunnerConfig(
 object JobRunnerConfig {
   def fromConfig[F[_]: Sync](cfg: Config): F[JobRunnerConfig] = {
     import pureconfig.module.catseffect.syntax._
-    ConfigSource.fromConfig(cfg).at("thomas.stream.job").loadF[F, JobRunnerConfig]
+    ConfigSource.fromConfig(cfg).at("thomas.stream.job").loadF[F, JobRunnerConfig]()
   }
 }

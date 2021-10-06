@@ -124,7 +124,7 @@ class AbtestManagementUI[F[_]: Async](
             feature,
             tests.size,
             msg.flatMap(_.left.toOption),
-            msg.flatMap(_.right.toOption),
+            msg.flatMap(_.toOption),
             (eligibleManagers
               .map(_.username)
               .toSet -- feature.developers.toSet).toList,

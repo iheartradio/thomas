@@ -1,19 +1,17 @@
 package com.iheart.thomas
 package abtest
 
-import java.time.OffsetDateTime
-
-import cats.effect.testing.scalatest.AsyncIOSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
-import cats.implicits._
-import TestUtils._
-import com.iheart.thomas.abtest.Error.EmptyUserId
-import com.iheart.thomas.abtest.model.UserMetaCriterion._
-import com.iheart.thomas.abtest.model._
-import play.api.libs.json.Json
 import cats.effect.IO
+import cats.effect.testing.scalatest.AsyncIOSpec
+import cats.implicits._
+import com.iheart.thomas.abtest.Error.EmptyUserId
+import com.iheart.thomas.abtest.TestUtils._
+import com.iheart.thomas.abtest.model._
+import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
+import play.api.libs.json.Json
 
+import java.time.OffsetDateTime
 import scala.concurrent.duration.DurationInt
 
 class AssignmentSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
@@ -24,7 +22,7 @@ class AssignmentSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
         .asserting {
           case Left(Error.ValidationErrors(d)) =>
             d.toList shouldBe List(EmptyUserId)
-          case _ => fail
+          case _ => fail()
         }
     }
 

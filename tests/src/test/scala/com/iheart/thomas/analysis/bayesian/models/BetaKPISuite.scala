@@ -7,8 +7,8 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.implicits._
 import com.iheart.thomas.abtest.model.Abtest
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 class BetaKPISuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
   implicit val rng = RNG.default

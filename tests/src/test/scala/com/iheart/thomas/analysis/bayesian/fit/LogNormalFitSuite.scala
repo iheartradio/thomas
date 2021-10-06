@@ -5,18 +5,17 @@ package fit
 import cats.implicits._
 import com.iheart.thomas.GroupName
 import com.iheart.thomas.abtest.model.Abtest
-import DistributionSpec.{Normal, Uniform}
-import implicits._
+import com.iheart.thomas.analysis.bayesian.fit.DistributionSpec.{Normal, Uniform}
+import com.iheart.thomas.analysis.bayesian.fit.LogNormalFit.Measurements
+import com.iheart.thomas.analysis.implicits._
 import com.stripe.rainier.core.LogNormal
 import com.stripe.rainier.sampler._
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import scala.util.Random
-import LogNormalFit.Measurements
 
 class LogNormalFitSuite extends AnyFunSuiteLike with Matchers {
   implicit val sampler = SamplerConfig.default //.copy(iterations = 10000)
@@ -71,7 +70,7 @@ class LogNormalFitSuite extends AnyFunSuiteLike with Matchers {
     ).assess(mockAb, "B")
 
     resultEither.isRight shouldBe true
-    val result = resultEither.right.get
+    val result = resultEither.getOrElse(throw new Exception("blah"))
 
     result.keys should contain("A")
 
@@ -105,7 +104,7 @@ class LogNormalFitSuite extends AnyFunSuiteLike with Matchers {
 
     resultEither.isRight shouldBe true
 
-    val result = resultEither.right.get
+    val result = resultEither.getOrElse(throw new Exception("blah"))
 
     result.keys should contain("B")
     result.keys should contain("C")
@@ -129,7 +128,7 @@ class LogNormalFitSuite extends AnyFunSuiteLike with Matchers {
 
     resultEither.isRight shouldBe true
 
-    val result = resultEither.right.get
+    val result = resultEither.getOrElse(throw new Exception("blah"))
     result._1.locationPrior.location shouldBe (0.01 +- 0.1)
     result._1.scaleLnPrior.from shouldBe (0d +- 1d)
     result._2 shouldBe <(0.5)

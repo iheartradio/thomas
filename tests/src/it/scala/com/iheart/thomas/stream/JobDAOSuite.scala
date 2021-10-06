@@ -1,18 +1,17 @@
 package com.iheart.thomas.stream
 
-import cats.effect.{IO, Resource}
 import cats.effect.testing.scalatest.AsyncIOSpec
-import cats.implicits._
-import com.iheart.thomas.utils.time.epochDay
+import cats.effect.{IO, Resource}
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.dynamo.AdminDAOs
 import com.iheart.thomas.stream.JobSpec.{ProcessSettingsOptional, UpdateKPIPrior}
 import com.iheart.thomas.testkit.MapBasedDAOs
 import com.iheart.thomas.testkit.Resources.localDynamoR
-import org.scalatest.matchers.should.Matchers
+import com.iheart.thomas.utils.time.epochDay
 import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
 
-import java.time.{Instant, LocalDate, LocalDateTime, OffsetDateTime, ZoneOffset}
+import java.time.Instant
 
 abstract class JobDAOSuite(daoR: Resource[IO, JobDAO[IO]])
     extends AsyncFreeSpec
