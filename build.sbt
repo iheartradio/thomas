@@ -32,7 +32,7 @@ lazy val libs = {
     .addJava(name ="logback-classic",       version = "1.2.5",  org = "ch.qos.logback")
     .addJVM(name = "mau",                   version = "0.3.0",  org = "com.kailuowang")
     .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
-    .add(   name = "play-json",             version = "2.7.4",  org = "com.typesafe.play")
+    .add(   name = "play-json",             version = "2.9.2",  org = "com.typesafe.play")
     .addJVM(name = "play-json-derived-codecs", version = "10.0.2", org = "org.julienrf")
     .addJVM(name = "rainier",               version = "0.3.4-Kai",  org ="com.kailuowang", "rainier-core", "rainier-cats")
     .addJVM(name = "reactivemongo",         version = reactiveMongoVer, org = "org.reactivemongo", "reactivemongo", "reactivemongo-bson-api", "reactivemongo-iteratees" )

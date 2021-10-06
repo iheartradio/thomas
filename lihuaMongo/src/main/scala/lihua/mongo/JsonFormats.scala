@@ -6,7 +6,6 @@ package lihua
 package mongo
 
 import cats.Invariant
-import org.joda.time.DateTime
 import play.api.libs.json._
 
 import scala.reflect.ClassTag
@@ -18,14 +17,6 @@ object JsonFormats extends playJson.Formats {
       override def reads(json: JsValue): JsResult[B] = fa.reads(json).map(f)
       override def writes(o: B): JsValue = fa.writes(g(o))
     }
-  }
-
-  implicit object JodaFormat extends Format[DateTime] {
-
-    override def reads(json: JsValue): JsResult[DateTime] =
-      (json \ "$date").validate[Long].map(new DateTime(_))
-
-    override def writes(o: DateTime): JsValue = Json.obj("$date" -> o.getMillis)
   }
 
   object StringBooleanFormat extends Format[Boolean] {

@@ -62,8 +62,10 @@ object Formats {
         case Seq(("%versionStart", JsString(start))) =>
           JsSuccess(VersionRange(f, start))
 
-        case Seq(("%versionRange", JsArray(Seq(JsString(start), JsString(end))))) =>
+        case Seq(("%versionRange", JsArray(array))) if array.length == 2 =>
+          val Seq(JsString(start), JsString(end)) = array.toSeq
           JsSuccess(VersionRange(f, start, Some(end)))
+
         case j =>
           JsError(JsPath \ f, s"Invalid JSON $j for user meta criteria for field %f")
       }
