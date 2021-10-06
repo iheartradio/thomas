@@ -1,11 +1,10 @@
 package com.iheart.thomas.abtest
 
 import cats.effect.testing.scalatest.AsyncIOSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
-import cats.implicits._
-import TestUtils._
+import com.iheart.thomas.abtest.TestUtils._
 import com.iheart.thomas.abtest.model.UserMetaCriterion._
+import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 class EligibilityControlSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
 

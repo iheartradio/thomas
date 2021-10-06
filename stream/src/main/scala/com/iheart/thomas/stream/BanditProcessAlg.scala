@@ -1,6 +1,5 @@
 package com.iheart.thomas.stream
 
-import cats.MonadThrow
 import cats.effect.Temporal
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.bandit.bayesian.BayesianMABAlg
@@ -16,7 +15,7 @@ trait BanditProcessAlg[F[_], Message] {
 }
 
 object BanditProcessAlg {
-  implicit def default[F[_]: MonadThrow: Temporal, Message](
+  implicit def default[F[_]: Temporal, Message](
       implicit allKPIProcessAlg: AllKPIProcessAlg[F, Message],
       banditAlg: BayesianMABAlg[F]
     ): BanditProcessAlg[F, Message] = new BanditProcessAlg[F, Message] {

@@ -67,6 +67,8 @@ object CryptTsec extends IOApp {
       case _ => IO.pure("usage: [genKey|encrypt]")
     }
 
-    command.attempt.flatMap(_.fold(s => IO(println(s)), s => IO(println(s)))).as(ExitCode.Success)
+    command.attempt
+      .flatMap(_.fold(s => IO(println(s)), s => IO(println(s))))
+      .as(ExitCode.Success)
   }
 }

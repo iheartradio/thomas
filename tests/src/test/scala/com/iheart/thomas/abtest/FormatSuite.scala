@@ -1,17 +1,12 @@
 package com.iheart.thomas
 package abtest
 
-import java.time.OffsetDateTime
-
+import _root_.play.api.libs.json._
 import com.iheart.thomas.abtest.json.play.Formats._
 import com.iheart.thomas.abtest.model.UserMetaCriterion._
 import com.iheart.thomas.abtest.model._
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
-import _root_.play.api.libs.json._
-
-import scala.util.matching.Regex
 
 class FormatSuite extends AnyFunSuiteLike with Matchers {
 
@@ -58,13 +53,13 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
       |       { "city": "LA" },
       |       { "city": "NY" }
       |     ],
+      |     "androidVer": {
+      |       "%versionRange" : [ "2.0", "3.1" ]
+      |     },
       |     "clientVer": {
       |       "%versionStart" : "1.0.0"
-      |     },
-      |
-      |     "androidVer": {
-      |       "%versionRange" : ["2.0", "3.1"]
       |     }
+      |
       |   },
       |   "groupMetas": {},
       |   "_id": {
@@ -76,7 +71,7 @@ class FormatSuite extends AnyFunSuiteLike with Matchers {
   val result = implicitly[Format[Abtest]]
     .reads(Json.parse(json))
   if (result.isError) println(result)
-  val abtest = result.get
+  val abtest = result.getOrElse(throw new Exception(s"json Parse error"))
   val userMetaCriteria = abtest.userMetaCriteria.get
 
   test("reads userMetaCriteria") {

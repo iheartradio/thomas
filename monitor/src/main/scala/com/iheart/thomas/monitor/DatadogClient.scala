@@ -67,7 +67,7 @@ object DatadogClient {
         ConfigSource
           .fromConfig(cfg)
           .at("thomas.datadog.api-key")
-          .loadF[F, String]
+          .loadF[F, String]()
       )
       .flatMap(resource(ec, _))
 }

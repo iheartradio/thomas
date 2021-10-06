@@ -3,8 +3,8 @@ package com.iheart.thomas.http4s
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.iheart.thomas.admin.Role
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 class AdminUIConfigSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
 

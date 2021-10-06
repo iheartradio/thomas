@@ -3,7 +3,20 @@ package http4s
 package analysis
 
 import cats.effect.Async
-import com.iheart.thomas.analysis.{AccumulativeKPIQueryRepo, AllKPIRepo, ConversionKPI, ConversionMessageQuery, Criteria, KPIName, KPIRepo, KPIStats, MessageQuery, QueryAccumulativeKPI, QueryName, bayesian}
+import com.iheart.thomas.analysis.{
+  AccumulativeKPIQueryRepo,
+  AllKPIRepo,
+  ConversionKPI,
+  ConversionMessageQuery,
+  Criteria,
+  KPIName,
+  KPIRepo,
+  KPIStats,
+  MessageQuery,
+  QueryAccumulativeKPI,
+  QueryName,
+  bayesian
+}
 import bayesian.models._
 import com.iheart.thomas.http4s.{AuthImp, ReverseRoutes}
 import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
@@ -16,13 +29,28 @@ import org.http4s.FormDataDecoder
 import FormDataDecoder._
 import com.iheart.thomas.analysis.bayesian.KPIEvaluator
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
-import com.iheart.thomas.analysis.monitor.{AllExperimentKPIStateRepo, ExperimentKPIState}
+import com.iheart.thomas.analysis.monitor.{
+  AllExperimentKPIStateRepo,
+  ExperimentKPIState
+}
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
-import com.iheart.thomas.http4s.analysis.UI.{MonitorInfo, StartMonitorRequest, controlArm, includedArms}
+import com.iheart.thomas.http4s.analysis.UI.{
+  MonitorInfo,
+  StartMonitorRequest,
+  controlArm,
+  includedArms
+}
 import com.iheart.thomas.stream.{JobAlg, JobInfo}
-import com.iheart.thomas.stream.JobSpec.{MonitorTest, ProcessSettingsOptional, UpdateKPIPrior}
+import com.iheart.thomas.stream.JobSpec.{
+  MonitorTest,
+  ProcessSettingsOptional,
+  UpdateKPIPrior
+}
 import org.http4s.Uri.Path.Segment
-import org.http4s.dsl.impl.{OptionalMultiQueryParamDecoderMatcher, OptionalQueryParamDecoderMatcher}
+import org.http4s.dsl.impl.{
+  OptionalMultiQueryParamDecoderMatcher,
+  OptionalQueryParamDecoderMatcher
+}
 import tsec.authentication._
 
 import java.time.Instant

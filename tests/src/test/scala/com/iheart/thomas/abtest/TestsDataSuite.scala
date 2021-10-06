@@ -1,18 +1,15 @@
 package com.iheart.thomas
 package abtest
 
-import java.time.Instant
-
+import com.iheart.thomas.utils.time._
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import org.scalacheck.Arbitrary
 
+import java.time.Instant
 import scala.concurrent.duration._
-import org.scalacheck.Gen._
-
-import utils.time._
 
 class TestsDataSuite
     extends AnyFreeSpec

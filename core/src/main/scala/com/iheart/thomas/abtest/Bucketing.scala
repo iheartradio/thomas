@@ -22,10 +22,11 @@ private[thomas] object Bucketing {
     BigInt(1, md5(s))
 
   /** @param s
-    *   @return Between 0 and 1
+    * @return
+    *   Between 0 and 1
     */
   def md5Double(s: String): Double = {
-    (BigDecimal(md5BigInt(s), MathContext.DECIMAL32) / max128BitValue).doubleValue()
+    (BigDecimal(md5BigInt(s), MathContext.DECIMAL32) / max128BitValue).doubleValue
   }
 
   def getGroup(
@@ -34,7 +35,7 @@ private[thomas] object Bucketing {
     ): Option[GroupName] = {
     val hashValue = md5Double(test.feature + userId + test.salt.getOrElse(""))
     test.ranges.collectFirst {
-      case (groupName, ranges) if ranges.exists(_.contains(hashValue)) ⇒ groupName
+      case (groupName, ranges) if ranges.exists(_.contains(hashValue)) => groupName
     }
   }
 
@@ -65,7 +66,7 @@ private[thomas] object Bucketing {
     def initRanges =
       groups
         .filter(_.size > 0)
-        .foldLeft(Vector.empty[(GroupName, List[GroupRange])]) { (ranges, group) ⇒
+        .foldLeft(Vector.empty[(GroupName, List[GroupRange])]) { (ranges, group) =>
           val start = ranges.lastOption.map(_._2.head.end).getOrElse(BigDecimal(0))
           val end = BigDecimal(1).min(start + group.size)
           ranges :+ (group.name -> List(GroupRange(start, end)))

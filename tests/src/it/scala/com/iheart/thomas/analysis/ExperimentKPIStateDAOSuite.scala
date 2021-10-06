@@ -3,25 +3,24 @@ package com.iheart.thomas.analysis
 import cats.data._
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.effect.{IO, Resource}
-import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
 import cats.implicits._
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{
-  ArmState,
-  ArmsState,
-  Key
-}
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, ArmsState, Key}
+import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
 import com.iheart.thomas.dynamo.AnalysisDAOs
 import com.iheart.thomas.stream.{ArmKPIEvents, KPIProcessAlg}
 import com.iheart.thomas.testkit.MapBasedDAOs
 import com.iheart.thomas.testkit.Resources.localDynamoR
 import com.iheart.thomas.utils.time.Period
+import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 import java.time.Instant
-import concurrent.duration._
+import scala.concurrent.duration._
 
-abstract class ExperimentKPIStateDAOSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
+abstract class ExperimentKPIStateDAOSuite
+    extends AsyncFreeSpec
+    with AsyncIOSpec
+    with Matchers {
 
   def stateOf(events: List[(String, ConversionEvent)]) =
     KPIProcessAlg

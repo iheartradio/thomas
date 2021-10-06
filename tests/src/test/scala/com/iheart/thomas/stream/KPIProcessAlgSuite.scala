@@ -3,33 +3,20 @@ package com.iheart.thomas.stream
 import breeze.stats.meanAndVariance
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
+import com.iheart.thomas.analysis._
+import com.iheart.thomas.analysis.bayesian.KPIIndicator
 import com.iheart.thomas.analysis.bayesian.models.{LogNormalModel, NormalModel}
-import com.iheart.thomas.analysis.{
-  QueryAccumulativeKPI,
-  ConversionKPI,
-  Conversions,
-  KPIName,
-  KPIRepo,
-  PerUserSamples,
-  PerUserSamplesLnSummary
-}
-import cats.implicits._
-import fs2.Stream
-import com.iheart.thomas.utils.time
-import com.iheart.thomas.analysis.bayesian.{KPIIndicator, Variable}
 import com.iheart.thomas.stream.JobSpec.ProcessSettings
 import com.iheart.thomas.testkit.MockQueryAccumulativeKPIAlg.MockData
 import com.iheart.thomas.testkit.{Factory, MapBasedDAOs, MockQueryAccumulativeKPIAlg}
 import com.iheart.thomas.tracking.EventLogger
-import com.stripe.rainier.core.{LogNormal, Normal}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
-import com.typesafe.config.Config
-import org.scalatest.matchers.should.Matchers
+import fs2.Stream
 import org.scalatest.freespec.AsyncFreeSpec
-import org.typelevel.jawn.ast.JValue
+import org.scalatest.matchers.should.Matchers
 
 import java.time.Instant
-import concurrent.duration._
+import scala.concurrent.duration._
 class KPIProcessAlgSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
 
   val testKPIName = KPIName("test")
@@ -37,8 +24,10 @@ class KPIProcessAlgSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
   def testQueryAccumulativeKPI[A](
       kpi: QueryAccumulativeKPI,
       data: List[MockData[PerUserSamples]]
-    )(f: (KPIProcessAlg[IO, Unit, QueryAccumulativeKPI],
-          KPIRepo[IO, QueryAccumulativeKPI]) => IO[A]
+    )(f: (
+          KPIProcessAlg[IO, Unit, QueryAccumulativeKPI],
+          KPIRepo[IO, QueryAccumulativeKPI]
+      ) => IO[A]
     ): IO[A] = {
 
     implicit val eventLogger = EventLogger.noop[IO]

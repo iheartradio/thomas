@@ -10,7 +10,7 @@ trait Formats {
     override def reads(json: JsValue): JsResult[EntityId] =
       (json \ "$oid").validate[String].map(EntityId(_))
 
-    override def writes(o: EntityId): JsValue = Json.obj("$oid" → o.value)
+    override def writes(o: EntityId): JsValue = Json.obj("$oid" -> o.value)
   }
 
   implicit def entityFormat[T: Format]: OFormat[Entity[T]] = new OFormat[Entity[T]] {

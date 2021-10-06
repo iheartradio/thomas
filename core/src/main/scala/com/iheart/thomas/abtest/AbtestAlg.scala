@@ -40,7 +40,8 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
 
   /** Stop a test before it ends
     * @param test
-    *   @return Some(test) if it already started, None if not started yet.
+    * @return
+    *   Some(test) if it already started, None if not started yet.
     */
   def terminate(test: TestId): F[Option[Entity[Abtest]]]
 
@@ -52,7 +53,8 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
     ): F[Entity[Abtest]]
 
   /** @param feature
-    *   @return tests for this feature in chronological descending order
+    * @return
+    *   tests for this feature in chronological descending order
     */
   def getTestsByFeature(feature: FeatureName): F[Vector[Entity[Abtest]]]
   def getLatestTestByFeature(feature: FeatureName): F[Option[Entity[Abtest]]]
@@ -450,10 +452,10 @@ final class DefaultAbtestAlg[F[_]](
     abTestDao.remove(testId)
 
   /** @param testId
-    *   @param auto create a new test if the current one of the testId is no longer
-    *   mutable
+    * @param auto
+    *   create a new test if the current one of the testId is no longer mutable
     * @param f
-    *   @return
+    * @return
     */
   private def updateAbtestTrivial(
       testId: TestId,
@@ -569,7 +571,7 @@ final class DefaultAbtestAlg[F[_]](
     ): F[List[(UserId, GroupName)]] =
     for {
       test <- getTestByFeature(featureName, at)
-      feature <- featureDao.findOne('name -> featureName)
+      feature <- featureDao.findOne(Symbol("name") -> featureName)
     } yield (ids.flatMap { uid =>
       Bucketing.getGroup(uid, test.data).map((uid, _))
     }.toMap ++ feature.data.overrides).toList
@@ -589,7 +591,7 @@ final class DefaultAbtestAlg[F[_]](
             Json.obj(noLock),
             Json.obj(
               "lockedAt" ->
-                Json.obj("$lt" -> now.plusDuration(gp.inverse))
+                Json.obj("$lt" -> now.plusDuration(gp.inverse()))
             )
           )
         }

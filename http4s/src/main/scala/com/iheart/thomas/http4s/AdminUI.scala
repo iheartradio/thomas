@@ -2,7 +2,13 @@ package com.iheart.thomas
 package http4s
 
 import com.iheart.thomas.http4s.abtest.AbtestManagementUI
-import com.iheart.thomas.http4s.auth.{AuthDependencies, AuthedEndpointsUtils, AuthenticationAlg, Token, UI}
+import com.iheart.thomas.http4s.auth.{
+  AuthDependencies,
+  AuthedEndpointsUtils,
+  AuthenticationAlg,
+  Token,
+  UI
+}
 import org.http4s.dsl.Http4sDsl
 import cats.implicits._
 import com.iheart.thomas.dynamo
@@ -90,11 +96,11 @@ object AdminUI {
 
   def loadConfig[F[_]: Sync](cfg: Config): F[AdminUIConfig] = {
     import pureconfig.generic.auto._
-    ConfigSource.fromConfig(cfg).at("thomas.admin-ui").loadF[F, AdminUIConfig]
+    ConfigSource.fromConfig(cfg).at("thomas.admin-ui").loadF[F, AdminUIConfig]()
   }
 
   def resource[
-      F[_]: Async:  Logger: EventLogger
+      F[_]: Async: Logger: EventLogger
         : AccumulativeKPIQueryRepo: JValueArmParser: JValueTimeStampParser
     ](implicit dc: DynamoDbAsyncClient,
       cfg: AdminUIConfig,
@@ -163,7 +169,7 @@ object AdminUI {
   /** Provides a server that serves the Admin UI
     */
   def serverResourceAutoLoadConfig[
-      F[_]: Async : EventLogger
+      F[_]: Async: EventLogger
         : AccumulativeKPIQueryRepo
         : JValueArmParser: JValueTimeStampParser
     ](implicit dc: DynamoDbAsyncClient,
