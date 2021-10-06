@@ -1,17 +1,12 @@
 package com.iheart.thomas
 package abtest
 
-import java.time.OffsetDateTime
-
+import _root_.play.api.libs.json._
 import com.iheart.thomas.abtest.json.play.Formats._
 import com.iheart.thomas.abtest.model.UserMetaCriterion._
 import com.iheart.thomas.abtest.model._
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
-import _root_.play.api.libs.json._
-
-import scala.util.matching.Regex
 
 class FormatSuite extends AnyFunSuiteLike with Matchers {
 

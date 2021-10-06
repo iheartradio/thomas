@@ -1,13 +1,11 @@
 package com.iheart.thomas
 package abtest
 
-import java.time.{Instant, OffsetDateTime, ZoneOffset}
-
 import cats.MonadError
 import cats.effect.IO
-import com.iheart.thomas.GroupName
 import com.iheart.thomas.abtest.model._
 
+import java.time.{Instant, OffsetDateTime, ZoneOffset}
 import scala.util.Random
 
 object TestUtils {

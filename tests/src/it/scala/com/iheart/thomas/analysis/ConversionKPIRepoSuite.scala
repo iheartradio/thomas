@@ -5,8 +5,8 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import com.iheart.thomas.analysis.bayesian.models.BetaModel
 import com.iheart.thomas.dynamo.AnalysisDAOs
 import com.iheart.thomas.testkit.Resources.localDynamoR
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 class ConversionKPIRepoSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
   val daoR = localDynamoR.map(implicit ld => AnalysisDAOs.conversionKPIRepo[IO])

@@ -96,7 +96,7 @@ object AdminUI {
 
   def loadConfig[F[_]: Sync](cfg: Config): F[AdminUIConfig] = {
     import pureconfig.generic.auto._
-    ConfigSource.fromConfig(cfg).at("thomas.admin-ui").loadF[F, AdminUIConfig]
+    ConfigSource.fromConfig(cfg).at("thomas.admin-ui").loadF[F, AdminUIConfig]()
   }
 
   def resource[

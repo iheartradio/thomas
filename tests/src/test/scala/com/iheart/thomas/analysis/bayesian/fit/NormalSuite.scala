@@ -6,7 +6,6 @@ import com.stripe.rainier.core.Model
 import com.stripe.rainier.sampler.RNG
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
 
 class NormalSuite extends AnyFunSuiteLike with Matchers with AllSyntax {
   implicit val rng = RNG.default

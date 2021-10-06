@@ -14,6 +14,7 @@ val gh = GitHubSettings(
 
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 val reactiveMongoVer = "1.0.7"
+
 // format: off
 lazy val libs = {
   org.typelevel.libraries
@@ -23,8 +24,8 @@ lazy val libs = {
     .addJVM(name = "decline",               version = "2.2.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
     .addJVM(name = "fs2-kafka",             version = "2.2.0",  org = "com.github.fd4s")
-    .add(name = "fs2",             version = "3.1.2")
-    .add(name = "cats-effect",             version = "3.2.9")
+    .add(   name = "fs2",                   version = "3.1.2")
+    .add(   name = "cats-effect",           version = "3.2.9")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .addJVM(name = "log4cats",              version = "2.1.1",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
@@ -37,6 +38,7 @@ lazy val libs = {
     .addJVM(name = "reactivemongo",         version = reactiveMongoVer, org = "org.reactivemongo", "reactivemongo", "reactivemongo-bson-api", "reactivemongo-iteratees" )
     .addJVM(name = "reactivemongo-play-json-compat", version = reactiveMongoVer + "-play27", org = "org.reactivemongo")
     .addJVM(name = "scala-java8-compat",    version = "1.0.1",  org = "org.scala-lang.modules")
+    .addJVM(name = "scala-collection-compat",    version = "2.5.0",  org = "org.scala-lang.modules")
     .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
     .addJVM(name = "scanamo",               version = "1.0.0-M17", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
@@ -58,7 +60,7 @@ addCommandAlias(
 )
 addCommandAlias(
   "compileAll",
-  s";tests/IntegrationTest/compile;thomas/Test/compile"
+  s";+tests/IntegrationTest/compile;+thomas/Test/compile"
 )
 addCommandAlias(
   "it",
@@ -127,6 +129,7 @@ lazy val client = project
     name := "thomas-client",
     rootSettings,
     Defaults.itSettings,
+    crossScalaVersions := Seq(scalaVersion.value),
     libs.dependency("scalatest", Some("it, test")),
     libs.dependencies("http4s-blaze-client", "http4s-play-json")
   )
@@ -137,6 +140,7 @@ lazy val cli = project
     name := "thomas-cli",
     rootSettings,
     libs.dependencies("decline", "logback-classic"),
+    crossScalaVersions := Seq(scalaVersion.value),
     releasePublishArtifactsAction := {
       (assembly / assembly).value
       releasePublishArtifactsAction.value
@@ -249,6 +253,7 @@ lazy val docs = project
       gh,
       rootSettings,
       taglessSettings,
+      spark,
       client,
       http4s,
       core,
@@ -260,6 +265,7 @@ lazy val docs = project
   .enablePlugins(MicrositesPlugin)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
+    crossScalaVersions := Seq(scalaVersion.value),
     micrositeSettings(gh, developerKai, "Thomas, a library for A/B tests"),
     micrositeDocumentationUrl := "/thomas/api/com/iheart/thomas/index.html",
     micrositeDocumentationLabelDescription := "API Documentation",
@@ -290,7 +296,8 @@ lazy val dynamo = project
       "scanamo-cats-effect",
       "cats-retry",
       "pureconfig-cats-effect",
-      "pureconfig-generic"
+      "pureconfig-generic",
+      "scala-collection-compat"
     ),
     libs.testDependencies("cats-effect-testing-scalatest")
   )

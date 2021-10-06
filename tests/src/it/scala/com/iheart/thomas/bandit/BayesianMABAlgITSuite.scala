@@ -1,40 +1,25 @@
 package com.iheart.thomas
 package bandit
 
-import java.time.{Instant, OffsetDateTime}
-import cats.data.{EitherT, NonEmptyList}
 import cats.MonadError
-import cats.effect.{IO, Resource}
-import com.iheart.thomas.abtest.{AbtestAlg, DefaultAbtestAlg}
-import com.iheart.thomas.analysis.{
-  ConversionKPI,
-  Conversions,
-  KPIName,
-  KPIRepo,
-  Probability
-}
-import com.iheart.thomas.bandit.bayesian.{BanditSpec, BayesianMAB, BayesianMABAlg}
-import com.iheart.thomas.mongo
-import com.typesafe.config.ConfigFactory
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
-import org.scalatest.funsuite.AnyFunSuiteLike
-import _root_.play.api.libs.json.{JsObject, Json}
+import cats.data.NonEmptyList
+import cats.effect.IO
 import cats.implicits._
+import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.abtest.model.Abtest.Specialization.MultiArmBandit
 import com.iheart.thomas.abtest.model.{AbtestSpec, Group}
 import com.iheart.thomas.analysis.bayesian.models.BetaModel
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
-import com.iheart.thomas.tracking.EventLogger
+import com.iheart.thomas.analysis.{ConversionKPI, Conversions, KPIName, KPIRepo}
+import com.iheart.thomas.bandit.bayesian.{BanditSpec, BayesianMAB, BayesianMABAlg}
 import com.iheart.thomas.utils.time.Period
-import com.stripe.rainier.sampler.RNG
+import org.scalatest.funsuite.AnyFunSuiteLike
+import org.scalatest.matchers.should.Matchers
 
-import concurrent.duration._
+import java.time.{Instant, OffsetDateTime}
+import scala.concurrent.duration._
 
 class BayesianMABAlgITSuite extends BayesianMABAlgITSuiteBase {
-
-  import testkit.Resources._
 
   test("init state") {
     val spec = createSpec()

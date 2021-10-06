@@ -6,20 +6,18 @@
 package com.iheart.thomas
 package abtest
 
-import java.time.OffsetDateTime
-
 import cats.implicits._
-import model._
+import com.iheart.thomas.abtest.model._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen._
 import org.scalacheck.{Arbitrary, Gen, Shrink}
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.funsuite.AnyFunSuiteLike
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
+import java.time.OffsetDateTime
+import scala.annotation.nowarn
 import scala.math.BigDecimal
-import scala.math.BigDecimal.RoundingMode
 import scala.util.Random
 
 trait BucketingTestsBase
@@ -39,6 +37,7 @@ trait BucketingTestsBase
       groupResults: List[GroupName],
       g: Group
     ) = {
+    @nowarn
     val groupSizes = groupResults.groupBy(identity).mapValues(_.length)
 
     (groupSizes
@@ -48,6 +47,7 @@ trait BucketingTestsBase
     )
   }
 
+  @nowarn
   def assertRangesValid(ranges: GroupRanges) = {
     for {
       (gn, ranges1) <- ranges
@@ -137,7 +137,7 @@ class BucketingTests extends BucketingTestsBase {
       val maxId = 500000000
       val ids = List.fill(size)(random.nextInt(maxId).toDouble)
       val expectedMean = maxId.toDouble / 2d
-
+      @nowarn
       val groupResults = ids
         .groupBy(uid => Bucketing.getGroup(uid.toString, test).get)
         .filterKeys(k => test.groups.find(_.name == k).get.size > 0.1)
@@ -370,9 +370,12 @@ object BucketingTests {
   implicit val testA: Arbitrary[Abtest] = Arbitrary(testG)
   implicit val userListA: Arbitrary[List[UserId]] = Arbitrary(usersListG)
   implicit val groupListA: Arbitrary[List[Group]] = Arbitrary(groupsGen(3))
+  @nowarn
   implicit val noShrinkForUsers: Shrink[List[UserId]] = Shrink(_ => Stream.empty)
+  @nowarn
   implicit val noShrinkForGroupRanges: Shrink[(GroupRanges, List[Group])] =
     Shrink(_ => Stream.empty)
+  @nowarn
   implicit val noShrinkForGroupRanges3
       : Shrink[(GroupRanges, List[Group], List[Group], List[Group])] =
     Shrink(_ => Stream.empty)
