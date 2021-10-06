@@ -1,10 +1,10 @@
 package com.iheart.thomas.stream
 
 import cats.effect.Concurrent
+import cats.implicits._
+import fs2.Stream
 import fs2.concurrent.Topic
 import org.typelevel.jawn.ast.JValue
-import fs2.Stream
-import cats.implicits._
 
 class PubSub[F[_]: Concurrent] private (topic: Topic[F, JValue])
     extends MessageSubscriber[F, JValue] {

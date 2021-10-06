@@ -19,7 +19,7 @@ trait DAOFactory[F[_], DAOF[_], A] {
     ): F[EntityDAO[DAOF, A, Query]]
 }
 
-abstract class DAOFactoryWithEnsure[A: Format, DAOF[_], F[_]](
+abstract class DAOFactoryWithEnsure[A, DAOF[_], F[_]](
     dbName: String,
     collectionName: String
   )(implicit F: Async[F])
@@ -112,13 +112,13 @@ abstract class EitherTDAOFactory[A: Format, F[_]](
     dbName: String,
     collectionName: String
   )(implicit F: Async[F])
-    extends DAOFactoryWithEnsure[A, AsyncEntityDAO.Result[F, ?], F](
+    extends DAOFactoryWithEnsure[A, AsyncEntityDAO.Result[F, *], F](
       dbName,
       collectionName
     ) {
   def doCreate(
       c: BSONCollection
     )(implicit ec: ExecutionContext
-    ): F[EntityDAO[AsyncEntityDAO.Result[F, ?], A, Query]] =
+    ): F[EntityDAO[AsyncEntityDAO.Result[F, *], A, Query]] =
     F.pure(new AsyncEntityDAO[A, F](c))
 }

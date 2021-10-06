@@ -17,7 +17,7 @@ trait ConfigResource {
             .resources(name)
             .withFallback(ConfigSource.default)
         )
-        .loadF[F, Config]
+        .loadF[F, Config]()
     )
 }
 

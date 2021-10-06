@@ -9,7 +9,6 @@ import cats.data.{EitherT, NonEmptyList}
 import lihua.mongo.DBError._
 import play.api.libs.json.{Format, JsObject}
 import cats.implicits._
-import reactivemongo.api.bson._
 import reactivemongo.play.json.compat._
 import json2bson._
 import bson2json._
@@ -160,13 +159,13 @@ object AsyncEntityDAO {
 
   /** creates a DAO that use F for error handling directly
     */
-  def direct[F[_], A: Format](
+  def direct[F[_], A](
       daoR: AsyncEntityDAO[A, F]
     )(implicit
       F: MonadError[F, Throwable]
     ): EntityDAO[F, A, Query] = {
     type DBResult[T] = EitherT[F, DBError, T]
-    val fk = implicitly[FunctorK[EntityDAO[?[_], A, Query]]]
+    val fk = implicitly[FunctorK[EntityDAO[*[_], A, Query]]]
     fk.mapK(daoR)(λ[DBResult ~> F] { dr =>
       dr.value.flatMap(F.fromEither)
     })

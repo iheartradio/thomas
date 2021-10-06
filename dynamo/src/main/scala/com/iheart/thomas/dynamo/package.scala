@@ -39,7 +39,7 @@ object `package` {
     import pureconfig.generic.auto._
     import pureconfig.module.catseffect.syntax._
     Resource
-      .eval(cfg.loadF[F, ClientConfig])
+      .eval(cfg.loadF[F, ClientConfig]())
       .flatMap(client[F](_))
   }
 }
