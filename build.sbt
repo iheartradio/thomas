@@ -151,8 +151,10 @@ lazy val cli = project
       s"release/thomas-cli_${version.value}.jar"
     ),
     assembly / assemblyMergeStrategy := {
-      case "module-info.class"             => MergeStrategy.discard
-      case "scala/annotation/nowarn.class" => MergeStrategy.discard
+      case "module-info.class"                        => MergeStrategy.discard
+      case "scala/annotation/nowarn.class"            => MergeStrategy.discard
+      case "scala/annotation/nowarn$.class"           => MergeStrategy.discard
+      case "dev/ludovic/netlib/InstanceBuilder.class" => MergeStrategy.discard
       case x =>
         val oldStrategy = (assembly / assemblyMergeStrategy).value
         oldStrategy(x)
