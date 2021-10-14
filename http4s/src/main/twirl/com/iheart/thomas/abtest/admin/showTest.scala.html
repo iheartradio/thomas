@@ -12,7 +12,8 @@
 test: Entity[Abtest],
 followUpO: Option[Entity[Abtest]],
 feature: Feature,
-isShuffled: Boolean
+isShuffled: Boolean,
+canUpdate: Boolean
 )(implicit env: UIEnv)
 
 
@@ -28,7 +29,11 @@ isShuffled: Boolean
         <span class="badge ml-3 mb-3 bg-@formatStatus(test)._2">
               @formatStatus(test)._1
             </span>
-
+        @if(test.data.isDryRun) {
+         <span class="badge ml-3 mb-3 bg-info">
+           Dry Run
+         </span>
+        }
         <span class="text-muted h6 ml-3 small">@test._id</span>
     </div>
 
@@ -45,7 +50,7 @@ isShuffled: Boolean
             Create Follow Up
         </a>
         }
-        @if(test.data.isScheduled(Instant.now)) {
+        @if(canUpdate) {
         <a href="@test._id/edit" class="btn btn-primary" role="button">
             Edit
         </a>
