@@ -62,6 +62,8 @@ package model {
 
     def statusAsOf(time: OffsetDateTime): Abtest.Status = statusAsOf(time.toInstant)
 
+    def isDryRun: Boolean = groups.forall(_.size == BigDecimal(0))
+
     def statusAsOf(time: Instant): Abtest.Status =
       if (time isBefore start)
         Abtest.Status.Scheduled

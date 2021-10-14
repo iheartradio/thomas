@@ -48,6 +48,9 @@ filters: Filters
             <span class="badge ml-3 bg-@formatStatus(test)._2">
               @formatStatus(test)._1
             </span>
+            @if(test.data.isDryRun) {
+               <span class="badge ml-3 bg-info">Dry Run</span>
+            }
         </div>
 
         <div class="col-auto">

@@ -382,12 +382,14 @@ class AbtestManagementUI[F[_]: Async](
         for {
           ti <- getTestInfo(testId)
           feature <- alg.getFeature(ti.test.data.feature)
+          canUpdate <- alg.canUpdate(ti.test.data)
           r <- Ok(
             showTest(
               ti.test,
               ti.followUpO,
               feature,
-              ti.isShuffled
+              ti.isShuffled,
+              canUpdate
             )(UIEnv(u))
           )
         } yield r
