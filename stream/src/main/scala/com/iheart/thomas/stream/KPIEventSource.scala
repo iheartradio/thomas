@@ -85,7 +85,7 @@ object KPIEventSource {
       }
     }
 
-  implicit def fromAlg[F[_]: MonadThrow: Temporal, Message](
+  implicit def fromAlg[F[_]: Temporal, Message](
       implicit alg: AccumulativeKPIQueryRepo[F],
       logger: EventLogger[F]
     ): KPIEventSource[F, QueryAccumulativeKPI, Message, PerUserSamples] = {

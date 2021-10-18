@@ -1,13 +1,9 @@
 package com.iheart.thomas
 package stream
 
-import analysis._
-import cats.Id
+import com.iheart.thomas.analysis._
 import org.scalatest.freespec.AnyFreeSpecLike
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
-import cats.implicits._
-import com.iheart.thomas.analysis.{ConversionMessageQuery, Criteria, MessageQuery}
 import org.typelevel.jawn.ast._
 
 class JValueParserSuite extends AnyFreeSpecLike with Matchers {

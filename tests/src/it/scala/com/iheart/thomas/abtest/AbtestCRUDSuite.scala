@@ -1,19 +1,16 @@
 package com.iheart.thomas.abtest
 
-import java.time.{Instant, OffsetDateTime}
-import cats.effect.testing.scalatest.AsyncIOSpec
-import TestUtils.{fakeAb, _}
-import cats.data.NonEmptyList
 import cats.effect.IO
-import lihua.{Entity, EntityId}
-import org.scalatest.matchers.should.Matchers
+import cats.effect.testing.scalatest.AsyncIOSpec
+import com.iheart.thomas.UserId
+import com.iheart.thomas.abtest.TestUtils.{fakeAb, _}
+import com.iheart.thomas.abtest.model.Group
 import org.scalatest.freespec.AsyncFreeSpec
-
-import concurrent.duration._
-import cats.implicits._
-import com.iheart.thomas.{FeatureName, UserId}
-import com.iheart.thomas.abtest.model.{Abtest, Group, UserGroupQuery}
+import org.scalatest.matchers.should.Matchers
 import play.api.libs.json.Json
+
+import java.time.{Instant, OffsetDateTime}
+import scala.concurrent.duration._
 
 class AbtestCRUDSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
 
@@ -270,8 +267,8 @@ class AbtestCRUDSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
 
             attempt2.data.name shouldBe ab.name
 
-            retrieve1.left.get shouldBe a[Error.NotFound]
-            retrieve2.left.get shouldBe a[Error.NotFound]
+            retrieve1.left.getOrElse(null) shouldBe a[Error.NotFound]
+            retrieve2.left.getOrElse(null) shouldBe a[Error.NotFound]
           }
         }
       }
@@ -323,7 +320,7 @@ class AbtestCRUDSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
           case Left(Error.ValidationErrors(d)) =>
             d.size shouldBe 1
             d.head shouldBe a[Error.ContinuationGap]
-          case _ => fail
+          case _ => fail()
         }
 
       }
@@ -338,7 +335,7 @@ class AbtestCRUDSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
           case Left(Error.ValidationErrors(d)) =>
             d.size shouldBe 1
             d.head shouldBe a[Error.ContinuationBefore]
-          case _ => fail
+          case _ => fail()
         }
       }
     }
@@ -409,7 +406,7 @@ class AbtestCRUDSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
             retrieved <- alg.getTest(test._id).attempt
           } yield {
             r.groups shouldBe empty
-            retrieved.left.get shouldBe a[Error.NotFound]
+            retrieved.left.getOrElse(null) shouldBe a[Error.NotFound]
           }
         }
       }

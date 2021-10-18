@@ -94,9 +94,9 @@ object ExperimentKPIState {
       likelihoodOptimum: Option[Probability]) {
 
     def sampleSize: Long = {
-      kpiStats match {
-        case c: Conversions                   => c.total
-        case samples: PerUserSamplesLnSummary => samples.count
+      (kpiStats: KPIStats) match {
+        case Conversions(_, total)                   => total
+        case PerUserSamplesLnSummary(_, _, count)    => count
       }
     }
   }

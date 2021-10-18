@@ -1,0 +1,31 @@
+@import com.iheart.thomas.abtest.model._
+@import com.iheart.thomas.http4s.Formatters.formatJSON
+@import com.iheart.thomas.abtest.json.play.Formats._
+
+@(
+draft: Option[AbtestSpec]
+)
+
+<div class="card">
+    <div class="card-header">
+        <span class="h5">Eligibility Control</span>
+    </div>
+    <div class="card-body">
+        <div class="form-group">
+            <label class="form-label" for="testRequiredTags">Tags</label>
+            <input name="requiredTags" class="form-control" id="testRequiredTags" type="text"
+                   value="@draft.map(_.requiredTags.mkString(" , "))"/>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="testUserMetaCriteria">User Meta Criteria</label>
+            <a target="_blank"
+               title="Criteria for filtering user by user meta. Click to see more documentation."
+               href="https://iheartradio.github.io/thomas/FAQ.html#how-to-manage-user-eligibility">
+                <i class="bi bi-question-circle"></i>
+            </a>
+            <textarea name="userMetaCriteria" class="form-control" id="testUserMetaCriteria">@draft.flatMap(_.userMetaCriteria).map(formatJSON(_))
+            </textarea>
+        </div>
+    </div>
+</div>

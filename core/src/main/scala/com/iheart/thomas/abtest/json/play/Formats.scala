@@ -7,7 +7,6 @@ import model._
 import _root_.play.api.libs.json._
 import Json.WithDefaultValues
 import com.iheart.thomas.abtest.model.Abtest.Specialization
-import com.iheart.thomas.abtest.model.UserMetaCriterion.ExactMatch
 import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 import lihua.playJson.Formats._
 
@@ -48,11 +47,11 @@ object Formats {
       ): JsResult[UserMetaCriterion] =
       obj.fields match {
         case Seq(("%regex", JsString(r))) => JsSuccess(RegexMatch(f, r))
-        case Seq(("%gt", JsNumber(r)))    => JsSuccess(Greater(f, r.doubleValue()))
+        case Seq(("%gt", JsNumber(r)))    => JsSuccess(Greater(f, r.doubleValue))
         case Seq(("%ge", JsNumber(r))) =>
-          JsSuccess(GreaterOrEqual(f, r.doubleValue()))
-        case Seq(("%lt", JsNumber(r))) => JsSuccess(Less(f, r.doubleValue()))
-        case Seq(("%le", JsNumber(r))) => JsSuccess(LessOrEqual(f, r.doubleValue()))
+          JsSuccess(GreaterOrEqual(f, r.doubleValue))
+        case Seq(("%lt", JsNumber(r))) => JsSuccess(Less(f, r.doubleValue))
+        case Seq(("%le", JsNumber(r))) => JsSuccess(LessOrEqual(f, r.doubleValue))
         case Seq(("%in", JsArray(seq))) =>
           seq.toList
             .traverse {
@@ -63,8 +62,10 @@ object Formats {
         case Seq(("%versionStart", JsString(start))) =>
           JsSuccess(VersionRange(f, start))
 
-        case Seq(("%versionRange", JsArray(Seq(JsString(start), JsString(end))))) =>
+        case Seq(("%versionRange", JsArray(array))) if array.length == 2 =>
+          val Seq(JsString(start), JsString(end)) = array.toSeq
           JsSuccess(VersionRange(f, start, Some(end)))
+
         case j =>
           JsError(JsPath \ f, s"Invalid JSON $j for user meta criteria for field %f")
       }

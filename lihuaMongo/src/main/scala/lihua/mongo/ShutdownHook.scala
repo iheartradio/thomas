@@ -6,7 +6,7 @@ package lihua
 package mongo
 
 trait ShutdownHook {
-  def onShutdown[T](code: ⇒ T): Unit
+  def onShutdown[T](code: => T): Unit
 }
 
 object ShutdownHook {

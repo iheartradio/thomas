@@ -7,8 +7,8 @@ import com.iheart.thomas.http4s.auth.AuthError.{IncorrectPassword, InvalidToken}
 import com.iheart.thomas.testkit.Resources
 import org.http4s.Status
 import org.http4s.dsl.Http4sDsl
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 class AuthenticationAlgSuite
     extends AsyncFreeSpec

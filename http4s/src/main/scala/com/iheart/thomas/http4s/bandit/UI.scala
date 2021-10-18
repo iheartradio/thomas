@@ -11,7 +11,7 @@ import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
 import org.http4s.dsl.Http4sDsl
 import tsec.authentication.asAuthed
 import cats.implicits._
-import com.iheart.thomas.abtest.model.{GroupMeta, GroupSize}
+import com.iheart.thomas.abtest.model.{GroupMeta, GroupRange, GroupSize, Tag, UserMetaCriteria, UserMetaCriterion}
 import com.iheart.thomas.analysis.{AllKPIRepo, KPIName}
 import com.iheart.thomas.bandit.ArmSpec
 import org.http4s.FormDataDecoder
@@ -72,8 +72,14 @@ class UI[F[_]: Async](
 }
 
 object UI {
+  case class BanditAbtestSpec(
+                               requiredTags: List[Tag] = Nil,
+                               userMetaCriteria: UserMetaCriteria = None,
+                               segmentRanges: List[GroupRange] = Nil
+                             )
   object decoders {
     import CommonFormDecoders._
+
     implicit val armSpecQueryDecoder: FormDataDecoder[ArmSpec] = (
       field[ArmName]("name"),
       fieldOptional[GroupSize]("size"),
@@ -81,7 +87,7 @@ object UI {
       fieldEither[Boolean]("reserved").default(false)
     ).mapN(ArmSpec.apply)
 
-    implicit val bandSpec: FormDataDecoder[BanditSpec] = (
+    implicit val bandSpecFDD: FormDataDecoder[BanditSpec] = (
       field[FeatureName]("feature"),
       field[String]("title"),
       field[String]("author"),
@@ -95,6 +101,18 @@ object UI {
       field[Int]("updatePolicyStateChunkSize"),
       field[FiniteDuration]("updatePolicyFrequency")
     ).mapN(BanditSpec.apply).sanitized
+
+    import abtest.AbtestManagementUI.Decoders._
+
+    implicit val banditAbtestSpecFDD: FormDataDecoder[BanditAbtestSpec] = (
+      tags("requiredTags"),
+      fieldOptional[UserMetaCriterion.And]("userMetaCriteria"),
+      list[GroupRange]("segmentRanges")
+    ).mapN(BanditAbtestSpec.apply).sanitized
+
+
+    implicit val banditAndAbtestSpecFDD: FormDataDecoder[(BanditSpec,BanditAbtestSpec)] = (bandSpecFDD,banditAbtestSpecFDD).tupled
+
 
   }
 }

@@ -6,20 +6,18 @@
 package com.iheart.thomas
 package abtest
 
-import java.time.OffsetDateTime
-
 import cats.implicits._
-import model._
+import com.iheart.thomas.abtest.model._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen._
 import org.scalacheck.{Arbitrary, Gen, Shrink}
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.funsuite.AnyFunSuiteLike
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
+import java.time.OffsetDateTime
+import scala.annotation.nowarn
 import scala.math.BigDecimal
-import scala.math.BigDecimal.RoundingMode
 import scala.util.Random
 
 trait BucketingTestsBase
@@ -39,15 +37,17 @@ trait BucketingTestsBase
       groupResults: List[GroupName],
       g: Group
     ) = {
+    @nowarn
     val groupSizes = groupResults.groupBy(identity).mapValues(_.length)
 
     (groupSizes
       .get(g.name)
       .fold(0d)(_.toDouble) / groupResults.size) should be(
-      g.size.doubleValue() +- 0.1
+      g.size.doubleValue +- 0.1
     )
   }
 
+  @nowarn
   def assertRangesValid(ranges: GroupRanges) = {
     for {
       (gn, ranges1) <- ranges
@@ -66,9 +66,9 @@ class BucketingTests extends BucketingTestsBase {
     PropertyCheckConfiguration(sizeRange = 30, minSuccessful = 30)
 
   test("gets the same group for the same test and profile") {
-    forAll { (userId: UserId, test: Abtest) ⇒
+    forAll { (userId: UserId, test: Abtest) =>
       (0 to 100)
-        .map(_ ⇒ Bucketing.getGroup(userId, test))
+        .map(_ => Bucketing.getGroup(userId, test))
         .map(_.get)
         .distinct
         .size should be(1)
@@ -76,7 +76,7 @@ class BucketingTests extends BucketingTestsBase {
   }
 
   test("gets the same group for the same test feature and profile") {
-    forAll { (userId: UserId, test: Abtest, test2: Abtest) ⇒
+    forAll { (userId: UserId, test: Abtest, test2: Abtest) =>
       val test2SameFeature = test2.copy(
         feature = test.feature,
         groups = test.groups,
@@ -91,9 +91,9 @@ class BucketingTests extends BucketingTestsBase {
   test(
     "The first 2 groups should retain as many user as possible when sizes change"
   ) {
-    forAll { (userIds: List[UserId], test: Abtest, test2Raw: Abtest) ⇒
+    forAll { (userIds: List[UserId], test: Abtest, test2Raw: Abtest) =>
       val groupResults1 =
-        userIds.groupBy(uid ⇒ Bucketing.getGroup(uid, test).get)
+        userIds.groupBy(uid => Bucketing.getGroup(uid, test).get)
 
       val test2 = test2Raw.copy(
         feature = test.feature,
@@ -101,7 +101,7 @@ class BucketingTests extends BucketingTestsBase {
       )
 
       val groupResults2 =
-        userIds.groupBy(uid ⇒ Bucketing.getGroup(uid, test2).get)
+        userIds.groupBy(uid => Bucketing.getGroup(uid, test2).get)
 
       def ensureConsistency(group: Group) = {
         val g1 = test.groups.find(_.name == group.name).get
@@ -120,9 +120,9 @@ class BucketingTests extends BucketingTestsBase {
   }
 
   test("getGroup distribute to group size") {
-    forAll(usersListG, testG) { (userIds: List[UserId], test: Abtest) ⇒
+    forAll(usersListG, testG) { (userIds: List[UserId], test: Abtest) =>
       val groupResults =
-        userIds.map(uid ⇒ Bucketing.getGroup(uid, test).get)
+        userIds.map(uid => Bucketing.getGroup(uid, test).get)
       test.groups.foreach { group =>
         assertGroupDistribution(groupResults, group)
       }
@@ -131,15 +131,15 @@ class BucketingTests extends BucketingTestsBase {
   }
 
   test("user id uniform distribution") {
-    forAll { (test: Abtest) ⇒
+    forAll { (test: Abtest) =>
       val random = new Random
       val size = 100000
       val maxId = 500000000
       val ids = List.fill(size)(random.nextInt(maxId).toDouble)
       val expectedMean = maxId.toDouble / 2d
-
+      @nowarn
       val groupResults = ids
-        .groupBy(uid ⇒ Bucketing.getGroup(uid.toString, test).get)
+        .groupBy(uid => Bucketing.getGroup(uid.toString, test).get)
         .filterKeys(k => test.groups.find(_.name == k).get.size > 0.1)
 
       groupResults.values.foreach { ids =>
@@ -370,9 +370,12 @@ object BucketingTests {
   implicit val testA: Arbitrary[Abtest] = Arbitrary(testG)
   implicit val userListA: Arbitrary[List[UserId]] = Arbitrary(usersListG)
   implicit val groupListA: Arbitrary[List[Group]] = Arbitrary(groupsGen(3))
+  @nowarn
   implicit val noShrinkForUsers: Shrink[List[UserId]] = Shrink(_ => Stream.empty)
+  @nowarn
   implicit val noShrinkForGroupRanges: Shrink[(GroupRanges, List[Group])] =
     Shrink(_ => Stream.empty)
+  @nowarn
   implicit val noShrinkForGroupRanges3
       : Shrink[(GroupRanges, List[Group], List[Group], List[Group])] =
     Shrink(_ => Stream.empty)

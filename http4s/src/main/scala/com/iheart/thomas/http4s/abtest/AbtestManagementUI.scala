@@ -124,7 +124,7 @@ class AbtestManagementUI[F[_]: Async](
             feature,
             tests.size,
             msg.flatMap(_.left.toOption),
-            msg.flatMap(_.right.toOption),
+            msg.flatMap(_.toOption),
             (eligibleManagers
               .map(_.username)
               .toSet -- feature.developers.toSet).toList,
@@ -382,12 +382,14 @@ class AbtestManagementUI[F[_]: Async](
         for {
           ti <- getTestInfo(testId)
           feature <- alg.getFeature(ti.test.data.feature)
+          canUpdate <- alg.canUpdate(ti.test.data)
           r <- Ok(
             showTest(
               ti.test,
               ti.followUpO,
               feature,
-              ti.isShuffled
+              ti.isShuffled,
+              canUpdate
             )(UIEnv(u))
           )
         } yield r

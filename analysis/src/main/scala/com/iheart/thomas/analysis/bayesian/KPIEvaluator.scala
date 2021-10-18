@@ -44,8 +44,9 @@ object KPIEvaluator {
         .evaluate(
           model,
           includedArms.fold(state.armsStateMap) { arms =>
+            val keys = arms.toSet ++ benchmarkArm.toSet
             state.armsStateMap
-              .filterKeys(arms.toSet ++ benchmarkArm.toSet)
+              .filter{ case (arm, _) => keys(arm) }
           },
           benchmarkArm
             .flatMap(ba => state.armsStateMap.get(ba).map((ba, _)))

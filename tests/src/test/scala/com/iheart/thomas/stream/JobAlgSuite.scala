@@ -4,29 +4,20 @@ package stream
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.implicits._
+import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.bayesian.models._
-import com.iheart.thomas.analysis.{
-  ConversionKPI,
-  ConversionMessageQuery,
-  Conversions,
-  Criteria,
-  KPIName,
-  KPIRepo,
-  MessageQuery,
-  PerUserSamplesLnSummary
-}
 import com.iheart.thomas.stream.JobSpec.{ProcessSettingsOptional, UpdateKPIPrior}
+import com.iheart.thomas.testkit.ExampleParsers._
+import com.iheart.thomas.testkit.MapBasedDAOs
+import com.iheart.thomas.tracking.EventLogger
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
-import org.typelevel.jawn.ast.{JObject, JString, JValue}
-import testkit.MapBasedDAOs
 import fs2.Stream
+import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
+import org.typelevel.jawn.ast.{JObject, JString, JValue}
 
 import java.time.Instant
-import concurrent.duration._
-import com.iheart.thomas.testkit.ExampleParsers._
-import com.iheart.thomas.tracking.EventLogger
+import scala.concurrent.duration._
 
 abstract class JobAlgSuiteBase extends AsyncFreeSpec with AsyncIOSpec with Matchers {
   import testkit.MockQueryAccumulativeKPIAlg._

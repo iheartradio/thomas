@@ -1,20 +1,16 @@
 package com.iheart.thomas.abtest
 
 import cats.effect.testing.scalatest.AsyncIOSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
-import TestUtils._
 import cats.implicits._
+import com.iheart.thomas.abtest.TestUtils._
+import com.iheart.thomas.abtest.model.{Abtest, GroupRange}
 import com.iheart.thomas.{GroupName, UserId}
-import com.iheart.thomas.abtest.model.{
-  Abtest,
-  GroupRange,
-  UserGroupQuery,
-  UserGroupQueryResult
-}
 import lihua.Entity
+import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 class ContinuationSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
+
   def getGroupAssignment(
       test: Entity[Abtest],
       ids: List[UserId]
@@ -32,7 +28,7 @@ class ContinuationSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
           )
           .map(_.groups.get(test.data.feature).map((_, uid)))
       }
-      .map(_.flatten.groupBy(_._1).mapValues(_.map(_._2)))
+      .map(_.flatten.groupBy(_._1).map { case (k , v) => (k, v.map(_._2))} )
   }
 
   "Inherits as many users from previous test as possible" in {

@@ -1,29 +1,20 @@
 package com.iheart.thomas
 package abtest
 
-import java.time.{Instant, OffsetDateTime}
-import java.util.concurrent.atomic.AtomicLong
+import cats.MonadError
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import com.iheart.thomas.abtest.Error.{
-  CannotChangeGroupSizeWithFollowUpTest,
-  CannotUpdateExpiredTest,
-  ConflictTest
-}
-import com.iheart.thomas.abtest.model.UserMetaCriterion.{ExactMatch, VersionRange}
-import com.iheart.thomas.abtest.model.{
-  EligibilityControlFilter,
-  UserGroupQuery,
-  UserMetaCriterion
-}
-import com.iheart.thomas.testkit.Factory.{now, _}
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
 import cats.implicits._
-import utils.time._
-import cats.MonadError
+import com.iheart.thomas.abtest.Error.{CannotChangeGroupSizeWithFollowUpTest, CannotUpdateExpiredTest, ConflictTest}
+import com.iheart.thomas.abtest.model.UserMetaCriterion.{ExactMatch, VersionRange}
+import com.iheart.thomas.abtest.model.{EligibilityControlFilter, UserGroupQuery, UserMetaCriterion}
+import com.iheart.thomas.testkit.Factory._
+import com.iheart.thomas.utils.time._
+import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
 
-import concurrent.duration._
+import java.time.{Instant, OffsetDateTime}
+import scala.concurrent.duration._
 class AbtestAlgSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
 
   val F = MonadError[IO, Throwable]
@@ -236,18 +227,8 @@ class AbtestAlgSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
     }
 
     "updateUserMetaCriteria" - {
-      object FastNowF {
-        val count = new AtomicLong(0)
-
-        implicit val fastNowF: IO[Instant] = IO { // a very fast clock
-          val c = count.getAndIncrement()
-          Instant.now.plusSeconds(c * 3600L)
-        }
-      }
 
       "Can 'update' test from the past using auto" in {
-
-        import FastNowF._
         val algR = testkit.Resources.apis.map(_._2)
 
         algR
@@ -279,7 +260,6 @@ class AbtestAlgSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
       }
 
       "Cannot 'update' expired test from the past using auto" in {
-        import FastNowF._
 
         val algR = testkit.Resources.apis.map(_._2)
 

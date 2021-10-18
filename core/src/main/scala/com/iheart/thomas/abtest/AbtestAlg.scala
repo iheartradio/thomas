@@ -47,6 +47,8 @@ trait AbtestAlg[F[_]] extends DataProvider[F] {
 
   def getTest(test: TestId): F[Entity[Abtest]]
 
+  def canUpdate(test: Abtest): F[Boolean]
+
   def updateTest(
       testId: TestId,
       spec: AbtestSpec
@@ -212,16 +214,26 @@ final class DefaultAbtestAlg[F[_]](
       createWithoutLock(testSpec, auto)
     )
 
+  def canUpdate(test: Abtest): F[Boolean] =
+    nowF.map(now => canUpdate(test, now))
+
+  def canUpdate(test: Abtest, asOf: Instant): Boolean =
+    test.isScheduled(asOf) || (test.isDryRun && test.is(Status.InProgress, asOf))
+
   def updateTest(
       testId: TestId,
       spec: AbtestSpec
     ): F[Entity[Abtest]] =
     for {
-      _ <- validateForCreation(spec)
+      _ <- errorsOToF(validate(spec))
       test <- getTest(testId)
       _ <- ensure(test.data.feature == spec.feature, FeatureCannotBeChanged)
       now <- nowF
-      _ <- ensure(test.data.isScheduled(now), CannotChangePastTest(now))
+      _ <- ensure(canUpdate(test.data, now), CannotChangePastTest(test.data.start))
+      startChanged = test.data.start.getEpochSecond != spec.startI.getEpochSecond
+      _ <- ensure(!(test.data.is(Status.InProgress, now) && startChanged),
+        CannotChangePastTest(test.data.start)
+      )
       tests <- getTestsByFeature(spec.feature)
       (beforeO, afterO) = {
         val index = tests.indexWhere(_._id == test._id)
@@ -229,7 +241,7 @@ final class DefaultAbtestAlg[F[_]](
       }
       _ <- beforeO.fold(F.unit)(before =>
         ensure(
-          before.data.end.fold(false)(!_.isAfter(spec.startI)),
+          before.data.end.fold(false)(be => !startChanged || !be.isAfter(spec.startI)),
           ConflictTest(before)
         )
       )
@@ -466,8 +478,7 @@ final class DefaultAbtestAlg[F[_]](
       now <- nowF
       candidate <- abTestDao.get(testId)
       test <-
-        candidate.data
-          .isScheduled(now)
+        canUpdate(candidate.data, now)
           .fold(
             F.pure(candidate),
             if (auto) {
@@ -571,7 +582,7 @@ final class DefaultAbtestAlg[F[_]](
     ): F[List[(UserId, GroupName)]] =
     for {
       test <- getTestByFeature(featureName, at)
-      feature <- featureDao.findOne('name -> featureName)
+      feature <- featureDao.findOne(Symbol("name") -> featureName)
     } yield (ids.flatMap { uid =>
       Bucketing.getGroup(uid, test.data).map((uid, _))
     }.toMap ++ feature.data.overrides).toList
@@ -591,7 +602,7 @@ final class DefaultAbtestAlg[F[_]](
             Json.obj(noLock),
             Json.obj(
               "lockedAt" ->
-                Json.obj("$lt" -> now.plusDuration(gp.inverse))
+                Json.obj("$lt" -> now.plusDuration(gp.inverse()))
             )
           )
         }
@@ -802,6 +813,14 @@ final class DefaultAbtestAlg[F[_]](
   private def validateForCreation(testSpec: AbtestSpec): F[Unit] =
     errorsOFFToF(
       nowF.map(now =>
+          testSpec.start.toInstant
+            .isBefore(now.minusSeconds(60))
+            .option(Error.CannotScheduleTestBeforeNow) :: validate(testSpec)
+      )
+    )
+
+
+  private def validate(testSpec: AbtestSpec): List[Option[ValidationError]] =
         List(
           testSpec.groups.isEmpty
             .option(Error.EmptyGroups),
@@ -814,9 +833,6 @@ final class DefaultAbtestAlg[F[_]](
           testSpec.end
             .filter(_.isBefore(testSpec.start))
             .as(Error.InconsistentTimeRange),
-          testSpec.start.toInstant
-            .isBefore(now.minusSeconds(60))
-            .option(Error.CannotScheduleTestBeforeNow),
           (testSpec.groups
             .map(_.name)
             .distinct
@@ -830,9 +846,8 @@ final class DefaultAbtestAlg[F[_]](
           (!testSpec.alternativeIdName
             .fold(true)(_.matches("[-_.A-Za-z0-9]+")))
             .option(Error.InvalidAlternativeIdName)
-        )
       )
-    )
+
   private def validate(userGroupQuery: UserGroupQuery): F[Unit] =
     userGroupQuery.userId.fold(F.unit)(validateUserId)
 

@@ -4,6 +4,7 @@
 @import com.iheart.thomas.analysis.KPIName
 @import com.iheart.thomas.bandit._
 @import com.iheart.thomas.analysis.html._
+@import com.iheart.thomas.abtest.admin.formParts.html._
 
 @(bandit: Bandit,  kpis: Seq[KPIName])(implicit env: UIEnv)
 
@@ -37,6 +38,14 @@
 </div>
 <form action="@env.routes.bandit(bandit.feature)" method="post">
     @banditSpecForm(Some(bandit.spec), kpis)
+    <div class="row mt-5">
+       <div class="col-7">
+          @eligibilityControl(Some(bandit.abtest.data.toSpec))
+       </div>
+       <div class="col-5">
+          @mutualExclusivity(Some(bandit.abtest.data.toSpec))
+       </div>
+    </div>
     <div class="row text-end mt-5">
         <div class="mr-4">
             <button type="submit" class="btn btn-primary">Update</button>

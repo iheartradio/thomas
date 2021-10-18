@@ -1,8 +1,8 @@
 @import com.iheart.thomas.abtest.model._
-@import com.iheart.thomas.abtest.json.play.Formats._
-@import com.iheart.thomas.http4s.Formatters.{formatDate, formatJSON}
+@import com.iheart.thomas.http4s.Formatters.{formatDate}
 @import com.iheart.thomas.common.html._
 @import com.iheart.thomas.bandit.ArmSpec
+@import com.iheart.thomas.abtest.admin.formParts.html._
 
 @(
 draft: Option[AbtestSpec],
@@ -13,37 +13,6 @@ isShuffled: Boolean = false,
 operatingSettingsOnly: Boolean = false
 )
 
-
-@range(rg: Option[GroupRange]) = {
-<div class="d-flex flex-row range-item">
-  <div class="row w-100">
-    <div class="col-md">
-      <div class="form-group">
-        <label class="form-label" for="testGroupRangeStart">Start</label>
-        <input name="segmentRanges[].start" class="form-control non-operative"
-               id="testGroupRangeStart" type="number"
-               value="@rg.map(_.start)"
-               min="0" max="1" step="any" placeholder="Btw 0 & 1" />
-      </div>
-    </div>
-    <div class="col-md">
-      <div class="form-group">
-        <label class="form-label" for="testGroupRangeEnd">End</label>
-        <input name="segmentRanges[].end" class="form-control non-operative"
-               id="testGroupRangeEnd" type="number"
-               value="@rg.map(_.end)"
-               min="0" max="1" step="any" placeholder="Btw 0 & 1"/>
-      </div>
-    </div>
-  </div>
-  <div class="text-center">
-    <button class="btn btn-link remove-item mt-4 ml-3 non-operative"
-            type="button" onclick="thomas.removeParentItem(this, '.range-item')" title="Remove Range">
-      <i class="bi bi-trash"></i>
-    </button>
-  </div>
-</div>
-}
 
 <div id="test-form">
   @for(msg <- errorMsg) {
@@ -118,53 +87,9 @@ operatingSettingsOnly: Boolean = false
 
     </div>
     <div class="col-md">
-      <div class="card">
-        <div class="card-header">
-          <span class="h5">Eligibility Control</span>
-        </div>
-        <div class="card-body">
-          <div class="form-group">
-            <label class="form-label" for="testRequiredTags">Tags</label>
-            <input name="requiredTags" class="form-control" id="testRequiredTags" type="text"
-                   value="@draft.map(_.requiredTags.mkString(" , "))"/>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="testUserMetaCriteria">User Meta Criteria</label>
-            <a target="_blank"
-                title="Criteria for filtering user by user meta. Click to see more documentation."
-                href="https://iheartradio.github.io/thomas/FAQ.html#how-to-manage-user-eligibility">
-              <i class="bi bi-question-circle"></i>
-            </a>
-            <textarea name="userMetaCriteria" class="form-control" id="testUserMetaCriteria">@draft.flatMap(_.userMetaCriteria).map(formatJSON(_))
-            </textarea>
-          </div>
-        </div>
-      </div>
-
-      <div class="card mt-5">
-        <div class="card-header">
-          <span class="h5">Mutual Exclusivity</span>
-        </div>
-        <div class="card-body">
-          <div id="testSegmentRanges">
-            @for( g <- draft.map(_.segmentRanges).getOrElse(Nil)) {
-              @range(Some(g))
-            }
-          </div>
-          @if((readonly || operatingSettingsOnly) && draft.fold(false)(_.segmentRanges.isEmpty)) {
-            <span class="h6 small text-muted">This test is not mutually exclusive with other tests.</span>
-          }
-          <div class="float-right">
-            <button type="button" id="btn-new-test-segment-range"
-                    onclick="thomas.appendItem('#newTestSegmentRange','#testSegmentRanges')"
-                    class="btn btn-secondary non-operative">New Segment Range
-            </button>
-          </div>
-          <div id="newTestSegmentRange" style="display: none">
-            @range(None)
-          </div>
-        </div>
+      @eligibilityControl(draft)
+      <div class="mt-5">
+        @mutualExclusivity(draft, readonly, operatingSettingsOnly)
       </div>
     </div>
 
