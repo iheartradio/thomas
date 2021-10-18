@@ -1,0 +1,64 @@
+@import com.iheart.thomas.abtest.model._
+
+@(
+draft: Option[AbtestSpec],
+readonly: Boolean = false,
+operatingSettingsOnly: Boolean = false
+)
+
+@range(rg: Option[GroupRange]) = {
+<div class="d-flex flex-row range-item">
+    <div class="row w-100">
+        <div class="col-md">
+            <div class="form-group">
+                <label class="form-label" for="testGroupRangeStart">Start</label>
+                <input name="segmentRanges[].start" class="form-control non-operative"
+                       id="testGroupRangeStart" type="number"
+                       value="@rg.map(_.start)"
+                       min="0" max="1" step="any" placeholder="Btw 0 & 1" />
+            </div>
+        </div>
+        <div class="col-md">
+            <div class="form-group">
+                <label class="form-label" for="testGroupRangeEnd">End</label>
+                <input name="segmentRanges[].end" class="form-control non-operative"
+                       id="testGroupRangeEnd" type="number"
+                       value="@rg.map(_.end)"
+                       min="0" max="1" step="any" placeholder="Btw 0 & 1"/>
+            </div>
+        </div>
+    </div>
+    <div class="text-center">
+        <button class="btn btn-link remove-item mt-4 ml-3 non-operative"
+                type="button" onclick="thomas.removeParentItem(this, '.range-item')" title="Remove Range">
+            <i class="bi bi-trash"></i>
+        </button>
+    </div>
+</div>
+}
+
+
+<div class="card mt-5">
+    <div class="card-header">
+        <span class="h5">Mutual Exclusivity</span>
+    </div>
+    <div class="card-body">
+        <div id="testSegmentRanges">
+            @for( g <- draft.map(_.segmentRanges).getOrElse(Nil)) {
+            @range(Some(g))
+            }
+        </div>
+        @if((readonly || operatingSettingsOnly) && draft.fold(false)(_.segmentRanges.isEmpty)) {
+        <span class="h6 small text-muted">This test is not mutually exclusive with other tests.</span>
+        }
+        <div class="float-right">
+            <button type="button" id="btn-new-test-segment-range"
+                    onclick="thomas.appendItem('#newTestSegmentRange','#testSegmentRanges')"
+                    class="btn btn-secondary non-operative">New Segment Range
+            </button>
+        </div>
+        <div id="newTestSegmentRange" style="display: none">
+            @range(None)
+        </div>
+    </div>
+</div>
