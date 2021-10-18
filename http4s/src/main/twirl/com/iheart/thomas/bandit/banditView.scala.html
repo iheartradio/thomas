@@ -39,8 +39,12 @@
 <form action="@env.routes.bandit(bandit.feature)" method="post">
     @banditSpecForm(Some(bandit.spec), kpis)
     <div class="row mt-5">
-        @eligibilityControl(Some(bandit.abtest.data.toSpec))
-        @mutualExclusivity(Some(bandit.abtest.data.toSpec))
+       <div class="col-7">
+          @eligibilityControl(Some(bandit.abtest.data.toSpec))
+       </div>
+       <div class="col-5">
+          @mutualExclusivity(Some(bandit.abtest.data.toSpec))
+       </div>
     </div>
     <div class="row text-end mt-5">
         <div class="mr-4">

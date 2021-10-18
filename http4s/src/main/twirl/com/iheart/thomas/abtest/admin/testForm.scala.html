@@ -88,7 +88,9 @@ operatingSettingsOnly: Boolean = false
     </div>
     <div class="col-md">
       @eligibilityControl(draft)
-      @mutualExclusivity(draft, readonly, operatingSettingsOnly)
+      <div class="mt-5">
+        @mutualExclusivity(draft, readonly, operatingSettingsOnly)
+      </div>
     </div>
 
   </div>
