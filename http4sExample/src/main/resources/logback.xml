@@ -14,6 +14,7 @@
     </appender>
 
     <logger name="reactivemongo" level="INFO"/>
+    <logger name="org.apache.kafka.clients.NetworkClient" level="ERROR"/>
     <root level="WARN">
         <appender-ref ref="ASYNCSTDOUT"/>
     </root>
