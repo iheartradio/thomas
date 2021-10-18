@@ -14,7 +14,6 @@ import cats.implicits._
 import com.iheart.thomas.abtest.model.{GroupMeta, GroupRange, GroupSize, Tag, UserMetaCriteria, UserMetaCriterion}
 import com.iheart.thomas.analysis.{AllKPIRepo, KPIName}
 import com.iheart.thomas.bandit.ArmSpec
-import com.iheart.thomas.http4s.abtest.AbtestManagementUI.Decoders.tags
 import org.http4s.FormDataDecoder
 import org.http4s.FormDataDecoder._
 import org.http4s.Uri.Path.Segment
