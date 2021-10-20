@@ -95,8 +95,8 @@ object ExperimentKPIState {
 
     def sampleSize: Long = {
       (kpiStats: KPIStats) match {
-        case Conversions(_, total)                   => total
-        case PerUserSamplesLnSummary(_, _, count)    => count
+        case Conversions(_, total)                => total
+        case PerUserSamplesLnSummary(_, _, count) => count
       }
     }
   }

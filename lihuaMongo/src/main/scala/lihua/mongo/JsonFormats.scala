@@ -58,8 +58,8 @@ object JsonFormats extends playJson.Formats {
   private def myClassOf[T: ClassTag] =
     implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
 
-  implicit def javaEnumWrites[ET <: Enum[ET]]: Writes[ET] = Writes {
-    (r:Enum[_]) => JsString(r.name())
+  implicit def javaEnumWrites[ET <: Enum[ET]]: Writes[ET] = Writes { (r: Enum[_]) =>
+    JsString(r.name())
   }
 
   implicit def javaEnumReads[ET <: Enum[ET]: ClassTag]: Reads[ET] = Reads {

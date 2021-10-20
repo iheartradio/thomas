@@ -4,7 +4,11 @@ import cats.data._
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.effect.{IO, Resource}
 import cats.implicits._
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, ArmsState, Key}
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{
+  ArmState,
+  ArmsState,
+  Key
+}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
 import com.iheart.thomas.dynamo.AnalysisDAOs
 import com.iheart.thomas.stream.{ArmKPIEvents, KPIProcessAlg}

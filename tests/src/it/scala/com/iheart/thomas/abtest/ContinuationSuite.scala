@@ -28,7 +28,7 @@ class ContinuationSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
           )
           .map(_.groups.get(test.data.feature).map((_, uid)))
       }
-      .map(_.flatten.groupBy(_._1).map { case (k , v) => (k, v.map(_._2))} )
+      .map(_.flatten.groupBy(_._1).map { case (k, v) => (k, v.map(_._2)) })
   }
 
   "Inherits as many users from previous test as possible" in {

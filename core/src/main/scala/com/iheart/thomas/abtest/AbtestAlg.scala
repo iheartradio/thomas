@@ -231,7 +231,8 @@ final class DefaultAbtestAlg[F[_]](
       now <- nowF
       _ <- ensure(canUpdate(test.data, now), CannotChangePastTest(test.data.start))
       startChanged = test.data.start.getEpochSecond != spec.startI.getEpochSecond
-      _ <- ensure(!(test.data.is(Status.InProgress, now) && startChanged),
+      _ <- ensure(
+        !(test.data.is(Status.InProgress, now) && startChanged),
         CannotChangePastTest(test.data.start)
       )
       tests <- getTestsByFeature(spec.feature)
@@ -241,7 +242,9 @@ final class DefaultAbtestAlg[F[_]](
       }
       _ <- beforeO.fold(F.unit)(before =>
         ensure(
-          before.data.end.fold(false)(be => !startChanged || !be.isAfter(spec.startI)),
+          before.data.end.fold(false)(be =>
+            !startChanged || !be.isAfter(spec.startI)
+          ),
           ConflictTest(before)
         )
       )
@@ -813,40 +816,39 @@ final class DefaultAbtestAlg[F[_]](
   private def validateForCreation(testSpec: AbtestSpec): F[Unit] =
     errorsOFFToF(
       nowF.map(now =>
-          testSpec.start.toInstant
-            .isBefore(now.minusSeconds(60))
-            .option(Error.CannotScheduleTestBeforeNow) :: validate(testSpec)
+        testSpec.start.toInstant
+          .isBefore(now.minusSeconds(60))
+          .option(Error.CannotScheduleTestBeforeNow) :: validate(testSpec)
       )
     )
 
-
   private def validate(testSpec: AbtestSpec): List[Option[ValidationError]] =
-        List(
-          testSpec.groups.isEmpty
-            .option(Error.EmptyGroups),
-          (testSpec.groups.map(_.size).sum > 1.000000001)
-            .option(
-              Error.InconsistentGroupSizes(
-                testSpec.groups.map(_.size)
-              )
-            ),
-          testSpec.end
-            .filter(_.isBefore(testSpec.start))
-            .as(Error.InconsistentTimeRange),
-          (testSpec.groups
-            .map(_.name)
-            .distinct
-            .length != testSpec.groups.length)
-            .option(Error.DuplicatedGroupName),
-          testSpec.groups
-            .exists(_.name.length >= 256)
-            .option(Error.GroupNameTooLong),
-          (!testSpec.feature.matches("[-_.A-Za-z0-9]+"))
-            .option(Error.InvalidFeatureName),
-          (!testSpec.alternativeIdName
-            .fold(true)(_.matches("[-_.A-Za-z0-9]+")))
-            .option(Error.InvalidAlternativeIdName)
-      )
+    List(
+      testSpec.groups.isEmpty
+        .option(Error.EmptyGroups),
+      (testSpec.groups.map(_.size).sum > 1.000000001)
+        .option(
+          Error.InconsistentGroupSizes(
+            testSpec.groups.map(_.size)
+          )
+        ),
+      testSpec.end
+        .filter(_.isBefore(testSpec.start))
+        .as(Error.InconsistentTimeRange),
+      (testSpec.groups
+        .map(_.name)
+        .distinct
+        .length != testSpec.groups.length)
+        .option(Error.DuplicatedGroupName),
+      testSpec.groups
+        .exists(_.name.length >= 256)
+        .option(Error.GroupNameTooLong),
+      (!testSpec.feature.matches("[-_.A-Za-z0-9]+"))
+        .option(Error.InvalidFeatureName),
+      (!testSpec.alternativeIdName
+        .fold(true)(_.matches("[-_.A-Za-z0-9]+")))
+        .option(Error.InvalidAlternativeIdName)
+    )
 
   private def validate(userGroupQuery: UserGroupQuery): F[Unit] =
     userGroupQuery.userId.fold(F.unit)(validateUserId)
