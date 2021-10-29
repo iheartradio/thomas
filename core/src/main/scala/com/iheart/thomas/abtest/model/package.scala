@@ -250,10 +250,10 @@ package model {
   sealed trait EligibilityControlFilter
   object EligibilityControlFilter {
     case object Off
-        extends EligibilityControlFilter //only includes tests that has no eligibility control
-    case object All extends EligibilityControlFilter //includes all tests
+        extends EligibilityControlFilter // only includes tests that has no eligibility control
+    case object All extends EligibilityControlFilter // includes all tests
     case object On
-        extends EligibilityControlFilter //only includes tests that has eligibility control
+        extends EligibilityControlFilter // only includes tests that has eligibility control
   }
   case class UserInfo(
       userId: Option[UserId],

@@ -60,7 +60,7 @@ object AutoRefreshAssignGroups {
     RefreshRef
       .resource[F, TestsData]((_: TestsData) =>
         F.unit
-      ) //todo: possibly add logging here.
+      ) // todo: possibly add logging here.
       .map { ref =>
         new AutoRefreshAssignGroups[F] {
           def assign(

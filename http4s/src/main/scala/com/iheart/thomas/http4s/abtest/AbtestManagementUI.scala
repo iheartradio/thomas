@@ -154,7 +154,7 @@ class AbtestManagementUI[F[_]: Async](
           _ <- user.check[F](ManageFeature(feature))
         } yield ()
 
-      //fails if use has no permission to change at all.
+      // fails if use has no permission to change at all.
       def canManage(test: Entity[Abtest]): F[Boolean] =
         alg
           .getFeature(test.data.feature)
@@ -253,7 +253,7 @@ class AbtestManagementUI[F[_]: Async](
             }
           )
 
-      //create a new revision for a test
+      // create a new revision for a test
       case se @ POST -> Root / "tests" / testId / "new_revision" asAuthed u =>
         get(testId).flatMap { fromTest =>
           se.request
@@ -285,7 +285,7 @@ class AbtestManagementUI[F[_]: Async](
             )
         }
 
-      //modify a scheduled test
+      // modify a scheduled test
       case se @ POST -> Root / "tests" / testId asAuthed u =>
         get(testId).flatMap { test =>
           se.request
@@ -329,7 +329,7 @@ class AbtestManagementUI[F[_]: Async](
             Ok(redirect(reverseRoutes.tests, s"Successfully $message."))
           }
 
-      //Add new test to a feature
+      // Add new test to a feature
       case se @ POST -> Root / "features" / feature / "tests" asAuthed u =>
         se.request
           .as[SpecForm]

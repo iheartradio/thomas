@@ -62,7 +62,9 @@ object ModelEvaluator {
           benchmarkO: Option[(ArmName, Measurement)]
         ): F[List[Evaluation]] =
         for {
-          probabilities <- evaluate(measurements.map{ case (k, v) => (k, (v, model))})
+          probabilities <- evaluate(measurements.map { case (k, v) =>
+            (k, (v, model))
+          })
           r <-
             probabilities.toList
               .traverse { case (armName, probability) =>

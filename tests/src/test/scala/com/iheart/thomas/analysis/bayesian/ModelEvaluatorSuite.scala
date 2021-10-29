@@ -50,7 +50,7 @@ class ModelEvaluatorSuite extends AnyFreeSpecLike with Matchers {
         )
       )
 
-      result("A").p shouldBe <(result("B").p) //due to the higher variance.
+      result("A").p shouldBe <(result("B").p) // due to the higher variance.
     }
   }
 

@@ -89,7 +89,7 @@ object BayesianMABAlg {
             state <- stateDao.find(settings.stateKey)
           } yield BayesianMAB(abtest, settings, state)
 
-        abtestAPI //todo: this search depends how the bandit was initialized, if the abtest is created before the state, this will have concurrency problem.
+        abtestAPI // todo: this search depends how the bandit was initialized, if the abtest is created before the state, this will have concurrency problem.
           .getAllTestsBySpecialization(
             Specialization.MultiArmBandit,
             time

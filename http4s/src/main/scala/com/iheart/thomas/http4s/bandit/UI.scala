@@ -11,7 +11,14 @@ import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
 import org.http4s.dsl.Http4sDsl
 import tsec.authentication.asAuthed
 import cats.implicits._
-import com.iheart.thomas.abtest.model.{GroupMeta, GroupRange, GroupSize, Tag, UserMetaCriteria, UserMetaCriterion}
+import com.iheart.thomas.abtest.model.{
+  GroupMeta,
+  GroupRange,
+  GroupSize,
+  Tag,
+  UserMetaCriteria,
+  UserMetaCriterion
+}
 import com.iheart.thomas.analysis.{AllKPIRepo, KPIName}
 import com.iheart.thomas.bandit.ArmSpec
 import org.http4s.FormDataDecoder
@@ -73,10 +80,9 @@ class UI[F[_]: Async](
 
 object UI {
   case class BanditAbtestSpec(
-                               requiredTags: List[Tag] = Nil,
-                               userMetaCriteria: UserMetaCriteria = None,
-                               segmentRanges: List[GroupRange] = Nil
-                             )
+      requiredTags: List[Tag] = Nil,
+      userMetaCriteria: UserMetaCriteria = None,
+      segmentRanges: List[GroupRange] = Nil)
   object decoders {
     import CommonFormDecoders._
 
@@ -110,9 +116,9 @@ object UI {
       list[GroupRange]("segmentRanges")
     ).mapN(BanditAbtestSpec.apply).sanitized
 
-
-    implicit val banditAndAbtestSpecFDD: FormDataDecoder[(BanditSpec,BanditAbtestSpec)] = (bandSpecFDD,banditAbtestSpecFDD).tupled
-
+    implicit val banditAndAbtestSpecFDD
+        : FormDataDecoder[(BanditSpec, BanditAbtestSpec)] =
+      (bandSpecFDD, banditAbtestSpecFDD).tupled
 
   }
 }

@@ -216,7 +216,7 @@ lazy val lihuaMongo = project
       "com.iheart" %% "ficus" % "1.5.0",
       "org.log4s" %% "log4s" % "1.10.0"
     ),
-    scalacOptions += "-deprecation:false" //disabled due to the deprecation of reactivemongo-play-json while the new api isn't stable enough
+    scalacOptions += "-deprecation:false" // disabled due to the deprecation of reactivemongo-play-json while the new api isn't stable enough
   )
 
 lazy val bandit = project
@@ -462,7 +462,7 @@ lazy val commonSettings = addCompilerPlugins(
   Test / compile / scalacOptions ~= lessStrictScalaChecks,
   scalacOptions += s"-Xlint:-package-object-classes",
   Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
-  ThisBuild / evictionErrorLevel := Level.Info //thanks to akka depending on java8 compat 0.8.0
+  ThisBuild / evictionErrorLevel := Level.Info // thanks to akka depending on java8 compat 0.8.0
 )
 
 lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =
