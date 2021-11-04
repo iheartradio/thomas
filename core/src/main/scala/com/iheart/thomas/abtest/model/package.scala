@@ -223,11 +223,23 @@ package model {
       overrideEligibility: Boolean = false,
       lockedAt: Option[Instant] = None,
       developers: List[Username] = Nil,
-      operators: List[Username] = Nil) {
+      operators: List[Username] = Nil,
+      assignmentTruthAt: AssignmentTruthAt = AssignmentTruthAt.Message) {
 
     def nonTestSettingsChangedFrom(that: Feature) =
       copy(overrides = Map.empty, overrideEligibility = false) !=
         that.copy(overrides = Map.empty, overrideEligibility = false)
+  }
+
+  sealed trait AssignmentTruthAt extends Serializable with Product
+
+  object AssignmentTruthAt {
+
+    case object Message extends AssignmentTruthAt
+
+    case object Realtime extends AssignmentTruthAt
+
+    implicit val eq: Eq[AssignmentTruthAt] = Eq.fromUniversalEquals
   }
 
   /** @param userId

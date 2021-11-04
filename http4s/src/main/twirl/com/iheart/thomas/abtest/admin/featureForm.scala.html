@@ -103,6 +103,23 @@ operatorCandidates: List[Username] = Nil,
                             >@feature.description</textarea>
                         </div>
 
+                        <div class="form-group">
+                            <label class="form-label" for="realtimeCB">Realtime assignment</label>
+                            <input name="realtime"
+                                   class="form-check-input"
+                                   id="realtimeCB"
+                                   type="checkbox"
+                                   @if(!env.currentUser.has(ManageTestSettings(feature))) {
+                                   disabled readonly
+                                   }
+                                   value="true"
+                                   @if(feature.assignmentTruthAt == AssignmentTruthAt.Realtime) {
+                                   checked
+                                   }
+
+                            />
+                        </div>
+
                     </div>
                 </div>
 

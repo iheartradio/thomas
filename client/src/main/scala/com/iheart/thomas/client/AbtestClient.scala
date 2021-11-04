@@ -37,7 +37,7 @@ trait ReadOnlyAbtestClient[F[_]] extends DataProvider[F] {
     )(implicit F: Functor[F]
     ): F[Option[Entity[Abtest]]] =
     tests(asOf).map(_.collectFirst {
-      case (test, Feature(`feature`, _, _, _, _, _, _)) => test
+      case (test, Feature(`feature`, _, _, _, _, _, _, _)) => test
     })
 
   def featureLatestTest(

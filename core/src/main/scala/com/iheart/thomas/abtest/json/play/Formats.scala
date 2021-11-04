@@ -31,6 +31,9 @@ object Formats {
   implicit val jSpecialization: Format[Specialization] =
     stringADTFormat(Specialization.MultiArmBandit)
 
+  implicit val jAssignmentTruthAt: Format[AssignmentTruthAt] =
+    stringADTFormat(AssignmentTruthAt.Message, AssignmentTruthAt.Realtime)
+
   val j = Json.using[WithDefaultValues]
 
   implicit val groupFormat = j.format[Group]
