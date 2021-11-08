@@ -24,8 +24,8 @@ object AutoRefreshAssignGroups {
       testsRange: Option[FiniteDuration])
 
   def resource[F[_]: Async](
-      dataProvider: abtest.DataProvider[F],
-      config: Config
+                             dataProvider: abtest.TestsDataProvider[F],
+                             config: Config
     )(implicit
       nowF: F[Instant]
     ): Resource[F, AutoRefreshAssignGroups[F]] =
@@ -50,10 +50,10 @@ object AutoRefreshAssignGroups {
     *   A Resource of An [[AutoRefreshAssignGroups]]
     */
   def resource[F[_]](
-      dataProvider: abtest.DataProvider[F],
-      refreshPeriod: FiniteDuration,
-      staleTimeout: FiniteDuration,
-      testsRange: Option[FiniteDuration]
+                      dataProvider: abtest.TestsDataProvider[F],
+                      refreshPeriod: FiniteDuration,
+                      staleTimeout: FiniteDuration,
+                      testsRange: Option[FiniteDuration]
     )(implicit F: Async[F],
       nowF: F[Instant]
     ): Resource[F, AutoRefreshAssignGroups[F]] = {

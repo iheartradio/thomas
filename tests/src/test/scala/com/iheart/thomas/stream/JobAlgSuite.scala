@@ -264,9 +264,7 @@ class JobAlgSuite extends JobAlgSuiteBase {
       }
     }
   }
-}
 
-class JobS extends JobAlgSuiteBase {
   "can pickup new job" in withAlg { (kpiDAO, alg, pubSub) =>
     val kpiC = kpiA.copy(name = KPIName("C"))
     val kpiB = kpiA.copy(name = KPIName("B"))
