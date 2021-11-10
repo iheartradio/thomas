@@ -5,24 +5,12 @@ import cats.data.NonEmptyList
 import cats.{Foldable, Monoid}
 import cats.effect.Temporal
 import cats.implicits._
+import com.iheart.thomas.abtest.FeatureRetriever
+import com.iheart.thomas.abtest.model.Feature
 import com.iheart.thomas.analysis.bayesian.Posterior
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{
-  ArmState,
-  ArmsState,
-  Key,
-  Specialization
-}
-import com.iheart.thomas.analysis.{
-  Aggregation,
-  AllKPIRepo,
-  ConversionKPI,
-  KPI,
-  KPIName,
-  KPIRepo,
-  KPIStats,
-  QueryAccumulativeKPI
-}
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, ArmsState, Key, Specialization}
+import com.iheart.thomas.analysis.{Aggregation, AllKPIRepo, ConversionKPI, KPI, KPIName, KPIRepo, KPIStats, QueryAccumulativeKPI}
 import com.iheart.thomas.stream.JobSpec.ProcessSettings
 import com.iheart.thomas.utils.time.Period
 import fs2.{Pipe, Stream}
@@ -50,7 +38,7 @@ trait KPIProcessAlg[F[_], Message, K <: KPI] {
 
   def monitorExperiment(
       kpi: K,
-      feature: FeatureName,
+      feature: Feature,
       specialization: Specialization,
       settings: ProcessSettings
     ): Pipe[F, Message, ExperimentKPIState[KPIStats]]
@@ -128,7 +116,7 @@ object KPIProcessAlg {
 
       def monitorExperiment(
           kpi: K,
-          feature: FeatureName,
+          feature: Feature,
           specialization: Specialization,
           settings: ProcessSettings
         ): Pipe[F, Message, ExperimentKPIState[KPIStats]] = {
@@ -142,7 +130,7 @@ object KPIProcessAlg {
                 statsOf(chunk),
                 Period.of(chunk, (_: ArmKPIEvents[Event]).timeStamp)
               ).traverseN { (chunkStats, chunkPeriod) =>
-                stateDAO.upsert(Key(feature, kpi.name, specialization)) {
+                stateDAO.upsert(Key(feature.name, kpi.name, specialization)) {
                   (existing, existingPeriod) =>
                     (
                       updateArms(chunkStats, existing),
@@ -160,10 +148,11 @@ object KPIProcessAlg {
 object AllKPIProcessAlg {
 
   implicit def default[F[_]: Temporal, Message](
-      implicit
-      convProcessAlg: KPIProcessAlg[F, Message, ConversionKPI],
-      accumProcessAlg: KPIProcessAlg[F, Message, QueryAccumulativeKPI],
-      allKPIRepo: AllKPIRepo[F]
+                                                 implicit
+                                                 convProcessAlg: KPIProcessAlg[F, Message, ConversionKPI],
+                                                 accumProcessAlg: KPIProcessAlg[F, Message, QueryAccumulativeKPI],
+                                                 allKPIRepo: AllKPIRepo[F],
+                                                 featureRetriever: FeatureRetriever[F]
     ): AllKPIProcessAlg[F, Message] =
     new AllKPIProcessAlg[F, Message] {
 
@@ -178,17 +167,21 @@ object AllKPIProcessAlg {
         }
 
       def monitorExperiment(
-          feature: FeatureName,
+          fn: FeatureName,
           kpiName: KPIName,
           specialization: Specialization,
           settings: ProcessSettings
-        ): F[Pipe[F, Message, ExperimentKPIState[KPIStats]]] =
-        allKPIRepo.get(kpiName).map {
-          case kpi: ConversionKPI =>
-            convProcessAlg.monitorExperiment(kpi, feature, specialization, settings)
-          case kpi: QueryAccumulativeKPI =>
-            accumProcessAlg.monitorExperiment(kpi, feature, specialization, settings)
+        ): F[Pipe[F, Message, ExperimentKPIState[KPIStats]]] = {
+        featureRetriever.getFeature(fn).flatMap { feature =>
+          allKPIRepo.get(kpiName).map {
+            case kpi: ConversionKPI =>
+              convProcessAlg.monitorExperiment(kpi, feature, specialization, settings)
+            case kpi: QueryAccumulativeKPI =>
+              accumProcessAlg.monitorExperiment(kpi, feature, specialization, settings)
+          }
         }
+
+      }
 
     }
 }
