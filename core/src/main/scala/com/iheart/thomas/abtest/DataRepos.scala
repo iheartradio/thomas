@@ -17,13 +17,15 @@ trait TestsDataProvider[F[_]] {
       duration: Option[FiniteDuration]
     ): F[TestsData]
 }
+trait FeatureRetriever[F[_]] {
+  def getFeature(name: FeatureName): F[Feature]
+}
 
-
-trait FeatureRepo[F[_]] {
+trait FeatureRepo[F[_]] extends FeatureRetriever[F] {
   def findByNames(names: Seq[FeatureName]): F[Seq[Entity[Feature]]]
-  def byName(name: FeatureName): F[Entity[Feature]]
   def insert(f: Feature): F[Entity[Feature]]
   def byNameOption(name: FeatureName): F[Option[Entity[Feature]]]
+  def byName(name: FeatureName): F[Entity[Feature]]
 
   def all: F[Vector[Entity[Feature]]]
 
@@ -54,6 +56,8 @@ object FeatureRepo {
 
     def byName(name: FeatureName): F[Entity[Feature]] =
       dao.byName(name)
+
+    def getFeature(name: FeatureName): F[Feature] = byName(name).map(_.data)
 
     def byNameOption(name: FeatureName): F[Option[Entity[Feature]]] =
       dao.byNameOption(name)

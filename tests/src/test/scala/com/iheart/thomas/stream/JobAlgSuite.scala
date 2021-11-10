@@ -4,6 +4,8 @@ package stream
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.implicits._
+import com.iheart.thomas.abtest.FeatureRetriever
+import com.iheart.thomas.abtest.model.Feature
 import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.bayesian.models._
 import com.iheart.thomas.stream.JobSpec.{ProcessSettingsOptional, UpdateKPIPrior}
@@ -32,6 +34,11 @@ abstract class JobAlgSuiteBase extends AsyncFreeSpec with AsyncIOSpec with Match
     implicit val eStateDAO = MapBasedDAOs.experimentStateDAO[IO, Conversions]
     implicit val aStateDAO =
       MapBasedDAOs.experimentStateDAO[IO, PerUserSamplesLnSummary]
+
+    implicit val featureRepo = new FeatureRetriever[IO] {
+      override def getFeature(name: FeatureName): IO[Feature] = IO(Feature("feature_foo"))
+    }
+
     implicit val nullBSProcessAlg: BanditProcessAlg[IO, JValue] = null
     PubSub.create[IO].flatMap { implicit pubSub =>
       f(ckpiDAO, JobAlg[IO, JValue], pubSub)

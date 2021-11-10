@@ -218,8 +218,8 @@ package model {
 
   case class Feature(
       name: FeatureName,
-      description: Option[String],
-      overrides: Overrides,
+      description: Option[String] = None,
+      overrides: Overrides = Map.empty,
       overrideEligibility: Boolean = false,
       lockedAt: Option[Instant] = None,
       developers: List[Username] = Nil,

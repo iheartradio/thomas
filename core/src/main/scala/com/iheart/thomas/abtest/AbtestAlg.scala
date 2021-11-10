@@ -28,7 +28,7 @@ import scala.util.Random
 /** Algebra for ABTest API Final Tagless encoding
   * @tparam F
   */
-trait AbtestAlg[F[_]] extends TestsDataProvider[F] {
+trait AbtestAlg[F[_]] extends TestsDataProvider[F] with FeatureRetriever[F] {
 
   def warmUp: F[Unit]
 

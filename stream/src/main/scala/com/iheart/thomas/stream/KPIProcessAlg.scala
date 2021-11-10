@@ -5,7 +5,7 @@ import cats.data.NonEmptyList
 import cats.{Foldable, Monoid}
 import cats.effect.Temporal
 import cats.implicits._
-import com.iheart.thomas.abtest.AbtestAlg
+import com.iheart.thomas.abtest.FeatureRetriever
 import com.iheart.thomas.abtest.model.Feature
 import com.iheart.thomas.analysis.bayesian.Posterior
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
@@ -148,11 +148,11 @@ object KPIProcessAlg {
 object AllKPIProcessAlg {
 
   implicit def default[F[_]: Temporal, Message](
-      implicit
-      convProcessAlg: KPIProcessAlg[F, Message, ConversionKPI],
-      accumProcessAlg: KPIProcessAlg[F, Message, QueryAccumulativeKPI],
-      allKPIRepo: AllKPIRepo[F],
-      abtestAlg: AbtestAlg[F]
+                                                 implicit
+                                                 convProcessAlg: KPIProcessAlg[F, Message, ConversionKPI],
+                                                 accumProcessAlg: KPIProcessAlg[F, Message, QueryAccumulativeKPI],
+                                                 allKPIRepo: AllKPIRepo[F],
+                                                 featureRetriever: FeatureRetriever[F]
     ): AllKPIProcessAlg[F, Message] =
     new AllKPIProcessAlg[F, Message] {
 
@@ -172,7 +172,7 @@ object AllKPIProcessAlg {
           specialization: Specialization,
           settings: ProcessSettings
         ): F[Pipe[F, Message, ExperimentKPIState[KPIStats]]] = {
-        abtestAlg.getFeature(fn).flatMap { feature =>
+        featureRetriever.getFeature(fn).flatMap { feature =>
           allKPIRepo.get(kpiName).map {
             case kpi: ConversionKPI =>
               convProcessAlg.monitorExperiment(kpi, feature, specialization, settings)
