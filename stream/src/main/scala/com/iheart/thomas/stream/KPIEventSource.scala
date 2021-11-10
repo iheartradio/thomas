@@ -4,22 +4,11 @@ package stream
 import cats.data.NonEmptyChain
 import cats.MonadThrow
 import cats.effect.Temporal
-import com.iheart.thomas.analysis.{
-  AccumulativeKPIQueryRepo,
-  KPI,
-  PerUserSamples,
-  PerUserSamplesQuery,
-  QueryAccumulativeKPI,
-  QueryName
-}
+import com.iheart.thomas.analysis.{AccumulativeKPIQueryRepo, KPI, PerUserSamples, PerUserSamplesQuery, QueryAccumulativeKPI, QueryName}
 import fs2.{Pipe, Stream}
 import cats.implicits._
-import com.iheart.thomas.stream.JobEvent.{
-  EventQueryInitiated,
-  EventsQueried,
-  EventsQueriedForFeature,
-  MessagesParseError
-}
+import com.iheart.thomas.abtest.model.Feature
+import com.iheart.thomas.stream.JobEvent.{EventQueryInitiated, EventsQueried, EventsQueriedForFeature, MessagesParseError}
 import com.iheart.thomas.tracking.EventLogger
 
 import java.time.Instant
@@ -29,7 +18,7 @@ trait KPIEventSource[F[_], K <: KPI, Message, Event] {
   def events(k: K): Pipe[F, Message, Event]
   def events(
       k: K,
-      feature: FeatureName
+      feature: Feature
     ): Pipe[F, Message, ArmKPIEvents[Event]]
 }
 
@@ -44,7 +33,7 @@ object KPIEventSource {
       def events(k: K): Pipe[F, Message, Event] = _ => Stream.empty
       def events(
           k: K,
-          feature: FeatureName
+          feature: Feature
         ): Pipe[F, Message, ArmKPIEvents[Event]] = _ => Stream.empty
     }
 
@@ -62,14 +51,14 @@ object KPIEventSource {
 
       def events(
           k: K,
-          feature: FeatureName
+          feature: Feature
         ): Pipe[F, Message, ArmKPIEvents[Event]] = {
         val parser = eventParser(k)
         (input: Stream[F, Message]) =>
           input
             .evalMapFilter { m =>
               armParser
-                .parse(m, feature)
+                .parse(m, feature.name)
                 .flatMap { armO =>
                   armO.flatTraverse { arm =>
                     (parser(m), timeStampParser(m))
@@ -128,12 +117,12 @@ object KPIEventSource {
 
         def events(
             k: QueryAccumulativeKPI,
-            feature: FeatureName
+            feature: Feature
           ): Pipe[F, Message, ArmKPIEvents[PerUserSamples]] =
           _ =>
             pulse(k)
               .evalMap { case (query, at) =>
-                query(k, feature, at)
+                query(k, feature.name, at)
                   .map(_.map { case (arm, samples) =>
                     ArmKPIEvents(arm, NonEmptyChain(samples), at)
                   })
@@ -141,7 +130,7 @@ object KPIEventSource {
                     logger(
                       EventsQueriedForFeature(
                         k,
-                        feature,
+                        feature.name,
                         r.map(ae => (ae.armName, ae.es.head.values.length))
                       )
                     )

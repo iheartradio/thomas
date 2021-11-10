@@ -21,7 +21,6 @@ import monocle.macros.syntax.lens._
 import mouse.all._
 import henkan.convert.Syntax._
 import mau.RefreshRef
-import _root_.play.api.libs.json.Json.JsValueWrapper
 
 import scala.concurrent.duration._
 import scala.util.Random
@@ -29,7 +28,7 @@ import scala.util.Random
 /** Algebra for ABTest API Final Tagless encoding
   * @tparam F
   */
-trait AbtestAlg[F[_]] extends DataProvider[F] {
+trait AbtestAlg[F[_]] extends TestsDataProvider[F] with FeatureRetriever[F] {
 
   def warmUp: F[Unit]
 
@@ -173,7 +172,7 @@ object AbtestAlg {
       abTestDao: EntityDAO[F, Abtest, JsObject],
       featureDao: EntityDAO[F, Feature, JsObject],
       eligibilityControl: EligibilityControl[F]
-    ): Resource[F, AbtestAlg[F]] =
+    ): Resource[F, AbtestAlg[F]] = {
     RefreshRef
       .resource[F, TestsData]
       .map { implicit rr =>
@@ -181,22 +180,19 @@ object AbtestAlg {
         new DefaultAbtestAlg[F](refreshPeriod)
       }
       .evalTap(_.warmUp)
+  }
 }
 
 final class DefaultAbtestAlg[F[_]](
     refreshPeriod: FiniteDuration,
     staleTimeout: FiniteDuration = 30.minutes
   )(implicit
-    private[thomas] val abTestDao: EntityDAO[
+   abTestDao: EntityDAO[
       F,
       Abtest,
       JsObject
     ],
-    private[thomas] val featureDao: EntityDAO[
-      F,
-      Feature,
-      JsObject
-    ],
+   featureRepo: FeatureRepo[F],
     refreshRef: RefreshRef[F, TestsData],
     nowF: F[Instant],
     F: MonadThrow[F],
@@ -290,17 +286,7 @@ final class DefaultAbtestAlg[F[_]](
     ): F[TestsData] =
     for {
       tests <- abTestDao.find(abtests.byTime(at, duration))
-      features <- featureDao.find(
-        Json.obj(
-          "name" ->
-            Json.obj(
-              "$in" ->
-                JsArray(
-                  tests.map(t => JsString(t.data.feature))
-                )
-            )
-        )
-      )
+      features <- featureRepo.findByNames(tests.map(_.data.feature))
     } yield TestsData(
       at,
       tests.map(t =>
@@ -323,7 +309,7 @@ final class DefaultAbtestAlg[F[_]](
       .map(_.map(_.data.feature).distinct.toList.sorted)
 
   def getAllFeatures: F[Vector[Feature]] =
-    featureDao.all.map(_.map(_.data))
+    featureRepo.all.map(_.map(_.data))
 
   def getTest(id: TestId): F[Entity[Abtest]] =
     abTestDao.get(id)
@@ -371,7 +357,7 @@ final class DefaultAbtestAlg[F[_]](
     ): F[Feature] =
     for {
       feature <- ensureFeature(featureName)
-      updated <- featureDao.update(
+      updated <- featureRepo.update(
         feature
           .lens(_.data.overrides)
           .modify(_ ++ overrides)
@@ -380,8 +366,8 @@ final class DefaultAbtestAlg[F[_]](
 
   def updateFeature(feature: Feature): F[Feature] =
     for {
-      fe <- featureDao.byName(feature.name)
-      updated <- featureDao.update(
+      fe <- featureRepo.byName(feature.name)
+      updated <- featureRepo.update(
         fe.copy(data = feature.copy(lockedAt = fe.data.lockedAt))
       )
     } yield updated.data
@@ -392,7 +378,7 @@ final class DefaultAbtestAlg[F[_]](
     ): F[Feature] =
     for {
       feature <- ensureFeature(featureName)
-      updated <- featureDao.update(
+      updated <- featureRepo.update(
         feature
           .lens(_.data.overrideEligibility)
           .set(overrideEligibility)
@@ -404,8 +390,8 @@ final class DefaultAbtestAlg[F[_]](
       userId: UserId
     ): F[Feature] =
     for {
-      feature <- featureDao.byName(featureName)
-      updated <- featureDao.update(
+      feature <- featureRepo.byName(featureName)
+      updated <- featureRepo.update(
         feature.lens(_.data.overrides).modify(_ - userId)
       )
     } yield updated.data
@@ -425,17 +411,17 @@ final class DefaultAbtestAlg[F[_]](
 
   def removeAllOverrides(featureName: FeatureName): F[Feature] =
     for {
-      feature <- featureDao.byName(featureName)
-      updated <- featureDao.update(
+      feature <- featureRepo.byName(featureName)
+      updated <- featureRepo.update(
         feature.lens(_.data.overrides).set(Map())
       )
     } yield updated.data
 
   def getFeature(featureName: FeatureName): F[Feature] =
-    featureDao.byName(featureName).map(_.data)
+    featureRepo.byName(featureName).map(_.data)
 
   def findFeature(featureName: FeatureName): F[Option[Feature]] =
-    featureDao.byNameOption(featureName).map(_.map(_.data))
+    featureRepo.byNameOption(featureName).map(_.map(_.data))
 
   def terminate(testId: TestId): F[Option[Entity[Abtest]]] =
     for {
@@ -582,46 +568,10 @@ final class DefaultAbtestAlg[F[_]](
     ): F[List[(UserId, GroupName)]] =
     for {
       test <- getTestByFeature(featureName, at)
-      feature <- featureDao.findOne(Symbol("name") -> featureName)
+      feature <- featureRepo.byName(featureName)
     } yield (ids.flatMap { uid =>
       Bucketing.getGroup(uid, test.data).map((uid, _))
     }.toMap ++ feature.data.overrides).toList
-
-  private def obtainLock(
-      feature: Entity[Feature],
-      gracePeriod: Option[FiniteDuration]
-    ): F[Boolean] = {
-    import utils.time.InstantOps
-    val noLock: (String, JsValueWrapper) = "lockedAt" -> Json.obj("$exists" -> false)
-    nowF.flatMap { now =>
-      val lockCheck: (String, JsValueWrapper) =
-        gracePeriod.fold(
-          noLock
-        ) { gp =>
-          "$or" -> Json.arr(
-            Json.obj(noLock),
-            Json.obj(
-              "lockedAt" ->
-                Json.obj("$lt" -> now.plusDuration(gp.inverse()))
-            )
-          )
-        }
-
-      featureDao
-        .update(
-          Json.obj(
-            "name" -> feature.data.name,
-            lockCheck
-          ),
-          feature.lens(_.data.lockedAt).set(Some(now)),
-          upsert = false
-        )
-    }
-
-  }
-  private def releaseLock(feature: Entity[Feature]): F[Entity[Feature]] =
-    featureDao
-      .update(feature.lens(_.data.lockedAt).set(None))
 
   private def createWithoutLock(
       testSpec: AbtestSpec,
@@ -653,7 +603,8 @@ final class DefaultAbtestAlg[F[_]](
 
     for {
       f <- ensureFeature(spec.feature, List(spec.author))
-      _ <- obtainLock(f, gracePeriod)
+      now <- nowF
+      _ <- featureRepo.obtainLock(f, now, gracePeriod)
         .adaptErr { case e =>
           ConflictCreation(spec.feature, e.getMessage)
         }
@@ -664,7 +615,7 @@ final class DefaultAbtestAlg[F[_]](
           )
         )(identity)
       attempt <- F.attempt(add)
-      _ <- releaseLock(f)
+      _ <- featureRepo.releaseLock(f)
       t <- F.fromEither(attempt)
     } yield t
   }
@@ -858,8 +809,8 @@ final class DefaultAbtestAlg[F[_]](
       name: FeatureName,
       developers: List[Username] = Nil
     ): F[Entity[Feature]] =
-    featureDao.byName(name).recoverWith { case Error.NotFound(_) =>
-      featureDao.insert(Feature(name, None, Map(), developers = developers))
+    featureRepo.byName(name).recoverWith { case Error.NotFound(_) =>
+      featureRepo.insert(Feature(name, None, Map(), developers = developers))
     }
 
   private implicit def errorsToF(possibleErrors: List[ValidationError]): F[Unit] =
