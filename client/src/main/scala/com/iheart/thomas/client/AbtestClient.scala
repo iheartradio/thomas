@@ -13,7 +13,7 @@ import com.iheart.thomas.abtest.model._
 import lihua.Entity
 import _root_.play.api.libs.json._
 import cats.implicits._
-import com.iheart.thomas.abtest.{DataProvider, Error, TestsData}
+import com.iheart.thomas.abtest.{TestsDataProvider, Error, TestsData}
 import com.iheart.thomas.abtest.json.play.Formats._
 import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 
@@ -24,7 +24,7 @@ import org.http4s.blaze.client.BlazeClientBuilder
 
 import scala.concurrent.duration.FiniteDuration
 
-trait ReadOnlyAbtestClient[F[_]] extends DataProvider[F] {
+trait ReadOnlyAbtestClient[F[_]] extends TestsDataProvider[F] {
   def tests(asOf: Option[Instant] = None): F[Vector[(Entity[Abtest], Feature)]]
 
   def featureTests(feature: FeatureName): F[Vector[Entity[Abtest]]]
@@ -37,7 +37,7 @@ trait ReadOnlyAbtestClient[F[_]] extends DataProvider[F] {
     )(implicit F: Functor[F]
     ): F[Option[Entity[Abtest]]] =
     tests(asOf).map(_.collectFirst {
-      case (test, Feature(`feature`, _, _, _, _, _, _)) => test
+      case (test, Feature(`feature`, _, _, _, _, _, _, _)) => test
     })
 
   def featureLatestTest(

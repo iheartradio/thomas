@@ -572,16 +572,18 @@ object AbtestManagementUI {
         fieldEither[Boolean]("overrideEligibility").default(false),
         fieldEither[Map[String, String]]("batchOverrides").default(Map.empty),
         listOf[String]("developers"),
-        listOf[String]("operators")
+        listOf[String]("operators"),
+        fieldEither[Boolean]("realtime").default(false).map(r => if(r) AssignmentTruthAt.Realtime else AssignmentTruthAt.Message)
       ).mapN {
-        (name, desc, overrides, oEFlag, batchOverrides, developers, operators) =>
+        (name, desc, overrides, oEFlag, batchOverrides, developers, operators, ata) =>
           Feature(
             name = name,
             description = desc,
             overrides = overrides ++ batchOverrides,
             overrideEligibility = oEFlag,
             developers = developers,
-            operators = operators
+            operators = operators,
+            assignmentTruthAt = ata
           )
       }.sanitized
     }
