@@ -28,8 +28,7 @@ object ArmExtractor {
           ts <- timeStampParser(message)
           assignments <- assigner.assign(UserGroupQuery(uid, at = Some(ts.toOffsetDateTimeUTC), features = List(feature.name)))
         } yield assignments.get(feature.name).map(_.groupName)
-      case Message => armParser.parse(message, feature.name)
-
+      case Message => armParser(message, feature.name)
     }
   }
 }
