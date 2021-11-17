@@ -26,6 +26,16 @@ object ArmParser {
   type JValueArmParser[F[_]] = ArmParser[F, JValue]
 }
 
+trait UserParser[F[_], Message] {
+  def apply(
+      m: Message
+    ): F[Option[UserId]]
+}
+
+object UserParser {
+  type JValueArmParser[F[_]] = UserParser[F, JValue]
+}
+
 trait TimeStampParser[F[_], Message] {
   def apply(
       m: Message
