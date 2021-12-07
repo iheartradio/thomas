@@ -7,8 +7,9 @@ import cats.implicits._
 import cats.{Applicative, Monad, MonadThrow}
 import com.iheart.thomas.admin.{Role, User}
 import org.http4s.dsl.Http4sDsl
+import org.http4s.headers.Location
 import org.http4s.twirl._
-import org.http4s.{HttpRoutes, Request, Response}
+import org.http4s.{HttpRoutes, Request, Response, Uri}
 import tsec.authentication.{SecuredRequest, TSecAuthService, TSecMiddleware}
 import tsec.authorization.{AuthGroup, AuthorizationInfo, BasicRBAC}
 
@@ -47,6 +48,11 @@ trait AuthedEndpointsUtils[F[_], Auth] {
     )
     middleWare(service)
   }
+
+  def redirectTo(location: String)(implicit F: Applicative[F]) =
+    SeeOther(
+      Location(Uri.unsafeFromString(location))
+    )
 
   def roleBasedService(
       authGroup: AuthGroup[Role]
