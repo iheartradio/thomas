@@ -23,7 +23,8 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
   *   reserve some arms from being changed by the bandit alg (useful for A/B tests)
   */
 case class BanditSpec(
-    feature: FeatureName,
+    feature:
+    FeatureName,
     title: String,
     author: String,
     kpiName: KPIName,

@@ -1,5 +1,7 @@
 package com.iheart.thomas.bandit
 
+import cats.kernel.Eq
+
 sealed trait BanditStatus extends Serializable with Product
 
 object BanditStatus {
@@ -9,4 +11,5 @@ object BanditStatus {
   case object Stopped
       extends BanditStatus //The treatments are no longer provided. i.e. backing A/B test is no longer running.
 
+  implicit val eqInst: Eq[BanditStatus] = Eq.fromUniversalEquals
 }
