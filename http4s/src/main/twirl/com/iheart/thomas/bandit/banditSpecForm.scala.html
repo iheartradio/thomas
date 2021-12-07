@@ -73,6 +73,7 @@ successMsg: Option[String] = None)(implicit env: UIEnv)
                    class="form-control"
                    id="minimumSizeChangeInput"
                    type="number"
+                   step="any"
                    required
                    value="@draftO.map(_.minimumSizeChange).getOrElse(0.05)"
             />
