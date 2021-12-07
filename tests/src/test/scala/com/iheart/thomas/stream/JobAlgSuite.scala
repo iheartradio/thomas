@@ -4,8 +4,8 @@ package stream
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.implicits._
-import com.iheart.thomas.abtest.FeatureRetriever
-import com.iheart.thomas.abtest.model.Feature
+import com.iheart.thomas.abtest.{AssignGroups, FeatureRetriever, PerformantAssigner}
+import com.iheart.thomas.abtest.model.{Feature, UserGroupQuery}
 import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.bayesian.models._
 import com.iheart.thomas.stream.JobSpec.{ProcessSettingsOptional, UpdateKPIPrior}
@@ -37,6 +37,10 @@ abstract class JobAlgSuiteBase extends AsyncFreeSpec with AsyncIOSpec with Match
 
     implicit val featureRepo = new FeatureRetriever[IO] {
       override def getFeature(name: FeatureName): IO[Feature] = IO(Feature("feature_foo"))
+    }
+
+    implicit val mockAssigner: PerformantAssigner[IO] = new PerformantAssigner[IO] {
+       def assign(query: UserGroupQuery): IO[Map[FeatureName, AssignGroups.AssignmentResult]] = IO.pure(Map.empty)
     }
 
     implicit val nullBSProcessAlg: BanditProcessAlg[IO, JValue] = null

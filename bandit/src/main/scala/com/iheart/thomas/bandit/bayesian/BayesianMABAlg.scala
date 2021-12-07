@@ -6,13 +6,11 @@ import cats.effect.Clock
 import cats.implicits._
 import cats.MonadThrow
 import com.iheart.thomas.abtest.model.Abtest.Specialization
-import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group, GroupSize}
+import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group, GroupRange, GroupSize, Tag, UserMetaCriteria}
 import com.iheart.thomas.analysis.bayesian.KPIEvaluator
-import com.iheart.thomas.analysis.monitor.{
-  AllExperimentKPIStateRepo,
-  ExperimentKPIState
-}
+import com.iheart.thomas.analysis.monitor.{AllExperimentKPIStateRepo, ExperimentKPIState}
 import com.iheart.thomas.analysis.{AllKPIRepo, KPIStats, Probability}
+import com.iheart.thomas.bandit.bayesian.BayesianMABAlg.BanditAbtestSpec
 import com.iheart.thomas.bandit.tracking.BanditEvent
 import com.iheart.thomas.tracking.EventLogger
 import com.iheart.thomas.utils.time.now
@@ -36,11 +34,17 @@ trait BayesianMABAlg[F[_]] {
 
   def delete(featureName: FeatureName): F[Unit]
 
-  def update(banditSpec: BanditSpec): F[BanditSpec]
+  def update(banditSpec: BanditSpec, bas: BanditAbtestSpec): F[BanditSpec]
 
 }
 
 object BayesianMABAlg {
+
+  case class BanditAbtestSpec(
+                               requiredTags: List[Tag] = Nil,
+                               userMetaCriteria: UserMetaCriteria = None,
+                               segmentRanges: List[GroupRange] = Nil
+                             )
 
   private[bayesian] def createTestSpec[F[_]: MonadThrow](
       from: BanditSpec,
@@ -124,8 +128,17 @@ object BayesianMABAlg {
             .mapN(BayesianMAB(_, bs, _))
         }
 
-      def update(banditSpec: BanditSpec): F[BanditSpec] = {
-        specDao.update(banditSpec)
+      def update(banditSpec: BanditSpec, bas: BanditAbtestSpec): F[BanditSpec] = {
+        for {
+          now <- now[F]
+          test <- abtest(banditSpec.feature)
+          spec = test.data.toSpec
+          _ <- abtestAPI.continue(spec.copy( start = now.toOffsetDateTimeSystemDefault,
+            requiredTags = bas.requiredTags,
+            userMetaCriteria = bas.userMetaCriteria, segmentRanges = bas.segmentRanges))
+          r <- specDao.update(banditSpec)
+        } yield r
+
       }
 
       def init(banditSpec: BanditSpec): F[Bandit] =

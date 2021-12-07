@@ -16,7 +16,7 @@ import scala.util.matching.Regex
   "Need to provide a parse that can parse group name (or arm name) out of ${Message} of event "
 )
 trait ArmParser[F[_], Message] {
-  def parse(
+  def apply(
       m: Message,
       feature: FeatureName
     ): F[Option[ArmName]]
@@ -24,6 +24,16 @@ trait ArmParser[F[_], Message] {
 
 object ArmParser {
   type JValueArmParser[F[_]] = ArmParser[F, JValue]
+}
+
+trait UserParser[F[_], Message] {
+  def apply(
+      m: Message
+    ): F[Option[UserId]]
+}
+
+object UserParser {
+  type JValueUserParser[F[_]] = UserParser[F, JValue]
 }
 
 trait TimeStampParser[F[_], Message] {
@@ -56,7 +66,6 @@ object TimeStampParser {
           )
       }
     }
-
 }
 
 trait KpiEventParser[F[_], Message, Event, K <: KPI] {

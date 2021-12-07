@@ -7,10 +7,12 @@ import com.iheart.thomas.bandit.bayesian.{BanditSpec, BayesianMABAlg}
 import com.iheart.thomas.stream.{Job, JobAlg}
 import com.iheart.thomas.stream.JobSpec.RunBandit
 import cats.implicits._
+import com.iheart.thomas.bandit.bayesian.BayesianMABAlg.BanditAbtestSpec
 
 trait ManagerAlg[F[_]] {
   def status(feature: FeatureName): F[BanditStatus]
   def pause(feature: FeatureName): F[Unit]
+  def update(bs: BanditSpec, bas: BanditAbtestSpec): F[BanditSpec]
   def start(feature: FeatureName): F[Option[Job]]
   def create(bs: BanditSpec): F[Bandit]
   def allBandits: F[Seq[Bandit]]
@@ -18,10 +20,20 @@ trait ManagerAlg[F[_]] {
 }
 
 object ManagerAlg {
-  implicit def apply[F[_]: Monad](
+  implicit def apply[F[_]](
       implicit alg: BayesianMABAlg[F],
-      jobAlg: JobAlg[F]
-    ): ManagerAlg[F] = new ManagerAlg[F] {
+      jobAlg: JobAlg[F],
+      F: Monad[F]): ManagerAlg[F] = new ManagerAlg[F] {
+
+    def update(bs: BanditSpec, bas: BanditAbtestSpec): F[BanditSpec] = {
+      for {
+        s <- status(bs.feature)
+        running = s === BanditStatus.Running
+        _ <- if(running) pause(bs.feature) else F.unit
+        r <- alg.update(bs, bas)
+        _ <- if(running) start(bs.feature) else F.unit
+      } yield r
+    }
 
     def status(feature: FeatureName): F[BanditStatus] = {
       jobAlg
