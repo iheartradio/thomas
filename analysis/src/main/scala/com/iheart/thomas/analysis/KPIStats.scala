@@ -18,7 +18,7 @@ case class Conversions(
   def sampleSize: Long = total
 
   override def toString: String =
-    s"Conversions(converted: $converted, total: $total, rate: ${(rate * 100).formatted("%.2f")}%)"
+    s"Conversions(converted: $converted, total: $total, rate: ${"%.2f".format(rate * 100)}%)"
 }
 
 object Conversions {
