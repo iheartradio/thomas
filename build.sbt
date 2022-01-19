@@ -13,7 +13,7 @@ val gh = GitHubSettings(
 )
 
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
-val reactiveMongoVer = "1.0.7"
+val reactiveMongoVer = "1.0.10"
 
 // format: off
 lazy val libs = {
@@ -24,12 +24,12 @@ lazy val libs = {
     .addJVM(name = "decline",               version = "2.2.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
     .addJVM(name = "fs2-kafka",             version = "2.2.0",  org = "com.github.fd4s")
-    .add(   name = "fs2",                   version = "3.2.3")
-    .add(   name = "cats-effect",           version = "3.3.4")
+    .add(   name = "fs2",                   version = "3.2.4")
+    .add(   name = "cats-effect",           version = "3.3.0")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .addJVM(name = "log4cats",              version = "2.1.1",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
-    .addJava(name ="logback-classic",       version = "1.2.6",  org = "ch.qos.logback")
+    .addJava(name ="logback-classic",       version = "1.2.10",  org = "ch.qos.logback")
     .addJVM(name = "mau",                   version = "0.3.1",  org = "com.kailuowang")
     .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
     .add(   name = "play-json",             version = "2.9.2",  org = "com.typesafe.play")
