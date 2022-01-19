@@ -2,7 +2,7 @@ package com.iheart.thomas.cli
 
 import cats.data.{NonEmptyList, Validated}
 import com.monovore.decline.Opts
-import cats.implicits._
+import cats.syntax.all._
 import _root_.play.api.libs.json.{JsObject, JsValue, Reads}
 import _root_.play.api.libs.json.Json.parse
 import cats.data.Validated.Valid

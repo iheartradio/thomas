@@ -10,7 +10,7 @@ import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
 import org.http4s.dsl.Http4sDsl
 import tsec.authentication.asAuthed
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.abtest.model.{GroupMeta, GroupRange, GroupSize, UserMetaCriterion}
 import com.iheart.thomas.analysis.{AllKPIRepo, KPIName}
 import com.iheart.thomas.bandit.ArmSpec

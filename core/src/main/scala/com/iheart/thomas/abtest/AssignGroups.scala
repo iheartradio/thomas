@@ -9,7 +9,7 @@ import cats.MonadThrow
 import java.time.Instant
 
 import cats.Monad
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.abtest.model._
 import henkan.convert.Syntax._
 import utils.time._

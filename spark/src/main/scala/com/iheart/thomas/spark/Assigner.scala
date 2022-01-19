@@ -8,7 +8,7 @@ import com.iheart.thomas.abtest.model.UserGroupQuery
 import com.iheart.thomas.client.AbtestClient
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{col, udf}
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.abtest.AssignGroups.AssignmentResult
 
 import scala.concurrent.ExecutionContext

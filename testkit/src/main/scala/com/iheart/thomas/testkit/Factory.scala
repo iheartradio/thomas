@@ -19,7 +19,7 @@ import com.iheart.thomas.analysis.{
 import com.iheart.thomas.dynamo.{AnalysisDAOs, ScanamoManagement}
 import com.iheart.thomas.http4s.MongoResources
 import ThrowableExtension._
-import cats.implicits._
+import cats.syntax.all._
 import concurrent.ExecutionContext.Implicits.global
 
 import scala.util.Random

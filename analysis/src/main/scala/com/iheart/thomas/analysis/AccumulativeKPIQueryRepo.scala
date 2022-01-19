@@ -3,7 +3,7 @@ package com.iheart.thomas.analysis
 import cats.{Applicative, Functor}
 import com.iheart.thomas.analysis.MessageQuery.FieldName
 import com.iheart.thomas.analysis.Query.DefaultParamValue
-import cats.implicits._
+import cats.syntax.all._
 
 import scala.concurrent.duration.FiniteDuration
 trait AccumulativeKPIQueryRepo[F[_]] {

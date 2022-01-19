@@ -1,7 +1,7 @@
 package com.iheart.thomas.stream
 
 import fs2.Pipe
-import cats.implicits._
+import cats.syntax.all._
 object PipeSyntax {
   implicit class pipeSyntax[F[_], A, B](private val self: Pipe[F, A, B])
       extends AnyVal {
