@@ -23,9 +23,9 @@ lazy val libs = {
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
     .addJVM(name = "decline",               version = "2.2.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
-    .addJVM(name = "fs2-kafka",             version = "2.2.0",  org = "com.github.fd4s")
+    .addJVM(name = "fs2-kafka",             version = "2.3.0",  org = "com.github.fd4s")
     .add(   name = "fs2",                   version = "3.2.4")
-    .add(   name = "cats-effect",           version = "3.3.0")
+    .add(   name = "cats-effect",           version = "3.3.5")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .addJVM(name = "log4cats",              version = "2.1.1",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
@@ -41,7 +41,7 @@ lazy val libs = {
     .addJVM(name = "scala-collection-compat",    version = "2.6.0",  org = "org.scala-lang.modules")
     .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
-    .addJVM(name = "scanamo",               version = "1.0.0-M17", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
+    .addJVM(name = "scanamo",               version = "1.0.0-M19", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
     .add(   name = "spark",                 version = "2.4.8",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tsec",                  version = "0.4.0",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
     .add   (name = "enumeratum",            version = "1.7.0",  org = "com.beachape" )
@@ -454,7 +454,7 @@ lazy val commonSettings = addCompilerPlugins(
 ) ++ sharedCommonSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := "2.12.15",
-  crossScalaVersions := Seq(scalaVersion.value, "2.13.7"),
+  crossScalaVersions := Seq(scalaVersion.value, "2.13.8"),
   Test / parallelExecution := false,
   releaseCrossBuild := false,
   developers := List(developerKai),
