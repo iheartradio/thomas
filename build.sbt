@@ -23,7 +23,7 @@ lazy val libs = {
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
     .addJVM(name = "decline",               version = "2.2.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
-    .addJVM(name = "fs2-kafka",             version = "2.2.0",  org = "com.github.fd4s")
+    .addJVM(name = "fs2-kafka",             version = "2.3.0",  org = "com.github.fd4s")
     .add(   name = "fs2",                   version = "3.2.4")
     .add(   name = "cats-effect",           version = "3.3.5")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
