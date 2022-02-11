@@ -2,7 +2,7 @@ package com.iheart.thomas
 package cli
 
 import cats.effect.Async
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.cli.OptsSyntax._
 import com.monovore.decline._
 import _root_.play.api.libs.json.Json.{prettyPrint, toJson}

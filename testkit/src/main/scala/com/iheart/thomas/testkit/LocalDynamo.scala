@@ -5,7 +5,7 @@ import cats.Parallel
 import cats.effect.{Async, Resource, Sync}
 import com.iheart.thomas.dynamo.ScanamoManagement
 import org.scanamo.LocalDynamoDB
-import cats.implicits._
+import cats.syntax.all._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.dynamodb.model.{
   ResourceNotFoundException,
