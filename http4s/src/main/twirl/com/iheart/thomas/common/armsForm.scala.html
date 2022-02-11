@@ -38,7 +38,7 @@ metaChangeOnly: Boolean = false
 
         @if(showReserved) {
         <div class="form-group ms-2 form-check">
-            <input name="reserved" class="form-check-input" type="checkbox"
+            <input name="groups[].reserved" class="form-check-input" type="checkbox"
                    value="true"
                    @if(as.fold(false)(_.reserved)) { checked }
             />
