@@ -7,7 +7,7 @@ import java.time.format.DateTimeFormatter
 import java.time._
 import java.util.concurrent.TimeUnit
 
-import cats.syntax.all._
+import cats.implicits._
 import scala.util.Try
 import scala.concurrent.duration.{Duration => CDuration, _}
 

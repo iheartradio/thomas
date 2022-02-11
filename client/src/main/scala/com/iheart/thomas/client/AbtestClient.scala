@@ -12,7 +12,7 @@ import cats.effect._
 import com.iheart.thomas.abtest.model._
 import lihua.Entity
 import _root_.play.api.libs.json._
-import cats.syntax.all._
+import cats.implicits._
 import com.iheart.thomas.abtest.{TestsDataProvider, Error, TestsData}
 import com.iheart.thomas.abtest.json.play.Formats._
 import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest

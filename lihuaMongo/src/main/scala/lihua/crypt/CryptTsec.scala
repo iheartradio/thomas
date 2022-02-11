@@ -9,7 +9,7 @@ import tsec.cipher.symmetric._
 import tsec.cipher.symmetric.jca._
 
 import scala.io.StdIn
-import cats.syntax.all._
+import cats.implicits._
 import lihua.crypt.CryptTsec.Base64Error
 
 class CryptTsec[F[_]](key: String)(implicit F: Sync[F]) extends Crypt[F] {

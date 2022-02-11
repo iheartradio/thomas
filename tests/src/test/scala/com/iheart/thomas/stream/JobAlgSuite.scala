@@ -3,7 +3,7 @@ package stream
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import cats.syntax.all._
+import cats.implicits._
 import com.iheart.thomas.abtest.{AssignGroups, FeatureRetriever, PerformantAssigner}
 import com.iheart.thomas.abtest.model.{Feature, UserGroupQuery}
 import com.iheart.thomas.analysis._

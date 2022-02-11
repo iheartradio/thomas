@@ -8,7 +8,7 @@ package mongo
 import cats.data.{EitherT, NonEmptyList}
 import lihua.mongo.DBError._
 import play.api.libs.json.{Format, JsObject}
-import cats.syntax.all._
+import cats.implicits._
 import reactivemongo.play.json.compat._
 import json2bson._
 import bson2json._

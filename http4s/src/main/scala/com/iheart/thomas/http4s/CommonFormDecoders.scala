@@ -4,7 +4,7 @@ package http4s
 import java.time.{Instant, OffsetDateTime, ZonedDateTime}
 import _root_.play.api.libs.json.{JsObject, Json, Reads}
 import cats.data.NonEmptyList
-import cats.syntax.all._
+import cats.implicits._
 import org.http4s.FormDataDecoder._
 import org.http4s.{
   FormDataDecoder,

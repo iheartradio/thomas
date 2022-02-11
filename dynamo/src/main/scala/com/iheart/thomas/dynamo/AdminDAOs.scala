@@ -4,7 +4,7 @@ import cats.effect.Async
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.admin.{AuthRecord, AuthRecordDAO, User, UserDAO}
 import DynamoFormats._
-import cats.syntax.all._
+import cats.implicits._
 import com.iheart.thomas.stream.{Job, JobDAO}
 import org.scanamo.syntax._
 

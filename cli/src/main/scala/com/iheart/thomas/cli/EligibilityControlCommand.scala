@@ -2,7 +2,7 @@ package com.iheart.thomas
 package cli
 
 import cats.effect.Async
-import cats.syntax.all._
+import cats.implicits._
 import com.iheart.thomas.abtest.json.play.Formats._
 import com.iheart.thomas.abtest.model.UserMetaCriterion
 import com.iheart.thomas.cli.OptsSyntax._

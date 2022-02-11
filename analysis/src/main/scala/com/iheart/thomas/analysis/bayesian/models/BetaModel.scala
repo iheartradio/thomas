@@ -3,7 +3,7 @@ package bayesian.models
 import syntax.all._
 import cats.data.ValidatedNel
 import com.stripe.rainier.core.Beta
-import cats.syntax.all._
+import cats.implicits._
 case class BetaModel(
     alpha: Double,
     beta: Double) {

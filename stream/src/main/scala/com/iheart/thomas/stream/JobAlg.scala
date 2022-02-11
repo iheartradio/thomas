@@ -3,7 +3,7 @@ package stream
 
 import cats.Functor
 import cats.effect.{Temporal, Async, Sync}
-import cats.syntax.all._
+import cats.implicits._
 import com.iheart.thomas.utils.time.InstantOps
 import com.iheart.thomas.analysis.KPIName
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Specialization

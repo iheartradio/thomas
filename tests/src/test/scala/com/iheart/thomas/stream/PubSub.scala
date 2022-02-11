@@ -1,7 +1,7 @@
 package com.iheart.thomas.stream
 
 import cats.effect.Concurrent
-import cats.syntax.all._
+import cats.implicits._
 import fs2.Stream
 import fs2.concurrent.Topic
 import org.typelevel.jawn.ast.JValue

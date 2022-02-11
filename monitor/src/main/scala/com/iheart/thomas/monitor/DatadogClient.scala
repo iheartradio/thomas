@@ -5,7 +5,7 @@ import org.http4s.client.{Client => Http4sClient}
 import org.http4s.play._
 import org.http4s.client.dsl.Http4sClientDsl
 import _root_.play.api.libs.json.{JsObject, Json}
-import cats.syntax.all._
+import cats.implicits._
 import com.typesafe.config.Config
 import pureconfig.ConfigSource
 import pureconfig.module.catseffect.syntax._

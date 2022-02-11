@@ -3,7 +3,7 @@ package http4s
 package auth
 
 import cats.data.{Kleisli, OptionT}
-import cats.syntax.all._
+import cats.implicits._
 import cats.{Applicative, Monad, MonadThrow}
 import com.iheart.thomas.admin.{Role, User}
 import org.http4s.dsl.Http4sDsl

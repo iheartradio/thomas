@@ -4,7 +4,7 @@ package analysis
 import breeze.stats.meanAndVariance.MeanAndVariance
 import cats.UnorderedFoldable
 import cats.kernel.{CommutativeMonoid, Monoid}
-import cats.syntax.all._
+import cats.implicits._
 import henkan.convert.Syntax._
 
 sealed trait KPIStats

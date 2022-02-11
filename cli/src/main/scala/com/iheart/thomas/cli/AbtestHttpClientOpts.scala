@@ -3,7 +3,7 @@ package cli
 
 import cats.effect.Async
 import com.monovore.decline.Opts
-import cats.syntax.all._
+import cats.implicits._
 import com.iheart.thomas.client.AbtestClient.HttpServiceUrlsPlay
 import com.iheart.thomas.client.Http4SAbtestClient
 
