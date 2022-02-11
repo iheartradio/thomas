@@ -18,7 +18,7 @@ showReset: Boolean = true
     </div>
     <div class="card-body">
         @if(showCommands) {
-        <form action="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/evaluate" >
+            <form action="@env.routes.analysisOf(state.key.feature)states/@state.key.kpi/@state.key.specialization.entryName/evaluate" >
         }
         <div class="d-flex mt-2 flex-wrap">
 
@@ -44,7 +44,6 @@ showReset: Boolean = true
                             @perUserSamplesSummary(s)
                         }
                     }
-
                 </div>
             }
         </div>
@@ -63,9 +62,6 @@ showReset: Boolean = true
             </div>
         </form>
         }
-
-
-
 
     </div>
 </div>
