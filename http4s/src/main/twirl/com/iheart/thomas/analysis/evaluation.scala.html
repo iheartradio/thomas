@@ -47,6 +47,7 @@ includedArms: Set[ArmName]
         </div>
         <div class="col-8">
             <form action="" method="get" class="row g-3">
+
                 @for(arm <- includedArms) {
                   <input type="hidden" name="includedArms" value="@arm" />
                 }
