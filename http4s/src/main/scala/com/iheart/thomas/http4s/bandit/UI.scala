@@ -11,7 +11,12 @@ import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
 import org.http4s.dsl.Http4sDsl
 import tsec.authentication.asAuthed
 import cats.implicits._
-import com.iheart.thomas.abtest.model.{GroupMeta, GroupRange, GroupSize, UserMetaCriterion}
+import com.iheart.thomas.abtest.model.{
+  GroupMeta,
+  GroupRange,
+  GroupSize,
+  UserMetaCriterion
+}
 import com.iheart.thomas.analysis.{AllKPIRepo, KPIName}
 import com.iheart.thomas.bandit.ArmSpec
 import com.iheart.thomas.bandit.bayesian.BayesianMABAlg.BanditAbtestSpec
@@ -69,12 +74,15 @@ class UI[F[_]: Async](
 
     case req @ POST -> `rootPath` / feature / "" asAuthed u =>
       for {
-        bs <- req.request.as[BanditSpec].ensure(MismatchFeatureName)(_.feature === feature)
+        bs <- req.request
+          .as[BanditSpec]
+          .ensure(MismatchFeatureName)(_.feature === feature)
         bas <- req.request.as[BanditAbtestSpec]
+
         r <-
           alg.update(bs.copy(author = u.username), bas) *>
             redirectTo(reverseRoutes.bandit(bs.feature))
-        } yield r
+      } yield r
 
     case GET -> `rootPath` / feature / "pause" asAuthed (_) =>
       alg.pause(feature) *>
@@ -85,7 +93,6 @@ class UI[F[_]: Async](
 
 object UI {
   case object MismatchFeatureName extends RuntimeException with NoStackTrace
-
 
   object decoders {
     import CommonFormDecoders._
@@ -120,9 +127,9 @@ object UI {
       list[GroupRange]("segmentRanges")
     ).mapN(BanditAbtestSpec.apply).sanitized
 
-
-    implicit val banditAndAbtestSpecFDD: FormDataDecoder[(BanditSpec,BanditAbtestSpec)] = (bandSpecFDD,banditAbtestSpecFDD).tupled
-
+    implicit val banditAndAbtestSpecFDD
+        : FormDataDecoder[(BanditSpec, BanditAbtestSpec)] =
+      (bandSpecFDD, banditAbtestSpecFDD).tupled
 
   }
 }

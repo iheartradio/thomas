@@ -15,7 +15,7 @@ metaChangeOnly: Boolean = false
     <div class="col-3">
         <div class="form-group">
             <input name="groups[].name" class="form-control size-change essential"
-                   id="testGroupName" type="text"
+                   id="testGroupName" type="text" required
                    value="@as.map(_.name)"/>
         </div>
     </div>
@@ -23,7 +23,7 @@ metaChangeOnly: Boolean = false
     <div class="col-2">
         <div class="form-group">
             <input name="groups[].size" class="form-control size-change essential"
-                   id="testGroupSize" type="number"
+                   id="testGroupSize" type="number" required
                    value="@as.map(_.initialSize)"
                    min="0" max="1" step="any" placeholder="Btw 0 & 1"/>
         </div>
@@ -37,14 +37,12 @@ metaChangeOnly: Boolean = false
           </div>
 
         @if(showReserved) {
-        <div class="form-group ms-2 form-check">
-            <input name="groups[].reserved" class="form-check-input" type="checkbox"
-                   value="true"
-                   @if(as.fold(false)(_.reserved)) { checked }
-            />
-            <label class="form-label">Reserved</label>
-        </div>
-
+            <div class="form-group ms-2 form-check">
+                <input name="groups[].reserved" class="reserved-hidden" type="hidden" value="@as.fold(false)(_.reserved)" />
+                <input class="form-check-input reserved-cb" type="checkbox" onclick="thomasCheckReserve(this)"
+                       @if(as.fold(false)(_.reserved)) { checked } />
+                <label class="form-label">Reserved</label>
+            </div>
         }
         <div class="text-center">
             <button class="btn btn-link remove-item remove-item mt-4 ml-3 size-change essential"
@@ -140,5 +138,12 @@ metaChangeOnly: Boolean = false
 
         return true;
     };
+
+    var thomasCheckReserve = function(el) {
+        $(el).parent().find('input.reserved-hidden').val(el.checked)
+    }
+    $(document).ready(function() {
+        $('body').append($('#newTestGroup')) //move new test group inputs out of the form
+    });
 
 </script>
