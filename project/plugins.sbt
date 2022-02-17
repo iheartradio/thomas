@@ -6,7 +6,7 @@ addSbtPlugin(
   "org.typelevel" %% "sbt-catalysts" % "1.2.1"
 )
 
-addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.9.0")
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.11.0")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-twirl" % "1.5.1")
 
