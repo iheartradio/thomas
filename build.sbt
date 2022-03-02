@@ -44,7 +44,7 @@ lazy val libs = {
     .addJVM(name = "scanamo",               version = "1.0.0-M19", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
     .add(   name = "spark",                 version = "2.4.8",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tsec",                  version = "0.4.0",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
-    .add   (name = "enumeratum",            version = "1.7.0",  org = "com.beachape" )
+    .add   (name = "enumeratum",            version = "1.7.0",  org = "com.beachape", "enumeratum", "enumeratum-cats" )
 
 }
 // format: on
@@ -243,6 +243,7 @@ lazy val analysis = project
       "cats-effect",
       "newtype",
       "enumeratum",
+      "enumeratum-cats",
       "breeze",
       "commons-math3",
       "play-json-derived-codecs"
