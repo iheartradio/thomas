@@ -320,7 +320,11 @@ final class DefaultAbtestAlg[F[_]](
     }
 
   def getAllTestsEndAfter(time: OffsetDateTime): F[Vector[Entity[Abtest]]] =
-    abTestDao.find(abtests.endTimeAfter(time.toInstant))
+    abTestDao.find(abtests.endTimeAfter(time.toInstant)
+      ++ Json.obj(
+      "specialization" -> Json.obj("$exists" -> false)
+      )
+    )
 
   def getTestsByFeature(feature: FeatureName): F[Vector[Entity[Abtest]]] =
     abTestDao
