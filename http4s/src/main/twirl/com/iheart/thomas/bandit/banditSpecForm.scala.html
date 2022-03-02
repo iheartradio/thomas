@@ -68,7 +68,12 @@ successMsg: Option[String] = None,
             </select>
         </div>
 
-            @armsForm(draftO.map(_.arms), armLabel = "Arm", showReserved = true)
+            @armsForm(
+                draftArms = draftO.map(_.arms),
+                armLabel = "Arm",
+                showReserved = true,
+                extraArmNotes = bandit.map(_.abtest.data.groups.map(g => (g.name, s"current allocation: ${g.size}")).toMap).getOrElse(Map.empty)
+            )
         </div>
 
         <div class="col-5">
