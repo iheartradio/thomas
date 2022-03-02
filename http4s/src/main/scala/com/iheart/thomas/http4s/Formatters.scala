@@ -2,7 +2,7 @@ package com.iheart.thomas.http4s
 
 import java.time.{Instant, OffsetDateTime, ZoneId}
 import java.time.format.DateTimeFormatter
-import com.iheart.thomas.abtest.model.Abtest
+import com.iheart.thomas.abtest.model.{Abtest, GroupSize}
 import com.iheart.thomas.abtest.model.Abtest.Status
 import lihua.Entity
 import _root_.play.api.libs.json.{Json, Writes}
@@ -30,6 +30,11 @@ object Formatters {
   def formatJSON[A](a: A)(implicit w: Writes[A]): String = {
     Json.prettyPrint(w.writes(a))
   }
+
+  def formatArmSize(size: GroupSize): String = {
+    "%.3f".format(size)
+  }
+
 
   def formatStatus(test: Entity[Abtest]): (String, String) = {
     test.data.statusAsOf(OffsetDateTime.now) match {

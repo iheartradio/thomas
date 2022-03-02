@@ -8,7 +8,7 @@ groupSizeChangeAllowed: Boolean = true,
 armLabel: String = "Group",
 showReserved: Boolean = false,
 metaChangeOnly: Boolean = false,
-extraArmNotes: Map[ArmName, String] = Map.empty
+extraArmNotes: Map[ArmName, Html] = Map.empty
 )
 
 @arm(as: Option[ArmSpec]) = {
@@ -48,7 +48,7 @@ extraArmNotes: Map[ArmName, String] = Map.empty
         }
         @for(note <- as.flatMap(a => extraArmNotes.get(a.name))) {
           <div>
-            @Html(note)
+            @note
           </div>
         }
         <div class="text-center">
