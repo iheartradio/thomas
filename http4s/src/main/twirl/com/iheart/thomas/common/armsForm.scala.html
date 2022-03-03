@@ -1,12 +1,14 @@
 @import com.iheart.thomas.bandit.ArmSpec
 @import com.iheart.thomas.http4s.Formatters.formatJSON
-
+@import play.twirl.api.Html
+@import com.iheart.thomas.ArmName
 @(
 draftArms: Option[Seq[ArmSpec]],
 groupSizeChangeAllowed: Boolean = true,
 armLabel: String = "Group",
 showReserved: Boolean = false,
-metaChangeOnly: Boolean = false
+metaChangeOnly: Boolean = false,
+extraArmNotes: Map[ArmName, Html] = Map.empty
 )
 
 @arm(as: Option[ArmSpec]) = {
@@ -43,6 +45,11 @@ metaChangeOnly: Boolean = false
                        @if(as.fold(false)(_.reserved)) { checked } />
                 <label class="form-label">Reserved</label>
             </div>
+        }
+        @for(note <- as.flatMap(a => extraArmNotes.get(a.name))) {
+          <div>
+            @note
+          </div>
         }
         <div class="text-center">
             <button class="btn btn-link remove-item remove-item mt-4 ml-3 size-change essential"

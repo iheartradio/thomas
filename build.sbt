@@ -25,7 +25,7 @@ lazy val libs = {
     .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
     .addJVM(name = "fs2-kafka",             version = "2.3.0",  org = "com.github.fd4s")
     .add(   name = "fs2",                   version = "3.2.4")
-    .add(   name = "cats-effect",           version = "3.3.5")
+    .add(   name = "cats-effect",           version = "3.3.6")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .addJVM(name = "log4cats",              version = "2.1.1",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
@@ -44,7 +44,7 @@ lazy val libs = {
     .addJVM(name = "scanamo",               version = "1.0.0-M19", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
     .add(   name = "spark",                 version = "2.4.8",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tsec",                  version = "0.4.0",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
-    .add   (name = "enumeratum",            version = "1.7.0",  org = "com.beachape" )
+    .add   (name = "enumeratum",            version = "1.7.0",  org = "com.beachape", "enumeratum", "enumeratum-cats" )
 
 }
 // format: on
@@ -243,6 +243,7 @@ lazy val analysis = project
       "cats-effect",
       "newtype",
       "enumeratum",
+      "enumeratum-cats",
       "breeze",
       "commons-math3",
       "play-json-derived-codecs"
