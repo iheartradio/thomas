@@ -42,7 +42,7 @@ lazy val libs = {
     .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
     .addJVM(name = "scanamo",               version = "1.0.0-M19", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
-    .add(   name = "spark",                 version = "2.4.8",  org = "org.apache.spark", "spark-sql", "spark-core")
+    .add(   name = "spark",                 version = "3.2.1",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tsec",                  version = "0.4.0",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
     .add   (name = "enumeratum",            version = "1.7.0",  org = "com.beachape", "enumeratum", "enumeratum-cats" )
 
@@ -180,7 +180,7 @@ lazy val core = project
       "pureconfig-generic"
     ),
     simulacrumSettings(libs),
-    buildInfoKeys := BuildInfoKey.ofN(name, version),
+    buildInfoKeys ++= Seq(BuildInfoKey(name), BuildInfoKey(version)),
     buildInfoPackage := "com.iheart.thomas"
   )
 
