@@ -128,7 +128,6 @@ class Http4SAbtestClient[F[_]: Async](
     val url = stringToUri(urls.testsData) +?
       ("atEpochMilli" -> at.toEpochMilli.toString) +?? ("durationMillisecond" ->
         duration.map(_.toMillis.toString))
-
     expect(GET(url))
   }
 
@@ -229,20 +228,20 @@ object AbtestClient {
   }
 
   /** Shortcuts for getting the assigned group only.
-    * @param serviceUrl
+    * @param serviceRootUrl
     *   for getting all running tests as of `time`
     */
   def testsData[F[_]: Async](
-      serviceUrl: String,
-      time: Instant
+                              serviceRootUrl: String,
+                              time: Instant
     )(implicit ec: ExecutionContext
-    ): F[TestsData] =
+    ): F[TestsData] = {
+    val root = serviceRootUrl.replace("/testsWithFeatures", "") //for legacy support.
     Http4SAbtestClient
-      .resource[F](
-        new HttpServiceUrlsPlay("mock") {
-          override val tests: String = serviceUrl
-        },
+      .readOnlyResource[F](
+        new HttpServiceUrlsPlay(root),
         ec
       )
       .use(_.getTestsData(time, None))
+  }
 }
