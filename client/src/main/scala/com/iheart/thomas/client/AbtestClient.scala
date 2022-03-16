@@ -233,7 +233,8 @@ object AbtestClient {
     */
   def testsData[F[_]: Async](
                               serviceRootUrl: String,
-                              time: Instant
+                              time: Instant,
+                              duration: Option[FiniteDuration]
     )(implicit ec: ExecutionContext
     ): F[TestsData] = {
     val root = serviceRootUrl.replace("/testsWithFeatures", "") //for legacy support.
@@ -242,6 +243,6 @@ object AbtestClient {
         new HttpServiceUrlsPlay(root),
         ec
       )
-      .use(_.getTestsData(time, None))
+      .use(_.getTestsData(time, duration))
   }
 }

@@ -14,7 +14,7 @@ import com.iheart.thomas.abtest.AssignGroups.AssignmentResult
 import com.iheart.thomas.abtest.model.UserGroupQuery
 
 import collection.JavaConverters._
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, DurationInt}
 
 class JavaAbtestAssignments private (
     serviceUrl: String,
@@ -23,7 +23,7 @@ class JavaAbtestAssignments private (
   implicit val nowF: IO[Instant] = IO.delay(Instant.now)
   implicit val ex: concurrent.ExecutionContext = global.compute
   val testData =
-    AbtestClient.testsData[IO](serviceUrl, time).unsafeRunSync()
+    AbtestClient.testsData[IO](serviceUrl, time, Some(12.hours)).unsafeRunSync()
 
   def assignments(
       userId: String,
