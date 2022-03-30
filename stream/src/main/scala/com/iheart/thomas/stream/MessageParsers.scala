@@ -3,7 +3,7 @@ package stream
 
 import cats.MonadThrow
 import com.iheart.thomas.analysis._
-import cats.syntax.all._
+import cats.implicits._
 import org.typelevel.jawn.ast.{JNull, JValue}
 
 import java.time.Instant

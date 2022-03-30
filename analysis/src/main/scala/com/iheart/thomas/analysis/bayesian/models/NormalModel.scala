@@ -1,7 +1,7 @@
 package com.iheart.thomas.analysis
 package bayesian.models
 import syntax.all._
-import cats.syntax.all._
+import cats.implicits._
 import cats.data.ValidatedNel
 import com.stripe.rainier.core.{Gamma, Normal}
 

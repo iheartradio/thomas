@@ -4,6 +4,7 @@ package http4s
 import com.iheart.thomas.admin.{Role, User}
 import tsec.authentication.{AugmentedJWT, SecuredRequestHandler}
 import tsec.authorization.{AuthGroup, SimpleAuthEnum}
+import cats.implicits._
 
 package object auth {
 

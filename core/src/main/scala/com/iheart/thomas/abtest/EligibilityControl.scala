@@ -8,7 +8,7 @@ package abtest
 
 import java.time.OffsetDateTime
 
-import cats.syntax.all._
+import cats.implicits._
 import cats.kernel.Semigroup
 import cats.{Applicative, Id, Monad}
 import com.iheart.thomas.abtest.model.Abtest.Status.InProgress

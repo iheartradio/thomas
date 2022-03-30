@@ -2,7 +2,7 @@ package com.iheart.thomas.testkit
 
 import cats.Applicative
 import cats.effect.IO
-import cats.syntax.all._
+import cats.implicits._
 import com.iheart.thomas.analysis.{
   KPI,
   KPIEventQuery,

@@ -5,7 +5,7 @@ import java.time.Instant
 import _root_.play.api.libs.json.Json.toJson
 import _root_.play.api.libs.json._
 import cats.effect.{Async, Resource}
-import cats.syntax.all._
+import cats.implicits._
 import com.iheart.thomas.abtest.Error._
 import com.iheart.thomas.abtest.json.play.Formats._
 import com.iheart.thomas.abtest.model.{

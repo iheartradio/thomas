@@ -1,7 +1,7 @@
 package com.iheart.thomas.analysis
 
 import cats.data.ValidatedNel
-import cats.syntax.all._
+import cats.implicits._
 import cats.{FlatMap, MonadThrow}
 import com.iheart.thomas.abtest.Error.NotFound
 import com.iheart.thomas.analysis.KPIRepo.{InvalidKPI, validate}

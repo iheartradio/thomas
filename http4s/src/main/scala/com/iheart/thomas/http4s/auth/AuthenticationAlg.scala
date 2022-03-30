@@ -7,7 +7,7 @@ import com.iheart.thomas.dynamo
 import com.iheart.thomas.admin.{PassResetToken, Role, User, UserDAO}
 import tsec.authentication.Authenticator
 import tsec.passwordhashers.{PasswordHash, PasswordHasher}
-import cats.syntax.all._
+import cats.implicits._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.http4s.auth.AuthError._
 import org.http4s.Response

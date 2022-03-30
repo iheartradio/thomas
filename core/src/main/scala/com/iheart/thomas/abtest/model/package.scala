@@ -8,7 +8,7 @@ package abtest
 
 import java.time.OffsetDateTime
 
-import cats.syntax.all._
+import cats.implicits._
 import play.api.libs.json.JsObject
 import lihua.EntityId
 import java.time.Instant

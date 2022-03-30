@@ -21,7 +21,7 @@ import bayesian.models._
 import com.iheart.thomas.http4s.{AuthImp, ReverseRoutes}
 import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
 import org.http4s.dsl.Http4sDsl
-import cats.syntax.all._
+import cats.implicits._
 import org.http4s.twirl._
 import com.iheart.thomas.analysis.html._
 import com.iheart.thomas.html.{errorMsg, redirect}

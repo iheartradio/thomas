@@ -10,7 +10,7 @@ import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
 import org.http4s.dsl.Http4sDsl
 import tsec.authentication.asAuthed
-import cats.syntax.all._
+import cats.implicits._
 import com.iheart.thomas.abtest.model.{
   GroupMeta,
   GroupRange,

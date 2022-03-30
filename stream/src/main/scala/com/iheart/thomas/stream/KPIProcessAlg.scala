@@ -4,7 +4,7 @@ package stream
 import cats.data.NonEmptyList
 import cats.{Foldable, Monoid}
 import cats.effect.Temporal
-import cats.syntax.all._
+import cats.implicits._
 import com.iheart.thomas.abtest.FeatureRetriever
 import com.iheart.thomas.abtest.model.Feature
 import com.iheart.thomas.analysis.bayesian.Posterior

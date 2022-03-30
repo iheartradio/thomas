@@ -41,7 +41,7 @@ object Formats {
   implicit val groupRangeFormat = j.format[GroupRange]
 
   import com.iheart.thomas.abtest.model.UserMetaCriterion._
-  import cats.syntax.all._
+  import cats.implicits._
   import Instances._
   implicit val userMetaCriteriaFormat: Format[UserMetaCriterion.And] = {
     def readFieldValue(

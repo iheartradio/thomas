@@ -12,7 +12,7 @@ import com.iheart.thomas.analysis.{
 }
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
-import cats.syntax.all._
+import cats.implicits._
 trait KPIEvaluator[F[_]] {
   def apply(
       stateKey: Key,

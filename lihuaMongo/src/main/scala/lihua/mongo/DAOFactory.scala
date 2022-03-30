@@ -3,7 +3,7 @@ package mongo
 
 import cats.effect.{Async}
 import play.api.libs.json.Format
-import cats.syntax.all._
+import cats.implicits._
 import reactivemongo.api.Collation
 import reactivemongo.api.bson.BSONDocument
 import reactivemongo.api.indexes.{Index, IndexType}
