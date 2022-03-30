@@ -1,7 +1,7 @@
 package com.iheart.thomas.utils.time
 
 import cats.{Foldable, Reducible, Semigroup}
-import cats.implicits._
+import cats.syntax.all._
 
 import java.time.Instant
 

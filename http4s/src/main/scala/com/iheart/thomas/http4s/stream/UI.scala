@@ -7,7 +7,7 @@ import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
 import com.iheart.thomas.stream.JobAlg
 import org.http4s.dsl.Http4sDsl
 import tsec.authentication._
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.html.redirect
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import org.http4s.twirl._

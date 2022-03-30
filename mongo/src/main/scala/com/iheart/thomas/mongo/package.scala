@@ -14,7 +14,7 @@ import lihua.crypt.CryptTsec
 import lihua.mongo._
 
 import scala.concurrent.ExecutionContext
-import cats.implicits._
+import cats.syntax.all._
 import cats.tagless.FunctorK
 import com.iheart.thomas.abtest.model.{Abtest, Feature}
 import lihua.mongo.DBError.UpdatedCountErrorDetail

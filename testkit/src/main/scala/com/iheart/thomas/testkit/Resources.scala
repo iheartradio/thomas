@@ -3,7 +3,7 @@ package testkit
 
 import java.time.Instant
 import cats.effect.{IO, Resource}
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.abtest.AbtestAlg
 import com.iheart.thomas.bandit.bayesian.BayesianMABAlg
 import com.iheart.thomas.{dynamo, mongo}

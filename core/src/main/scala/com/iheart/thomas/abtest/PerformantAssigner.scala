@@ -5,7 +5,7 @@ package abtest
 import cats.effect.{Async, Resource}
 import com.iheart.thomas.abtest.model._
 import mau.RefreshRef
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.abtest.AssignGroups.AssignmentResult
 import com.typesafe.config.Config
 import pureconfig.ConfigSource
