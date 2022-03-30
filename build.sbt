@@ -107,7 +107,6 @@ lazy val thomas = project
     tests,
     http4s,
     http4sExample,
-    cli,
     mongo,
     analysis,
     docs,
@@ -134,32 +133,6 @@ lazy val client = project
     libs.dependencies("http4s-blaze-client", "http4s-play-json")
   )
 
-lazy val cli = project
-  .dependsOn(client)
-  .settings(
-    name := "thomas-cli",
-    rootSettings,
-    libs.dependencies("decline", "logback-classic"),
-    crossScalaVersions := Seq(scalaVersion.value),
-    releasePublishArtifactsAction := {
-      (assembly / assembly).value
-      releasePublishArtifactsAction.value
-    },
-    assembly / assemblyOption := (assembly / assemblyOption).value
-      .copy(prependShellScript = Some(defaultUniversalScript(shebang = false))),
-    assembly / assemblyOutputPath := file(
-      s"release/thomas-cli_${version.value}.jar"
-    ),
-    assembly / assemblyMergeStrategy := {
-      case "module-info.class"                        => MergeStrategy.discard
-      case "scala/annotation/nowarn.class"            => MergeStrategy.discard
-      case "scala/annotation/nowarn$.class"           => MergeStrategy.discard
-      case "dev/ludovic/netlib/InstanceBuilder.class" => MergeStrategy.discard
-      case x =>
-        val oldStrategy = (assembly / assemblyMergeStrategy).value
-        oldStrategy(x)
-    }
-  )
 
 lazy val core = project
   .dependsOn(lihua)
@@ -261,7 +234,6 @@ lazy val docs = project
       http4s,
       core,
       analysis,
-      cli,
       stream
     )
   )
@@ -493,7 +465,6 @@ lazy val publishSettings =
       commitReleaseVersion,
       tagRelease,
       releaseStepCommandAndRemaining("+publishSigned"),
-      releaseStepCommandAndRemaining("cli/assembly"),
       releaseStepCommand("sonatypeBundleRelease"),
       setNextVersion,
       commitNextVersion,
