@@ -78,7 +78,7 @@ class UI[F[_]: Async](
       for {
         states <- stateRepo.all
         kpis <- allKPIRepo.all
-        r <- Ok(index(states, kpis)(UIEnv(u)))
+        r <- Ok(index(states.filter(_.key.specialization === Specialization.RealtimeMonitor), kpis)(UIEnv(u)))
       } yield r
   }
 

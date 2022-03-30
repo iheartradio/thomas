@@ -12,7 +12,7 @@ import cats.implicits._
 import com.iheart.thomas.abtest.AssignGroups.AssignmentResult
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, DurationInt}
 
 class Assigner(data: TestsData) extends Serializable {
 
@@ -77,8 +77,8 @@ object Assigner {
     )(implicit ec: ExecutionContext
     ): F[Assigner] = {
     val time = asOf.map(Instant.ofEpochSecond).getOrElse(Instant.now)
-
-    AbtestClient.testsData[F](url, time).map {
+    val durationOfTestsToUse = 12.hours
+    AbtestClient.testsData[F](url, time, Some(durationOfTestsToUse)).map {
       new Assigner(_)
     }
 
