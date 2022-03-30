@@ -10,7 +10,6 @@ import java.time.{Duration, LocalDateTime}
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AsyncFreeSpec
 import collection.JavaConverters._
 
 class JavaAPISuite extends AnyFunSuite with Matchers {
