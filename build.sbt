@@ -25,7 +25,7 @@ lazy val libs = {
     .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
     .addJVM(name = "fs2-kafka",             version = "2.4.0",  org = "com.github.fd4s")
     .add(   name = "fs2",                   version = "3.2.4")
-    .add(   name = "cats-effect",           version = "3.3.7")
+    .add(   name = "cats-effect",           version = "3.3.11")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .addJVM(name = "log4cats",              version = "2.1.1",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
@@ -132,7 +132,6 @@ lazy val client = project
     libs.dependency("scalatest", Some("it, test")),
     libs.dependencies("http4s-blaze-client", "http4s-play-json")
   )
-
 
 lazy val core = project
   .dependsOn(lihua)
