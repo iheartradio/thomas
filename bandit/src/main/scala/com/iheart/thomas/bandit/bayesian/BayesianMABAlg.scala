@@ -34,6 +34,8 @@ trait BayesianMABAlg[F[_]] {
 
   def delete(featureName: FeatureName): F[Unit]
 
+  def resetState(featureName: FeatureName): F[Bandit]
+
   def update(banditSpec: BanditSpec, bas: BanditAbtestSpec): F[BanditSpec]
 
 }
@@ -115,6 +117,11 @@ object BayesianMABAlg {
             kpiHistoryRepo.delete(bs.stateKey)
           ).tupled.void
         }
+
+      def resetState(featureName: FeatureName): F[Bandit] =
+        get(featureName).flatTap { b =>
+          stateDao.delete(b.spec.stateKey)
+        }.map(_.copy(state = None))
 
       def abtest(featureName: FeatureName): F[Entity[Abtest]] =
         abtestAPI
