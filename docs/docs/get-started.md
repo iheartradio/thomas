@@ -67,6 +67,11 @@ Then add a `Main` object by following the example of`ExampleAbtestAdminUIApp` in
 
 `sbt run` shall start the Web UI locally.
 
+This local Web UI has an Url
+
+```
+http://localhost:8080/admin/tests
+```
 
 #### Step 2 Option 2b: Setting up with Play framework
 
