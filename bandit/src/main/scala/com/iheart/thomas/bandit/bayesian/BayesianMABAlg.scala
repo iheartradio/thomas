@@ -8,7 +8,7 @@ import cats.MonadThrow
 import com.iheart.thomas.abtest.model.Abtest.Specialization
 import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group, GroupRange, GroupSize, Tag, UserMetaCriteria}
 import com.iheart.thomas.analysis.bayesian.KPIEvaluator
-import com.iheart.thomas.analysis.monitor.{AllExperimentKPIStateRepo, ExperimentKPIState}
+import com.iheart.thomas.analysis.monitor.{AllExperimentKPIStateRepo, ExperimentKPIHistoryRepo, ExperimentKPIState}
 import com.iheart.thomas.analysis.{AllKPIRepo, KPIStats, Probability}
 import com.iheart.thomas.bandit.bayesian.BayesianMABAlg.BanditAbtestSpec
 import com.iheart.thomas.bandit.tracking.BanditEvent
@@ -77,7 +77,8 @@ object BayesianMABAlg {
       kpiRepo: AllKPIRepo[F],
       abtestAPI: abtest.AbtestAlg[F],
       T: Clock[F],
-      F: MonadThrow[F]
+      F: MonadThrow[F],
+      kpiHistoryRepo: ExperimentKPIHistoryRepo[F]
     ): BayesianMABAlg[F] =
     new BayesianMABAlg[F] {
 
@@ -110,7 +111,8 @@ object BayesianMABAlg {
               )
             },
             specDao.remove(featureName),
-            stateDao.delete(bs.stateKey)
+            stateDao.delete(bs.stateKey),
+            kpiHistoryRepo.delete(bs.stateKey)
           ).tupled.void
         }
 
@@ -222,7 +224,8 @@ object BayesianMABAlg {
           currentTest <- abtest(settings.feature)
           updatedTest <-
             if (hasEnoughSamples)
-              resizeAbtest(currentTest, newState, settings)
+              resizeAbtest(currentTest, newState, settings) <*
+                kpiHistoryRepo.append(newState)
             else
               F.pure(currentTest)
 
