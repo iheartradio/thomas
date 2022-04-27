@@ -62,7 +62,9 @@ object ModelEvaluator {
           benchmarkO: Option[(ArmName, Measurement)]
         ): F[List[Evaluation]] =
         for {
-          probabilities <- evaluate(measurements.map{ case (k, v) => (k, (v, model))})
+          probabilities <- evaluate(measurements.map { case (k, v) =>
+            (k, (v, model))
+          })
           r <-
             probabilities.toList
               .traverse { case (armName, probability) =>
@@ -96,7 +98,7 @@ object ModelEvaluator {
 
       def evaluate(
           allMeasurement: Map[GroupName, (Measurement, Model)]
-        ): F[Map[GroupName, Probability]] =
+        ): F[Map[GroupName, Probability]] = {
         NonEmptyList
           .fromList(allMeasurement.toList)
           .map {
@@ -123,6 +125,7 @@ object ModelEvaluator {
               (gn, Probability(c.toDouble / total.toDouble))
             })
           }
+      }
     }
 
 }

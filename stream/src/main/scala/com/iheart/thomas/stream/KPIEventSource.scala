@@ -39,7 +39,7 @@ object KPIEventSource {
 
   implicit def fromParsers[F[_]: MonadThrow, K <: KPI, Message, Event](
       implicit eventParser: KpiEventParser[F, Message, Event, K],
-      armParser: ArmParser[F, Message],
+      armExtractor: ArmExtractor[F, Message],
       logger: EventLogger[F],
       timeStampParser: TimeStampParser[F, Message]
     ): KPIEventSource[F, K, Message, Event] =
@@ -57,8 +57,7 @@ object KPIEventSource {
         (input: Stream[F, Message]) =>
           input
             .evalMapFilter { m =>
-              armParser
-                .parse(m, feature.name)
+              armExtractor(feature, m)
                 .flatMap { armO =>
                   armO.flatTraverse { arm =>
                     (parser(m), timeStampParser(m))

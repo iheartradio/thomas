@@ -11,15 +11,23 @@ import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
 import org.http4s.dsl.Http4sDsl
 import tsec.authentication.asAuthed
 import cats.implicits._
-import com.iheart.thomas.abtest.model.{GroupMeta, GroupRange, GroupSize, Tag, UserMetaCriteria, UserMetaCriterion}
+import com.iheart.thomas.abtest.model.{
+  GroupMeta,
+  GroupRange,
+  GroupSize,
+  UserMetaCriterion
+}
 import com.iheart.thomas.analysis.{AllKPIRepo, KPIName}
 import com.iheart.thomas.bandit.ArmSpec
+import com.iheart.thomas.bandit.bayesian.BayesianMABAlg.BanditAbtestSpec
+import com.iheart.thomas.http4s.bandit.UI.MismatchFeatureName
 import org.http4s.FormDataDecoder
 import org.http4s.FormDataDecoder._
 import org.http4s.Uri.Path.Segment
 import org.http4s.twirl._
 
 import scala.concurrent.duration.FiniteDuration
+import scala.util.control.NoStackTrace
 
 class UI[F[_]: Async](
     implicit alg: ManagerAlg[F],
@@ -57,12 +65,24 @@ class UI[F[_]: Async](
 
     case GET -> `rootPath` / feature / "start" asAuthed (_) =>
       alg.start(feature) *>
-        Ok(redirect(reverseRoutes.bandit(feature), "Bandit Created"))
+        redirectTo(reverseRoutes.bandit(feature))
 
     case GET -> `rootPath` / feature / "" asAuthed (u) =>
       (kpis, alg.get(feature)).mapN { (ks, b) =>
         Ok(banditView(b, ks)(UIEnv(u)))
       }.flatten
+
+    case req @ POST -> `rootPath` / feature / "" asAuthed u =>
+      for {
+        bs <- req.request
+          .as[BanditSpec]
+          .ensure(MismatchFeatureName)(_.feature === feature)
+        bas <- req.request.as[BanditAbtestSpec]
+
+        r <-
+          alg.update(bs.copy(author = u.username), bas) *>
+            redirectTo(reverseRoutes.bandit(bs.feature))
+      } yield r
 
     case GET -> `rootPath` / feature / "pause" asAuthed (_) =>
       alg.pause(feature) *>
@@ -72,11 +92,8 @@ class UI[F[_]: Async](
 }
 
 object UI {
-  case class BanditAbtestSpec(
-                               requiredTags: List[Tag] = Nil,
-                               userMetaCriteria: UserMetaCriteria = None,
-                               segmentRanges: List[GroupRange] = Nil
-                             )
+  case object MismatchFeatureName extends RuntimeException with NoStackTrace
+
   object decoders {
     import CommonFormDecoders._
 
@@ -110,9 +127,9 @@ object UI {
       list[GroupRange]("segmentRanges")
     ).mapN(BanditAbtestSpec.apply).sanitized
 
-
-    implicit val banditAndAbtestSpecFDD: FormDataDecoder[(BanditSpec,BanditAbtestSpec)] = (bandSpecFDD,banditAbtestSpecFDD).tupled
-
+    implicit val banditAndAbtestSpecFDD
+        : FormDataDecoder[(BanditSpec, BanditAbtestSpec)] =
+      (bandSpecFDD, banditAbtestSpecFDD).tupled
 
   }
 }

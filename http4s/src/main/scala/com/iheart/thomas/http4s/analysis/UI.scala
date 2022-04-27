@@ -28,7 +28,7 @@ import com.iheart.thomas.html.{errorMsg, redirect}
 import org.http4s.FormDataDecoder
 import FormDataDecoder._
 import com.iheart.thomas.analysis.bayesian.KPIEvaluator
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{Key, Specialization}
 import com.iheart.thomas.analysis.monitor.{
   AllExperimentKPIStateRepo,
   ExperimentKPIState
@@ -78,7 +78,7 @@ class UI[F[_]: Async](
       for {
         states <- stateRepo.all
         kpis <- allKPIRepo.all
-        r <- Ok(index(states, kpis)(UIEnv(u)))
+        r <- Ok(index(states.filter(_.key.specialization === Specialization.RealtimeMonitor), kpis)(UIEnv(u)))
       } yield r
   }
 
@@ -117,11 +117,12 @@ class UI[F[_]: Async](
             s"Stopped monitoring $feature on $kpi"
           )
         )
-    case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "evaluate" :? controlArm(
+    case GET -> `rootPath` / "abtests" / feature / "states" / kpi / specialization / "evaluate" :? controlArm(
           caO
         ) +& includedArms(arms) asAuthed (u) =>
+      val spec = Specialization.withName(specialization)
       kPIEvaluator(
-        Key(feature, KPIName(kpi)),
+        Key(feature, KPIName(kpi), spec),
         caO,
         arms.toOption.filter(_.nonEmpty)
       ).flatMap { ro =>
@@ -138,6 +139,7 @@ class UI[F[_]: Async](
         )
       }
 
+    //todo: this kpi key is not complete
     case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "reset" asAuthed (_) =>
       stateRepo.delete(Key(feature, KPIName(kpi))) *>
         Ok(

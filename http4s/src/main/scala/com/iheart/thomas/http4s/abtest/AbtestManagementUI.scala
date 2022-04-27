@@ -183,6 +183,9 @@ class AbtestManagementUI[F[_]: Async](
 
     roleBasedService(admin.Authorization.testManagerRoles) {
 
+      case GET -> Root  asAuthed _ =>
+        SeeOther( (cfg.rootPath + "/tests").location)
+
       case GET -> Root / "tests" / "new" :? featureReq(fn) +& scratchConfirmed(
             scratch
           ) asAuthed u =>

@@ -2,13 +2,13 @@ package com.iheart.thomas
 package abtest
 
 
-import java.time.Instant
-
 import cats.effect.{Async, Resource}
 import com.iheart.thomas.abtest.model._
 import mau.RefreshRef
 import cats.implicits._
 import com.iheart.thomas.abtest.AssignGroups.AssignmentResult
+import com.typesafe.config.Config
+import pureconfig.ConfigSource
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -18,23 +18,33 @@ abstract class PerformantAssigner[F[_]] {
 
 object PerformantAssigner {
 
-  case class Config(
+  case class Settings(
                      refreshPeriod: FiniteDuration,
                      staleTimeout: FiniteDuration,
                      testsRange: Option[FiniteDuration])
 
-  def resource[F[_]: Async](
+  def resource[F[_]: Async](implicit
                              dataProvider: TestsDataProvider[F],
-                             config: Config
-                           )(implicit
-                             nowF: F[Instant]
-                           ): Resource[F, PerformantAssigner[F]] =
+                               cfg: Config
+                           ): Resource[F, PerformantAssigner[F]] = {
+  import pureconfig.module.catseffect.syntax._
+  import pureconfig.generic.auto._
+
+    Resource.eval(
+    ConfigSource
+      .fromConfig(cfg)
+      .at("thomas.stream.job.assigner")
+      .loadF[F, Settings]()).flatMap { settings =>
+
     resource[F](
       dataProvider,
-      refreshPeriod = config.refreshPeriod,
-      staleTimeout = config.staleTimeout,
-      testsRange = config.testsRange
+      refreshPeriod = settings.refreshPeriod,
+      staleTimeout = settings.staleTimeout,
+      testsRange = settings.testsRange
     )
+  }}
+
+
 
   /** @param dataProvider
    *   client to get A/B tests data
@@ -54,8 +64,7 @@ object PerformantAssigner {
                       refreshPeriod: FiniteDuration,
                       staleTimeout: FiniteDuration,
                       testsRange: Option[FiniteDuration]
-                    )(implicit F: Async[F],
-                      nowF: F[Instant]
+                    )(implicit F: Async[F]
                     ): Resource[F, PerformantAssigner[F]] = {
     RefreshRef
       .resource[F, TestsData]((_: TestsData) =>
@@ -69,7 +78,7 @@ object PerformantAssigner {
             for {
               data <- ref
                 .getOrFetch(refreshPeriod, staleTimeout)(
-                  nowF.flatMap { now =>
+                  utils.time.now[F].flatMap { now =>
                     dataProvider
                       .getTestsData(
                         testsRange.fold(now)(tr => now.minusNanos(tr.toNanos)),
@@ -78,7 +87,10 @@ object PerformantAssigner {
                   }
                 )(PartialFunction.empty)
 
-              assignment <- AssignGroups.assign[F](data, query, staleTimeout)
+              assignment <- {
+                implicit val nowF = utils.time.now[F]
+                AssignGroups.assign[F](data, query, staleTimeout)
+              }
             } yield assignment
           }
         }
