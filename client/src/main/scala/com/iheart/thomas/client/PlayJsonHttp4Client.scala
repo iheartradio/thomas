@@ -3,7 +3,7 @@ package com.iheart.thomas.client
 import cats.effect.Async
 import org.http4s.client.dsl.Http4sClientDsl
 import _root_.play.api.libs.json.{JsObject, Reads, Writes}
-import cats.implicits._
+import cats.syntax.all._
 import org.http4s.{InvalidResponseException, Request, Uri}
 
 /** Utility class for writing http4 based client using play json

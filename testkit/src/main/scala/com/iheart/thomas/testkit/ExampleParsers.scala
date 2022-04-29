@@ -1,7 +1,7 @@
 package com.iheart.thomas.testkit
 
 import cats.{Applicative, MonadThrow}
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.{ArmName, FeatureName, UserId}
 import com.iheart.thomas.stream.{ArmParser, TimeStampParser, UserParser}
 import org.typelevel.jawn.ast.JValue

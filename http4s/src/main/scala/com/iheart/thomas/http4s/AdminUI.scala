@@ -4,7 +4,7 @@ package http4s
 import com.iheart.thomas.http4s.abtest.AbtestManagementUI
 import com.iheart.thomas.http4s.auth.{AuthDependencies, AuthedEndpointsUtils, AuthenticationAlg, Token, UI}
 import org.http4s.dsl.Http4sDsl
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.dynamo
 import cats.effect._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
