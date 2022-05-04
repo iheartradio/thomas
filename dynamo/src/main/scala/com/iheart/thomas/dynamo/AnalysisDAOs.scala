@@ -9,7 +9,7 @@ import com.iheart.thomas.dynamo.DynamoFormats._
 import com.iheart.thomas.utils.time.Period
 import org.scanamo.DynamoFormat
 import org.scanamo.syntax._
-import cats.implicits._
+import cats.syntax.all._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 
 import scala.concurrent.duration._

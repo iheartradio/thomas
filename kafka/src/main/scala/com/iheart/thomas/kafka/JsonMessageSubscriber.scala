@@ -1,7 +1,7 @@
 package com.iheart.thomas.kafka
 
 import cats.effect.Async
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.stream.MessageSubscriber
 import com.typesafe.config.Config
 import fs2.Stream

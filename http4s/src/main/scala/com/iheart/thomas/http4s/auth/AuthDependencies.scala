@@ -3,7 +3,7 @@ package http4s.auth
 
 import cats.data.OptionT
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.Username
 import com.iheart.thomas.admin.{AuthRecord, AuthRecordDAO, User, UserDAO}
 import com.iheart.thomas.http4s.AuthImp

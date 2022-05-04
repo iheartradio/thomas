@@ -5,7 +5,7 @@ import cats.Monad
 import com.iheart.thomas.abtest.PerformantAssigner
 import com.iheart.thomas.abtest.model.AssignmentTruthAt.{Message, Realtime}
 import com.iheart.thomas.abtest.model.{Feature, UserGroupQuery}
-import cats.implicits._
+import cats.syntax.all._
 import utils.time._
 
 

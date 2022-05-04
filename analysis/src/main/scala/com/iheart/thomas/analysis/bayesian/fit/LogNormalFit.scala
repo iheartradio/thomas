@@ -9,7 +9,7 @@ import com.stripe.rainier.compute.Real
 import com.stripe.rainier.core.{LogNormal, Model}
 import com.stripe.rainier.sampler.{RNG, SamplerConfig}
 import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.analysis.bayesian.Variable
 import java.time.Instant
 

@@ -67,7 +67,6 @@ object EntityDAO {
     */
   abstract class EntityDAOMonad[F[_]: Monad, T, Query]
       extends EntityDAO[F, T, Query] {
-    import cats.implicits._
     def upsert(
         query: Query,
         t: T
