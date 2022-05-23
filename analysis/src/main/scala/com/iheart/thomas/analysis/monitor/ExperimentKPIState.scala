@@ -76,7 +76,6 @@ object ExperimentKPIState {
     val values = findValues
     case object RealtimeMonitor extends Specialization
     case object BanditCurrent extends Specialization
-    case object BanditHistory extends Specialization
   }
 
   def init[F[_]: Clock: Functor, KS <: KPIStats](
@@ -189,3 +188,4 @@ object AllExperimentKPIStateRepo {
       )
     }
 }
+

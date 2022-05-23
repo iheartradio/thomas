@@ -23,13 +23,13 @@ lazy val libs = {
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
     .addJVM(name = "decline",               version = "2.2.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
-    .addJVM(name = "fs2-kafka",             version = "2.3.0",  org = "com.github.fd4s")
-    .add(   name = "fs2",                   version = "3.2.4")
-    .add(   name = "cats-effect",           version = "3.3.6")
+    .addJVM(name = "fs2-kafka",             version = "2.4.0",  org = "com.github.fd4s")
+    .add(   name = "fs2",                   version = "3.2.7")
+    .add(   name = "cats-effect",           version = "3.3.12")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .addJVM(name = "log4cats",              version = "2.1.1",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
-    .addJava(name ="logback-classic",       version = "1.2.10",  org = "ch.qos.logback")
+    .addJava(name ="logback-classic",       version = "1.2.11",  org = "ch.qos.logback")
     .addJVM(name = "mau",                   version = "0.3.1",  org = "com.kailuowang")
     .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
     .add(   name = "play-json",             version = "2.9.2",  org = "com.typesafe.play")
@@ -38,11 +38,11 @@ lazy val libs = {
     .addJVM(name = "reactivemongo",         version = reactiveMongoVer, org = "org.reactivemongo", "reactivemongo", "reactivemongo-bson-api", "reactivemongo-iteratees" )
     .addJVM(name = "reactivemongo-play-json-compat", version = reactiveMongoVer + "-play27", org = "org.reactivemongo")
     .addJVM(name = "scala-java8-compat",    version = "1.0.1",  org = "org.scala-lang.modules")
-    .addJVM(name = "scala-collection-compat",    version = "2.6.0",  org = "org.scala-lang.modules")
+    .addJVM(name = "scala-collection-compat",    version = "2.7.0",  org = "org.scala-lang.modules")
     .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
     .addJVM(name = "scanamo",               version = "1.0.0-M19", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
-    .add(   name = "spark",                 version = "2.4.8",  org = "org.apache.spark", "spark-sql", "spark-core")
+    .add(   name = "spark",                 version = "3.2.1",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tsec",                  version = "0.4.0",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
     .add   (name = "enumeratum",            version = "1.7.0",  org = "com.beachape", "enumeratum", "enumeratum-cats" )
 
@@ -103,11 +103,9 @@ lazy val thomas = project
     client,
     bandit,
     lihua,
-    lihuaMongo,
     tests,
     http4s,
     http4sExample,
-    cli,
     mongo,
     analysis,
     docs,
@@ -134,33 +132,6 @@ lazy val client = project
     libs.dependencies("http4s-blaze-client", "http4s-play-json")
   )
 
-lazy val cli = project
-  .dependsOn(client)
-  .settings(
-    name := "thomas-cli",
-    rootSettings,
-    libs.dependencies("decline", "logback-classic"),
-    crossScalaVersions := Seq(scalaVersion.value),
-    releasePublishArtifactsAction := {
-      (assembly / assembly).value
-      releasePublishArtifactsAction.value
-    },
-    assembly / assemblyOption := (assembly / assemblyOption).value
-      .copy(prependShellScript = Some(defaultUniversalScript(shebang = false))),
-    assembly / assemblyOutputPath := file(
-      s"release/thomas-cli_${version.value}.jar"
-    ),
-    assembly / assemblyMergeStrategy := {
-      case "module-info.class"                        => MergeStrategy.discard
-      case "scala/annotation/nowarn.class"            => MergeStrategy.discard
-      case "scala/annotation/nowarn$.class"           => MergeStrategy.discard
-      case "dev/ludovic/netlib/InstanceBuilder.class" => MergeStrategy.discard
-      case x =>
-        val oldStrategy = (assembly / assemblyMergeStrategy).value
-        oldStrategy(x)
-    }
-  )
-
 lazy val core = project
   .dependsOn(lihua)
   .enablePlugins(BuildInfoPlugin)
@@ -180,7 +151,7 @@ lazy val core = project
       "pureconfig-generic"
     ),
     simulacrumSettings(libs),
-    buildInfoKeys := BuildInfoKey.ofN(name, version),
+    buildInfoKeys ++= Seq(BuildInfoKey(name), BuildInfoKey(version)),
     buildInfoPackage := "com.iheart.thomas"
   )
 
@@ -194,30 +165,6 @@ lazy val lihua = project.settings(
   )
 )
 
-lazy val lihuaMongo = project
-  .dependsOn(lihua)
-  .settings(
-    name := "thomas-lihua-mongo",
-    rootSettings,
-    taglessSettings,
-    libs.dependencies(),
-    libs.dependency("simulacrum", Some("provided")),
-    libs.dependencies(
-      "cats-effect",
-      "reactivemongo",
-      "reactivemongo-bson-api",
-      "reactivemongo-play-json-compat",
-      "newtype",
-      "play-json",
-      "cats-core",
-      "tsec-cipher-jca"
-    ),
-    libraryDependencies ++= Seq(
-      "com.iheart" %% "ficus" % "1.5.0",
-      "org.log4s" %% "log4s" % "1.10.0"
-    ),
-    scalacOptions += "-deprecation:false" //disabled due to the deprecation of reactivemongo-play-json while the new api isn't stable enough
-  )
 
 lazy val bandit = project
   .dependsOn(analysis)
@@ -261,7 +208,6 @@ lazy val docs = project
       http4s,
       core,
       analysis,
-      cli,
       stream
     )
   )
@@ -286,9 +232,24 @@ lazy val docs = project
   )
 
 lazy val mongo = project
-  .dependsOn(core, bandit, lihuaMongo)
+  .dependsOn(core, bandit)
   .settings(name := "thomas-mongo")
-  .settings(rootSettings)
+  .settings(
+    rootSettings,
+    taglessSettings,
+    libs.dependencies(
+      "reactivemongo",
+      "reactivemongo-bson-api",
+      "reactivemongo-play-json-compat",
+      "newtype",
+      "play-json",
+      "tsec-cipher-jca"
+    ),
+    libraryDependencies ++= Seq(
+      "com.iheart" %% "ficus" % "1.5.0",
+
+    )
+  )
 
 lazy val dynamo = project
   .dependsOn(bandit, stream)
@@ -493,7 +454,6 @@ lazy val publishSettings =
       commitReleaseVersion,
       tagRelease,
       releaseStepCommandAndRemaining("+publishSigned"),
-      releaseStepCommandAndRemaining("cli/assembly"),
       releaseStepCommand("sonatypeBundleRelease"),
       setNextVersion,
       commitNextVersion,

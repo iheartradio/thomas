@@ -3,16 +3,13 @@ package com.iheart.thomas.dynamo
 import cats.effect.Async
 import com.iheart.thomas.ArmName
 import com.iheart.thomas.analysis._
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{
-  ArmState,
-  ArmsState,
-  Key
-}
-import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, ArmsState, Key}
+import com.iheart.thomas.analysis.monitor.{ExperimentKPIHistory, ExperimentKPIHistoryRepo, ExperimentKPIState, ExperimentKPIStateDAO}
 import com.iheart.thomas.dynamo.DynamoFormats._
 import com.iheart.thomas.utils.time.Period
 import org.scanamo.DynamoFormat
 import org.scanamo.syntax._
+import cats.implicits._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 
 import scala.concurrent.duration._
@@ -29,12 +26,15 @@ object AnalysisDAOs extends ScanamoManagement {
   val experimentKPIStateKey =
     ScanamoDAOHelperStringKey.keyOf(experimentKPIStateKeyName)
 
+  val experimentKPIHistoryTableName = "ds-abtest-kpi-history"
+
   def tables =
     List(
       (conversionKPITableName, kPIKey),
       (queryAccumulativeKPITableName, kPIKey),
       (conversionKPIStateTableName, experimentKPIStateKey),
-      (perUserSamplesKPIStateTableName, experimentKPIStateKey)
+      (perUserSamplesKPIStateTableName, experimentKPIStateKey),
+      (experimentKPIHistoryTableName, experimentKPIStateKey)
     )
 
   def ensureAnalysisTables[F[_]: Async](
@@ -73,11 +73,31 @@ object AnalysisDAOs extends ScanamoManagement {
     experimentKPIStateDAO[F, Conversions](conversionKPIStateTableName)
 
   implicit def experimentKPIStatePerUserSamplesDAO[F[_]: Async](
-      implicit dynamoClient: DynamoDbAsyncClient
-    ): ExperimentKPIStateDAO[F, PerUserSamplesLnSummary] =
+                                                                 implicit dynamoClient: DynamoDbAsyncClient
+                                                               ): ExperimentKPIStateDAO[F, PerUserSamplesLnSummary] =
     experimentKPIStateDAO[F, PerUserSamplesLnSummary](
       perUserSamplesKPIStateTableName
     )
+
+  implicit def experimentKPIHistoryDAO[F[_]](implicit dynamoClient: DynamoDbAsyncClient,
+                                                   F: Async[F]
+                                                 ): ExperimentKPIHistoryRepo[F] =
+    new ScanamoDAOHelperStringFormatKey[F, ExperimentKPIHistory[KPIStats], Key](
+    experimentKPIHistoryTableName,
+    experimentKPIStateKeyName,
+    dynamoClient
+  )  with ExperimentKPIHistoryRepo[F] {
+    protected def stringKey(k: Key): String = k.toStringKey
+
+      /**
+       * Note that this is not concurrency safe, it's the job system's job to keep job concurrently safe.
+       */
+      def append(state: ExperimentKPIState[KPIStats]): F[ExperimentKPIHistory[KPIStats]] =
+        find(state.key).flatMap {
+          case Some(exising) => update(exising.copy(history = state :: exising.history))
+          case None =>  insert(ExperimentKPIHistory(state.key, List(state)))
+        }
+    }
 
   def experimentKPIStateDAO[F[_], KS <: KPIStats](
       tableName: String

@@ -8,7 +8,7 @@ import cats.MonadThrow
 import com.iheart.thomas.abtest.model.Abtest.Specialization
 import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group, GroupRange, GroupSize, Tag, UserMetaCriteria}
 import com.iheart.thomas.analysis.bayesian.KPIEvaluator
-import com.iheart.thomas.analysis.monitor.{AllExperimentKPIStateRepo, ExperimentKPIState}
+import com.iheart.thomas.analysis.monitor.{AllExperimentKPIStateRepo, ExperimentKPIHistoryRepo, ExperimentKPIState}
 import com.iheart.thomas.analysis.{AllKPIRepo, KPIStats, Probability}
 import com.iheart.thomas.bandit.bayesian.BayesianMABAlg.BanditAbtestSpec
 import com.iheart.thomas.bandit.tracking.BanditEvent
@@ -33,6 +33,8 @@ trait BayesianMABAlg[F[_]] {
   def updatePolicy(state: ExperimentKPIState[KPIStats]): F[Bandit]
 
   def delete(featureName: FeatureName): F[Unit]
+
+  def resetState(featureName: FeatureName): F[Bandit]
 
   def update(banditSpec: BanditSpec, bas: BanditAbtestSpec): F[BanditSpec]
 
@@ -77,7 +79,8 @@ object BayesianMABAlg {
       kpiRepo: AllKPIRepo[F],
       abtestAPI: abtest.AbtestAlg[F],
       T: Clock[F],
-      F: MonadThrow[F]
+      F: MonadThrow[F],
+      kpiHistoryRepo: ExperimentKPIHistoryRepo[F]
     ): BayesianMABAlg[F] =
     new BayesianMABAlg[F] {
 
@@ -110,9 +113,15 @@ object BayesianMABAlg {
               )
             },
             specDao.remove(featureName),
-            stateDao.delete(bs.stateKey)
+            stateDao.delete(bs.stateKey),
+            kpiHistoryRepo.delete(bs.stateKey)
           ).tupled.void
         }
+
+      def resetState(featureName: FeatureName): F[Bandit] =
+        get(featureName).flatTap { b =>
+          stateDao.delete(b.spec.stateKey)
+        }.map(_.copy(state = None))
 
       def abtest(featureName: FeatureName): F[Entity[Abtest]] =
         abtestAPI
@@ -222,7 +231,8 @@ object BayesianMABAlg {
           currentTest <- abtest(settings.feature)
           updatedTest <-
             if (hasEnoughSamples)
-              resizeAbtest(currentTest, newState, settings)
+              resizeAbtest(currentTest, newState, settings) <*
+                kpiHistoryRepo.append(newState)
             else
               F.pure(currentTest)
 

@@ -4,6 +4,8 @@ package spark
 import cats.effect.IO
 import mau.RefreshRef
 import cats.effect.unsafe.implicits.global
+import org.apache.spark.sql.expressions.UserDefinedFunction
+
 import concurrent.duration._
 import org.apache.spark.sql.functions.udf
 
@@ -24,7 +26,10 @@ case class AutoRefreshAssigner(
 
   }.unsafeRunSync()
 
-  def assignUdf(feature: FeatureName) = udf { (userId: String) =>
+  def assignUdf(feature: FeatureName): UserDefinedFunction = udf(assignFunction(feature))
+
+  def assignFunction(feature: FeatureName): String => Option[GroupName] = (userId: String) => {
     inner.get.unsafeRunSync().flatMap(_.assign(feature, userId))
   }
+
 }
