@@ -71,12 +71,11 @@ object ExperimentKPIState {
 
   sealed trait Specialization extends EnumEntry
 
-  object Specialization extends Enum[Specialization] {
+  object Specialization extends Enum[Specialization] with enumeratum.CatsEnum[Specialization] {
 
     val values = findValues
     case object RealtimeMonitor extends Specialization
     case object BanditCurrent extends Specialization
-    case object BanditHistory extends Specialization
   }
 
   def init[F[_]: Clock: Functor, KS <: KPIStats](
@@ -189,3 +188,4 @@ object AllExperimentKPIStateRepo {
       )
     }
 }
+

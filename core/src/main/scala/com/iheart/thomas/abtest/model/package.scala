@@ -253,9 +253,9 @@ package model {
   case class UserGroupQuery(
       userId: Option[UserId],
       at: Option[OffsetDateTime] = None,
-      tags: List[Tag] = Nil,
+      tags: Seq[Tag] = Nil,
       meta: UserMeta = Map(),
-      features: List[FeatureName] = Nil,
+      features: Seq[FeatureName] = Nil,
       eligibilityControlFilter: EligibilityControlFilter =
         EligibilityControlFilter.All)
 

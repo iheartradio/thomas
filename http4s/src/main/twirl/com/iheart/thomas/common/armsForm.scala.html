@@ -1,12 +1,14 @@
 @import com.iheart.thomas.bandit.ArmSpec
 @import com.iheart.thomas.http4s.Formatters.formatJSON
-
+@import play.twirl.api.Html
+@import com.iheart.thomas.ArmName
 @(
 draftArms: Option[Seq[ArmSpec]],
 groupSizeChangeAllowed: Boolean = true,
 armLabel: String = "Group",
 showReserved: Boolean = false,
-metaChangeOnly: Boolean = false
+metaChangeOnly: Boolean = false,
+extraArmNotes: Map[ArmName, Html] = Map.empty
 )
 
 @arm(as: Option[ArmSpec]) = {
@@ -15,7 +17,7 @@ metaChangeOnly: Boolean = false
     <div class="col-3">
         <div class="form-group">
             <input name="groups[].name" class="form-control size-change essential"
-                   id="testGroupName" type="text"
+                   id="testGroupName" type="text" required
                    value="@as.map(_.name)"/>
         </div>
     </div>
@@ -23,7 +25,7 @@ metaChangeOnly: Boolean = false
     <div class="col-2">
         <div class="form-group">
             <input name="groups[].size" class="form-control size-change essential"
-                   id="testGroupSize" type="number"
+                   id="testGroupSize" type="number" required
                    value="@as.map(_.initialSize)"
                    min="0" max="1" step="any" placeholder="Btw 0 & 1"/>
         </div>
@@ -37,14 +39,17 @@ metaChangeOnly: Boolean = false
           </div>
 
         @if(showReserved) {
-        <div class="form-group ms-2 form-check">
-            <input name="reserved" class="form-check-input" type="checkbox"
-                   value="true"
-                   @if(as.fold(false)(_.reserved)) { checked }
-            />
-            <label class="form-label">Reserved</label>
-        </div>
-
+            <div class="form-group ms-2 form-check">
+                <input name="groups[].reserved" class="reserved-hidden" type="hidden" value="@as.fold(false)(_.reserved)" />
+                <input class="form-check-input reserved-cb" type="checkbox" onclick="thomasCheckReserve(this)"
+                       @if(as.fold(false)(_.reserved)) { checked } />
+                <label class="form-label">Reserved</label>
+            </div>
+        }
+        @for(note <- as.flatMap(a => extraArmNotes.get(a.name))) {
+          <div>
+            @note
+          </div>
         }
         <div class="text-center">
             <button class="btn btn-link remove-item remove-item mt-4 ml-3 size-change essential"
@@ -140,5 +145,12 @@ metaChangeOnly: Boolean = false
 
         return true;
     };
+
+    var thomasCheckReserve = function(el) {
+        $(el).parent().find('input.reserved-hidden').val(el.checked)
+    }
+    $(document).ready(function() {
+        $('body').append($('#newTestGroup')) //move new test group inputs out of the form
+    });
 
 </script>

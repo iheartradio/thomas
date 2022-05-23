@@ -98,7 +98,7 @@ object ModelEvaluator {
 
       def evaluate(
           allMeasurement: Map[GroupName, (Measurement, Model)]
-        ): F[Map[GroupName, Probability]] =
+        ): F[Map[GroupName, Probability]] = {
         NonEmptyList
           .fromList(allMeasurement.toList)
           .map {
@@ -125,6 +125,7 @@ object ModelEvaluator {
               (gn, Probability(c.toDouble / total.toDouble))
             })
           }
+      }
     }
 
 }

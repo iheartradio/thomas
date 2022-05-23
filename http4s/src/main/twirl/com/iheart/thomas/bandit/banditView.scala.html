@@ -37,7 +37,7 @@
 
 </div>
 <form action="@env.routes.bandit(bandit.feature)" method="post">
-    @banditSpecForm(Some(bandit.spec), kpis)
+    @banditSpecForm(Some(bandit), kpis)
     <div class="row mt-5">
        <div class="col-7">
           @eligibilityControl(Some(bandit.abtest.data.toSpec))

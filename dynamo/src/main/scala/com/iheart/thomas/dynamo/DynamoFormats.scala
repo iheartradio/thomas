@@ -5,7 +5,7 @@ import cats.data.NonEmptyList
 import com.iheart.thomas.admin.{AuthRecord, PassResetToken, Role, User}
 import com.iheart.thomas.analysis._
 import com.iheart.thomas.analysis.bayesian.models._
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState
+import com.iheart.thomas.analysis.monitor.{ExperimentKPIHistory, ExperimentKPIState}
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.ArmState
 import com.iheart.thomas.bandit.ArmSpec
 import com.iheart.thomas.bandit.bayesian._
@@ -145,5 +145,18 @@ object DynamoFormats {
   implicit val ekpiStatePerUserSamplesFormat
       : DynamoFormat[ExperimentKPIState[PerUserSamplesLnSummary]] =
     deriveDynamoFormat[ExperimentKPIState[PerUserSamplesLnSummary]]
+
+ implicit val kpiStatsFormat
+      : DynamoFormat[KPIStats] = deriveDynamoFormat[KPIStats]
+
+  implicit val genArmStatsFormat
+      : DynamoFormat[ArmState[KPIStats]] = deriveDynamoFormat[ArmState[KPIStats]]
+
+  implicit val genExperimentKPIStatsFormat
+      : DynamoFormat[ExperimentKPIState[KPIStats]] = deriveDynamoFormat[ExperimentKPIState[KPIStats]]
+
+
+  implicit val experimentKPIHistoryFormat
+      : DynamoFormat[ExperimentKPIHistory[KPIStats]] = deriveDynamoFormat[ExperimentKPIHistory[KPIStats]]
 
 }
