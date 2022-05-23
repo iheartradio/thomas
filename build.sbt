@@ -103,7 +103,6 @@ lazy val thomas = project
     client,
     bandit,
     lihua,
-    lihuaMongo,
     tests,
     http4s,
     http4sExample,
@@ -166,30 +165,6 @@ lazy val lihua = project.settings(
   )
 )
 
-lazy val lihuaMongo = project
-  .dependsOn(lihua)
-  .settings(
-    name := "thomas-lihua-mongo",
-    rootSettings,
-    taglessSettings,
-    libs.dependencies(),
-    libs.dependency("simulacrum", Some("provided")),
-    libs.dependencies(
-      "cats-effect",
-      "reactivemongo",
-      "reactivemongo-bson-api",
-      "reactivemongo-play-json-compat",
-      "newtype",
-      "play-json",
-      "cats-core",
-      "tsec-cipher-jca"
-    ),
-    libraryDependencies ++= Seq(
-      "com.iheart" %% "ficus" % "1.5.0",
-      "org.log4s" %% "log4s" % "1.10.0"
-    ),
-    scalacOptions += "-deprecation:false" //disabled due to the deprecation of reactivemongo-play-json while the new api isn't stable enough
-  )
 
 lazy val bandit = project
   .dependsOn(analysis)
@@ -257,9 +232,24 @@ lazy val docs = project
   )
 
 lazy val mongo = project
-  .dependsOn(core, bandit, lihuaMongo)
+  .dependsOn(core, bandit)
   .settings(name := "thomas-mongo")
-  .settings(rootSettings)
+  .settings(
+    rootSettings,
+    taglessSettings,
+    libs.dependencies(
+      "reactivemongo",
+      "reactivemongo-bson-api",
+      "reactivemongo-play-json-compat",
+      "newtype",
+      "play-json",
+      "tsec-cipher-jca"
+    ),
+    libraryDependencies ++= Seq(
+      "com.iheart" %% "ficus" % "1.5.0",
+
+    )
+  )
 
 lazy val dynamo = project
   .dependsOn(bandit, stream)
