@@ -165,7 +165,6 @@ lazy val lihua = project.settings(
   )
 )
 
-
 lazy val bandit = project
   .dependsOn(analysis)
   .aggregate(analysis)
@@ -246,8 +245,7 @@ lazy val mongo = project
       "tsec-cipher-jca"
     ),
     libraryDependencies ++= Seq(
-      "com.iheart" %% "ficus" % "1.5.0",
-
+      "com.iheart" %% "ficus" % "1.5.2"
     )
   )
 
