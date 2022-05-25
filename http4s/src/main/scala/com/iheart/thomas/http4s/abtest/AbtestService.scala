@@ -8,13 +8,7 @@ import cats.effect.{Async, Resource}
 import cats.implicits._
 import com.iheart.thomas.abtest.Error._
 import com.iheart.thomas.abtest.json.play.Formats._
-import com.iheart.thomas.abtest.model.{
-  AbtestSpec,
-  GroupMeta,
-  UserGroupQuery,
-  UserGroupQueryResult
-}
-import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
+import com.iheart.thomas.abtest.model._
 import com.iheart.thomas.abtest.{AbtestAlg, Error}
 import Error.{NotFound => APINotFound}
 import com.iheart.thomas.http4s.MongoResources
@@ -22,40 +16,30 @@ import com.typesafe.config.Config
 import lihua.EntityId
 import lihua.mongo.JsonFormats._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.dsl.impl.{
-  OptionalQueryParamDecoderMatcher,
-  QueryParamDecoderMatcher
-}
+import org.http4s.dsl.impl.{OptionalQueryParamDecoderMatcher, QueryParamDecoderMatcher}
 import org.http4s.implicits._
 import org.http4s.play._
 import org.http4s.server.Router
 import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes, Response}
 import AbtestService.validationErrorMsg
+import cats.MonadThrow
 import com.iheart.thomas.tracking.{Event, EventLogger}
 
 import scala.concurrent.ExecutionContext
 
-class AbtestService[F[_]: Async](
-    api: AbtestAlg[F]
-  )(implicit logger: EventLogger[F])
-    extends Http4sDsl[F] {
-
+trait AbtestServiceHelper[F[_]] extends Http4sDsl[F]{
   implicit val jsonObjectEncoder: EntityEncoder[F, JsObject] =
     implicitly[EntityEncoder[F, JsValue]].narrow
 
-  implicit def decoder[A: Reads]: EntityDecoder[F, A] = jsonOf
-
-  import AbtestService.QueryParamDecoderMatchers._
-
   def respondOption[T: Format](
-      result: F[Option[T]],
-      notFoundMsg: String
-    ): F[Response[F]] =
+                                result: F[Option[T]],
+                                notFoundMsg: String
+                              )(implicit F: MonadThrow[F]): F[Response[F]] =
     respond(
       result.flatMap(_.liftTo[F](Error.NotFound(notFoundMsg)))
     )
 
-  def respond[T: Format](result: F[T]): F[Response[F]] = {
+  def respond[T: Format](result: F[T])(implicit F: MonadThrow[F]): F[Response[F]] = {
 
     def errorsJson(msgs: Seq[String]): JsObject =
       Json.obj("errors" -> JsArray(msgs.map(JsString)))
@@ -122,6 +106,17 @@ class AbtestService[F[_]: Async](
       errResponse(e)
     }
   }
+}
+
+class AbtestService[F[_]: Async](
+    api: AbtestAlg[F]
+  )(implicit logger: EventLogger[F])
+    extends Http4sDsl[F] with  AbtestServiceHelper[F]{
+
+
+  implicit def decoder[A: Reads]: EntityDecoder[F, A] = jsonOf
+  import AbtestService.QueryParamDecoderMatchers._
+
 
   def routes =
     Router("/internal/" -> internal).orElse(public).orNotFound
@@ -186,64 +181,8 @@ class AbtestService[F[_]: Async](
         respond(api.getOverrides(feature))
     }
 
-  def managing =
-    HttpRoutes.of[F] {
 
-      case req @ POST -> Root / "tests" :? auto(a) =>
-        req.as[AbtestSpec] >>= (t => respond(api.create(t, a.getOrElse(false))))
-
-      case req @ POST -> Root / "tests" / "auto" =>
-        req.as[AbtestSpec] >>= (t => respond(api.create(t, true)))
-
-      case req @ PUT -> Root / "tests" =>
-        req.as[AbtestSpec] >>= (t => respond(api.continue(t)))
-
-      case DELETE -> Root / "tests" / testId =>
-        respondOption(
-          api.terminate(EntityId(testId)),
-          s"No test with id $testId"
-        )
-
-      case req @ PUT -> Root / "tests" / testId / "groups" / "metas" :? auto(a) =>
-        req.as[Map[GroupName, GroupMeta]] >>= (m =>
-          respond(
-            api.addGroupMetas(EntityId(testId), m, a.getOrElse(false))
-          )
-        )
-
-      case DELETE -> Root / "tests" / testId / "groups" / "metas" :? auto(a) =>
-        respond(
-          api.removeGroupMetas(EntityId(testId), a.getOrElse(false))
-        )
-
-      case PUT -> Root / "features" / feature / "groups" / groupName / "overrides" / userId =>
-        respond(api.addOverrides(feature, Map(userId -> groupName)))
-
-      case PUT -> Root / "features" / feature / "overridesEligibility" :? ovrrd(
-            o
-          ) =>
-        respond(api.setOverrideEligibilityIn(feature, o))
-
-      case DELETE -> Root / "features" / feature / "overrides" / userId =>
-        respond(api.removeOverrides(feature, userId))
-
-      case DELETE -> Root / "features" / feature / "overrides" =>
-        respond(api.removeAllOverrides(feature))
-
-      case req @ POST -> Root / "features" / feature / "overrides" =>
-        req.as[Map[UserId, GroupName]] >>= (m =>
-          respond(api.addOverrides(feature, m))
-        )
-
-      case req @ PUT -> Root / "tests" / testId / "userMetaCriteria" =>
-        req.as[UpdateUserMetaCriteriaRequest] >>= { r =>
-          respond(
-            api.updateUserMetaCriteria(EntityId(testId), r.criteria, r.auto)
-          )
-        }
-    }
-
-  def internal: HttpRoutes[F] = readonly <+> managing
+  def internal: HttpRoutes[F] = readonly
 
 }
 
