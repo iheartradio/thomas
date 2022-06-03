@@ -66,6 +66,7 @@ object Error {
 
   case object InconsistentTimeRange extends ValidationError
   case object FeatureCannotBeChanged extends Error
+  case object CannotRollback extends Error
   case class ConflictTest(existing: Entity[Abtest]) extends Error {
     override def getMessage =
       s"Cannot schedule to overlap with an existing test (${existing._id} ${existing.data.end

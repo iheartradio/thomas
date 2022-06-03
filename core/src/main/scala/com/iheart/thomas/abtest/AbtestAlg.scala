@@ -60,6 +60,8 @@ trait AbtestAlg[F[_]] extends TestsDataProvider[F] with FeatureRetriever[F] {
   def getTestsByFeature(feature: FeatureName): F[Vector[Entity[Abtest]]]
   def getLatestTestByFeature(feature: FeatureName): F[Option[Entity[Abtest]]]
   def continue(spec: AbtestSpec): F[Entity[Abtest]]
+  def canRollback(test: Abtest): F[Either[Unit, Option[Entity[Abtest]]]]
+  def rollbackTo(id: TestId): F[Entity[Abtest]]
 
   def getAllFeatureNames: F[List[FeatureName]]
   def getAllFeatures: F[Vector[Feature]]
@@ -209,6 +211,36 @@ final class DefaultAbtestAlg[F[_]](
     addTestWithLock(testSpec)(
       createWithoutLock(testSpec, auto)
     )
+
+  def canRollback(test: Abtest): F[Either[Unit, Option[Entity[Abtest]]]] = {
+    nowF.flatMap { now =>
+      if(!test.is(Status.Expired, now))
+        F.pure(Left(()))
+      else {
+        getTestByFeature(test.feature).map { existing =>
+          existing.data.statusAsOf(now) match {
+            case Status.InProgress => Right(Some(existing))
+            case Status.Expired => Right(None)
+            case Status.Scheduled => Left(())
+          }
+        }
+      }
+    }
+  }
+
+  def rollbackTo(id: TestId): F[Entity[Abtest]] =
+    for {
+      now <- nowF
+      test <- getTest(id)
+      rollbackable <- canRollback(test.data)
+      r <- rollbackable match {
+        case Left(_) =>  F.raiseError[Entity[Abtest]](CannotRollback)
+        case Right(toTerminateO) =>
+          toTerminateO.fold(F.unit)(toTerminate => terminate(toTerminate._id).void) >>
+            abTestDao.insert(test.data.copy(start = now, end = None))
+
+      }
+    } yield r
 
   def canUpdate(test: Abtest): F[Boolean] =
     nowF.map(now => canUpdate(test, now))

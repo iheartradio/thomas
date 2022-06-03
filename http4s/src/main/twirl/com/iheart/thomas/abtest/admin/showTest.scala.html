@@ -13,7 +13,8 @@ test: Entity[Abtest],
 followUpO: Option[Entity[Abtest]],
 feature: Feature,
 isShuffled: Boolean,
-canUpdate: Boolean
+canUpdate: Boolean,
+canRollback: Boolean
 )(implicit env: UIEnv)
 
 
@@ -45,6 +46,16 @@ canUpdate: Boolean
 <div class="row text-end mt-5">
     @if(env.currentUser.has(OperateFeature(feature))) {
     <div class="mr-4">
+        @if(canRollback) {
+          <form action="@test._id/rollback" method="post">
+              <button type="submit"
+              onclick="return confirm('Are you sure you want to terminate the currently running test and rollback to this one?');"
+              class="btn btn-warning me-3" role="button">
+                  Rollback to it
+              </button>
+          </form>
+
+        }
         @if(followUpO.isEmpty) {
         <a href="@test._id/new_revision" class="btn btn-primary" role="button">
             Create Follow Up
