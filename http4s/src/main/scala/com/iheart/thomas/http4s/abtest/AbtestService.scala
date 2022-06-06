@@ -68,6 +68,8 @@ trait AbtestServiceHelper[F[_]] extends Http4sDsl[F]{
               s"Cannot change group sizes for test having follow test ${t._id}"
             )
           )
+        case CannotRollback =>
+          BadRequest(errorJson(s"Cannot rollback this test"))
         case FeatureCannotBeChanged =>
           BadRequest(
             errorJson(

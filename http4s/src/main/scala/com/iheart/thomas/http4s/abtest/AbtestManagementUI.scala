@@ -230,6 +230,14 @@ class AbtestManagementUI[F[_]: Async](
           }
         }
 
+      case POST -> Root / "tests" / testId / "rollback" asAuthed u =>
+        for {
+          test <- get(testId)
+          _ <- u.canManage(test)
+          t <- alg.rollbackTo(test._id)
+          r <- redirectToTest(t)
+        } yield r
+
       case se @ POST -> Root / "features" / feature asAuthed u =>
         se.request
           .as[Feature]
@@ -386,13 +394,15 @@ class AbtestManagementUI[F[_]: Async](
           ti <- getTestInfo(testId)
           feature <- alg.getFeature(ti.test.data.feature)
           canUpdate <- alg.canUpdate(ti.test.data)
+          canRollback <- alg.canRollback(ti.test.data)
           r <- Ok(
             showTest(
               ti.test,
               ti.followUpO,
               feature,
               ti.isShuffled,
-              canUpdate
+              canUpdate,
+              canRollback = canRollback.isRight
             )(UIEnv(u))
           )
         } yield r
