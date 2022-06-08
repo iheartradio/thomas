@@ -134,6 +134,13 @@ class AbtestService[F[_]: Async](
       )
     }
 
+
+  def testOnly: HttpRoutes[F] =
+    HttpRoutes.of[F] {
+      case req @ POST -> Root / "tests" / "auto"=>
+        req.as[AbtestSpec] >>= (t => respond(api.create(t, true)))
+    }
+
   def readonly: HttpRoutes[F] =
     HttpRoutes.of[F] {
       case GET -> Root / "health" =>
