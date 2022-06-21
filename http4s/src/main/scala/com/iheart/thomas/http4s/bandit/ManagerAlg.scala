@@ -23,15 +23,16 @@ object ManagerAlg {
   implicit def apply[F[_]](
       implicit alg: BayesianMABAlg[F],
       jobAlg: JobAlg[F],
-      F: Monad[F]): ManagerAlg[F] = new ManagerAlg[F] {
+      F: Monad[F]
+    ): ManagerAlg[F] = new ManagerAlg[F] {
 
     def update(bs: BanditSpec, bas: BanditAbtestSpec): F[BanditSpec] = {
       for {
         s <- status(bs.feature)
         running = s === BanditStatus.Running
-        _ <- if(running) pause(bs.feature) else F.unit
+        _ <- if (running) pause(bs.feature) else F.unit
         r <- alg.update(bs, bas)
-        _ <- if(running) start(bs.feature) else F.unit
+        _ <- if (running) start(bs.feature) else F.unit
       } yield r
     }
 

@@ -177,12 +177,12 @@ object JobAlg {
                       )
                     })
                   }
-                ) //todo: be resilient against DB error with logging.
+                ) // todo: be resilient against DB error with logging.
 
             val runningJobs: Stream[F, Vector[Job]] = availableJobs
               .evalScan(
                 (
-                  Vector.empty[Job], //previous set of Jobs
+                  Vector.empty[Job], // previous set of Jobs
                   none[Vector[
                     Job
                   ]] // current Job, None if no change from previous bandits

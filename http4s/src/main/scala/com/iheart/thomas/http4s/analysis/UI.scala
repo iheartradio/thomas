@@ -78,7 +78,12 @@ class UI[F[_]: Async](
       for {
         states <- stateRepo.all
         kpis <- allKPIRepo.all
-        r <- Ok(index(states.filter(_.key.specialization === Specialization.RealtimeMonitor), kpis)(UIEnv(u)))
+        r <- Ok(
+          index(
+            states.filter(_.key.specialization === Specialization.RealtimeMonitor),
+            kpis
+          )(UIEnv(u))
+        )
       } yield r
   }
 
@@ -139,7 +144,7 @@ class UI[F[_]: Async](
         )
       }
 
-    //todo: this kpi key is not complete
+    // todo: this kpi key is not complete
     case GET -> `rootPath` / "abtests" / feature / "states" / kpi / "reset" asAuthed (_) =>
       stateRepo.delete(Key(feature, KPIName(kpi))) *>
         Ok(

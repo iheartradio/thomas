@@ -26,10 +26,13 @@ case class AutoRefreshAssigner(
 
   }.unsafeRunSync()
 
-  def assignUdf(feature: FeatureName): UserDefinedFunction = udf(assignFunction(feature))
+  def assignUdf(feature: FeatureName): UserDefinedFunction = udf(
+    assignFunction(feature)
+  )
 
-  def assignFunction(feature: FeatureName): String => Option[GroupName] = (userId: String) => {
-    inner.get.unsafeRunSync().flatMap(_.assign(feature, userId))
-  }
+  def assignFunction(feature: FeatureName): String => Option[GroupName] =
+    (userId: String) => {
+      inner.get.unsafeRunSync().flatMap(_.assign(feature, userId))
+    }
 
 }

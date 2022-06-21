@@ -105,7 +105,9 @@ object FitAssessmentAlg {
             .get(baselineGroup)
             .liftTo[F](BaselineGroupNameNotFound(baselineGroup, allMeasurement.keys))
       } yield {
-        val groupMeasurements = allMeasurement.filter{ case (k, _) => k != baselineGroup }
+        val groupMeasurements = allMeasurement.filter { case (k, _) =>
+          k != baselineGroup
+        }
 
         groupMeasurements.map { case (gn, ms) =>
           val improvement =

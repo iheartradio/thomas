@@ -6,7 +6,14 @@ import cats.syntax.all._
 import com.iheart.thomas.abtest.Error.NotFound
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmsState, Key}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
-import com.iheart.thomas.analysis.{ConversionKPI, KPIName, KPIRepo, KPIStats, Probability, QueryAccumulativeKPI}
+import com.iheart.thomas.analysis.{
+  ConversionKPI,
+  KPIName,
+  KPIRepo,
+  KPIStats,
+  Probability,
+  QueryAccumulativeKPI
+}
 import com.iheart.thomas.stream.{Job, JobDAO}
 import com.iheart.thomas.utils.time.Period
 

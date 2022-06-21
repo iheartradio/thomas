@@ -237,7 +237,7 @@ class BayesianMABAlgITSuite extends BayesianMABAlgITSuiteBase {
             "A" -> Conversions(
               2000,
               total = 18000
-            ), //the new samples are the same rate as the old one.
+            ), // the new samples are the same rate as the old one.
             "B" -> Conversions(800, total = 8000)
           ),
           sdao

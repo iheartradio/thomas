@@ -52,7 +52,7 @@ abstract class DAOFactoryWithEnsure[A, DAOF[_], F[_]](
     )(implicit ec: ExecutionContext
     ): F[EntityDAO[DAOF, A, Query]]
 
-  //replacement for the deprecated Index.apply
+  // replacement for the deprecated Index.apply
   protected def index(
       key: Seq[(String, IndexType)],
       name: Option[String] = None,

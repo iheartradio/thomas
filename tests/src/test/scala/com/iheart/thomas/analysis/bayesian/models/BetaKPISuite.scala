@@ -54,7 +54,8 @@ class BetaKPISuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
         .asserting { dist =>
           dist
             .sortBy(_.probabilityBeingOptimal.p)
-            .map(_.name).last shouldBe  "D"
+            .map(_.name)
+            .last shouldBe "D"
         }
     }
 
@@ -73,7 +74,8 @@ class BetaKPISuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
         .asserting { dist =>
           dist
             .sortBy(_.probabilityBeingOptimal.p)
-            .map(_.name).last shouldBe  "D"
+            .map(_.name)
+            .last shouldBe "D"
         }
     }
 
@@ -90,7 +92,8 @@ class BetaKPISuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
         .asserting { dist =>
           dist
             .sortBy(_.probabilityBeingOptimal.p)
-            .map(_.name).last shouldBe  "A"
+            .map(_.name)
+            .last shouldBe "A"
         }
     }
 

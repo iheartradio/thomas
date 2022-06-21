@@ -31,10 +31,10 @@ trait FeatureRepo[F[_]] extends FeatureRetriever[F] {
 
   def update(f: Entity[Feature]): F[Entity[Feature]]
   def obtainLock(
-                  feature: Entity[Feature],
-                  at: Instant,
-                  gracePeriod: Option[FiniteDuration]
-                ): F[Boolean]
+      feature: Entity[Feature],
+      at: Instant,
+      gracePeriod: Option[FiniteDuration]
+    ): F[Boolean]
 
   def releaseLock(feature: Entity[Feature]): F[Entity[Feature]] =
     update(feature.lens(_.data.lockedAt).set(None))
@@ -43,16 +43,22 @@ trait FeatureRepo[F[_]] extends FeatureRetriever[F] {
 object FeatureRepo {
   import com.iheart.thomas.abtest.QueryDSL._
 
-  implicit def fromEntityDAO[F[_]: Functor](implicit dao: EntityDAO[F, Feature, JsObject]): FeatureRepo[F] = new FeatureRepo[F] {
-    def findByNames(names: Seq[FeatureName]): F[Seq[Entity[Feature]]] = dao.find( Json.obj(
-      "name" ->
+  implicit def fromEntityDAO[F[_]: Functor](
+      implicit dao: EntityDAO[F, Feature, JsObject]
+    ): FeatureRepo[F] = new FeatureRepo[F] {
+    def findByNames(names: Seq[FeatureName]): F[Seq[Entity[Feature]]] = dao
+      .find(
         Json.obj(
-          "$in" ->
-            JsArray(
-              names.map(JsString(_))
+          "name" ->
+            Json.obj(
+              "$in" ->
+                JsArray(
+                  names.map(JsString(_))
+                )
             )
         )
-    )).widen
+      )
+      .widen
 
     def byName(name: FeatureName): F[Entity[Feature]] =
       dao.byName(name)
@@ -70,41 +76,39 @@ object FeatureRepo {
 
     def update(f: Entity[Feature]): F[Entity[Feature]] = dao.update(f)
 
-
     def obtainLock(
-                    feature: Entity[Feature],
-                    at: Instant,
-                    gracePeriod: Option[FiniteDuration]
-
-                          ): F[Boolean] = {
+        feature: Entity[Feature],
+        at: Instant,
+        gracePeriod: Option[FiniteDuration]
+      ): F[Boolean] = {
       import utils.time.InstantOps
-      val noLock: (String, JsValueWrapper) = "lockedAt" -> Json.obj("$exists" -> false)
+      val noLock: (String, JsValueWrapper) =
+        "lockedAt" -> Json.obj("$exists" -> false)
 
-        val lockCheck: (String, JsValueWrapper) =
-          gracePeriod.fold(
-            noLock
-          ) { gp =>
-            "$or" -> Json.arr(
-              Json.obj(noLock),
-              Json.obj(
-                "lockedAt" ->
-                  Json.obj("$lt" -> at.plusDuration(gp.inverse()))
-              )
-            )
-          }
-
-        dao
-          .update(
+      val lockCheck: (String, JsValueWrapper) =
+        gracePeriod.fold(
+          noLock
+        ) { gp =>
+          "$or" -> Json.arr(
+            Json.obj(noLock),
             Json.obj(
-              "name" -> feature.data.name,
-              lockCheck
-            ),
-            feature.lens(_.data.lockedAt).set(Some(at)),
-            upsert = false
+              "lockedAt" ->
+                Json.obj("$lt" -> at.plusDuration(gp.inverse()))
+            )
           )
+        }
+
+      dao
+        .update(
+          Json.obj(
+            "name" -> feature.data.name,
+            lockCheck
+          ),
+          feature.lens(_.data.lockedAt).set(Some(at)),
+          upsert = false
+        )
     }
 
   }
-
 
 }

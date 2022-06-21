@@ -71,7 +71,9 @@ object ExperimentKPIState {
 
   sealed trait Specialization extends EnumEntry
 
-  object Specialization extends Enum[Specialization] with enumeratum.CatsEnum[Specialization] {
+  object Specialization
+      extends Enum[Specialization]
+      with enumeratum.CatsEnum[Specialization] {
 
     val values = findValues
     case object RealtimeMonitor extends Specialization
@@ -94,8 +96,8 @@ object ExperimentKPIState {
 
     def sampleSize: Long = {
       (kpiStats: KPIStats) match {
-        case Conversions(_, total)                   => total
-        case PerUserSamplesLnSummary(_, _, count)    => count
+        case Conversions(_, total)                => total
+        case PerUserSamplesLnSummary(_, _, count) => count
       }
     }
   }
@@ -188,4 +190,3 @@ object AllExperimentKPIStateRepo {
       )
     }
 }
-

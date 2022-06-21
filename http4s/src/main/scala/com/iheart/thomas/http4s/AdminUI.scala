@@ -2,7 +2,13 @@ package com.iheart.thomas
 package http4s
 
 import com.iheart.thomas.http4s.abtest.AbtestManagementUI
-import com.iheart.thomas.http4s.auth.{AuthDependencies, AuthedEndpointsUtils, AuthenticationAlg, Token, UI}
+import com.iheart.thomas.http4s.auth.{
+  AuthDependencies,
+  AuthedEndpointsUtils,
+  AuthenticationAlg,
+  Token,
+  UI
+}
 import org.http4s.dsl.Http4sDsl
 import cats.syntax.all._
 import com.iheart.thomas.dynamo
@@ -97,7 +103,8 @@ object AdminUI {
 
   def resource[
       F[_]: Async: Logger: EventLogger
-        : AccumulativeKPIQueryRepo: JValueArmParser: JValueTimeStampParser: JValueUserParser
+        : AccumulativeKPIQueryRepo: JValueArmParser: JValueTimeStampParser
+        : JValueUserParser
     ](implicit dc: DynamoDbAsyncClient,
       cfg: AdminUIConfig,
       config: Config,
@@ -138,7 +145,6 @@ object AdminUI {
 
               com.iheart.thomas.bandit.bayesian.BayesianMABAlg.apply[F]
               PerformantAssigner.resource[F].map { implicit assigner =>
-
                 new AdminUI(
                   amUI,
                   authUI,
@@ -154,7 +160,8 @@ object AdminUI {
 
   def resourceFromDynamo[
       F[_]: Async: Logger: EventLogger
-        : AccumulativeKPIQueryRepo: JValueArmParser: JValueTimeStampParser: JValueUserParser
+        : AccumulativeKPIQueryRepo: JValueArmParser: JValueTimeStampParser
+        : JValueUserParser
     ](implicit
       cfg: Config,
       adminUIConfig: AdminUIConfig,
@@ -184,7 +191,8 @@ object AdminUI {
     */
   def serverResource[
       F[_]: Async: EventLogger
-        : AccumulativeKPIQueryRepo: JValueArmParser: JValueTimeStampParser: JValueUserParser
+        : AccumulativeKPIQueryRepo: JValueArmParser: JValueTimeStampParser
+        : JValueUserParser
     ](implicit
       adminCfg: AdminUIConfig,
       config: Config,

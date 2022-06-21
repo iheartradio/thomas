@@ -36,7 +36,7 @@ class AsyncEntityDAO[T: Format, F[_]: Async](
 
   lazy val writeCollection = collection.withReadPreference(
     ReadPreference.primary
-  ) //due to a bug in ReactiveMongo
+  ) // due to a bug in ReactiveMongo
 
   def get(id: EntityId): R[Entity[T]] =
     of(
