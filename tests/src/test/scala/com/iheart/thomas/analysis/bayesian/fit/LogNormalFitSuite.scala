@@ -18,7 +18,7 @@ import java.time.temporal.ChronoUnit
 import scala.util.Random
 
 class LogNormalFitSuite extends AnyFunSuiteLike with Matchers {
-  implicit val sampler = SamplerConfig.default //.copy(iterations = 10000)
+  implicit val sampler = SamplerConfig.default // .copy(iterations = 10000)
 
   type F[A] = Either[Throwable, A]
   def mock(

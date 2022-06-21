@@ -137,7 +137,7 @@ private[thomas] object Bucketing {
                 allocate(
                   group.size,
                   assignment
-                ) //allocate from the existing assignment
+                ) // allocate from the existing assignment
               } else
                 assignment ++ allocate(group.size - assignedSize, allAvailable)
           }

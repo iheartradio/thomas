@@ -22,13 +22,13 @@ lazy val libs = {
     .addJVM(name = "breeze",                version = "1.3",    org ="org.scalanlp", "breeze", "breeze-viz")
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
     .addJVM(name = "decline",               version = "2.2.0",  org = "com.monovore")
-    .addJVM(name = "embedded-kafka",        version = "2.7.0",  org = "io.github.embeddedkafka")
+    .addJVM(name = "embedded-kafka",        version = "2.8.1",  org = "io.github.embeddedkafka")
     .addJVM(name = "fs2-kafka",             version = "2.4.0",  org = "com.github.fd4s")
-    .add(   name = "fs2",                   version = "3.2.7")
+    .add(   name = "fs2",                   version = "3.2.8")
     .add(   name = "cats-effect",           version = "3.3.12")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .addJVM(name = "log4cats",              version = "2.1.1",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
-    .addJava(name ="log4j-core",            version = "2.11.1", org = "org.apache.logging.log4j")
+    .addJava(name ="log4j-core",            version = "2.11.2", org = "org.apache.logging.log4j")
     .addJava(name ="logback-classic",       version = "1.2.11",  org = "ch.qos.logback")
     .addJVM(name = "mau",                   version = "0.3.1",  org = "com.kailuowang")
     .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
@@ -37,12 +37,12 @@ lazy val libs = {
     .addJVM(name = "rainier",               version = "0.3.5",  org ="com.stripe", "rainier-core", "rainier-cats")
     .addJVM(name = "reactivemongo",         version = reactiveMongoVer, org = "org.reactivemongo", "reactivemongo", "reactivemongo-bson-api", "reactivemongo-iteratees" )
     .addJVM(name = "reactivemongo-play-json-compat", version = reactiveMongoVer + "-play27", org = "org.reactivemongo")
-    .addJVM(name = "scala-java8-compat",    version = "1.0.1",  org = "org.scala-lang.modules")
+    .addJVM(name = "scala-java8-compat",    version = "1.0.2",  org = "org.scala-lang.modules")
     .addJVM(name = "scala-collection-compat",    version = "2.7.0",  org = "org.scala-lang.modules")
-    .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
+    .add(   name = "scalacheck-1-14",       version = "3.2.2.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
-    .addJVM(name = "scanamo",               version = "1.0.0-M19", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
-    .add(   name = "spark",                 version = "3.3.0",  org = "org.apache.spark", "spark-sql", "spark-core")
+    .addJVM(name = "scanamo",               version = "1.0.0-M20", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
+    .add(   name = "spark",                 version = "3.2.1",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tsec",                  version = "0.4.0",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
     .add   (name = "enumeratum",            version = "1.7.0",  org = "com.beachape", "enumeratum", "enumeratum-cats" )
 
@@ -413,7 +413,7 @@ lazy val commonSettings = addCompilerPlugins(
   "kind-projector"
 ) ++ sharedCommonSettings ++ Seq(
   organization := "com.iheart",
-  scalaVersion := "2.12.15",
+  scalaVersion := "2.12.16",
   crossScalaVersions := Seq(scalaVersion.value, "2.13.8"),
   Test / parallelExecution := false,
   releaseCrossBuild := false,
@@ -422,7 +422,7 @@ lazy val commonSettings = addCompilerPlugins(
   Test / compile / scalacOptions ~= lessStrictScalaChecks,
   scalacOptions += s"-Xlint:-package-object-classes",
   Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
-  ThisBuild / evictionErrorLevel := Level.Info //thanks to akka depending on java8 compat 0.8.0
+  ThisBuild / evictionErrorLevel := Level.Info // thanks to akka depending on java8 compat 0.8.0
 )
 
 lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =

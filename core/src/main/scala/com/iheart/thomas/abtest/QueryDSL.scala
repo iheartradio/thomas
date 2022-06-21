@@ -9,7 +9,6 @@ import _root_.play.api.libs.json.{JsObject, Json, Writes}
 import utils.time._
 import scala.concurrent.duration.FiniteDuration
 
-
 object QueryDSL {
 
   object abtests {
@@ -35,7 +34,8 @@ object QueryDSL {
 
   implicit class ExtendedOps[F[_]](self: EntityDAO[F, Feature, JsObject]) {
 
-    def byName(name: FeatureName): F[Entity[Feature]] = self.findOne(Symbol("name") -> name)
+    def byName(name: FeatureName): F[Entity[Feature]] =
+      self.findOne(Symbol("name") -> name)
     def byNameOption(name: FeatureName): F[Option[Entity[Feature]]] =
       self.findOneOption(Symbol("name") -> name)
   }
