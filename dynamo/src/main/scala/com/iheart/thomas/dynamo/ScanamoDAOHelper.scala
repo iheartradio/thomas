@@ -2,7 +2,7 @@ package com.iheart.thomas
 package dynamo
 
 import cats.effect.Async
-import cats.implicits._
+import cats.syntax.all._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import software.amazon.awssdk.services.dynamodb.model.{
   AttributeDefinition,

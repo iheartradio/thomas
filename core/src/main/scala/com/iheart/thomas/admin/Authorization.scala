@@ -4,7 +4,7 @@ import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Feature}
 
 import scala.util.control.NoStackTrace
 import cats.MonadThrow
-import cats.implicits._
+import cats.syntax.all._
 import lihua.Entity
 
 import java.time.OffsetDateTime

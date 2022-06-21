@@ -8,7 +8,7 @@ package thomas
 package mongo
 
 import cats.effect.Async
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.abtest.model._
 import com.iheart.thomas.abtest.json.play.Formats._
 import lihua.mongo.EitherTDAOFactory

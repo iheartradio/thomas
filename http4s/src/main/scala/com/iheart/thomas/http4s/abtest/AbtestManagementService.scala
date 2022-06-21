@@ -8,7 +8,7 @@ import com.iheart.thomas.http4s.auth.AuthedEndpointsUtils
 import org.http4s.{EntityDecoder}
 import org.http4s.dsl.Http4sDsl
 import com.iheart.thomas.abtest.model._
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 import lihua.EntityId
 import com.iheart.thomas.abtest.json.play.Formats._
