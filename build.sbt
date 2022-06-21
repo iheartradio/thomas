@@ -28,7 +28,7 @@ lazy val libs = {
     .add(   name = "cats-effect",           version = "3.3.12")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .addJVM(name = "log4cats",              version = "2.1.1",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
-    .addJava(name ="log4j-core",            version = "2.11.2", org = "org.apache.logging.log4j")
+    .addJava(name ="log4j-core",            version = "2.17.2", org = "org.apache.logging.log4j")
     .addJava(name ="logback-classic",       version = "1.2.11",  org = "ch.qos.logback")
     .addJVM(name = "mau",                   version = "0.3.1",  org = "com.kailuowang")
     .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
