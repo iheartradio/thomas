@@ -206,7 +206,7 @@ class AssignmentSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
           } yield {
             val assignments =
               r.map(_.groups(testUsingAlternativeId.feature)).distinct
-            assignments.size shouldBe 1 //since they have the same device id they should be assigned with the same group even though they have difference userIds
+            assignments.size shouldBe 1 // since they have the same device id they should be assigned with the same group even though they have difference userIds
 
           }
         }

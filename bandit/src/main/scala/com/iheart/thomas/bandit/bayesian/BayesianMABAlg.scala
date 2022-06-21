@@ -6,9 +6,21 @@ import cats.effect.Clock
 import cats.implicits._
 import cats.MonadThrow
 import com.iheart.thomas.abtest.model.Abtest.Specialization
-import com.iheart.thomas.abtest.model.{Abtest, AbtestSpec, Group, GroupRange, GroupSize, Tag, UserMetaCriteria}
+import com.iheart.thomas.abtest.model.{
+  Abtest,
+  AbtestSpec,
+  Group,
+  GroupRange,
+  GroupSize,
+  Tag,
+  UserMetaCriteria
+}
 import com.iheart.thomas.analysis.bayesian.KPIEvaluator
-import com.iheart.thomas.analysis.monitor.{AllExperimentKPIStateRepo, ExperimentKPIHistoryRepo, ExperimentKPIState}
+import com.iheart.thomas.analysis.monitor.{
+  AllExperimentKPIStateRepo,
+  ExperimentKPIHistoryRepo,
+  ExperimentKPIState
+}
 import com.iheart.thomas.analysis.{AllKPIRepo, KPIStats, Probability}
 import com.iheart.thomas.bandit.bayesian.BayesianMABAlg.BanditAbtestSpec
 import com.iheart.thomas.bandit.tracking.BanditEvent
@@ -43,10 +55,9 @@ trait BayesianMABAlg[F[_]] {
 object BayesianMABAlg {
 
   case class BanditAbtestSpec(
-                               requiredTags: List[Tag] = Nil,
-                               userMetaCriteria: UserMetaCriteria = None,
-                               segmentRanges: List[GroupRange] = Nil
-                             )
+      requiredTags: List[Tag] = Nil,
+      userMetaCriteria: UserMetaCriteria = None,
+      segmentRanges: List[GroupRange] = Nil)
 
   private[bayesian] def createTestSpec[F[_]: MonadThrow](
       from: BanditSpec,
@@ -96,7 +107,7 @@ object BayesianMABAlg {
             state <- stateDao.find(settings.stateKey)
           } yield BayesianMAB(abtest, settings, state)
 
-        abtestAPI //todo: this search depends how the bandit was initialized, if the abtest is created before the state, this will have concurrency problem.
+        abtestAPI // todo: this search depends how the bandit was initialized, if the abtest is created before the state, this will have concurrency problem.
           .getAllTestsBySpecialization(
             Specialization.MultiArmBandit,
             time
@@ -119,9 +130,11 @@ object BayesianMABAlg {
         }
 
       def resetState(featureName: FeatureName): F[Bandit] =
-        get(featureName).flatTap { b =>
-          stateDao.delete(b.spec.stateKey)
-        }.map(_.copy(state = None))
+        get(featureName)
+          .flatTap { b =>
+            stateDao.delete(b.spec.stateKey)
+          }
+          .map(_.copy(state = None))
 
       def abtest(featureName: FeatureName): F[Entity[Abtest]] =
         abtestAPI
@@ -142,9 +155,14 @@ object BayesianMABAlg {
           now <- now[F]
           test <- abtest(banditSpec.feature)
           spec = test.data.toSpec
-          _ <- abtestAPI.continue(spec.copy( start = now.toOffsetDateTimeSystemDefault,
-            requiredTags = bas.requiredTags,
-            userMetaCriteria = bas.userMetaCriteria, segmentRanges = bas.segmentRanges))
+          _ <- abtestAPI.continue(
+            spec.copy(
+              start = now.toOffsetDateTimeSystemDefault,
+              requiredTags = bas.requiredTags,
+              userMetaCriteria = bas.userMetaCriteria,
+              segmentRanges = bas.segmentRanges
+            )
+          )
           r <- specDao.update(banditSpec)
         } yield r
 

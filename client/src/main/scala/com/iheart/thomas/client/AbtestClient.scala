@@ -232,12 +232,13 @@ object AbtestClient {
     *   for getting all running tests as of `time`
     */
   def testsData[F[_]: Async](
-                              serviceRootUrl: String,
-                              time: Instant,
-                              duration: Option[FiniteDuration]
+      serviceRootUrl: String,
+      time: Instant,
+      duration: Option[FiniteDuration]
     )(implicit ec: ExecutionContext
     ): F[TestsData] = {
-    val root = serviceRootUrl.replace("/testsWithFeatures", "") //for legacy support.
+    val root =
+      serviceRootUrl.replace("/testsWithFeatures", "") // for legacy support.
     Http4SAbtestClient
       .readOnlyResource[F](
         new HttpServiceUrlsPlay(root),

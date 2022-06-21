@@ -20,7 +20,7 @@ object ExampleParsers {
   implicit def userParser[F[_]: Applicative]: UserParser[F, JValue] =
     new UserParser[F, JValue] {
       def apply(
-          m: JValue,
+          m: JValue
         ): F[Option[UserId]] =
         m.getPath(s"userId").getString.pure[F]
     }

@@ -143,7 +143,7 @@ object MongoDB {
       }
       .map { l =>
         val map = l.flatten.toMap
-        //if authSource db is missing a credential, use the top one by default.
+        // if authSource db is missing a credential, use the top one by default.
         (config.authSource, map.values.headOption).tupled
           .fold(map)(Map(_) ++ map)
       }

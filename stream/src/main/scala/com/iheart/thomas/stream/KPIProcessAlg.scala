@@ -9,8 +9,22 @@ import com.iheart.thomas.abtest.FeatureRetriever
 import com.iheart.thomas.abtest.model.Feature
 import com.iheart.thomas.analysis.bayesian.Posterior
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}
-import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmState, ArmsState, Key, Specialization}
-import com.iheart.thomas.analysis.{Aggregation, AllKPIRepo, ConversionKPI, KPI, KPIName, KPIRepo, KPIStats, QueryAccumulativeKPI}
+import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{
+  ArmState,
+  ArmsState,
+  Key,
+  Specialization
+}
+import com.iheart.thomas.analysis.{
+  Aggregation,
+  AllKPIRepo,
+  ConversionKPI,
+  KPI,
+  KPIName,
+  KPIRepo,
+  KPIStats,
+  QueryAccumulativeKPI
+}
 import com.iheart.thomas.stream.JobSpec.ProcessSettings
 import com.iheart.thomas.utils.time.Period
 import fs2.{Pipe, Stream}
@@ -148,11 +162,11 @@ object KPIProcessAlg {
 object AllKPIProcessAlg {
 
   implicit def default[F[_]: Temporal, Message](
-                                                 implicit
-                                                 convProcessAlg: KPIProcessAlg[F, Message, ConversionKPI],
-                                                 accumProcessAlg: KPIProcessAlg[F, Message, QueryAccumulativeKPI],
-                                                 allKPIRepo: AllKPIRepo[F],
-                                                 featureRetriever: FeatureRetriever[F]
+      implicit
+      convProcessAlg: KPIProcessAlg[F, Message, ConversionKPI],
+      accumProcessAlg: KPIProcessAlg[F, Message, QueryAccumulativeKPI],
+      allKPIRepo: AllKPIRepo[F],
+      featureRetriever: FeatureRetriever[F]
     ): AllKPIProcessAlg[F, Message] =
     new AllKPIProcessAlg[F, Message] {
 
@@ -175,9 +189,11 @@ object AllKPIProcessAlg {
         featureRetriever.getFeature(fn).flatMap { feature =>
           allKPIRepo.get(kpiName).map {
             case kpi: ConversionKPI =>
-              convProcessAlg.monitorExperiment(kpi, feature, specialization, settings)
+              convProcessAlg
+                .monitorExperiment(kpi, feature, specialization, settings)
             case kpi: QueryAccumulativeKPI =>
-              accumProcessAlg.monitorExperiment(kpi, feature, specialization, settings)
+              accumProcessAlg
+                .monitorExperiment(kpi, feature, specialization, settings)
           }
         }
 

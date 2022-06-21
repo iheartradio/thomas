@@ -4,9 +4,8 @@ import com.iheart.thomas.analysis.KPIStats
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Key
 
 case class ExperimentKPIHistory[+KS <: KPIStats](
-  key: Key,
-  history: List[ExperimentKPIState[KS]]
-)
+    key: Key,
+    history: List[ExperimentKPIState[KS]])
 
 trait ExperimentKPIHistoryRepo[F[_]] {
   def get(key: Key): F[ExperimentKPIHistory[KPIStats]]
