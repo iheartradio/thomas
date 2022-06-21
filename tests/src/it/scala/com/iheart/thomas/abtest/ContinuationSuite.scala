@@ -28,7 +28,7 @@ class ContinuationSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
           )
           .map(_.groups.get(test.data.feature).map((_, uid)))
       }
-      .map(_.flatten.groupBy(_._1).map { case (k , v) => (k, v.map(_._2))} )
+      .map(_.flatten.groupBy(_._1).map { case (k, v) => (k, v.map(_._2)) })
   }
 
   "Inherits as many users from previous test as possible" in {
@@ -52,11 +52,11 @@ class ContinuationSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
         groupAssignment2 <- getGroupAssignment(ab2, ids)
         groupAssignment3 <- getGroupAssignment(ab3, ids)
       } yield {
-        //expanding group should see all users from the same group in the previous test
+        // expanding group should see all users from the same group in the previous test
         groupAssignment2("A") should contain allElementsOf groupAssignment1("A")
         groupAssignment3("A") should contain allElementsOf groupAssignment2("A")
 
-        //shrinking group should inherit all users from the same group in the previous test
+        // shrinking group should inherit all users from the same group in the previous test
         groupAssignment1("B") should contain allElementsOf groupAssignment2("B")
         groupAssignment2("B") should contain allElementsOf groupAssignment3("B")
       }
@@ -101,7 +101,7 @@ class ContinuationSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
         groupAssignment3 <- getGroupAssignment(ab3, ids)
       } yield {
 
-        //hard coded to make sure that these values do not change for to maintain compatibility.
+        // hard coded to make sure that these values do not change for to maintain compatibility.
         groupAssignment1("A") should be(
           List(314, 310, 303, 299, 292, 288, 286, 285, 278, 273, 267, 265, 261, 257,
             256, 254).sorted.map(_.toString)

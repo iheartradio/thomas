@@ -16,7 +16,7 @@ trait KPIRepo[F[_], K <: KPI] {
   def create(
       newKpi: K
     )(implicit F: MonadThrow[F]
-    ): F[K] = //todo: add AllKPIRepo deps to ensure kpi name uniqueness.
+    ): F[K] = // todo: add AllKPIRepo deps to ensure kpi name uniqueness.
     validate(newKpi)
       .leftMap(es => InvalidKPI(es.mkString_("; ")))
       .liftTo[F] *> insert(newKpi)

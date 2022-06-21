@@ -36,11 +36,15 @@ abstract class JobAlgSuiteBase extends AsyncFreeSpec with AsyncIOSpec with Match
       MapBasedDAOs.experimentStateDAO[IO, PerUserSamplesLnSummary]
 
     implicit val featureRepo = new FeatureRetriever[IO] {
-      override def getFeature(name: FeatureName): IO[Feature] = IO(Feature("feature_foo"))
+      override def getFeature(name: FeatureName): IO[Feature] = IO(
+        Feature("feature_foo")
+      )
     }
 
     implicit val mockAssigner: PerformantAssigner[IO] = new PerformantAssigner[IO] {
-       def assign(query: UserGroupQuery): IO[Map[FeatureName, AssignGroups.AssignmentResult]] = IO.pure(Map.empty)
+      def assign(
+          query: UserGroupQuery
+        ): IO[Map[FeatureName, AssignGroups.AssignmentResult]] = IO.pure(Map.empty)
     }
 
     implicit val nullBSProcessAlg: BanditProcessAlg[IO, JValue] = null

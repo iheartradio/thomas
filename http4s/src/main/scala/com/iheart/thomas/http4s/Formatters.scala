@@ -35,7 +35,6 @@ object Formatters {
     "%.3f".format(size)
   }
 
-
   def formatStatus(test: Entity[Abtest]): (String, String) = {
     test.data.statusAsOf(OffsetDateTime.now) match {
       case Status.Expired    => ("Stopped", "secondary")

@@ -146,17 +146,17 @@ object DynamoFormats {
       : DynamoFormat[ExperimentKPIState[PerUserSamplesLnSummary]] =
     deriveDynamoFormat[ExperimentKPIState[PerUserSamplesLnSummary]]
 
- implicit val kpiStatsFormat
-      : DynamoFormat[KPIStats] = deriveDynamoFormat[KPIStats]
+  implicit val kpiStatsFormat: DynamoFormat[KPIStats] = deriveDynamoFormat[KPIStats]
 
-  implicit val genArmStatsFormat
-      : DynamoFormat[ArmState[KPIStats]] = deriveDynamoFormat[ArmState[KPIStats]]
+  implicit val genArmStatsFormat: DynamoFormat[ArmState[KPIStats]] =
+    deriveDynamoFormat[ArmState[KPIStats]]
 
   implicit val genExperimentKPIStatsFormat
-      : DynamoFormat[ExperimentKPIState[KPIStats]] = deriveDynamoFormat[ExperimentKPIState[KPIStats]]
-
+      : DynamoFormat[ExperimentKPIState[KPIStats]] =
+    deriveDynamoFormat[ExperimentKPIState[KPIStats]]
 
   implicit val experimentKPIHistoryFormat
-      : DynamoFormat[ExperimentKPIHistory[KPIStats]] = deriveDynamoFormat[ExperimentKPIHistory[KPIStats]]
+      : DynamoFormat[ExperimentKPIHistory[KPIStats]] =
+    deriveDynamoFormat[ExperimentKPIHistory[KPIStats]]
 
 }

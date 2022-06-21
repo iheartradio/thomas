@@ -189,12 +189,12 @@ final class DefaultAbtestAlg[F[_]](
     refreshPeriod: FiniteDuration,
     staleTimeout: FiniteDuration = 30.minutes
   )(implicit
-   abTestDao: EntityDAO[
+    abTestDao: EntityDAO[
       F,
       Abtest,
       JsObject
     ],
-   featureRepo: FeatureRepo[F],
+    featureRepo: FeatureRepo[F],
     refreshRef: RefreshRef[F, TestsData],
     nowF: F[Instant],
     F: MonadThrow[F],
@@ -214,14 +214,14 @@ final class DefaultAbtestAlg[F[_]](
 
   def canRollback(test: Abtest): F[Either[Unit, Option[Entity[Abtest]]]] = {
     nowF.flatMap { now =>
-      if(!test.is(Status.Expired, now))
+      if (!test.is(Status.Expired, now))
         F.pure(Left(()))
       else {
         getTestByFeature(test.feature).map { existing =>
           existing.data.statusAsOf(now) match {
             case Status.InProgress => Right(Some(existing))
-            case Status.Expired => Right(None)
-            case Status.Scheduled => Left(())
+            case Status.Expired    => Right(None)
+            case Status.Scheduled  => Left(())
           }
         }
       }
@@ -234,9 +234,11 @@ final class DefaultAbtestAlg[F[_]](
       test <- getTest(id)
       rollbackable <- canRollback(test.data)
       r <- rollbackable match {
-        case Left(_) =>  F.raiseError[Entity[Abtest]](CannotRollback)
+        case Left(_) => F.raiseError[Entity[Abtest]](CannotRollback)
         case Right(toTerminateO) =>
-          toTerminateO.fold(F.unit)(toTerminate => terminate(toTerminate._id).void) >>
+          toTerminateO.fold(F.unit)(toTerminate =>
+            terminate(toTerminate._id).void
+          ) >>
             abTestDao.insert(test.data.copy(start = now, end = None))
 
       }
@@ -259,7 +261,8 @@ final class DefaultAbtestAlg[F[_]](
       now <- nowF
       _ <- ensure(canUpdate(test.data, now), CannotChangePastTest(test.data.start))
       startChanged = test.data.start.getEpochSecond != spec.startI.getEpochSecond
-      _ <- ensure(!(test.data.is(Status.InProgress, now) && startChanged),
+      _ <- ensure(
+        !(test.data.is(Status.InProgress, now) && startChanged),
         CannotChangePastTest(test.data.start)
       )
       tests <- getTestsByFeature(spec.feature)
@@ -269,7 +272,9 @@ final class DefaultAbtestAlg[F[_]](
       }
       _ <- beforeO.fold(F.unit)(before =>
         ensure(
-          before.data.end.fold(false)(be => !startChanged || !be.isAfter(spec.startI)),
+          before.data.end.fold(false)(be =>
+            !startChanged || !be.isAfter(spec.startI)
+          ),
           ConflictTest(before)
         )
       )
@@ -303,7 +308,7 @@ final class DefaultAbtestAlg[F[_]](
       refreshRef.getOrFetch(refreshPeriod, staleTimeout)(
         nowF.flatMap(getTestsData(_, None))
       ) { case _ =>
-        F.unit //todo: add logging here for Abtest retrieval failure
+        F.unit // todo: add logging here for Abtest retrieval failure
       }
     )(getTestsData(_, None))
 
@@ -352,10 +357,11 @@ final class DefaultAbtestAlg[F[_]](
     }
 
   def getAllTestsEndAfter(time: OffsetDateTime): F[Vector[Entity[Abtest]]] =
-    abTestDao.find(abtests.endTimeAfter(time.toInstant)
-      ++ Json.obj(
-      "specialization" -> Json.obj("$exists" -> false)
-      )
+    abTestDao.find(
+      abtests.endTimeAfter(time.toInstant)
+        ++ Json.obj(
+          "specialization" -> Json.obj("$exists" -> false)
+        )
     )
 
   def getTestsByFeature(feature: FeatureName): F[Vector[Entity[Abtest]]] =
@@ -507,7 +513,7 @@ final class DefaultAbtestAlg[F[_]](
               if (candidate.data.statusAsOf(now) == Status.Expired)
                 CannotUpdateExpiredTest(
                   candidate.data.end.get
-                ) //this should be safe since it's already expired and thus must have an end date
+                ) // this should be safe since it's already expired and thus must have an end date
                   .raiseError[F, Entity[Abtest]]
               else
                 create(
@@ -640,7 +646,8 @@ final class DefaultAbtestAlg[F[_]](
     for {
       f <- ensureFeature(spec.feature, List(spec.author))
       now <- nowF
-      _ <- featureRepo.obtainLock(f, now, gracePeriod)
+      _ <- featureRepo
+        .obtainLock(f, now, gracePeriod)
         .adaptErr { case e =>
           ConflictCreation(spec.feature, e.getMessage)
         }
@@ -663,16 +670,16 @@ final class DefaultAbtestAlg[F[_]](
       r <- lastOne.fold(doCreate(ts, None)) { lte =>
         val lt = lte.data
         lt.statusAsOf(ts.start) match {
-          case Abtest.Status.Scheduled => //when the existing test is ahead of the new test
+          case Abtest.Status.Scheduled => // when the existing test is ahead of the new test
             terminate(lte._id) >> createWithoutLock(
               ts,
               false
             )
-          case Abtest.Status.InProgress => //when the exiting test has overlap with the new test
+          case Abtest.Status.InProgress => // when the exiting test has overlap with the new test
             tryUpdate(lte, ts, now).getOrElse(
               continueWith(ts, lte)
             )
-          case Abtest.Status.Expired => //when the existing test is before the new test.
+          case Abtest.Status.Expired => // when the existing test is before the new test.
             doCreate(ts, lastOne)
         }
       }
@@ -800,40 +807,39 @@ final class DefaultAbtestAlg[F[_]](
   private def validateForCreation(testSpec: AbtestSpec): F[Unit] =
     errorsOFFToF(
       nowF.map(now =>
-          testSpec.start.toInstant
-            .isBefore(now.minusSeconds(60))
-            .option(Error.CannotScheduleTestBeforeNow) :: validate(testSpec)
+        testSpec.start.toInstant
+          .isBefore(now.minusSeconds(60))
+          .option(Error.CannotScheduleTestBeforeNow) :: validate(testSpec)
       )
     )
 
-
   private def validate(testSpec: AbtestSpec): List[Option[ValidationError]] =
-        List(
-          testSpec.groups.isEmpty
-            .option(Error.EmptyGroups),
-          (testSpec.groups.map(_.size).sum > 1.000000001)
-            .option(
-              Error.InconsistentGroupSizes(
-                testSpec.groups.map(_.size)
-              )
-            ),
-          testSpec.end
-            .filter(_.isBefore(testSpec.start))
-            .as(Error.InconsistentTimeRange),
-          (testSpec.groups
-            .map(_.name)
-            .distinct
-            .length != testSpec.groups.length)
-            .option(Error.DuplicatedGroupName),
-          testSpec.groups
-            .exists(_.name.length >= 256)
-            .option(Error.GroupNameTooLong),
-          (!testSpec.feature.matches("[-_.A-Za-z0-9]+"))
-            .option(Error.InvalidFeatureName),
-          (!testSpec.alternativeIdName
-            .fold(true)(_.matches("[-_.A-Za-z0-9]+")))
-            .option(Error.InvalidAlternativeIdName)
-      )
+    List(
+      testSpec.groups.isEmpty
+        .option(Error.EmptyGroups),
+      (testSpec.groups.map(_.size).sum > 1.000000001)
+        .option(
+          Error.InconsistentGroupSizes(
+            testSpec.groups.map(_.size)
+          )
+        ),
+      testSpec.end
+        .filter(_.isBefore(testSpec.start))
+        .as(Error.InconsistentTimeRange),
+      (testSpec.groups
+        .map(_.name)
+        .distinct
+        .length != testSpec.groups.length)
+        .option(Error.DuplicatedGroupName),
+      testSpec.groups
+        .exists(_.name.length >= 256)
+        .option(Error.GroupNameTooLong),
+      (!testSpec.feature.matches("[-_.A-Za-z0-9]+"))
+        .option(Error.InvalidFeatureName),
+      (!testSpec.alternativeIdName
+        .fold(true)(_.matches("[-_.A-Za-z0-9]+")))
+        .option(Error.InvalidAlternativeIdName)
+    )
 
   private def validate(userGroupQuery: UserGroupQuery): F[Unit] =
     userGroupQuery.userId.fold(F.unit)(validateUserId)

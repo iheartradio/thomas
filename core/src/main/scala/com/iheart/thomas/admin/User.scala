@@ -21,12 +21,12 @@ object User {
 object Role {
   val Admin: Role = Role("Admin")
   val Developer: Role =
-    Role("Developer") //can start their own test and become feature manager
-  val Tester: Role = Role("Tester") //can change overrides
-  val User: Role = Role("User") //readonly but can be feature admin
+    Role("Developer") // can start their own test and become feature manager
+  val Tester: Role = Role("Tester") // can change overrides
+  val User: Role = Role("User") // readonly but can be feature admin
   val Analyst: Role = Role("Analyst")
   val Scientist: Role = Role("Scientist")
-  val Guest: Role = Role("Guest") //Cannot do anything
+  val Guest: Role = Role("Guest") // Cannot do anything
 
   val values = List(Admin, User, Developer, Tester, Analyst, Scientist, Guest)
 

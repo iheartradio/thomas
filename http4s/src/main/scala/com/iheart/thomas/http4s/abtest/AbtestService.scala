@@ -16,7 +16,10 @@ import com.typesafe.config.Config
 import lihua.EntityId
 import lihua.mongo.JsonFormats._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.dsl.impl.{OptionalQueryParamDecoderMatcher, QueryParamDecoderMatcher}
+import org.http4s.dsl.impl.{
+  OptionalQueryParamDecoderMatcher,
+  QueryParamDecoderMatcher
+}
 import org.http4s.implicits._
 import org.http4s.play._
 import org.http4s.server.Router
@@ -27,14 +30,15 @@ import com.iheart.thomas.tracking.{Event, EventLogger}
 
 import scala.concurrent.ExecutionContext
 
-trait AbtestServiceHelper[F[_]] extends Http4sDsl[F]{
+trait AbtestServiceHelper[F[_]] extends Http4sDsl[F] {
   implicit val jsonObjectEncoder: EntityEncoder[F, JsObject] =
     implicitly[EntityEncoder[F, JsValue]].narrow
 
   def respondOption[T: Format](
-                                result: F[Option[T]],
-                                notFoundMsg: String
-                              )(implicit F: MonadThrow[F]): F[Response[F]] =
+      result: F[Option[T]],
+      notFoundMsg: String
+    )(implicit F: MonadThrow[F]
+    ): F[Response[F]] =
     respond(
       result.flatMap(_.liftTo[F](Error.NotFound(notFoundMsg)))
     )
@@ -113,12 +117,11 @@ trait AbtestServiceHelper[F[_]] extends Http4sDsl[F]{
 class AbtestService[F[_]: Async](
     api: AbtestAlg[F]
   )(implicit logger: EventLogger[F])
-    extends Http4sDsl[F] with  AbtestServiceHelper[F]{
-
+    extends Http4sDsl[F]
+    with AbtestServiceHelper[F] {
 
   implicit def decoder[A: Reads]: EntityDecoder[F, A] = jsonOf
   import AbtestService.QueryParamDecoderMatchers._
-
 
   def routes =
     Router("/internal/" -> internal).orElse(public).orNotFound
@@ -182,7 +185,6 @@ class AbtestService[F[_]: Async](
       case GET -> Root / "features" / feature / "overrides" =>
         respond(api.getOverrides(feature))
     }
-
 
   def internal: HttpRoutes[F] = readonly
 

@@ -5,9 +5,17 @@ import cats.MonadError
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.implicits._
-import com.iheart.thomas.abtest.Error.{CannotChangeGroupSizeWithFollowUpTest, CannotUpdateExpiredTest, ConflictTest}
+import com.iheart.thomas.abtest.Error.{
+  CannotChangeGroupSizeWithFollowUpTest,
+  CannotUpdateExpiredTest,
+  ConflictTest
+}
 import com.iheart.thomas.abtest.model.UserMetaCriterion.{ExactMatch, VersionRange}
-import com.iheart.thomas.abtest.model.{EligibilityControlFilter, UserGroupQuery, UserMetaCriterion}
+import com.iheart.thomas.abtest.model.{
+  EligibilityControlFilter,
+  UserGroupQuery,
+  UserMetaCriterion
+}
 import com.iheart.thomas.testkit.Factory._
 import com.iheart.thomas.utils.time._
 import org.scalatest.freespec.AsyncFreeSpec

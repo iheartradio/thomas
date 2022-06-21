@@ -422,7 +422,7 @@ lazy val commonSettings = addCompilerPlugins(
   Test / compile / scalacOptions ~= lessStrictScalaChecks,
   scalacOptions += s"-Xlint:-package-object-classes",
   Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
-  ThisBuild / evictionErrorLevel := Level.Info //thanks to akka depending on java8 compat 0.8.0
+  ThisBuild / evictionErrorLevel := Level.Info // thanks to akka depending on java8 compat 0.8.0
 )
 
 lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =

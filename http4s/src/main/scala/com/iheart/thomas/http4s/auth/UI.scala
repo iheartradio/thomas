@@ -135,7 +135,7 @@ class UI[F[_]: Async, Auth](
           username,
           password,
           if (initialAdminUsername.fold(false)(_ == username))
-            Role.Admin //todo: this logic might be too critical to leave in UI
+            Role.Admin // todo: this logic might be too critical to leave in UI
           else initialRole
         )
         r <- Ok(
