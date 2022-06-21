@@ -39,7 +39,7 @@ lazy val libs = {
     .addJVM(name = "reactivemongo-play-json-compat", version = reactiveMongoVer + "-play27", org = "org.reactivemongo")
     .addJVM(name = "scala-java8-compat",    version = "1.0.1",  org = "org.scala-lang.modules")
     .addJVM(name = "scala-collection-compat",    version = "2.7.0",  org = "org.scala-lang.modules")
-    .add(   name = "scalacheck-1-14",       version = "3.1.4.0",org = "org.scalatestplus")
+    .add(   name = "scalacheck-1-14",       version = "3.2.2.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
     .addJVM(name = "scanamo",               version = "1.0.0-M19", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
     .add(   name = "spark",                 version = "3.2.1",  org = "org.apache.spark", "spark-sql", "spark-core")
