@@ -2,7 +2,7 @@ package com.iheart.thomas
 package http4s
 package auth
 import cats.effect.Async
-import cats.implicits._
+import cats.syntax.all._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 import com.iheart.thomas.admin.Role
 import com.iheart.thomas.auth.html

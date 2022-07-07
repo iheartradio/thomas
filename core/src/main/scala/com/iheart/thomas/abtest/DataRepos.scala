@@ -7,7 +7,7 @@ import lihua.{Entity, EntityDAO}
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsArray, JsObject, JsString, Json}
 import monocle.macros.syntax.lens._
-import cats.implicits._
+import cats.syntax.all._
 import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
 

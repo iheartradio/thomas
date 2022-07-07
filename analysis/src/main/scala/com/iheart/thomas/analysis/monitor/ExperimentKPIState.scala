@@ -3,7 +3,7 @@ package analysis
 package monitor
 
 import com.iheart.thomas.analysis.Probability
-import cats.implicits._
+import cats.syntax.all._
 import ExperimentKPIState.{ArmState, Key}
 import cats.data.NonEmptyList
 import cats.{Functor, MonadThrow}

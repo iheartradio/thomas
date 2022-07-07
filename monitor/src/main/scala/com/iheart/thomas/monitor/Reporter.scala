@@ -2,7 +2,7 @@ package com.iheart.thomas.monitor
 
 import cats.effect.{Concurrent, Fiber}
 import org.typelevel.log4cats.Logger
-import cats.implicits._
+import cats.syntax.all._
 
 /** Fire and forget reporter
   *

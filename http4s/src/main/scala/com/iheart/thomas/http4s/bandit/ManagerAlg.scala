@@ -6,7 +6,7 @@ import com.iheart.thomas.bandit.BanditStatus
 import com.iheart.thomas.bandit.bayesian.{BanditSpec, BayesianMABAlg}
 import com.iheart.thomas.stream.{Job, JobAlg}
 import com.iheart.thomas.stream.JobSpec.RunBandit
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.bandit.bayesian.BayesianMABAlg.BanditAbtestSpec
 
 trait ManagerAlg[F[_]] {

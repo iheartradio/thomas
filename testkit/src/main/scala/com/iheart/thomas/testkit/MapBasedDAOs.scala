@@ -2,7 +2,7 @@ package com.iheart.thomas
 package testkit
 
 import cats.effect.{Async, Sync}
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.abtest.Error.NotFound
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.{ArmsState, Key}
 import com.iheart.thomas.analysis.monitor.{ExperimentKPIState, ExperimentKPIStateDAO}

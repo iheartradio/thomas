@@ -5,7 +5,7 @@ import com.iheart.thomas.FeatureName
 import com.iheart.thomas.bandit.bayesian.BayesianMABAlg
 import com.iheart.thomas.stream.JobSpec.ProcessSettings
 import fs2.Pipe
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.analysis.monitor.ExperimentKPIState.Specialization
 
 trait BanditProcessAlg[F[_], Message] {

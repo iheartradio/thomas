@@ -7,7 +7,7 @@ import cats.effect.{Async, Resource}
 
 import scala.concurrent.{ExecutionContext, Future}
 import net.ceedubs.ficus.Ficus._
-import cats.implicits._
+import cats.syntax.all._
 import net.ceedubs.ficus.readers.namemappers.implicits.hyphenCase
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.ValueReader

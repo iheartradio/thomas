@@ -1,7 +1,7 @@
 package com.iheart.thomas.analysis.bayesian.fit
 
 import cats.MonadError
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.GroupName
 import com.iheart.thomas.abtest.model.Abtest
 import com.iheart.thomas.analysis.`package`.Indicator

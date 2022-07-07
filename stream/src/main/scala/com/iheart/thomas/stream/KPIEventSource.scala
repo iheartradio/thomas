@@ -13,7 +13,7 @@ import com.iheart.thomas.analysis.{
   QueryName
 }
 import fs2.{Pipe, Stream}
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.abtest.model.Feature
 import com.iheart.thomas.stream.JobEvent.{
   EventQueryInitiated,

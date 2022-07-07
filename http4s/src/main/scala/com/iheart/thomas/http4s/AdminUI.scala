@@ -10,7 +10,7 @@ import com.iheart.thomas.http4s.auth.{
   UI
 }
 import org.http4s.dsl.Http4sDsl
-import cats.implicits._
+import cats.syntax.all._
 import com.iheart.thomas.dynamo
 import cats.effect._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
