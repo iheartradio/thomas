@@ -10,6 +10,7 @@ import org.scalatest.matchers.should.Matchers
 class ModelEvaluatorSuite extends AnyFreeSpecLike with Matchers {
 
   "LogNormal Evaluator" - {
+    implicit val rdb = breeze.stats.distributions.RandBasis.mt0
     val evaluator =
       implicitly[ModelEvaluator[Id, LogNormalModel, PerUserSamples.LnSummary]]
     "compare two data samples" in {

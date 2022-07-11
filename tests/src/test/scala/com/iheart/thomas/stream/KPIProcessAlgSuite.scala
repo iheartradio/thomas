@@ -18,7 +18,7 @@ import org.scalatest.matchers.should.Matchers
 import java.time.Instant
 import scala.concurrent.duration._
 class KPIProcessAlgSuite extends AsyncFreeSpec with AsyncIOSpec with Matchers {
-
+  implicit val rdb = breeze.stats.distributions.RandBasis.mt0
   val testKPIName = KPIName("test")
 
   def testQueryAccumulativeKPI[A](
