@@ -19,6 +19,7 @@ import java.time.Instant
 import scala.concurrent.duration._
 
 object MockQueryAccumulativeKPIAlg {
+  implicit val rdb = breeze.stats.distributions.RandBasis.mt0
   implicit val nullAlg = AccumulativeKPIQueryRepo.unsupported[IO]
   type MockData[E] = (FeatureName, ArmName, KPIName, Instant, Instant, E)
   val mockQueryName = QueryName("Mock Query with preset data")
