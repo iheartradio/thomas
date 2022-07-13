@@ -25,7 +25,7 @@ lazy val libs = {
     .addJVM(name = "embedded-kafka",        version = "3.2.0",  org = "io.github.embeddedkafka")
     .addJVM(name = "fs2-kafka",             version = "2.4.0",  org = "com.github.fd4s")
     .add(   name = "fs2",                   version = "3.2.10")
-    .add(   name = "cats-effect",           version = "3.3.13")
+    .add(   name = "cats-effect",           version = "3.3.14")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .addJVM(name = "log4cats",              version = "2.3.2",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.18.0", org = "org.apache.logging.log4j")
