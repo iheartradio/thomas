@@ -259,7 +259,7 @@ package model {
       eligibilityControlFilter: EligibilityControlFilter =
         EligibilityControlFilter.All)
 
-  sealed trait EligibilityControlFilter
+  sealed trait EligibilityControlFilter extends Serializable with Product
   object EligibilityControlFilter {
     case object Off
         extends EligibilityControlFilter // only includes tests that has no eligibility control

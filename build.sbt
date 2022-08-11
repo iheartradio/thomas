@@ -14,9 +14,9 @@ val gh = GitHubSettings(
 
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 val reactiveMongoVer = "1.0.10"
-
+val typeLevelOrg = "org.typelevel"
 // format: off
-lazy val libs = {
+lazy val libs =
   org.typelevel.libraries
     .addJVM(name = "akka-slf4j",            version = "2.6.19",  org = "com.typesafe.akka")
     .addJVM(name = "breeze",                version = "2.0",    org ="org.scalanlp", "breeze", "breeze-viz")
@@ -45,8 +45,10 @@ lazy val libs = {
     .add(   name = "spark",                 version = "3.2.1",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tsec",                  version = "0.4.0",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
     .add   (name = "enumeratum",            version = "1.7.0",  org = "com.beachape", "enumeratum", "enumeratum-cats" )
+    .add(name = "cats",             version = "2.7.0",org = typeLevelOrg, "cats-core", "cats-kernel", "cats-free", "cats-laws", "cats-testkit", "alleycats-core")
+    .add(name = "mouse",            version = "1.0.10",   org = typeLevelOrg)
 
-}
+
 // format: on
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
@@ -183,7 +185,6 @@ lazy val analysis = project
   .settings(rootSettings)
   .settings(taglessSettings)
   .settings(
-    libs.testDependencies("scalacheck", "cats-effect-testing-scalatest"),
     libs.dependencies(
       "rainier-core",
       "cats-effect",
