@@ -204,7 +204,7 @@ object AdminUI {
       for {
         ui <- AdminUI.resource[F]
         e <-
-          BlazeServerBuilder[F](executionContext)
+          BlazeServerBuilder[F]
             .bindHttp(8080, "0.0.0.0")
             .withHttpApp(
               Router(adminCfg.rootPath -> ui.routes).orNotFound

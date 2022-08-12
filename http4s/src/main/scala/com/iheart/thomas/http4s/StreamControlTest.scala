@@ -11,7 +11,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.syntax.all._
 
 import concurrent.duration._
-import scala.concurrent.ExecutionContext
+
 object StreamControlTest extends IOApp with Http4sDsl[IO] {
   def run(args: List[String]): IO[ExitCode] =
     banditUpdateController[IO](
@@ -19,7 +19,7 @@ object StreamControlTest extends IOApp with Http4sDsl[IO] {
         .repeatEval(IO.sleep(1.second) *> IO(println(LocalDateTime.now)))
         .interruptAfter(120.seconds)
     ).flatMap { case (runs, pause) =>
-      BlazeServerBuilder[IO](ExecutionContext.global)
+      BlazeServerBuilder[IO]
         .bindHttp(9000, "localhost")
         .withHttpApp(routes(pause).orNotFound)
         .serve

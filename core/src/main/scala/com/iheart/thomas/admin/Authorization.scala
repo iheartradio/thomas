@@ -65,7 +65,7 @@ object Authorization {
 
   val readableRoles = Role.values.filter(_ != Guest)
 
-  sealed trait Permission
+  sealed trait Permission extends Serializable with Product
 
   case object ManageUsers extends Permission
   case object ManageBandits extends Permission

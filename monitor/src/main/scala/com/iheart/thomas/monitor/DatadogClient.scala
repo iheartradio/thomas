@@ -12,7 +12,6 @@ import pureconfig.module.catseffect.syntax._
 import DatadogClient.ErrorResponseFromDataDogService
 import org.http4s.blaze.client.BlazeClientBuilder
 
-import scala.concurrent.ExecutionContext
 import scala.util.control.NoStackTrace
 
 class DatadogClient[F[_]](
@@ -52,14 +51,13 @@ object DatadogClient {
       with NoStackTrace
 
   def resource[F[_]: Async](
-      ec: ExecutionContext,
       apiKey: String
-    ): Resource[F, DatadogClient[F]] =
-    BlazeClientBuilder[F](ec).resource
+    ): Resource[F, DatadogClient[F]] = {
+    BlazeClientBuilder[F].resource
       .map(new DatadogClient[F](_, apiKey))
+  }
 
   def fromConfig[F[_]: Async](
-      ec: ExecutionContext,
       cfg: Config
     ): Resource[F, DatadogClient[F]] =
     Resource
@@ -69,5 +67,5 @@ object DatadogClient {
           .at("thomas.datadog.api-key")
           .loadF[F, String]()
       )
-      .flatMap(resource(ec, _))
+      .flatMap(resource(_))
 }
