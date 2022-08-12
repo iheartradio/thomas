@@ -13,15 +13,15 @@ import com.iheart.thomas.abtest.model._
 import lihua.Entity
 import _root_.play.api.libs.json._
 import cats.implicits._
-import com.iheart.thomas.abtest.{TestsDataProvider, Error, TestsData}
+import com.iheart.thomas.abtest.{Error, TestsData, TestsDataProvider}
 import com.iheart.thomas.abtest.json.play.Formats._
 import com.iheart.thomas.abtest.protocol.UpdateUserMetaCriteriaRequest
 
-import scala.concurrent.ExecutionContext
 import scala.util.control.NoStackTrace
 import com.iheart.thomas.client.AbtestClient.HttpServiceUrls
 import org.http4s.blaze.client.BlazeClientBuilder
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
 trait ReadOnlyAbtestClient[F[_]] extends TestsDataProvider[F] {
@@ -167,14 +167,14 @@ object Http4SAbtestClient {
       urls: HttpServiceUrls,
       ec: ExecutionContext
     ): Resource[F, AbtestClient[F]] = {
-    BlazeClientBuilder[F](ec).resource.map(cl => new Http4SAbtestClient[F](cl, urls))
+    BlazeClientBuilder[F].withExecutionContext(ec).resource.map(cl => new Http4SAbtestClient[F](cl, urls))
   }
 
   def readOnlyResource[F[_]: Async](
       urls: HttpServiceUrls,
       ec: ExecutionContext
     ): Resource[F, ReadOnlyAbtestClient[F]] = {
-    BlazeClientBuilder[F](ec).resource.map(cl => new Http4SAbtestClient[F](cl, urls))
+    BlazeClientBuilder[F].withExecutionContext(ec).resource.map(cl => new Http4SAbtestClient[F](cl, urls))
   }
 }
 

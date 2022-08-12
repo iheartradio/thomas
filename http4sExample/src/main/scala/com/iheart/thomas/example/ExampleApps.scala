@@ -16,7 +16,7 @@ object ExampleAbtestServerApp extends IOApp {
 
   def run(args: List[String]): IO[ExitCode] =
     AbtestService.fromMongo[IO]().use { s =>
-      BlazeServerBuilder[IO](global)
+      BlazeServerBuilder[IO]
         .bindHttp(8080, "0.0.0.0")
         .withHttpApp(s.routes)
         .serve
