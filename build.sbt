@@ -19,7 +19,7 @@ val typeLevelOrg = "org.typelevel"
 lazy val libs =
   org.typelevel.libraries
     .addJVM(name = "akka-slf4j",            version = "2.6.19",  org = "com.typesafe.akka")
-    .addJVM(name = "breeze",                version = "2.0",    org ="org.scalanlp", "breeze", "breeze-viz")
+    .addJVM(name = "breeze",                version = "2.1.0",    org ="org.scalanlp", "breeze", "breeze-viz")
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
     .addJVM(name = "decline",               version = "2.2.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "3.2.1",  org = "io.github.embeddedkafka")
