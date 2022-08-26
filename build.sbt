@@ -73,13 +73,9 @@ addCommandAlias(
 
 addCommandAlias(
   "switchToIT",
-  s";http4sExample/dependencyServicesDown;tests/dependencyServicesUp;"
+  s";tests/dependencyServicesUp;"
 )
 
-addCommandAlias(
-  "switchToDev",
-  s";tests/dependencyServicesDown;http4sExample/dependencyServicesUp;"
-)
 addCommandAlias("it", s"tests/IntegrationTest/test")
 
 addCommandAlias(
@@ -109,7 +105,6 @@ lazy val thomas = project
     lihua,
     tests,
     http4s,
-    http4sExample,
     mongo,
     analysis,
     docs,
@@ -331,19 +326,6 @@ lazy val http4s = project
       "tsec-jwt-mac",
       "tsec-jwt-sig",
       "tsec-http4s"
-    )
-  )
-
-lazy val http4sExample = project
-  .dependsOn(http4s, testkit)
-  .settings(
-    name := "thomas-http4s-example",
-    rootSettings,
-    dependencyServicesUp := dockerCompose(upOrDown = true),
-    dependencyServicesDown := dockerCompose(upOrDown = false),
-    noPublishSettings,
-    reStart / mainClass := Some(
-      "com.iheart.thomas.example.ExampleAbtestAdminUIApp"
     )
   )
 
