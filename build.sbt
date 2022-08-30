@@ -62,18 +62,45 @@ addCommandAlias(
   "quickValidate",
   s";thomas/test;thomas/IntegrationTest/compile"
 )
+
 addCommandAlias(
   "compileAll",
   s";+tests/IntegrationTest/compile;+thomas/Test/compile"
 )
+
 addCommandAlias(
   "it",
   s";thomas/test;tests/IntegrationTest/test"
 )
 
 addCommandAlias(
+  "testDependencyUp",
+  ";tests/IntegrationTest/dependencyServicesUp"
+)
+
+addCommandAlias(
+  "testDependencyDown",
+  ";tests/IntegrationTest/dependencyServicesDown"
+)
+
+addCommandAlias(
+  "switchToDev",
+  ";testDependencyDown;devDependencyUp"
+)
+
+addCommandAlias(
+  "devDependencyUp",
+  "tests/dependencyServicesUp"
+)
+
+addCommandAlias(
+  "devDependencyDown",
+  "tests/dependencyServicesDown"
+)
+
+addCommandAlias(
   "switchToIT",
-  s";tests/dependencyServicesUp;"
+  ";devDependencyDown;testDependencyUp"
 )
 
 addCommandAlias("it", s"tests/IntegrationTest/test")
@@ -363,11 +390,23 @@ lazy val tests = project
   .configs(IntegrationTest)
   .settings(rootSettings)
   .settings(
-    dependencyServicesUp := dockerCompose(upOrDown = true, ".test"),
-    dependencyServicesDown := dockerCompose(upOrDown = false, ".test"),
+    dependencyServicesUp := dockerCompose(upOrDown = true),
+    dependencyServicesDown := dockerCompose(upOrDown = false),
+    IntegrationTest / dependencyServicesUp := dockerCompose(
+      upOrDown = true,
+      ".test"
+    ),
+    IntegrationTest / dependencyServicesDown := dockerCompose(
+      upOrDown = false,
+      ".test"
+    ),
+    IntegrationTest / parallelExecution := false,
+    dependencyServicesUp := dockerCompose(upOrDown = true),
+    dependencyServicesDown := dockerCompose(upOrDown = false),
     Defaults.itSettings,
     IntegrationTest / parallelExecution := false,
     IntegrationTest / compile / scalacOptions ~= lessStrictScalaChecks,
+    
     noPublishSettings,
     libs.testDependencies("scalacheck-1-14"),
     libs.dependency("cats-effect-testing-scalatest", Some(IntegrationTest.name)),
