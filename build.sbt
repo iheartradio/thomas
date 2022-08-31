@@ -56,7 +56,7 @@ lazy val libs =
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias(
   "validate",
-  s";+clean;testDependencyUp;+test;+tests/IntegrationTest/test;ttestDependencyDown"
+  s";+clean;testDependencyUp;+test;+tests/IntegrationTest/test;testDependencyDown"
 )
 addCommandAlias(
   "quickValidate",
