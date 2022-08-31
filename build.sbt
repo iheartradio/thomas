@@ -56,30 +56,53 @@ lazy val libs =
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias(
   "validate",
-  s";+clean;tests/dependencyServicesUp;+test;+tests/IntegrationTest/test;tests/dependencyServicesDown"
+  s";+clean;testDependencyUp;+test;+tests/IntegrationTest/test;testDependencyDown"
 )
 addCommandAlias(
   "quickValidate",
   s";thomas/test;thomas/IntegrationTest/compile"
 )
+
 addCommandAlias(
   "compileAll",
   s";+tests/IntegrationTest/compile;+thomas/Test/compile"
 )
+
 addCommandAlias(
   "it",
   s";thomas/test;tests/IntegrationTest/test"
 )
 
 addCommandAlias(
-  "switchToIT",
-  s";http4sExample/dependencyServicesDown;tests/dependencyServicesUp;"
+  "testDependencyUp",
+  ";tests/IntegrationTest/dependencyServicesUp"
+)
+
+addCommandAlias(
+  "testDependencyDown",
+  ";tests/IntegrationTest/dependencyServicesDown"
 )
 
 addCommandAlias(
   "switchToDev",
-  s";tests/dependencyServicesDown;http4sExample/dependencyServicesUp;"
+  ";testDependencyDown;devDependencyUp"
 )
+
+addCommandAlias(
+  "devDependencyUp",
+  "tests/dependencyServicesUp"
+)
+
+addCommandAlias(
+  "devDependencyDown",
+  "tests/dependencyServicesDown"
+)
+
+addCommandAlias(
+  "switchToIT",
+  ";devDependencyDown;testDependencyUp"
+)
+
 addCommandAlias("it", s"tests/IntegrationTest/test")
 
 addCommandAlias(
@@ -109,7 +132,6 @@ lazy val thomas = project
     lihua,
     tests,
     http4s,
-    http4sExample,
     mongo,
     analysis,
     docs,
@@ -334,19 +356,6 @@ lazy val http4s = project
     )
   )
 
-lazy val http4sExample = project
-  .dependsOn(http4s, testkit)
-  .settings(
-    name := "thomas-http4s-example",
-    rootSettings,
-    dependencyServicesUp := dockerCompose(upOrDown = true),
-    dependencyServicesDown := dockerCompose(upOrDown = false),
-    noPublishSettings,
-    reStart / mainClass := Some(
-      "com.iheart.thomas.example.ExampleAbtestAdminUIApp"
-    )
-  )
-
 lazy val monitor = project
   .settings(name := "thomas-monitor")
   .settings(rootSettings)
@@ -381,11 +390,23 @@ lazy val tests = project
   .configs(IntegrationTest)
   .settings(rootSettings)
   .settings(
-    dependencyServicesUp := dockerCompose(upOrDown = true, ".test"),
-    dependencyServicesDown := dockerCompose(upOrDown = false, ".test"),
+    dependencyServicesUp := dockerCompose(upOrDown = true),
+    dependencyServicesDown := dockerCompose(upOrDown = false),
+    IntegrationTest / dependencyServicesUp := dockerCompose(
+      upOrDown = true,
+      ".test"
+    ),
+    IntegrationTest / dependencyServicesDown := dockerCompose(
+      upOrDown = false,
+      ".test"
+    ),
+    IntegrationTest / parallelExecution := false,
+    dependencyServicesUp := dockerCompose(upOrDown = true),
+    dependencyServicesDown := dockerCompose(upOrDown = false),
     Defaults.itSettings,
     IntegrationTest / parallelExecution := false,
     IntegrationTest / compile / scalacOptions ~= lessStrictScalaChecks,
+    
     noPublishSettings,
     libs.testDependencies("scalacheck-1-14"),
     libs.dependency("cats-effect-testing-scalatest", Some(IntegrationTest.name)),
