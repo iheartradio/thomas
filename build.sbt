@@ -19,7 +19,7 @@ val typeLevelOrg = "org.typelevel"
 lazy val libs =
   org.typelevel.libraries
     .addJVM(name = "akka-slf4j",            version = "2.6.19",  org = "com.typesafe.akka")
-    .addJVM(name = "breeze",                version = "2.0",    org ="org.scalanlp", "breeze", "breeze-viz")
+    .addJVM(name = "breeze",                version = "2.1.0",    org ="org.scalanlp", "breeze", "breeze-viz")
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
     .addJVM(name = "decline",               version = "2.2.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "3.2.1",  org = "io.github.embeddedkafka")
@@ -29,7 +29,7 @@ lazy val libs =
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .addJVM(name = "log4cats",              version = "2.3.2",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.18.0", org = "org.apache.logging.log4j")
-    .addJava(name ="logback-classic",       version = "1.2.11",  org = "ch.qos.logback")
+    .addJava(name ="logback-classic",       version = "1.4.0",  org = "ch.qos.logback")
     .addJVM(name = "mau",                   version = "0.3.1",  org = "com.kailuowang")
     .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
     .add(   name = "play-json",             version = "2.9.2",  org = "com.typesafe.play")
@@ -48,7 +48,7 @@ lazy val libs =
     //fix cats to 2.7.0 (with mouse) because 2.8.0 causes scalac exception `scala.reflect.internal.Types$NoCommonType: lub/glb of incompatible types: [_] and  <: Product`
     // issue https://github.com/typelevel/cats/issues/4280
     .add(name = "cats",             version = "2.7.0",org = typeLevelOrg, "cats-core", "cats-kernel", "cats-free", "cats-laws", "cats-testkit", "alleycats-core")
-    .add(name = "mouse",            version = "1.0.10",   org = typeLevelOrg)
+    .add(name = "mouse",            version = "1.0.11",   org = typeLevelOrg)
 
 
 // format: on
@@ -56,30 +56,53 @@ lazy val libs =
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias(
   "validate",
-  s";+clean;tests/dependencyServicesUp;+test;+tests/IntegrationTest/test;tests/dependencyServicesDown"
+  s";+clean;testDependencyUp;+test;+tests/IntegrationTest/test;testDependencyDown"
 )
 addCommandAlias(
   "quickValidate",
   s";thomas/test;thomas/IntegrationTest/compile"
 )
+
 addCommandAlias(
   "compileAll",
   s";+tests/IntegrationTest/compile;+thomas/Test/compile"
 )
+
 addCommandAlias(
   "it",
   s";thomas/test;tests/IntegrationTest/test"
 )
 
 addCommandAlias(
-  "switchToIT",
-  s";http4sExample/dependencyServicesDown;tests/dependencyServicesUp;"
+  "testDependencyUp",
+  ";tests/IntegrationTest/dependencyServicesUp"
+)
+
+addCommandAlias(
+  "testDependencyDown",
+  ";tests/IntegrationTest/dependencyServicesDown"
 )
 
 addCommandAlias(
   "switchToDev",
-  s";tests/dependencyServicesDown;http4sExample/dependencyServicesUp;"
+  ";testDependencyDown;devDependencyUp"
 )
+
+addCommandAlias(
+  "devDependencyUp",
+  "tests/dependencyServicesUp"
+)
+
+addCommandAlias(
+  "devDependencyDown",
+  "tests/dependencyServicesDown"
+)
+
+addCommandAlias(
+  "switchToIT",
+  ";devDependencyDown;testDependencyUp"
+)
+
 addCommandAlias("it", s"tests/IntegrationTest/test")
 
 addCommandAlias(
@@ -109,7 +132,6 @@ lazy val thomas = project
     lihua,
     tests,
     http4s,
-    http4sExample,
     mongo,
     analysis,
     docs,
@@ -334,19 +356,6 @@ lazy val http4s = project
     )
   )
 
-lazy val http4sExample = project
-  .dependsOn(http4s, testkit)
-  .settings(
-    name := "thomas-http4s-example",
-    rootSettings,
-    dependencyServicesUp := dockerCompose(upOrDown = true),
-    dependencyServicesDown := dockerCompose(upOrDown = false),
-    noPublishSettings,
-    reStart / mainClass := Some(
-      "com.iheart.thomas.example.ExampleAbtestAdminUIApp"
-    )
-  )
-
 lazy val monitor = project
   .settings(name := "thomas-monitor")
   .settings(rootSettings)
@@ -381,11 +390,23 @@ lazy val tests = project
   .configs(IntegrationTest)
   .settings(rootSettings)
   .settings(
-    dependencyServicesUp := dockerCompose(upOrDown = true, ".test"),
-    dependencyServicesDown := dockerCompose(upOrDown = false, ".test"),
+    dependencyServicesUp := dockerCompose(upOrDown = true),
+    dependencyServicesDown := dockerCompose(upOrDown = false),
+    IntegrationTest / dependencyServicesUp := dockerCompose(
+      upOrDown = true,
+      ".test"
+    ),
+    IntegrationTest / dependencyServicesDown := dockerCompose(
+      upOrDown = false,
+      ".test"
+    ),
+    IntegrationTest / parallelExecution := false,
+    dependencyServicesUp := dockerCompose(upOrDown = true),
+    dependencyServicesDown := dockerCompose(upOrDown = false),
     Defaults.itSettings,
     IntegrationTest / parallelExecution := false,
     IntegrationTest / compile / scalacOptions ~= lessStrictScalaChecks,
+    
     noPublishSettings,
     libs.testDependencies("scalacheck-1-14"),
     libs.dependency("cats-effect-testing-scalatest", Some(IntegrationTest.name)),
