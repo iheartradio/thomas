@@ -48,7 +48,7 @@ lazy val libs =
     //fix cats to 2.7.0 (with mouse) because 2.8.0 causes scalac exception `scala.reflect.internal.Types$NoCommonType: lub/glb of incompatible types: [_] and  <: Product`
     // issue https://github.com/typelevel/cats/issues/4280
     .add(name = "cats",             version = "2.7.0",org = typeLevelOrg, "cats-core", "cats-kernel", "cats-free", "cats-laws", "cats-testkit", "alleycats-core")
-    .add(name = "mouse",            version = "1.0.11",   org = typeLevelOrg)
+    .add(name = "mouse",            version = "1.1.0",   org = typeLevelOrg)
 
 
 // format: on
