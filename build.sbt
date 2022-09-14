@@ -42,7 +42,7 @@ lazy val libs =
     .add(   name = "scalacheck-1-14",       version = "3.2.2.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
     .addJVM(name = "scanamo",               version = "1.0.0-M20", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
-    .add(   name = "spark",                 version = "3.2.1",  org = "org.apache.spark", "spark-sql", "spark-core")
+    .add(   name = "spark",                 version = "3.3.0",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tsec",                  version = "0.4.0",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
     .add   (name = "enumeratum",            version = "1.7.0",  org = "com.beachape", "enumeratum", "enumeratum-cats" )
     //fix cats to 2.7.0 (with mouse) because 2.8.0 causes scalac exception `scala.reflect.internal.Types$NoCommonType: lub/glb of incompatible types: [_] and  <: Product`
@@ -153,9 +153,8 @@ lazy val client = project
     name := "thomas-client",
     rootSettings,
     Defaults.itSettings,
-    crossScalaVersions := Seq(scalaVersion.value),
     libs.dependency("scalatest", Some("it, test")),
-    libs.dependencies("http4s-blaze-client", "http4s-play-json")
+    libs.dependencies("http4s-blaze-client", "http4s-play-json", "scala-collection-compat")
   )
 
 lazy val core = project
@@ -322,7 +321,7 @@ lazy val spark = project
   .settings(name := "thomas-spark")
   .settings(rootSettings)
   .settings(
-    crossScalaVersions := Seq(scalaVersion.value),
+
     libs.dependency("spark-sql", Some("provided")),
     libs.testDependencies("cats-testkit-scalatest")
   )
@@ -436,8 +435,8 @@ lazy val commonSettings = addCompilerPlugins(
   "kind-projector"
 ) ++ sharedCommonSettings ++ Seq(
   organization := "com.iheart",
-  scalaVersion := "2.12.16",
-  crossScalaVersions := Seq(scalaVersion.value, "2.13.8"),
+  scalaVersion := "2.13.8",
+  crossScalaVersions := Seq(scalaVersion.value, "2.12.16"),
   Test / parallelExecution := false,
   releaseCrossBuild := false,
   developers := List(developerKai),

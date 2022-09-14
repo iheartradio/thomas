@@ -13,7 +13,7 @@ import com.iheart.thomas.abtest.AssignGroups
 import com.iheart.thomas.abtest.AssignGroups.AssignmentResult
 import com.iheart.thomas.abtest.model.UserGroupQuery
 
-import collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.duration.{Duration, DurationInt}
 
 class JavaAbtestAssignments private (
