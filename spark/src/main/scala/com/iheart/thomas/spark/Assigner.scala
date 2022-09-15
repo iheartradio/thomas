@@ -33,7 +33,7 @@ class Assigner(data: TestsData) extends Serializable {
         UserGroupQuery(Some(userId), None, features = List(feature)),
         Duration.Zero
       )
-      .unsafeRunSync
+      .unsafeRunSync()
       .get(feature)
       .collect { case AssignmentResult(groupName, _) =>
         groupName
