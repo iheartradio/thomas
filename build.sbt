@@ -436,7 +436,7 @@ lazy val commonSettings = addCompilerPlugins(
 ) ++ sharedCommonSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := "2.13.8",
-  crossScalaVersions := Seq(scalaVersion.value, "2.12.16"),
+  crossScalaVersions := Seq(scalaVersion.value, "2.12.17"),
   Test / parallelExecution := false,
   releaseCrossBuild := false,
   developers := List(developerKai),
