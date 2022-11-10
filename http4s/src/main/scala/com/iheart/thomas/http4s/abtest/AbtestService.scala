@@ -124,7 +124,7 @@ class AbtestService[F[_]: Async](
   import AbtestService.QueryParamDecoderMatchers._
 
   def routes =
-    Router("/internal/" -> internal).orElse(public).orNotFound
+    (public <+> Router("/internal/" -> internal)).orNotFound
 
   def public =
     HttpRoutes.of[F] { case req @ POST -> Root / "users" / "groups" / "query" =>
