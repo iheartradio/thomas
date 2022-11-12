@@ -87,7 +87,8 @@ object AdminUI {
       adminTablesWriteCapacity: Long,
       initialAdminUsername: String,
       initialRole: Role,
-      siteName: String)
+      siteName: String,
+      docUrl: String)
 
   implicit val roleCfgReader: ConfigReader[Role] =
     ConfigReader.fromNonEmptyString(s =>

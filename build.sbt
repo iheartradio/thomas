@@ -24,12 +24,12 @@ lazy val libs =
     .addJVM(name = "decline",               version = "2.2.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "3.2.1",  org = "io.github.embeddedkafka")
     .addJVM(name = "fs2-kafka",             version = "2.4.0",  org = "com.github.fd4s")
-    .add(   name = "fs2",                   version = "3.2.14")
+    .add(   name = "fs2",                   version = "3.3.0")
     .add(   name = "cats-effect",           version = "3.3.13")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .addJVM(name = "log4cats",              version = "2.3.2",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
-    .addJava(name ="log4j-core",            version = "2.18.0", org = "org.apache.logging.log4j")
-    .addJava(name ="logback-classic",       version = "1.4.0",  org = "ch.qos.logback")
+    .addJava(name ="log4j-core",            version = "2.19.0", org = "org.apache.logging.log4j")
+    .addJava(name ="logback-classic",       version = "1.2.11",  org = "ch.qos.logback")
     .addJVM(name = "mau",                   version = "0.3.1",  org = "com.kailuowang")
     .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
     .add(   name = "play-json",             version = "2.9.2",  org = "com.typesafe.play")
@@ -436,7 +436,7 @@ lazy val commonSettings = addCompilerPlugins(
 ) ++ sharedCommonSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := "2.13.8",
-  crossScalaVersions := Seq(scalaVersion.value, "2.12.16"),
+  crossScalaVersions := Seq(scalaVersion.value, "2.12.17"),
   Test / parallelExecution := false,
   releaseCrossBuild := false,
   developers := List(developerKai),
