@@ -12,3 +12,10 @@ pull_request_rules:
     actions:
       merge:
         method: merge
+  - name: automatically merge kailuowang PRs
+    conditions:
+      - author=kailuowang
+      - status-success=Build and Test (ubuntu-latest, adopt@1.11)
+    actions:
+      merge:
+        method: merge        
