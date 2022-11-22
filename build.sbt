@@ -42,13 +42,10 @@ lazy val libs =
     .add(   name = "scalacheck-1-14",       version = "3.2.2.0",org = "org.scalatestplus")
     .add(   name = "scalatestplus-play",    version = "5.1.0",  org = "org.scalatestplus.play")
     .addJVM(name = "scanamo",               version = "1.0.0-M23", org ="org.scanamo", "scanamo-testkit", "scanamo-cats-effect")
-    .add(   name = "spark",                 version = "3.3.0",  org = "org.apache.spark", "spark-sql", "spark-core")
+    .add(   name = "spark",                 version = "3.3.1",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tsec",                  version = "0.4.0",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
     .add   (name = "enumeratum",            version = "1.7.0",  org = "com.beachape", "enumeratum", "enumeratum-cats" )
-    //fix cats to 2.7.0 (with mouse) because 2.8.0 causes scalac exception `scala.reflect.internal.Types$NoCommonType: lub/glb of incompatible types: [_] and  <: Product`
-    // issue https://github.com/typelevel/cats/issues/4280
-    .add(name = "cats",             version = "2.7.0",org = typeLevelOrg, "cats-core", "cats-kernel", "cats-free", "cats-laws", "cats-testkit", "alleycats-core")
-    .add(name = "mouse",            version = "1.0.11",   org = typeLevelOrg)
+
 
 
 // format: on
@@ -56,7 +53,7 @@ lazy val libs =
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
 addCommandAlias(
   "validate",
-  s";+clean;testDependencyUp;+test;+tests/IntegrationTest/test;testDependencyDown"
+  s";clean;testDependencyUp;test;tests/IntegrationTest/test;testDependencyDown"
 )
 addCommandAlias(
   "quickValidate",
@@ -65,7 +62,7 @@ addCommandAlias(
 
 addCommandAlias(
   "compileAll",
-  s";+tests/IntegrationTest/compile;+thomas/Test/compile"
+  s";tests/IntegrationTest/compile;thomas/Test/compile"
 )
 
 addCommandAlias(
@@ -237,7 +234,6 @@ lazy val docs = project
   .enablePlugins(MicrositesPlugin)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
-    crossScalaVersions := Seq(scalaVersion.value),
     micrositeSettings(gh, developerKai, "Thomas, a library for A/B tests"),
     micrositeDocumentationUrl := "/thomas/api/com/iheart/thomas/index.html",
     micrositeDocumentationLabelDescription := "API Documentation",
@@ -321,7 +317,6 @@ lazy val spark = project
   .settings(name := "thomas-spark")
   .settings(rootSettings)
   .settings(
-
     libs.dependency("spark-sql", Some("provided")),
     libs.testDependencies("cats-testkit-scalatest")
   )
@@ -436,7 +431,6 @@ lazy val commonSettings = addCompilerPlugins(
 ) ++ sharedCommonSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := "2.13.10",
-  crossScalaVersions := Seq(scalaVersion.value, "2.12.17"),
   Test / parallelExecution := false,
   releaseCrossBuild := false,
   developers := List(developerKai),

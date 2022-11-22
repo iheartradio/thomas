@@ -3,7 +3,7 @@ addSbtPlugin("io.gatling" %% "gatling-sbt" % "4.2.3")
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "1.2.0")
 
 addSbtPlugin(
-  "com.kailuowang" %% "sbt-catalysts" % "1.3.0"
+  "com.kailuowang" %% "sbt-catalysts" % "1.3.2"
 )
 
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.11.0")
