@@ -140,7 +140,7 @@ lazy val thomas = project
     testkit,
     kafka
   )
-  .settings(rootSettings, crossScalaVersions := Nil, noPublishing)
+  .settings(rootSettings, noPublishing)
 
 lazy val client = project
   .dependsOn(bandit)
