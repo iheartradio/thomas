@@ -1,6 +1,6 @@
 @import com.iheart.thomas.http4s.UIEnv
 @import com.iheart.thomas.html._
-
+@import play.twirl.api.Html
 
 @()(implicit env: UIEnv)
 
@@ -10,7 +10,7 @@
             <div class="card-head"><h4 style="float: left;">@question</h4> </div>
         </a>
         <div class="collapse" id="collapse@index">
-            <div class="card-body">@answer</div>
+            <div class="card-body">@Html(answer)</div>
         </div>
     </div>
 }
@@ -66,10 +66,11 @@
               |You can verify the outcome by following 'How to test an A/B test with user profiles?'
               |""".stripMargin,
             5)
-        @item("How to set user meta criteria?",
-            """User meta criteria is used to control user eligibility.
+        @item(s"How to set user meta criteria?",
+            s"""User meta criteria is used to control user eligibility.
               |The value of your criteria should be a JSON object that is flat with string values only.
               |E.g. I want only web APP users in US to be eligible for this feature test, the criteria should be
+              |<pre class="bg-light">
               |[ {
               |  "platform" : "web"
               |}, {
@@ -77,7 +78,9 @@
               |    "%in" : [ "us" ]
               |  }
               |} ]
+              |</pre>
               |The following example lists most of the criteria
+              |<pre class="bg-light">
               |{
               |
               |       "sex" : "female",                   //matches users whose "sex" field is exactly "female"
@@ -107,7 +110,8 @@
               |         "%versionRange" : ["2.0", "3.1"] //special filter for version strings. Matches users whose "androidVer" is between than "2.0" and "3.1"
               |       }
               |}
-              |For more information, check this out https://iheartradio.github.io/thomas/FAQ.html#how-to-manage-user-eligibility
+              |</pre>
+              |For more information, check <a target="_blank" href="${env.docUrl}/thomas/#advanced-eligibility-control--targeted-audience-">this doc</a> out
               |""".stripMargin,
             6)
         @item("How to find a feature?",
