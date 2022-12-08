@@ -16,6 +16,7 @@ case class ReverseRoutes(rootPath: String) {
   val logout = s"$rootPath/logout"
   val analysis = s"$rootPath/analysis/"
   val bandits = s"$rootPath/bandits/"
+  val faq = s"$rootPath/faq"
   def bandit(feature: FeatureName): String = bandits + feature + "/"
   def kpi(kpi: KPIName) = s"$rootPath/analysis/kpis/$kpi"
   val background = s"$rootPath/stream/background"

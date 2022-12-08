@@ -406,6 +406,9 @@ class AbtestManagementUI[F[_]: Async](
             )(UIEnv(u))
           )
         } yield r
+
+      case GET -> Root / "faq" asAuthed u =>
+        Ok(faq()(UIEnv(u)))
     }
   }
 
