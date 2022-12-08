@@ -15,7 +15,6 @@
     </div>
 }
 
-
 @topNav("Frequently Asked Questions", "FAQ") {
 <div class="row justify-content-md-center">
     <div class="col-md-8 col-xl-6 mt-5">
@@ -72,11 +71,15 @@
               |E.g. I want only web APP users in US to be eligible for this feature test, the criteria should be
               |<pre class="bg-light">
               |[ {
+              |
               |  "platform" : "web"
+              |
               |}, {
+              |
               |  "country" : {
               |    "%in" : [ "us" ]
               |  }
+              |
               |} ]
               |</pre>
               |The following example lists most of the criteria
@@ -111,7 +114,7 @@
               |       }
               |}
               |</pre>
-              |For more information, check <a target="_blank" href="${env.docUrl}/thomas/#advanced-eligibility-control--targeted-audience-">this doc</a> out
+              |For more information, check <a class="text-decoration-underline" target="_blank" href="${env.docUrl}/thomas/#advanced-eligibility-control--targeted-audience-">this doc</a> out
               |""".stripMargin,
             6)
         @item("How to find a feature?",
