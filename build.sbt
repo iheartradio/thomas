@@ -328,6 +328,7 @@ lazy val http4s = project
   .settings(rootSettings)
   .settings(taglessSettings)
   .settings(
+    Compile / unmanagedResourceDirectories ++= (Compile / TwirlKeys.compileTemplates / sourceDirectories).value,
     libs.testDependencies("scalacheck", "scalatest"),
     TwirlKeys.templateImports := Seq(),
     libs.dependencies(
