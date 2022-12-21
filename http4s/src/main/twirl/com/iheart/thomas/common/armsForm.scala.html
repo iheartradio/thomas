@@ -34,9 +34,17 @@ extraArmNotes: Map[ArmName, Html] = Map.empty
     <div class="col-7 d-flex flex-row">
 
         <div class="form-group w-100">
+          <label class="form-label" for="testGroupMeta">Meta</label>
           <textarea name="groups[].meta" class="form-control size-change"
                     id="testGroupMeta">@as.flatMap(_.meta).map(formatJSON(_))</textarea>
           </div>
+
+
+        <div class="form-group w-100">
+            <label class="form-label" for="testGroupDesc">Description</label>
+          <textarea name="groups[].description" class="form-control size-change"
+                    id="testGroupDesc">@as.flatMap(_.description)</textarea>
+        </div>
 
         @if(showReserved) {
             <div class="form-group ms-2 form-check">

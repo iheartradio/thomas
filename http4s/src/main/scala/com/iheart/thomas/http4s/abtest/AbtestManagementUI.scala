@@ -4,7 +4,7 @@ package abtest
 
 import java.time.OffsetDateTime
 import cats.data.Validated.Valid
-import cats.effect.{Async, Resource, Clock}
+import cats.effect.{Async, Clock, Resource}
 import cats.implicits._
 import com.iheart.thomas.{FeatureName, GroupName}
 import com.iheart.thomas.abtest.AbtestAlg
@@ -20,14 +20,10 @@ import com.iheart.thomas.http4s.auth.{AuthedEndpointsUtils, AuthenticationAlg}
 import com.typesafe.config.Config
 import io.estatico.newtype.ops._
 import lihua.{Entity, EntityId}
-import org.http4s.{FormDataDecoder, QueryParamDecoder}
+import org.http4s.{FormDataDecoder, HttpRoutes, QueryParamDecoder}
 import org.http4s.FormDataDecoder._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.dsl.impl.{
-  FlagQueryParamMatcher,
-  OptionalQueryParamDecoderMatcher,
-  QueryParamDecoderMatcher
-}
+import org.http4s.dsl.impl.{FlagQueryParamMatcher, OptionalQueryParamDecoderMatcher, QueryParamDecoderMatcher}
 import org.http4s.twirl._
 import _root_.play.api.libs.json.JsObject
 
@@ -70,6 +66,12 @@ class AbtestManagementUI[F[_]: Async](
       test: Entity[Abtest]
     ) =
     SeeOther(testUrl(test).location)
+
+
+  val gateway = HttpRoutes.of[F] {
+    case GET -> Root =>
+      SeeOther(reverseRoutes.tests.location)
+  }
 
   val routes = {
 
@@ -510,7 +512,8 @@ object AbtestManagementUI {
       (
         field[GroupName]("name"),
         field[GroupSize]("size"),
-        fieldOptional[JsObject]("meta")
+        fieldOptional[JsObject]("meta"),
+        fieldOptional[String]("description")
       ).mapN(Group.apply)
 
     implicit val groupRangeFormDecoder: FormDataDecoder[GroupRange] =

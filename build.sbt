@@ -383,6 +383,7 @@ lazy val tests = project
   .configs(IntegrationTest)
   .settings(rootSettings)
   .settings(
+    reStart / mainClass :=  Some("com.iheart.thomas.example.ExampleAbtestAdminUIApp"),
     dependencyServicesUp := dockerCompose(upOrDown = true),
     dependencyServicesDown := dockerCompose(upOrDown = false),
     IntegrationTest / dependencyServicesUp := dockerCompose(
@@ -399,7 +400,7 @@ lazy val tests = project
     Defaults.itSettings,
     IntegrationTest / parallelExecution := false,
     IntegrationTest / compile / scalacOptions ~= lessStrictScalaChecks,
-    
+
     noPublishSettings,
     libs.testDependencies("scalacheck-1-14"),
     libs.dependency("cats-effect-testing-scalatest", Some(IntegrationTest.name)),

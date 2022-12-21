@@ -2,13 +2,7 @@ package com.iheart.thomas
 package http4s
 
 import com.iheart.thomas.http4s.abtest.AbtestManagementUI
-import com.iheart.thomas.http4s.auth.{
-  AuthDependencies,
-  AuthedEndpointsUtils,
-  AuthenticationAlg,
-  Token,
-  UI
-}
+import com.iheart.thomas.http4s.auth.{AuthDependencies, AuthedEndpointsUtils, AuthenticationAlg, Token, UI}
 import org.http4s.dsl.Http4sDsl
 import cats.implicits._
 import com.iheart.thomas.dynamo
@@ -57,6 +51,7 @@ class AdminUI[F[_]: MonadThrow](
   val routes = authUI.publicEndpoints <+> liftService(
     abtestManagementUI.routes <+> authUI.authedService <+> analysisUI.routes <+> streamUI.routes <+> banditUI.routes
   )
+  def gateway = abtestManagementUI.gateway
 
   val serverErrorHandler: ServiceErrorHandler[F] = { _ =>
     {
@@ -208,7 +203,8 @@ object AdminUI {
           BlazeServerBuilder[F]
             .bindHttp(8080, "0.0.0.0")
             .withHttpApp(
-              Router(adminCfg.rootPath -> ui.routes).orNotFound
+              Router(adminCfg.rootPath -> ui.routes,
+                "" -> ui.gateway).orNotFound
             )
             .withServiceErrorHandler(ui.serverErrorHandler)
             .serve
