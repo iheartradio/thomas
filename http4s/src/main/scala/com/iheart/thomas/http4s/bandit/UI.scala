@@ -100,8 +100,10 @@ object UI {
     implicit val armSpecQueryDecoder: FormDataDecoder[ArmSpec] = (
       field[ArmName]("name"),
       fieldOptional[GroupSize]("size"),
+      
       fieldOptional[GroupMeta]("meta"),
-      fieldEither[Boolean]("reserved").default(false)
+      fieldEither[Boolean]("reserved").default(false),
+      fieldOptional[String]("description")
     ).mapN(ArmSpec.apply)
 
     implicit val bandSpecFDD: FormDataDecoder[BanditSpec] = (

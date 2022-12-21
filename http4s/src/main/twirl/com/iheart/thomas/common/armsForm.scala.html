@@ -11,15 +11,19 @@ metaChangeOnly: Boolean = false,
 extraArmNotes: Map[ArmName, Html] = Map.empty
 )
 
+@optionalLabel = {
+    <span class="text-uppercase fw-lighter ms-2">optional</span>
+}
 @arm(as: Option[ArmSpec]) = {
 
 <div class="row abtest-group mb-3">
-    <div class="col-3">
+    <div class="col-2">
         <div class="form-group">
             <input name="groups[].name" class="form-control size-change essential"
                    id="testGroupName" type="text" required
                    value="@as.map(_.name)"/>
         </div>
+
     </div>
 
     <div class="col-2">
@@ -31,35 +35,43 @@ extraArmNotes: Map[ArmName, Html] = Map.empty
         </div>
     </div>
 
-    <div class="col-7 d-flex flex-row">
 
+    <div class="col-3 d-flex flex-row">
         <div class="form-group w-100">
-          <textarea name="groups[].meta" class="form-control size-change"
-                    id="testGroupMeta">@as.flatMap(_.meta).map(formatJSON(_))</textarea>
-          </div>
+            <input name="groups[].description" placeholder="Detailed description" class="form-control" maxlength="20"
+             @for(desc <- as.flatMap(_.description)) { value="@desc" }
+            />
+            @for(note <- as.flatMap(a => extraArmNotes.get(a.name))) {
+                <div class="text-muted">
+                 @note
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-5">
+        <div class="form-group w-100" >
+            <textarea name="groups[].meta" class="form-control size-change" placeholder="Json data sent along with the group assignment"
+            id="testGroupMeta">@as.flatMap(_.meta).map(formatJSON(_))</textarea>
+        </div>
 
         @if(showReserved) {
             <div class="form-group ms-2 form-check">
                 <input name="groups[].reserved" class="reserved-hidden" type="hidden" value="@as.fold(false)(_.reserved)" />
                 <input class="form-check-input reserved-cb" type="checkbox" onclick="thomasCheckReserve(this)"
-                       @if(as.fold(false)(_.reserved)) { checked } />
+                @if(as.fold(false)(_.reserved)) { checked } />
                 <label class="form-label">Reserved</label>
             </div>
         }
-        @for(note <- as.flatMap(a => extraArmNotes.get(a.name))) {
-          <div>
-            @note
-          </div>
-        }
+
         <div class="text-center">
             <button class="btn btn-link remove-item remove-item mt-4 ml-3 size-change essential"
-                    type="button" onclick="thomas.removeParentItem(this, '.abtest-group')" title="Remove @armLabel">
+            type="button" onclick="thomas.removeParentItem(this, '.abtest-group')" title="Remove @armLabel">
                 <i class="bi bi-trash"></i>
             </button>
         </div>
 
     </div>
-
 
 </div>
 }
@@ -72,7 +84,7 @@ extraArmNotes: Map[ArmName, Html] = Map.empty
     <div class="card-body">
         <div id="testGroups">
             <div class="row abtest-group-header">
-                <div class="col-3">
+                <div class="col-2">
                     <div class="form-group">
                         <label class="form-label" for="testGroupName">@armLabel Name</label>
                     </div>
@@ -82,11 +94,17 @@ extraArmNotes: Map[ArmName, Html] = Map.empty
                         <label class="form-label" for="testGroupSize">Size</label>
                     </div>
                 </div>
-                <div class="col-7">
+                <div class="col-3">
                     <div class="form-group w-100">
-                        <label class="form-label" for="testGroupMeta">Meta</label>
+                        <label class="form-label" for="testGroupDesc">Description </label> @optionalLabel
                     </div>
                 </div>
+                <div class="col-5">
+                    <div class="form-group w-100">
+                        <label class="form-label" for="testGroupMeta">Meta @optionalLabel</label>
+                    </div>
+                </div>
+
             </div>
             @for( a <- draftArms.toSeq.flatten) {
                 @arm(Some(a))

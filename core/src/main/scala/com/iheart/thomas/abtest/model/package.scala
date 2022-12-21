@@ -199,7 +199,8 @@ package model {
   case class Group(
       name: GroupName,
       size: GroupSize,
-      meta: Option[GroupMeta])
+      meta: Option[GroupMeta],
+      description: Option[String] = None)
 
   case class GroupRange(
       start: BigDecimal,

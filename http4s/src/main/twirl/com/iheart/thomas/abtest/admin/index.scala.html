@@ -43,27 +43,46 @@ filters: Filters
 <a href="tests/@test._id" class="list-group-item list-group-item-action flex-column align-items-start">
     <div class="row">
         <div class="col-auto me-auto">
+            <div>
+                <span class="mb-1 h5 fw-light text-success">@test.data.name</span>
+                <span class="badge ml-3 bg-@formatStatus(test)._2">
+                  @formatStatus(test)._1
+                </span>
+                @if(test.data.isDryRun) {
+                   <span class="badge ml-3 bg-info">Dry Run</span>
+                }
+            </div>
+            <div>
+              <div class="d-flex">
+                @for(group <- test.data.groups) {
+                  <div class="me-4">
 
-            <span class="mb-1 h5 fw-light text-success">@test.data.name</span>
-            <span class="badge ml-3 bg-@formatStatus(test)._2">
-              @formatStatus(test)._1
-            </span>
-            @if(test.data.isDryRun) {
-               <span class="badge ml-3 bg-info">Dry Run</span>
-            }
+                          <span class="text-primary">@group.name</span><span class="ms-2">@group.size</span>
+
+                      @for(desc <- group.description) {
+                        <span class="text-muted ms-2">@desc</span>
+                      }
+                  </div>
+              }
+              </div>
+
+            </div>
         </div>
 
         <div class="col-auto">
-            <small>
-                <span class="fw-heavy"></span>
+          <div class="text-end">
+            <small class="fw-heavy">
                 @formatDate(test.data.start, dateTimeFormatterShort)
                 -
                 @test.data.end.map(formatDate(_, dateTimeFormatterShort)).getOrElse("Indefinitely")
             </small>
+          </div>
+            <div class="text-end">
             <small><span class="fw-light ml-3">
               Author: </span>
-                <span class="fw-heavy"> @test.data.author</span>
+                <span class="text-primary"> @test.data.author</span>
             </small>
+            </div>
         </div>
 
     </div>
