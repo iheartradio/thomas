@@ -4,7 +4,6 @@ package abtest
 import cats.MonadError
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import cats.implicits._
 import com.iheart.thomas.abtest.Error.{
   CannotChangeGroupSizeWithFollowUpTest,
   CannotUpdateExpiredTest,
