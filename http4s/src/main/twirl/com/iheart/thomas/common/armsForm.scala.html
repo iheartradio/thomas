@@ -51,7 +51,7 @@ extraArmNotes: Map[ArmName, Html] = Map.empty
 
     <div class="col-5">
         <div class="form-group w-100" >
-            <textarea name="groups[].meta" class="form-control size-change" placeholder="Json data sent along with the group assignment"
+            <textarea name="groups[].meta" class="form-control size-change" placeholder="Json data sent along with the group assignment. e.g. {&quot;bannerConfig&quot;:{&quot;color&quot;:&quot;#FFFFFF&quot;}}"
             id="testGroupMeta">@as.flatMap(_.meta).map(formatJSON(_))</textarea>
         </div>
 
