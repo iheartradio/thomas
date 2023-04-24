@@ -49,10 +49,13 @@ extraArmNotes: Map[ArmName, Html] = Map.empty
         </div>
     </div>
 
-    <div class="col-5">
+    <div class="col-5 d-flex">
         <div class="form-group w-100" >
             <textarea name="groups[].meta" class="form-control size-change" placeholder="Json data sent along with the group assignment. e.g. {&quot;bannerConfig&quot;:{&quot;color&quot;:&quot;#FFFFFF&quot;}}"
             id="testGroupMeta">@as.flatMap(_.meta).map(formatJSON(_))</textarea>
+            <button class="btn btn-link btn-editor-json" type="button">
+                <i class="bi bi-pencil"></i>
+            </button>
         </div>
 
         @if(showReserved) {
@@ -126,7 +129,23 @@ extraArmNotes: Map[ArmName, Html] = Map.empty
         </div>
     </div>
 </div>
-
+<div class="modal" tabindex="-1" id="jsonEditorModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">JSON Editor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="jsoneditor" style="width: 100%; height: 400px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveJson">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 @if(!groupSizeChangeAllowed) {
@@ -169,6 +188,33 @@ extraArmNotes: Map[ArmName, Html] = Map.empty
     }
     $(document).ready(function() {
         $('body').append($('#newTestGroup')) //move new test group inputs out of the form
+
+        const options = { mode: "tree", mainMenuBar: false };
+        const editor = new JSONEditor(document.getElementById("jsoneditor"), options);
+        const modal = new bootstrap.Modal(document.getElementById("jsonEditorModal"), {backdrop: 'static'});
+        let currentTextField = null;
+
+        $('#testGroups').on("click",".btn-editor-json", function (e) {
+            currentTextField = $(e.currentTarget).prev();
+            let textFieldValue = currentTextField.val();
+            //if it's empty initialized it with {}
+            if (textFieldValue === "") {
+                textFieldValue = "{}";
+            }
+            try {
+                const json = JSON.parse(textFieldValue);
+                editor.set(json);
+                modal.show();
+            } catch (error) {
+                alert("Invalid JSON!");
+            }
+        });
+
+        $("#saveJson").on("click", function () {
+            const json = editor.get();
+            currentTextField.val(JSON.stringify(json));
+            modal.hide();
+        });
     });
 
 </script>
