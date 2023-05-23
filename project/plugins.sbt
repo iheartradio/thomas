@@ -1,4 +1,4 @@
-addSbtPlugin("io.gatling" %% "gatling-sbt" % "4.2.6")
+addSbtPlugin("io.gatling" %% "gatling-sbt" % "4.3.2")
 
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.1.1")
 
