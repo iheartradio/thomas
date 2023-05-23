@@ -205,6 +205,7 @@ extraArmNotes: Map[ArmName, Html] = Map.empty
                 const json = JSON.parse(textFieldValue);
                 editor.set(json);
                 modal.show();
+                editor.expandAll();
             } catch (error) {
                 alert("Invalid JSON!");
             }

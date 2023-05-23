@@ -27,11 +27,13 @@ draft: Option[AbtestSpec]
             <button class="btn btn-link btn-editor-json-um" type="button">
                 <i class="bi bi-pencil"></i>
             </button>
+
+
         </div>
     </div>
 </div>
 
-<div class="modal" tabindex="-1" id="jsonEditorModal-um">
+<div class="modal" id="jsonEditorModal-um" >
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -50,17 +52,21 @@ draft: Option[AbtestSpec]
 </div>
 
 
-
 <script>
     $(document).ready(function() {
-
         const schema = {
-            "$schema": "http://json-schema.org/draft-07/schema#",
+            "oneOf": [
+                {
+                    "$ref": "crit"
+                }
+            ]
+        }
+        const crit = {
             "type": "object",
             "$recursiveAnchor": true,
             "patternProperties": {
                 "^[a-zA-Z0-9]+$": {
-                    "anyOf": [
+                    "oneOf": [
                         {
                             "type": "string"
                         },
@@ -111,7 +117,8 @@ draft: Option[AbtestSpec]
                             "type": "object",
                             "properties": {
                                 "%versionStart": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "examples": ["1.0.0"]
                                 }
                             },
                             "required": ["%versionStart"],
@@ -137,17 +144,48 @@ draft: Option[AbtestSpec]
                         {
                             "type": "array",
                             "items": {
-                                "$recursiveRef": "#"
+                                "$ref": "crit"
                             }
                         },
                         {
-                            "$recursiveRef": "#"
+                            "$ref": "crit"
+                        }]
+                    },
+
+                "^%and$": {
+                    "oneOf" : [
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "crit"
+                            }
+                        },
+                        {
+                            "$ref": "crit"
                         }]
                     }
             },
             "additionalProperties": false
         }
-        const options = { mode: "tree", mainMenuBar: false, schema: schema,  statusBar: true, navigationBar: true };
+        const options = { mode: "tree",
+            modes: ["tree", "code"],
+            schema: schema,
+            schemaRefs: {crit},
+            autocomplete: {
+                applyTo: ["field"],
+                getOptions: function (text, path, input, editor) {
+                    return new Promise(function (resolve, reject) {
+                        const options = ["%regex", "%in", "%gt", "%lt", "%versionStart", "%versionRange", "%or", "%and"]
+                        if(text.startsWith("%")) {
+                            resolve(options.filter(option => option.startsWith(text)))
+                        } else {
+                            resolve([])
+                        }
+
+                    })
+                }
+            }
+        };
 
         const editor = new JSONEditor(document.getElementById("jsoneditor-um"), options);
         const modal = new bootstrap.Modal(document.getElementById("jsonEditorModal-um"), {backdrop: 'static'});
@@ -164,10 +202,10 @@ draft: Option[AbtestSpec]
                 const json = JSON.parse(textFieldValue);
                 editor.set(json);
                 modal.show();
+                editor.expandAll();
             } catch (error) {
                 alert("Invalid JSON!");
             }
-            editor.expandAll();
 
         });
 
