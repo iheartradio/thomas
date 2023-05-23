@@ -331,6 +331,7 @@ lazy val http4s = project
     Compile / unmanagedResourceDirectories ++= (Compile / TwirlKeys.compileTemplates / sourceDirectories).value,
     libs.testDependencies("scalacheck", "scalatest"),
     TwirlKeys.templateImports := Seq(),
+    scalacOptions ~= (sc => sc.filterNot(Set("-Xlint:missing-interpolator"))),
     libs.dependencies(
       "logback-classic",
       "http4s-blaze-server",

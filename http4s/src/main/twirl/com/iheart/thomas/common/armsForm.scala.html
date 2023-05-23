@@ -133,7 +133,7 @@ extraArmNotes: Map[ArmName, Html] = Map.empty
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">JSON Editor</h5>
+                <h5 class="modal-title">Group Meta JSON Editor</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -212,7 +212,7 @@ extraArmNotes: Map[ArmName, Html] = Map.empty
 
         $("#saveJson").on("click", function () {
             const json = editor.get();
-            currentTextField.val(JSON.stringify(json));
+            currentTextField.val(JSON.stringify(json, null, 4));
             modal.hide();
         });
     });

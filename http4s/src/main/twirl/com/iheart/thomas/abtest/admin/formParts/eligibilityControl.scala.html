@@ -1,6 +1,5 @@
 @import com.iheart.thomas.abtest.model._
-@import com.iheart.thomas.http4s.Formatters.formatJSON
-@import com.iheart.thomas.abtest.json.play.Formats._
+@import com.iheart.thomas.http4s.Formatters._
 
 @(
 draft: Option[AbtestSpec]
@@ -24,8 +23,159 @@ draft: Option[AbtestSpec]
                href="https://iheartradio.github.io/thomas/FAQ.html#how-to-manage-user-eligibility">
                 <i class="bi bi-question-circle"></i>
             </a>
-            <textarea name="userMetaCriteria" class="form-control" id="testUserMetaCriteria">@draft.flatMap(_.userMetaCriteria).map(formatJSON(_))
-            </textarea>
+            <textarea name="userMetaCriteria" class="form-control" id="testUserMetaCriteria">@draft.flatMap(_.userMetaCriteria).map(formatUserMetaCriteria(_))</textarea>
+            <button class="btn btn-link btn-editor-json-um" type="button">
+                <i class="bi bi-pencil"></i>
+            </button>
         </div>
     </div>
 </div>
+
+<div class="modal" tabindex="-1" id="jsonEditorModal-um">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">User Meta Criteria JSON Editor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="jsoneditor-um" style="width: 100%; height: 400px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveJson-um">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+    $(document).ready(function() {
+
+        const schema = {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
+            "$recursiveAnchor": true,
+            "patternProperties": {
+                "^[a-zA-Z0-9]+$": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "%regex": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": ["%regex"],
+                            "additionalProperties": false
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "%in": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "required": ["%in"],
+                            "additionalProperties": false
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "%gt": {
+                                    "type": "number"
+                                }
+                            },
+                            "required": ["%gt"],
+                            "additionalProperties": false
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "%lt": {
+                                    "type": "number"
+                                }
+                            },
+                            "required": ["%lt"],
+                            "additionalProperties": false
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "%versionStart": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": ["%versionStart"],
+                            "additionalProperties": false
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "%versionRange": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "required": ["%versionRange"],
+                            "additionalProperties": false
+                        }
+                    ]
+                },
+                "^%or$": {
+                    "oneOf" : [
+                        {
+                            "type": "array",
+                            "items": {
+                                "$recursiveRef": "#"
+                            }
+                        },
+                        {
+                            "$recursiveRef": "#"
+                        }]
+                    }
+            },
+            "additionalProperties": false
+        }
+        const options = { mode: "tree", mainMenuBar: false, schema: schema,  statusBar: true, navigationBar: true };
+
+        const editor = new JSONEditor(document.getElementById("jsoneditor-um"), options);
+        const modal = new bootstrap.Modal(document.getElementById("jsonEditorModal-um"), {backdrop: 'static'});
+        let currentTextField = null;
+
+        $('.btn-editor-json-um').on("click", function (e) {
+            currentTextField = $(e.currentTarget).prev();
+            let textFieldValue = currentTextField.val();
+            //if it's empty initialized it with {}
+            if (textFieldValue.trim() === "") {
+                textFieldValue = "{}";
+            }
+            try {
+                const json = JSON.parse(textFieldValue);
+                editor.set(json);
+                modal.show();
+            } catch (error) {
+                alert("Invalid JSON!");
+            }
+            editor.expandAll();
+
+        });
+
+        $("#saveJson-um").on("click", function () {
+            const json = editor.get();
+            currentTextField.val(JSON.stringify(json, null, 4));
+            modal.hide();
+        });
+    });
+
+</script>
