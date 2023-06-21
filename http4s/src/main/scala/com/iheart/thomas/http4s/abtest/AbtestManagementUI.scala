@@ -32,18 +32,34 @@ import admin.Authorization._
 import cats.Functor
 import utils.time._
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
+import com.iheart.thomas.stream.AdminEvent.FeatureChanged
+import com.iheart.thomas.stream.BusAlg
+import org.http4s.server.websocket.WebSocketBuilder2
+import org.http4s.websocket.WebSocketFrame
 
 import scala.util.control.NoStackTrace
 
-class AbtestManagementUI[F[_]: Async](
+class AbtestManagementUI[F[_]](
     private[http4s] val alg: AbtestAlg[F],
-    authAlg: AuthenticationAlg[F, AuthImp]
-  )(implicit cfg: AdminUIConfig)
+    authAlg: AuthenticationAlg[F, AuthImp],
+  )(implicit cfg: AdminUIConfig, F: Async[F], busAlg: BusAlg[F])
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
 
   import AbtestManagementUI.Decoders._
   import tsec.authentication._
+
+
+  def websocketRoutes(builder: WebSocketBuilder2[F]): AuthService =
+    roleBasedService(admin.Authorization.testManagerRoles) {
+      case GET -> Root / "features" / feature / "changes" asAuthed _ =>
+        builder.build { _ =>
+          busAlg.subscribe {
+            case FeatureChanged(fn, at) if fn == feature =>
+              F.pure(Option(WebSocketFrame.Text(at.toString)))
+          }
+        }
+    }
 
   implicit val reverseRoutes: ReverseRoutes = ReverseRoutes.apply
 
@@ -256,8 +272,9 @@ class AbtestManagementUI[F[_]: Async](
                 } *>
                 alg
                   .updateFeature(f)
-                  .flatMap(
-                    showFeature(u, _, Some(Right("Feature successfully update.")))
+                  .flatTap(f => busAlg.publish(FeatureChanged(feature, f.lastUpdated.get)))
+                  .flatMap( _ =>
+                    SeeOther((reverseRoutes.features + "/" + feature).location)
                   )
                   .handleErrorWith(e =>
                     showFeature(u, f, Some(Left(displayError(e))))
@@ -458,7 +475,8 @@ object AbtestManagementUI {
     )(implicit
       ex: ExecutionContext,
       cfg: AdminUIConfig,
-      authAlg: AuthenticationAlg[F, AuthImp]
+      authAlg: AuthenticationAlg[F, AuthImp],
+      busAlg: BusAlg[F]
     ): Resource[F, AbtestManagementUI[F]] = {
     MongoResources
       .abtestAlg[F](cfgResourceName)
@@ -470,8 +488,10 @@ object AbtestManagementUI {
     )(implicit
       ex: ExecutionContext,
       acfg: AdminUIConfig,
-      authAlg: AuthenticationAlg[F, AuthImp]
+      authAlg: AuthenticationAlg[F, AuthImp],
+      busAlg: BusAlg[F]
     ): Resource[F, AbtestManagementUI[F]] = {
+
     MongoResources.abtestAlg[F](cfg).map(new AbtestManagementUI(_, authAlg))
   }
 

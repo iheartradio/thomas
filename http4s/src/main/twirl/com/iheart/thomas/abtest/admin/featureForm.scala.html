@@ -302,6 +302,24 @@ operatorCandidates: List[Username] = Nil,
     $(document).ready(function(){
         thomas.twoLists("#feature-developers","#add-developer")
         thomas.twoLists("#feature-operators","#add-operator")
+
+        //get the current host and replace the protocol with ws
+        const ws = new WebSocket(window.location.toString().replace("http","ws") + "/changes");
+        ws.onmessage = (event) => {
+            const timestamp = event.data;
+            if(timestamp != "@feature.lastUpdated.fold("")(_.toString)"){
+                //delay this for 1 second so that page redirect after the form submission without handling the event
+                setTimeout(function(){
+                    //ask users if they want to refresh the page
+                    if(confirm("The feature has been updated by another user. Do you want to refresh the page?")){
+                        window.location.reload();
+                    }
+
+                }, 1000);
+
+            }
+
+        }
     });
 
 </script>

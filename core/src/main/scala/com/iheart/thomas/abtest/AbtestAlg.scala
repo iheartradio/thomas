@@ -409,8 +409,9 @@ final class DefaultAbtestAlg[F[_]](
   def updateFeature(feature: Feature): F[Feature] =
     for {
       fe <- featureRepo.byName(feature.name)
+      now <- nowF
       updated <- featureRepo.update(
-        fe.copy(data = feature.copy(lockedAt = fe.data.lockedAt))
+        fe.copy(data = feature.copy(lockedAt = fe.data.lockedAt, lastUpdated = Some(now)))
       )
     } yield updated.data
 
