@@ -226,7 +226,8 @@ package model {
       lockedAt: Option[Instant] = None,
       developers: List[Username] = Nil,
       operators: List[Username] = Nil,
-      assignmentTruthAt: AssignmentTruthAt = AssignmentTruthAt.Message) {
+      assignmentTruthAt: AssignmentTruthAt = AssignmentTruthAt.Message,
+      lastUpdated: Option[Instant] = None) {
 
     def nonTestSettingsChangedFrom(that: Feature) =
       copy(overrides = Map.empty, overrideEligibility = false) !=

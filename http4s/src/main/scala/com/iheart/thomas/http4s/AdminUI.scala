@@ -18,7 +18,7 @@ import pureconfig.module.catseffect.syntax._
 import cats.MonadThrow
 import com.iheart.thomas.http4s.AdminUI.AdminUIConfig
 import com.iheart.thomas.kafka.JsonMessageSubscriber
-import com.iheart.thomas.stream.JobAlg
+import com.iheart.thomas.stream.{BusAlg, JobAlg}
 import org.typelevel.log4cats.Logger
 import fs2.Stream
 
@@ -35,6 +35,7 @@ import com.iheart.thomas.stream.TimeStampParser.JValueTimeStampParser
 import com.iheart.thomas.stream.UserParser.JValueUserParser
 import com.iheart.thomas.tracking.EventLogger
 import org.http4s.blaze.server.BlazeServerBuilder
+import org.http4s.server.websocket.WebSocketBuilder2
 
 class AdminUI[F[_]: MonadThrow](
     abtestManagementUI: AbtestManagementUI[F],
@@ -48,8 +49,8 @@ class AdminUI[F[_]: MonadThrow](
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
 
-  val routes = authUI.publicEndpoints <+> liftService(
-    abtestManagementUI.routes <+> authUI.authedService <+> analysisUI.routes <+> streamUI.routes <+> banditUI.routes
+  def routes(builder: WebSocketBuilder2[F]) = authUI.publicEndpoints <+> liftService(
+    abtestManagementUI.routes <+> abtestManagementUI.websocketRoutes(builder) <+> authUI.authedService <+> analysisUI.routes <+> streamUI.routes <+> banditUI.routes
   )
   def gateway = abtestManagementUI.gateway
 
@@ -124,7 +125,8 @@ object AdminUI {
           cfg.adminTablesReadCapacity,
           cfg.adminTablesWriteCapacity
         )
-      ) *> {
+      ) *>
+      BusAlg.resource(10).flatMap { implicit ba =>
         Resource.eval(AuthDependencies[F](cfg.key)).flatMap { deps =>
           import deps._
           import dynamo.AdminDAOs._
@@ -202,8 +204,8 @@ object AdminUI {
         e <-
           BlazeServerBuilder[F]
             .bindHttp(8080, "0.0.0.0")
-            .withHttpApp(
-              Router(adminCfg.rootPath -> ui.routes,
+            .withHttpWebSocketApp( builder =>
+              Router(adminCfg.rootPath -> ui.routes(builder),
                 "" -> ui.gateway).orNotFound
             )
             .withServiceErrorHandler(ui.serverErrorHandler)
