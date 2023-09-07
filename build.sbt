@@ -1,5 +1,6 @@
 import com.typesafe.sbt.SbtGit.git
 import microsites._
+import org.typelevel.sbtcatalysts.Libraries
 
 import scala.sys.process._
 import sbtassembly.AssemblyPlugin.defaultUniversalScript
@@ -45,8 +46,27 @@ lazy val libs =
     .add(   name = "spark",                 version = "3.3.1",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tsec",                  version = "0.4.0",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
     .add   (name = "enumeratum",            version = "1.7.2",  org = "com.beachape", "enumeratum", "enumeratum-cats" )
+    .addScalacPlugin(name = "kind-projector", version = "0.13.2",  org = typeLevelOrg, crossVersion = CrossVersion.for3Use2_13)
+    //.addScalacPlugin(name = "paradise",       version = "2.1.1", org = "org.scalamacros", crossVersion = CrossVersion.for3Use2_13 )
 
+val a = println("---------------------------\n", libs.vers("kind-projector"), "---------------------------\n")
 
+val getDependency: (Option[String], List[ExclusionRule], Option[CrossVersion]) => (Libraries,  String) => Setting[Seq[ModuleID]] =
+  (maybeScope, exclusions, crossVersion) => (lib, moduleName) => libraryDependencies += {
+    val m = crossVersion match {
+      case Some(c) => lib.moduleID(moduleName).value cross c
+      case None => lib.moduleID(moduleName).value
+    }
+    (maybeScope, exclusions) match {
+      case (Some(scope), Nil) => m % scope
+      case (None, ex) => m excludeAll (ex: _*)
+      case (Some(scope), ex) => m % scope excludeAll (ex: _*)
+      case _ => m
+    }
+  }
+
+val increment: (Libraries,  String) => Setting[Seq[ModuleID]] =
+  getDependency(None, Nil, Some(CrossVersion.for3Use2_13))
 
 // format: on
 
@@ -180,11 +200,14 @@ lazy val core = project
 lazy val lihua = project.settings(
   name := "thomas-lihua",
   rootSettings,
-  taglessSettings,
-  libs.dependencies(
-    "newtype",
-    "play-json"
-  )
+  taglessSettings3,
+  crossScalaVersions := Seq(scala3),
+  //increment(libs, "newtype"),
+  //increment(libs, "play-json"),
+  libraryDependencies ++= Seq(
+    "com.typesafe.play" %% "play-json" % "2.9.4" cross CrossVersion.for3Use2_13,
+    "io.estatico" %% "newtype" % "0.4.3" cross CrossVersion.for3Use2_13
+  ),
 )
 
 lazy val bandit = project
@@ -427,12 +450,16 @@ lazy val developerKai = Developer(
   new java.net.URL("http://kailuowang.com")
 )
 
+lazy val scala213 = "2.13.10"
+lazy val scala3 = "3.2.2"
+
+
 lazy val commonSettings = addCompilerPlugins(
   libs,
   "kind-projector"
 ) ++ sharedCommonSettings ++ Seq(
   organization := "com.iheart",
-  scalaVersion := "2.13.10",
+  scalaVersion := scala213,
   Test / parallelExecution := false,
   releaseCrossBuild := false,
   developers := List(developerKai),
@@ -451,6 +478,12 @@ lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =
 lazy val taglessSettings = paradiseSettings(libs) ++ Seq(
   libraryDependencies ++= Seq(
     "org.typelevel" %% "cats-tagless-macros" % "0.14.0"
+  )
+)
+
+lazy val taglessSettings3 = Seq(
+  libraryDependencies ++= Seq(
+    "org.typelevel" %% "cats-tagless-macros" % "0.14.0" cross CrossVersion.for3Use2_13
   )
 )
 
