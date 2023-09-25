@@ -79,6 +79,9 @@ class UserMetaCriterionSuite extends AnyFreeSpec with Matchers {
           GreaterOrEqual("f", 1d).eligible(Map("f" -> "2")) shouldBe true
           GreaterOrEqual("f", 1d).eligible(Map("f" -> "1")) shouldBe true
           GreaterOrEqual("f", 1d).eligible(Map("f" -> "0")) shouldBe false
+          GreaterOrEqual("f", 1d).eligible(Map("f" -> "2.0")) shouldBe true
+          GreaterOrEqual("f", 1d).eligible(Map("f" -> "1.0")) shouldBe true
+          GreaterOrEqual("f", 1d).eligible(Map("f" -> "0.5")) shouldBe false
         }
       }
 
@@ -91,6 +94,9 @@ class UserMetaCriterionSuite extends AnyFreeSpec with Matchers {
           Greater("f", 1d).eligible(Map("f" -> "2")) shouldBe true
           Greater("f", 1d).eligible(Map("f" -> "1")) shouldBe false
           Greater("f", 1d).eligible(Map("f" -> "0")) shouldBe false
+          Greater("f", 1d).eligible(Map("f" -> "2.0")) shouldBe true
+          Greater("f", 1d).eligible(Map("f" -> "1.0")) shouldBe false
+          Greater("f", 1d).eligible(Map("f" -> "0.5")) shouldBe false
         }
       }
 
@@ -103,6 +109,9 @@ class UserMetaCriterionSuite extends AnyFreeSpec with Matchers {
           Less("f", 1d).eligible(Map("f" -> "0")) shouldBe true
           Less("f", 1d).eligible(Map("f" -> "1")) shouldBe false
           Less("f", 1d).eligible(Map("f" -> "2")) shouldBe false
+          Less("f", 1d).eligible(Map("f" -> "0.5")) shouldBe true
+          Less("f", 1d).eligible(Map("f" -> "1.0")) shouldBe false
+          Less("f", 1d).eligible(Map("f" -> "2.0")) shouldBe false
         }
       }
 
@@ -115,6 +124,9 @@ class UserMetaCriterionSuite extends AnyFreeSpec with Matchers {
           LessOrEqual("f", 1d).eligible(Map("f" -> "0")) shouldBe true
           LessOrEqual("f", 1d).eligible(Map("f" -> "1")) shouldBe true
           LessOrEqual("f", 1d).eligible(Map("f" -> "2")) shouldBe false
+          LessOrEqual("f", 1d).eligible(Map("f" -> "0.5")) shouldBe true
+          LessOrEqual("f", 1d).eligible(Map("f" -> "1.0")) shouldBe true
+          LessOrEqual("f", 1d).eligible(Map("f" -> "2.0")) shouldBe false
         }
       }
     }
