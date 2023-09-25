@@ -164,6 +164,10 @@ The following example lists most of the criteria.
          "city": "LA",
          "state": "NY"
        },
+
+       "age" : {
+         "%gt" : 32                       //matches age older than 32, other compartor includes %ge, %lt and %le, using those 4 comparators implies a numeric field from both User Meta Criteria in Admin UI and clients that pass in meta
+       },
        
        "clientVer": {
          "%versionStart" : "1.0.0"         //special filter for version strings. Matches users whose "clientVer" is later than "1.0.0"
