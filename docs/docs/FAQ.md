@@ -61,7 +61,7 @@ In A/B tests you can set a user meta criteria in field `userMetaCriteria`, this 
        },
        
        "age" : {
-          "%gt" : 32                       //matches age older than 32, other compartor includes %ge, %lt and %le
+          "%gt" : 32                       //matches age older than 32, other compartor includes %ge, %lt and %le, using those 4 comparators implies a numeric field from both User Meta Criteria in Admin UI and clients that pass in meta
        },
 
        "clientVer": {
