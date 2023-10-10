@@ -230,8 +230,8 @@ package model {
       lastUpdated: Option[Instant] = None) {
 
     def nonTestSettingsChangedFrom(that: Feature) =
-      copy(overrides = Map.empty, overrideEligibility = false) !=
-        that.copy(overrides = Map.empty, overrideEligibility = false)
+      copy(overrides = Map.empty, overrideEligibility = false, lastUpdated = None) !=
+        that.copy(overrides = Map.empty, overrideEligibility = false, lastUpdated = None)
   }
 
   sealed trait AssignmentTruthAt extends Serializable with Product
