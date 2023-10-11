@@ -128,8 +128,9 @@ class AbtestService[F[_]: Async](
 
   def public =
     HttpRoutes.of[F] { case req @ POST -> Root / "users" / "groups" / "query" =>
-      req.as[UserGroupQuery] >>= (ugq =>
-        respond(
+      req.as[UserGroupQuery] redeemWith ( // redeemWith handles all body parsing errors
+        _ => BadRequest("Invalid Request Body"),
+        ugq => respond(
           api
             .getGroupsWithMeta(ugq)
             .flatTap(r => logger(AbTestRequestServed(ugq, r)))
