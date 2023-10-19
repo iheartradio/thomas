@@ -15,6 +15,9 @@ val gh = GitHubSettings(
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
 val reactiveMongoVer = "1.0.10"
 val typeLevelOrg = "org.typelevel"
+lazy val scala2 = "2.13.10"
+lazy val scala3 = "3.2.2"
+
 // format: off
 lazy val libs =
   org.typelevel.libraries
@@ -32,7 +35,7 @@ lazy val libs =
     .addJava(name ="logback-classic",       version = "1.4.11",  org = "ch.qos.logback")
     .addJVM(name = "mau",                   version = "0.3.1",  org = "com.kailuowang")
     .addJVM(name = "newtype",               version = "0.4.4",  org = "io.estatico")
-    .add(   name = "play-json",             version = "2.9.4",  org = "com.typesafe.play")
+    .add(   name = "play-json",             version = "2.10.1",  org = "com.typesafe.play")
     .addJVM(name = "play-json-derived-codecs", version = "10.1.0", org = "org.julienrf")
     .addJVM(name = "rainier",               version = "0.3.5",  org ="com.stripe", "rainier-core", "rainier-cats")
     .addJVM(name = "reactivemongo",         version = reactiveMongoVer, org = "org.reactivemongo", "reactivemongo", "reactivemongo-bson-api", "reactivemongo-iteratees" )
@@ -45,7 +48,14 @@ lazy val libs =
     .add(   name = "spark",                 version = "3.3.1",  org = "org.apache.spark", "spark-sql", "spark-core")
     .addJVM(name = "tsec",                  version = "0.4.0",  org = "io.github.jmcardon", "tsec-common", "tsec-password", "tsec-mac", "tsec-signatures", "tsec-jwt-mac", "tsec-jwt-sig", "tsec-http4s", "tsec-cipher-jca")
     .add   (name = "enumeratum",            version = "1.7.2",  org = "com.beachape", "enumeratum", "enumeratum-cats" )
+    .addScalacPlugin(name = "kind-projector", version = "0.13.2",  org = typeLevelOrg,      crossVersion = CrossVersion.for3Use2_13With("", ".10"))
+    .addScalacPlugin(name = "paradise",       version = "2.1.1",   org = "org.scalamacros", crossVersion = CrossVersion.for3Use2_13With("", ".0-M3"))
 
+
+//val vv = libs.moduleID("paradise")
+//val b: Unit = println("-----------------------------")
+//val c: Unit = println(vv)
+//val d: Unit = println("-----------------------------")
 
 
 // format: on
@@ -181,9 +191,10 @@ lazy val lihua = project.settings(
   name := "thomas-lihua",
   rootSettings,
   taglessSettings,
-  libs.dependencies(
-    "newtype",
-    "play-json"
+  crossScalaVersions := List(scala2, scala3),
+  libraryDependencies ++= Seq(
+    libs.moduleID("newtype").value cross CrossVersion.for3Use2_13,
+    libs.moduleID("play-json").value cross CrossVersion.for3Use2_13
   )
 )
 
@@ -433,13 +444,18 @@ lazy val commonSettings = addCompilerPlugins(
   "kind-projector"
 ) ++ sharedCommonSettings ++ Seq(
   organization := "com.iheart",
-  scalaVersion := "2.13.10",
+  scalaVersion := scala2,
   Test / parallelExecution := false,
   releaseCrossBuild := false,
   developers := List(developerKai),
   Compile / console / scalacOptions ~= lessStrictScalaChecks,
   Test / compile / scalacOptions ~= lessStrictScalaChecks,
-  scalacOptions += s"-Xlint:-package-object-classes",
+  scalacOptions += {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, _)) => s"-Xlint:-package-object-classes"
+      case _ => ""
+    }
+  },
   Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
   ThisBuild / evictionErrorLevel := Level.Info // thanks to akka depending on java8 compat 0.8.0
 )
@@ -449,11 +465,22 @@ lazy val lessStrictScalaChecks: Seq[String] => Seq[String] =
     Set("-Ywarn-unused-import", "-Ywarn-unused:imports", "-Ywarn-dead-code")
   )
 
-lazy val taglessSettings = paradiseSettings(libs) ++ Seq(
-  libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-tagless-macros" % "0.14.0"
-  )
-)
+lazy val taglessSettings = Seq(
+  libraryDependencies ++=
+    Seq("org.typelevel" %% "cats-tagless-macros" % "0.14.0" cross CrossVersion.for3Use2_13) ++ {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((3, _)) => Seq()
+        // if scala 2.13+ is used, quasiquotes are merged into scala-reflect
+        case Some((2, scalaMajor)) if scalaMajor >= 13 => Seq()
+        // otherwise quasiquotes are provided by macro paradise
+        case _ =>
+          Seq(
+            compilerPlugin("org.scalamacros" %% "paradise" % "2.1.1" cross CrossVersion.full)
+          )
+      }
+    }
+  ) ++ macroAnnotationsSettings
+
 
 lazy val buildSettings = sharedBuildSettings(gh, libs)
 
