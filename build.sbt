@@ -51,13 +51,6 @@ lazy val libs =
     .addScalacPlugin(name = "kind-projector", version = "0.13.2",  org = typeLevelOrg,      crossVersion = CrossVersion.for3Use2_13With("", ".10"))
     .addScalacPlugin(name = "paradise",       version = "2.1.1",   org = "org.scalamacros", crossVersion = CrossVersion.for3Use2_13With("", ".0-M3"))
 
-
-//val vv = libs.moduleID("paradise")
-//val b: Unit = println("-----------------------------")
-//val c: Unit = println(vv)
-//val d: Unit = println("-----------------------------")
-
-
 // format: on
 
 addCommandAlias("validateClient", s"client/IntegrationTest/test")
