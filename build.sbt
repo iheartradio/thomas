@@ -164,8 +164,7 @@ lazy val core = project
     name := "thomas-core",
     rootSettings,
     taglessSettings,
-    libs.dependencies(
-      "cats-core",
+    Seq("cats-core",
       "monocle-macro",
       "monocle-core",
       "mau",
@@ -174,7 +173,7 @@ lazy val core = project
       "log4cats-core",
       "pureconfig-cats-effect",
       "pureconfig-generic"
-    ),
+    ).map(key => libraryDependencies += libs.moduleID(key).value cross CrossVersion.for3Use2_13),
     simulacrumSettings(libs),
     buildInfoKeys ++= Seq(BuildInfoKey(name), BuildInfoKey(version)),
     buildInfoPackage := "com.iheart.thomas"
@@ -184,9 +183,8 @@ lazy val lihua = project.settings(
   name := "thomas-lihua",
   rootSettings,
   taglessSettings,
-  libraryDependencies ++= Seq(
-    libs.moduleID("newtype").value cross CrossVersion.for3Use2_13,
-    libs.moduleID("play-json").value cross CrossVersion.for3Use2_13
+  Seq("newtype", "play-json").map(
+    key => libraryDependencies += libs.moduleID(key).value cross CrossVersion.for3Use2_13
   )
 )
 
