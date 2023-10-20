@@ -184,7 +184,6 @@ lazy val lihua = project.settings(
   name := "thomas-lihua",
   rootSettings,
   taglessSettings,
-  crossScalaVersions := List(scala2, scala3),
   libraryDependencies ++= Seq(
     libs.moduleID("newtype").value cross CrossVersion.for3Use2_13,
     libs.moduleID("play-json").value cross CrossVersion.for3Use2_13
@@ -438,6 +437,7 @@ lazy val commonSettings = addCompilerPlugins(
 ) ++ sharedCommonSettings ++ Seq(
   organization := "com.iheart",
   scalaVersion := scala2,
+  crossScalaVersions := List(scala2, scala3),
   Test / parallelExecution := false,
   releaseCrossBuild := false,
   developers := List(developerKai),
