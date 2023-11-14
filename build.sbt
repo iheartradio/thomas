@@ -13,7 +13,7 @@ val gh = GitHubSettings(
 )
 
 lazy val rootSettings = buildSettings ++ publishSettings ++ commonSettings
-val reactiveMongoVer = "1.0.10"
+val reactiveMongoVer = "1.1.0"
 val typeLevelOrg = "org.typelevel"
 // format: off
 lazy val libs =
@@ -23,7 +23,7 @@ lazy val libs =
     .addJava(name ="commons-math3",         version = "3.6.1",  org ="org.apache.commons")
     .addJVM(name = "decline",               version = "2.2.0",  org = "com.monovore")
     .addJVM(name = "embedded-kafka",        version = "3.2.3",  org = "io.github.embeddedkafka")
-    .addJVM(name = "fs2-kafka",             version = "2.4.0",  org = "com.github.fd4s")
+    .addJVM(name = "fs2-kafka",             version = "3.2.0",  org = "com.github.fd4s")
     .add(   name = "fs2",                   version = "3.3.0")
     .add(   name = "cats-effect",           version = "3.3.13")
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
@@ -35,8 +35,8 @@ lazy val libs =
     .add(   name = "play-json",             version = "2.9.4",  org = "com.typesafe.play")
     .addJVM(name = "play-json-derived-codecs", version = "10.1.0", org = "org.julienrf")
     .addJVM(name = "rainier",               version = "0.3.5",  org ="com.stripe", "rainier-core", "rainier-cats")
-    .addJVM(name = "reactivemongo",         version = reactiveMongoVer, org = "org.reactivemongo", "reactivemongo", "reactivemongo-bson-api", "reactivemongo-iteratees" )
-    .addJVM(name = "reactivemongo-play-json-compat", version = reactiveMongoVer + "-play27", org = "org.reactivemongo")
+    .addJVM(name = "reactivemongo",         version = reactiveMongoVer + "-RC11", org = "org.reactivemongo", "reactivemongo", "reactivemongo-bson-api", "reactivemongo-iteratees" )
+    .addJVM(name = "reactivemongo-play-json-compat", version = reactiveMongoVer + "-play29-RC11", org = "org.reactivemongo")
     .addJVM(name = "scala-java8-compat",    version = "1.0.2",  org = "org.scala-lang.modules")
     .addJVM(name = "scala-collection-compat",    version = "2.8.0",  org = "org.scala-lang.modules")
     .add(   name = "scalacheck-1-14",       version = "3.2.2.0",org = "org.scalatestplus")
