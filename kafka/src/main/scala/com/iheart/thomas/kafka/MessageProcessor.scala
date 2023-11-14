@@ -3,16 +3,16 @@ package kafka
 
 import com.iheart.thomas.FeatureName
 import com.iheart.thomas.analysis.KPIName
-
 import com.iheart.thomas.analysis.ConversionEvent
+import cats.effect.kernel.Resource
 import fs2.Pipe
-import fs2.kafka.RecordDeserializer
+import fs2.kafka.Deserializer
 
 trait MessageProcessor[F[_]] {
   type RawMessage
   type PreprocessedMessage
 
-  implicit def deserializer: RecordDeserializer[F, RawMessage]
+  implicit def deserializer: Resource[F, Deserializer[F, RawMessage]]
   def preprocessor: Pipe[F, RawMessage, PreprocessedMessage]
   def toConversionEvent(
       featureName: FeatureName,
@@ -28,7 +28,7 @@ object MessageProcessor {
           FeatureName,
           KPIName
       ) => F[Pipe[F, Message, (ArmName, ConversionEvent)]]
-    )(implicit ev: RecordDeserializer[F, Message]
+    )(implicit ev: Resource[F, Deserializer[F, Message]]
     ): MessageProcessor[F] {
     type RawMessage = Message;
     type PreprocessedMessage = Message
@@ -37,7 +37,7 @@ object MessageProcessor {
 
       type RawMessage = Message
       type PreprocessedMessage = Message
-      implicit def deserializer: RecordDeserializer[F, Message] = ev
+      implicit def deserializer: Resource[F, Deserializer[F, RawMessage]] = ev
       def preprocessor: Pipe[F, Message, Message] = identity
 
       def toConversionEvent(
