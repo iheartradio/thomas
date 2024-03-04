@@ -233,7 +233,7 @@ package model {
     *   a list of operators who can change the test
     * @param assignmentTruthAt
     *   if set to Realtime, the bandits will query the latest assignment, if set to
-    *   Message, the bandits will use the treatment-groups.$feature field from kafka message
+    *   Message, the bandits will use the treatment-groups.feature field from kafka message
     * @param lastUpdated
     *   the last time the test was updated
     */
