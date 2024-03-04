@@ -218,6 +218,26 @@ package model {
       start <= hashValue && hashValue <= end
   }
 
+  /** @param name
+    * @param description
+    * @param overrides
+    *   a map of user id to group name, used for overriding group assignment
+    * @param overrideEligibility
+    *   if true, the test will ignore eligibility control and use the overrides
+    *   directly
+    * @param lockedAt
+    *   if set, the test is locked and cannot be changed
+    * @param developers
+    *   a list of developers who can change the test
+    * @param operators
+    *   a list of operators who can change the test
+    * @param assignmentTruthAt
+    *   if set to Realtime, the bandits will query the latest assignment, if set to
+    *   Message, the bandits will use the treatment-groups.$feature field from kafka message
+    * @param lastUpdated
+    *   the last time the test was updated
+    */
+
   case class Feature(
       name: FeatureName,
       description: Option[String] = None,
