@@ -6,7 +6,7 @@ addSbtPlugin(
   "com.kailuowang" %% "sbt-catalysts" % "1.3.3"
 )
 
-addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.11.0")
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.12.0")
 
 addSbtPlugin("com.typesafe.play" % "sbt-twirl" % "1.5.2")
 
