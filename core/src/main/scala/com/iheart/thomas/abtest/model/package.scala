@@ -103,7 +103,7 @@ package model {
           groups = groups.map(g => g.copy(meta = g.meta))
         )
 
-    def shortNote: Option[String] = note.map(_.split("\n").head)
+    def shortNote: String = note.map(_.split("\n").head).getOrElse("")
   }
 
   /** Data used to create an A/B tests

@@ -20,7 +20,6 @@ canRollback: Boolean
 
 @topNav("A/B Test for feature " + test.data.feature, "A/B Tests") {
 
-
 <form action="#" method="post">
     <div class="m-3">
         <span class="h5">A/B Test <span class="text-success">@test.data.name</span> for </span>
@@ -100,12 +99,12 @@ canRollback: Boolean
                 <span class="h5">Description</span>
             </div>
             <div class="card-body">
-                <form action="@test._id/note" method="post">
-                    <button type="submit" class="btn btn-success me-2" role="button" id="noteSaveBtn">Save</button>
+                <form action="@test._id/note" method="post" id="noteForm">
+                    <button disabled type="submit" class="btn btn-success me-2" role="button" id="noteSaveBtn">Save</button>
                     <button type="button" class="btn btn-primary" role="button" id="noteEditBtn">Edit</button>
                     <div class="form-group mt-4">
                         <label for="noteArea">Note</label>
-                        <textarea id="noteArea" name="note" class="form-control" rows="5" placeholder="Why this test? How the test goes?">@test.data.note.getOrElse("")</textarea>
+                        <textarea readonly id="noteArea" name="note" class="form-control" rows="5" placeholder="Why this test? How the test goes?">@test.data.note.getOrElse("")</textarea>
                     </div>
                 </form>
             </div>
@@ -153,27 +152,18 @@ canRollback: Boolean
 </div>
 }
 
-@*<script>*@
-@*    document.addEventListener("DOMContentLoaded", function() {*@
-@*        var textarea = document.getElementById("noteArea");*@
-@*        var editBtn = document.getElementById("noteEditBtn");*@
-@*        var saveBtn = document.getElementById("noteSaveBtn");*@
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var textarea = document.getElementById("noteArea");
+        var editBtn = document.getElementById("noteEditBtn");
+        var saveBtn = document.getElementById("noteSaveBtn");
+        var noteForm = document.getElementById("noteForm");
 
-@*        editBtn.addEventListener("click", function() {*@
-@*            textarea.disabled = false;*@
-@*            textarea.readOnly = false;*@
-@*            textarea.focus();*@
-@*            editBtn.disabled = true;*@
-@*            saveBtn.disabled = false;*@
-@*        });*@
-
-@*        saveBtn.addEventListener("click", function(event) {*@
-@*            // event.preventDefault();*@
-@*            textarea.disabled = true;*@
-@*            editBtn.disabled = false;*@
-@*            saveBtn.disabled = true;*@
-@*            // Perform any additional actions for saving the changes*@
-@*            console.log("Changes saved!");*@
-@*        });*@
-@*    });*@
-@*</script>*@
+        editBtn.addEventListener("click", function() {
+            textarea.readOnly = false;
+            textarea.focus();
+            editBtn.disabled = true;
+            saveBtn.disabled = false;
+        });
+    });
+</script>
