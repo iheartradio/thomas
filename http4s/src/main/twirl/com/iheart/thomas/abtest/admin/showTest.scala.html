@@ -20,7 +20,6 @@ canRollback: Boolean
 
 @topNav("A/B Test for feature " + test.data.feature, "A/B Tests") {
 
-
 <form action="#" method="post">
     <div class="m-3">
         <span class="h5">A/B Test <span class="text-success">@test.data.name</span> for </span>
@@ -93,8 +92,27 @@ canRollback: Boolean
     }
 </div>
 
+<div class="row mt-4 mb-4">
+    <div class="col-md">
+        <div class="card mt-4">
+            <div class="card-header">
+                <span class="h5">Description</span>
+            </div>
+            <div class="card-body">
+                <form action="@test._id/note" method="post" id="noteForm">
+                    <button disabled type="submit" class="btn btn-success me-2" role="button" id="noteSaveBtn">Save</button>
+                    <button type="button" class="btn btn-primary" role="button" id="noteEditBtn">Edit</button>
+                    <div class="form-group mt-4">
+                        <label for="noteArea">Note</label>
+                        <textarea readonly id="noteArea" name="note" class="form-control" rows="5" placeholder="Purposes and results.">@test.data.note.getOrElse("")</textarea>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
-<div class="row mt-6">
+<div class="row mt-4 mb-4">
     <div class="col-6">
         <div class="card">
             <div class="card-header">
@@ -132,8 +150,20 @@ canRollback: Boolean
         </div>
     </div>
 </div>
-
-
 }
 
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var textarea = document.getElementById("noteArea");
+        var editBtn = document.getElementById("noteEditBtn");
+        var saveBtn = document.getElementById("noteSaveBtn");
+        var noteForm = document.getElementById("noteForm");
 
+        editBtn.addEventListener("click", function() {
+            textarea.readOnly = false;
+            textarea.focus();
+            editBtn.disabled = true;
+            saveBtn.disabled = false;
+        });
+    });
+</script>

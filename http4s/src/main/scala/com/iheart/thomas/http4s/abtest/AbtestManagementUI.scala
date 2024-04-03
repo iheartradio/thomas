@@ -359,6 +359,29 @@ class AbtestManagementUI[F[_]](
             Ok(redirect(reverseRoutes.tests, s"Successfully $message."))
           }
 
+      case se @ POST -> Root / "tests" / testId / "note" asAuthed u =>
+        get(testId).flatMap { test =>
+          se.request
+            .as[NoteForm]
+            .redeemWith(
+              e => BadRequest(errorMsg(displayError(e))),
+              note =>
+                  alg
+                    .updateTestNote(
+                      testId.coerce[EntityId],
+                      note.note.get
+                    )
+                    .flatMap(redirectToTest)
+                    .handleErrorWith(_ =>
+                      u.canManage(test)
+                        .flatMap(_ =>
+                          BadRequest(
+                          )
+                        )
+                    )
+            )
+        }
+
       // Add new test to a feature
       case se @ POST -> Root / "features" / feature / "tests" asAuthed u =>
         se.request
@@ -551,7 +574,8 @@ object AbtestManagementUI {
         alternativeIdName: Option[MetaFieldName] = None,
         userMetaCriteria: UserMetaCriteria = None,
         reshuffle: Boolean = false,
-        segmentRanges: List[GroupRange] = Nil) {
+        segmentRanges: List[GroupRange] = Nil,
+        note: Option[String] = None) {
       def toAbtestSpec[F[_]: Functor: Clock](
           u: User,
           feature: FeatureName
@@ -568,12 +592,15 @@ object AbtestManagementUI {
             alternativeIdName = alternativeIdName,
             userMetaCriteria = userMetaCriteria,
             reshuffle = reshuffle,
-            segmentRanges = segmentRanges
+            segmentRanges = segmentRanges,
+            note = note
           )
         }
 
       }
     }
+
+    case class NoteForm(note: Option[String] = Some(""))
 
     implicit val userGroupQueryFormDecoder: FormDataDecoder[UserGroupQuery] = {
       implicit val mapQPD = mapQueryParamDecoder
@@ -595,8 +622,14 @@ object AbtestManagementUI {
         fieldOptional[MetaFieldName]("alternativeIdName"),
         fieldOptional[UserMetaCriterion.And]("userMetaCriteria"),
         fieldEither[Boolean]("reshuffle").default(false),
-        list[GroupRange]("segmentRanges")
+        list[GroupRange]("segmentRanges"),
+        fieldOptional[String]("note")
       ).mapN(SpecForm.apply).sanitized
+
+    implicit val noteFormDecoder: FormDataDecoder[NoteForm] =
+      (
+        fieldOptional[String]("note")
+      ).map(NoteForm.apply).sanitized
 
     implicit val FeatureFormDecoder: FormDataDecoder[Feature] = {
       implicit val mapQPD = mapQueryParamDecoder
