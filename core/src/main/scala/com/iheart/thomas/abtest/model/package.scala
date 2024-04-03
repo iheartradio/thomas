@@ -55,7 +55,8 @@ package model {
       userMetaCriteria: UserMetaCriteria = None,
       salt: Option[String] = None,
       segmentRanges: List[GroupRange] = Nil,
-      specialization: Option[Abtest.Specialization] = None) {
+      specialization: Option[Abtest.Specialization] = None,
+      note: Option[String] = None){
 
     val hasEligibilityControl: Boolean =
       requiredTags.nonEmpty || userMetaCriteria.nonEmpty
@@ -101,6 +102,8 @@ package model {
           end = end.map(_.toOffsetDateTimeSystemDefault),
           groups = groups.map(g => g.copy(meta = g.meta))
         )
+
+    def shortNote: Option[String] = note.map(_.split("\n").head)
   }
 
   /** Data used to create an A/B tests
@@ -160,7 +163,8 @@ package model {
       userMetaCriteria: UserMetaCriteria = None,
       reshuffle: Boolean = false,
       segmentRanges: List[GroupRange] = Nil,
-      specialization: Option[Abtest.Specialization] = None) {
+      specialization: Option[Abtest.Specialization] = None,
+      note: Option[String] = None) {
 
     val startI = start.toInstant
     val endI = end.map(_.toInstant)

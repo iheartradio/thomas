@@ -53,6 +53,11 @@ trait AbtestAlg[F[_]] extends TestsDataProvider[F] with FeatureRetriever[F] {
       spec: AbtestSpec
     ): F[Entity[Abtest]]
 
+  def updateTestNote(
+      testId: TestId,
+      note: String
+  ): F[Entity[Abtest]]
+
   /** @param feature
     * @return
     *   tests for this feature in chronological descending order
@@ -293,6 +298,13 @@ final class DefaultAbtestAlg[F[_]](
       )
 
     } yield r
+
+  override def updateTestNote(testId: TestId, note: String): F[Entity[Abtest]] = {
+    for {
+      test <- getTest(testId)
+      r <- abTestDao.update(test.copy(data = test.data.copy(note = Some(note))))
+    } yield r
+  }
 
   def continue(testSpec: AbtestSpec): F[Entity[Abtest]] =
     addTestWithLock(testSpec) {
