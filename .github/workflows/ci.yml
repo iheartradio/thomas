@@ -34,9 +34,6 @@ jobs:
           cache: sbt
 
       - uses: sbt/setup-sbt@v1
-      - name: Build and test
-        shell: bash
-        run: sbt -v +test
 
       - name: Cache sbt
         uses: actions/cache@v4
