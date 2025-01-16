@@ -31,7 +31,6 @@ jobs:
         with:
           java-version: '11'
           distribution: 'adopt'
-          cache: 'sbt'
 
       - name: Cache sbt
         uses: actions/cache@v2
