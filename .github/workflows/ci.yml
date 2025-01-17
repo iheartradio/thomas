@@ -36,12 +36,12 @@ jobs:
 
       - name: LS
         run: |
-          ls ~/.sbt
-          ls ~/.ivy2/cache
-          ls ~/.coursier/cache/v1
-          ls ~/.cache/coursier/v1
-          ls ~/AppData/Local/Coursier/Cache/v1
-          ls ~/Library/Caches/Coursier/v1
+          ls ~/.sbt || true
+          ls ~/.ivy2/cache || true
+          ls ~/.coursier/cache/v1 || true
+          ls ~/.cache/coursier/v1 || true
+          ls ~/AppData/Local/Coursier/Cache/v1 || true
+          ls ~/Library/Caches/Coursier/v1 || true
 
       - name: Cache sbt
         uses: actions/cache@v4
