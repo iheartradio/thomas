@@ -39,11 +39,19 @@ jobs:
 
       - name: LS
         run: |
+          ll -h ~/ || true
           ls ~/.sbt || true
-          ls ~/.ivy2/cache || true
-          ls ~/.coursier/cache/v1 || true
-          ls ~/.cache/coursier/v1 || true
-          ls ~/AppData/Local/Coursier/Cache/v1 || true
+          ls ~/.ivy2/ || true
+          ls ~/.coursier/ || true
+          ls ~/.coursier/cache/ || true
+          ls ~/.cache/ || true
+          ls ~/.cache/coursier/ || true
+          ls ~/AppData/ || true
+          ls ~/AppData/Local/ || true
+          ls ~/AppData/Local/Coursier/ || true
+          ls ~/AppData/Local/Coursier/Cache/ || true
+          ls ~/Library/Caches/ || true
+          ls ~/Library/Caches/Coursier/ || true
           ls ~/Library/Caches/Coursier/v1 || true
 
       - name: Cache sbt
