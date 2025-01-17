@@ -34,6 +34,9 @@ jobs:
       - name: Set up sbt
         uses: sbt/setup-sbt@v1
 
+      - name: Validation
+        run: sbt validate
+
       - name: LS
         run: |
           ls ~/.sbt || true
@@ -54,6 +57,3 @@ jobs:
             ~/AppData/Local/Coursier/Cache/v1
             ~/Library/Caches/Coursier/v1
           key: ${{ runner.os }}-sbt-cache-v4-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
-
-      - name: Validation
-        run: sbt validate
