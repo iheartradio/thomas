@@ -377,7 +377,7 @@ lazy val stress = project
   .settings(rootSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "io.gatling.highcharts" % "gatling-charts-highcharts" % "2.3.1" % Test,
+      "io.gatling.highcharts" % "gatling-charts-highcharts" % "3.13.4" % Test,
       "io.gatling" % "gatling-test-framework" % "2.3.1" % Test
     )
   )
