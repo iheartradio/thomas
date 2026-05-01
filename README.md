@@ -10,6 +10,20 @@
 
 ### Go to [the website](https://iheartradio.github.io/thomas/) for documentation.
 
+## API Documentation (Swagger UI)
+
+When the server is running, interactive API documentation is available at:
+
+```
+http://localhost:8080/swagger-ui
+```
+
+The machine-readable OpenAPI 3.0 spec is served at:
+
+```
+http://localhost:8080/swagger/openapi.yaml
+```
+
 
 ## Copyright and License
 
