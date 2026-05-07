@@ -463,6 +463,7 @@ import ReleaseTransformations._
 
 lazy val publishSettings =
   sharedPublishSettings(gh) ++ credentialSettings ++ sharedReleaseProcess ++ Seq(
+    sonatypeCredentialHost := "central.sonatype.com",
     publishTo := sonatypePublishToBundle.value,
     releaseProcess := Seq[ReleaseStep](
       checkSnapshotDependencies,
