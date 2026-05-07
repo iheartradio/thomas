@@ -1,0 +1,675 @@
+openapi: "3.0.3"
+info:
+  title: Thomas AbtestService API
+  description: >
+    Read-only HTTP API for A/B test assignment and introspection.
+    All `/internal/*` routes are VPC-internal only.
+  version: "1.0.0"
+
+tags:
+  - name: Assignments
+    description: Resolve user group assignments
+  - name: Health
+    description: Service health
+  - name: Internal Read API
+    description: Read-only introspection of tests and features
+
+paths:
+  /users/groups/query:
+    post:
+      tags: [Assignments]
+      summary: Get group assignments for a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserGroupQuery'
+            example:
+              userId: "user-123"
+              features: ["my_feature", "another_feature"]
+              tags: ["ios"]
+              meta: {"appVersion": "5.0.0"}
+              eligibilityControlFilter: "All"
+      responses:
+        "200":
+          description: Group assignments resolved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGroupQueryResult'
+              example:
+                at: "2024-01-15T12:00:00Z"
+                groups:
+                  my_feature: "treatment"
+                  another_feature: "control"
+                metas:
+                  my_feature: {"color": "blue"}
+        "400":
+          description: Invalid Request Body (plain text)
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: "Invalid Request Body"
+
+  /internal/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  version:
+                    type: string
+                    example: "0.7.0"
+
+  /internal/tests/history/{at}:
+    get:
+      tags: [Internal Read API]
+      summary: Get all tests that were active at a given epoch second
+      parameters:
+        - name: at
+          in: path
+          required: true
+          description: Epoch second timestamp
+          schema:
+            type: integer
+            format: int64
+            example: 1705320000
+      responses:
+        "200":
+          description: List of tests active at the given time
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntityAbtest'
+
+  /internal/tests/{endAfter}:
+    get:
+      tags: [Internal Read API]
+      summary: Get all tests ending after a given epoch second
+      description: >
+        The path parameter is treated as an epoch-second `endAfter` value.
+        Note: this path pattern also matches numeric test IDs — prefer
+        `/internal/tests/{testId}` (string) for ID lookups and
+        `/internal/tests?endAfter=` for time-based queries to avoid ambiguity.
+      parameters:
+        - name: endAfter
+          in: path
+          required: true
+          description: Epoch second — return tests that end after this time
+          schema:
+            type: integer
+            format: int64
+            example: 1705320000
+      responses:
+        "200":
+          description: List of matching tests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntityAbtest'
+
+  /internal/tests:
+    get:
+      tags: [Internal Read API]
+      summary: Get tests, optionally filtered by time
+      parameters:
+        - name: at
+          in: query
+          required: false
+          description: Epoch second — return tests active at this time
+          schema:
+            type: integer
+            format: int64
+        - name: endAfter
+          in: query
+          required: false
+          description: >
+            Epoch second — return tests ending after this time.
+            Takes precedence over `at` when both are provided.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: List of matching tests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntityAbtest'
+
+  /internal/testsWithFeatures:
+    get:
+      tags: [Internal Read API]
+      summary: Get cached tests with feature data
+      description: >
+        Returns cached test assignments. The `at` parameter is passed by
+        `AbtestClient` as **epoch milliseconds**, but the underlying
+        `getAllTestsCachedEpoch` implementation currently interprets the value
+        as **epoch seconds**. This is a known inconsistency — document and use
+        accordingly. Prefer `/internal/tests/cache?at=` which has the same
+        behavior but is more explicit.
+      parameters:
+        - name: at
+          in: query
+          required: false
+          description: >
+            Timestamp value. Sent as epoch milliseconds by AbtestClient, but
+            interpreted as epoch seconds internally. See description for details.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Cached tests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntityAbtest'
+
+  /internal/testsData:
+    get:
+      tags: [Internal Read API]
+      summary: Get test assignment data for a time window
+      parameters:
+        - name: atEpochMilli
+          in: query
+          required: true
+          description: Start of the time window as epoch milliseconds
+          schema:
+            type: integer
+            format: int64
+            example: 1705320000000
+        - name: durationMillisecond
+          in: query
+          required: false
+          description: Duration of the time window in milliseconds
+          schema:
+            type: integer
+            format: int64
+            example: 86400000
+      responses:
+        "200":
+          description: Tests data for the requested window
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestsData'
+
+  /internal/tests/{testId}:
+    get:
+      tags: [Internal Read API]
+      summary: Get a single test by ID
+      description: >
+        Looks up a test by its string MongoDB entity ID. Note that numeric-only
+        IDs are ambiguous with the `/internal/tests/{endAfter}` path — use a
+        full hex ObjectId string to avoid routing ambiguity.
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          description: MongoDB entity ID of the test
+          schema:
+            type: string
+            example: "64a1f2e3b4c5d6e7f8a9b0c1"
+      responses:
+        "200":
+          description: The requested test
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityAbtest'
+        "404":
+          description: Test not found
+
+  /internal/tests/cache:
+    get:
+      tags: [Internal Read API]
+      summary: Get cached tests at a given time
+      description: >
+        Same behavior as `/internal/testsWithFeatures?at=`. The `at` parameter
+        is treated as epoch seconds here.
+      parameters:
+        - name: at
+          in: query
+          required: false
+          description: Epoch seconds timestamp
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Cached tests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntityAbtest'
+
+  /internal/features:
+    get:
+      tags: [Internal Read API]
+      summary: Get all feature names
+      responses:
+        "200":
+          description: List of feature names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              example: ["my_feature", "another_feature"]
+
+  /internal/features/{feature}/tests:
+    get:
+      tags: [Internal Read API]
+      summary: Get all tests for a feature
+      parameters:
+        - name: feature
+          in: path
+          required: true
+          description: Feature name
+          schema:
+            type: string
+            example: "my_feature"
+      responses:
+        "200":
+          description: List of tests for the feature
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntityAbtest'
+
+  /internal/features/{feature}/overrides:
+    get:
+      tags: [Internal Read API]
+      summary: Get the Feature object including its user overrides
+      description: >
+        Returns the complete `Feature` object for the given feature name,
+        including the `overrides` map (userId → groupName).
+      parameters:
+        - name: feature
+          in: path
+          required: true
+          description: Feature name
+          schema:
+            type: string
+            example: "my_feature"
+      responses:
+        "200":
+          description: Feature object with overrides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityFeature'
+        "404":
+          description: Feature not found
+
+components:
+  schemas:
+
+    ErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+      example:
+        errors: ["tests must end after start."]
+
+    EntityId:
+      type: object
+      description: MongoDB ObjectId wrapper as serialized by lihua
+      properties:
+        $oid:
+          type: string
+          example: "64a1f2e3b4c5d6e7f8a9b0c1"
+      required: ["$oid"]
+
+    UserGroupQuery:
+      type: object
+      properties:
+        userId:
+          type: string
+          nullable: true
+          description: The user ID to assign. Null for anonymous.
+          example: "user-123"
+        at:
+          type: string
+          format: date-time
+          nullable: true
+          description: The point in time to evaluate assignments. Defaults to now.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags associated with the request (e.g. platform, device type)
+          example: ["ios"]
+        meta:
+          type: object
+          additionalProperties:
+            type: string
+          description: User metadata used for eligibility criteria evaluation
+          example: {"appVersion": "5.0.0", "country": "US"}
+        features:
+          type: array
+          items:
+            type: string
+          description: Limit assignment lookup to these features. Empty means all features.
+          example: ["my_feature"]
+        eligibilityControlFilter:
+          type: string
+          enum: ["Off", "On", "All"]
+          default: "All"
+          description: >
+            Filter tests by eligibility control presence.
+            `Off` = only tests with no eligibility control,
+            `On` = only tests with eligibility control,
+            `All` = all tests.
+
+    UserGroupQueryResult:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+          description: The timestamp at which assignments were resolved
+        groups:
+          type: object
+          additionalProperties:
+            type: string
+          description: Map of featureName → groupName
+          example: {"my_feature": "treatment"}
+        metas:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties: true
+          description: Map of featureName → group metadata object
+          example: {"my_feature": {"color": "blue"}}
+
+    Group:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "control"
+        size:
+          type: number
+          description: Fraction of traffic allocated to this group (0.0–1.0)
+          example: 0.5
+        meta:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Arbitrary metadata attached to this group
+        description:
+          type: string
+          nullable: true
+
+    GroupRange:
+      type: object
+      description: A numeric range [start, end] within [0, 1] used for hash-based assignment
+      properties:
+        start:
+          type: number
+          example: 0.0
+        end:
+          type: number
+          example: 0.5
+
+    UserMetaCriteria:
+      description: >
+        An eligibility criterion tree expressed as a JSON object DSL.
+        The top level is always an implicit `%and`. Supported operators:
+
+        - `{ "fieldName": "exactValue" }` — exact string match
+        - `{ "fieldName": { "%regex": "pattern" } }` — regex match
+        - `{ "fieldName": { "%gt": 1.5 } }` — numeric greater-than (also `%ge`, `%lt`, `%le`)
+        - `{ "fieldName": { "%in": ["a", "b"] } }` — set membership
+        - `{ "fieldName": { "%versionStart": "5.0", "%versionEnd": "6.0" } }` — version range
+        - `{ "%not": { ... } }` — negation
+        - `{ "%or": [ { ... }, { ... } ] }` — disjunction
+        - `{ "%and": [ { ... }, { ... } ] }` — explicit conjunction
+      type: object
+      additionalProperties: true
+      example:
+        country: "US"
+        appVersion:
+          "%versionStart": "5.0"
+          "%versionEnd": "6.0"
+
+    Abtest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "my_experiment"
+        feature:
+          type: string
+          example: "my_feature"
+        author:
+          type: string
+          example: "engineer@example.com"
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+          nullable: true
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/Group'
+        ranges:
+          type: object
+          description: Map of groupName → list of GroupRange
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/GroupRange'
+        requiredTags:
+          type: array
+          items:
+            type: string
+        alternativeIdName:
+          type: string
+          nullable: true
+          description: If set, use this meta field as the user ID for hashing instead of userId
+        userMetaCriteria:
+          $ref: '#/components/schemas/UserMetaCriteria'
+          nullable: true
+        salt:
+          type: string
+          nullable: true
+        segmentRanges:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupRange'
+        specialization:
+          type: string
+          nullable: true
+          enum: ["MultiArmBandit"]
+        note:
+          type: string
+          nullable: true
+
+    EntityAbtest:
+      type: object
+      description: A persisted Abtest with its MongoDB entity ID
+      properties:
+        _id:
+          $ref: '#/components/schemas/EntityId'
+        name:
+          type: string
+        feature:
+          type: string
+        author:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+          nullable: true
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/Group'
+        ranges:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/GroupRange'
+        requiredTags:
+          type: array
+          items:
+            type: string
+        alternativeIdName:
+          type: string
+          nullable: true
+        userMetaCriteria:
+          $ref: '#/components/schemas/UserMetaCriteria'
+          nullable: true
+        salt:
+          type: string
+          nullable: true
+        segmentRanges:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupRange'
+        specialization:
+          type: string
+          nullable: true
+          enum: ["MultiArmBandit"]
+        note:
+          type: string
+          nullable: true
+
+    Feature:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "my_feature"
+        description:
+          type: string
+          nullable: true
+        overrides:
+          type: object
+          additionalProperties:
+            type: string
+          description: Map of userId → groupName for manual overrides
+          example: {"user-123": "treatment"}
+        overrideEligibility:
+          type: boolean
+          default: false
+        lockedAt:
+          type: string
+          format: date-time
+          nullable: true
+        developers:
+          type: array
+          items:
+            type: string
+        operators:
+          type: array
+          items:
+            type: string
+        assignmentTruthAt:
+          type: string
+          enum: ["Message", "Realtime"]
+          default: "Message"
+        lastUpdated:
+          type: string
+          format: date-time
+          nullable: true
+
+    EntityFeature:
+      type: object
+      description: A persisted Feature with its MongoDB entity ID
+      properties:
+        _id:
+          $ref: '#/components/schemas/EntityId'
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        overrides:
+          type: object
+          additionalProperties:
+            type: string
+        overrideEligibility:
+          type: boolean
+        lockedAt:
+          type: string
+          format: date-time
+          nullable: true
+        developers:
+          type: array
+          items:
+            type: string
+        operators:
+          type: array
+          items:
+            type: string
+        assignmentTruthAt:
+          type: string
+          enum: ["Message", "Realtime"]
+        lastUpdated:
+          type: string
+          format: date-time
+          nullable: true
+
+    TestsData:
+      type: object
+      description: >
+        Test assignment data for a time window. The `data` field contains
+        Play JSON tuple-serialized pairs. `duration` is written as a string
+        (e.g. "1 day") but may also be read as numeric nanoseconds.
+      properties:
+        at:
+          type: string
+          format: date-time
+        duration:
+          oneOf:
+            - type: string
+              example: "1 day"
+            - type: integer
+              format: int64
+              example: 86400000000000
+          nullable: true
+        data:
+          type: array
+          description: Array of [timestamp, EntityAbtest] two-element tuples as serialized by Play JSON
+          items:
+            type: array
+            minItems: 2
+            maxItems: 2
