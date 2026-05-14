@@ -1,5 +1,3 @@
-version: '2'
-
 services:
   kafka:
     image: apache/kafka:4.2.0

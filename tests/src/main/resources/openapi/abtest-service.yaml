@@ -6,6 +6,9 @@ info:
     All `/internal/*` routes are VPC-internal only.
   version: "1.0.0"
 
+servers:
+  - url: ..
+
 tags:
   - name: Assignments
     description: Resolve user group assignments

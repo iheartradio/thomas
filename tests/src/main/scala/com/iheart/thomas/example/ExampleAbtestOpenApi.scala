@@ -1,13 +1,13 @@
 package com.iheart.thomas
-package http4s.abtest
+package example
 
 import cats.effect.Sync
 import cats.syntax.applicative._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.{HttpRoutes, MediaType, Response, Status}
 import org.http4s.headers.`Content-Type`
+import org.http4s.{HttpRoutes, MediaType, Response, Status}
 
-object AbtestOpenApi {
+object ExampleAbtestOpenApi {
 
   private val swaggerUiVersion = "5.17.14"
 
@@ -26,7 +26,7 @@ object AbtestOpenApi {
        |  <script>
        |    window.onload = function() {
        |      SwaggerUIBundle({
-       |        url: "/internal/openapi.yaml",
+       |        url: "openapi.yaml",
        |        dom_id: '#swagger-ui',
        |        presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
        |        layout: "BaseLayout",
@@ -39,7 +39,7 @@ object AbtestOpenApi {
        |""".stripMargin
 
   private lazy val yamlBytes: Array[Byte] = {
-    val stream = AbtestOpenApi.getClass.getClassLoader
+    val stream = ExampleAbtestOpenApi.getClass.getClassLoader
       .getResourceAsStream("openapi/abtest-service.yaml")
     if (stream == null)
       throw new IllegalStateException("openapi/abtest-service.yaml not found on classpath")

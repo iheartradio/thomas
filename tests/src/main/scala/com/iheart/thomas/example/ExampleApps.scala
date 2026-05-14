@@ -2,10 +2,12 @@ package com.iheart.thomas
 package example
 
 import cats.effect._
+import cats.implicits._
 import com.iheart.thomas.http4s.AdminUI
 import com.iheart.thomas.http4s.abtest.AbtestService
 import com.iheart.thomas.tracking.EventLogger
 import org.http4s.blaze.server.BlazeServerBuilder
+import org.http4s.server.Router
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import testkit.{LocalDynamo, MockQueryAccumulativeKPIAlg}
 
@@ -16,9 +18,12 @@ object ExampleAbtestServerApp extends IOApp {
 
   def run(args: List[String]): IO[ExitCode] =
     AbtestService.fromMongo[IO]().use { s =>
+      val routes = s.public <+> Router(
+        "/internal/" -> (s.internal <+> ExampleAbtestOpenApi.routes[IO])
+      )
       BlazeServerBuilder[IO]
         .bindHttp(8080, "0.0.0.0")
-        .withHttpApp(s.routes)
+        .withHttpApp(routes.orNotFound)
         .serve
         .compile
         .drain
