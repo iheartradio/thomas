@@ -1,0 +1,597 @@
+openapi: "3.0.3"
+info:
+  title: Thomas A/B Testing API
+  description: |
+    REST API for the Thomas A/B testing service.
+
+    **Public endpoints** are available without authentication.
+
+    **Internal / management endpoints** under `/internal/` require authentication
+    (role: `testManager` or higher).
+  version: "1.0"
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: /
+    description: Current server
+
+tags:
+  - name: users
+    description: User group assignment
+  - name: tests
+    description: A/B test read operations
+  - name: features
+    description: Feature read operations
+  - name: internal
+    description: Management endpoints (auth required)
+
+paths:
+  /users/groups/query:
+    post:
+      tags: [users]
+      summary: Get group assignments for a user
+      description: |
+        Returns the A/B test group assignments (and optional metadata) for a
+        given user / set of features at an optional point in time.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserGroupQuery'
+      responses:
+        "200":
+          description: Group assignments for the user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGroupQueryResult'
+        "400":
+          description: Invalid request body
+
+  /health:
+    get:
+      tags: [tests]
+      summary: Health check
+      description: Returns the service health status and current version.
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  version:
+                    type: string
+                    example: "0.7.0"
+
+  /tests/history/{at}:
+    get:
+      tags: [tests]
+      summary: Get all tests as of a given epoch-second timestamp
+      parameters:
+        - name: at
+          in: path
+          required: true
+          description: Unix epoch seconds
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: List of A/B tests active at the given time
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntityAbtest'
+
+  /tests/{endAfter}:
+    get:
+      tags: [tests]
+      summary: Get all tests ending after a given epoch
+      parameters:
+        - name: endAfter
+          in: path
+          required: true
+          description: Unix epoch seconds; only tests whose end is after this value are returned
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: List of matching A/B tests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntityAbtest'
+
+  /tests:
+    get:
+      tags: [tests]
+      summary: Get all tests
+      description: Returns all tests, with optional epoch-millisecond time filter and/or `endAfter` filter.
+      parameters:
+        - name: at
+          in: query
+          required: false
+          description: Point-in-time filter (epoch milliseconds)
+          schema:
+            type: integer
+            format: int64
+        - name: endAfter
+          in: query
+          required: false
+          description: Only return tests ending after this epoch (milliseconds)
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: List of A/B tests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntityAbtest'
+
+  /testsWithFeatures:
+    get:
+      tags: [tests]
+      summary: Get cached tests with features
+      parameters:
+        - name: at
+          in: query
+          required: false
+          description: Point-in-time filter (epoch milliseconds)
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Cached tests with associated feature data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntityAbtest'
+
+  /testsData:
+    get:
+      tags: [tests]
+      summary: Get tests data for a time window
+      parameters:
+        - name: atEpochMilli
+          in: query
+          required: true
+          description: Start of the time window (epoch milliseconds)
+          schema:
+            type: integer
+            format: int64
+        - name: durationMillisecond
+          in: query
+          required: false
+          description: Duration of the window in milliseconds
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Tests data for the given window
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /tests/{testId}:
+    get:
+      tags: [tests]
+      summary: Get a single test by ID
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          description: MongoDB ObjectId of the test
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The requested A/B test
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityAbtest'
+        "404":
+          description: Test not found
+
+  /tests/cache:
+    get:
+      tags: [tests]
+      summary: Get cached tests
+      parameters:
+        - name: at
+          in: query
+          required: false
+          description: Point-in-time filter (epoch milliseconds)
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Cached A/B tests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntityAbtest'
+
+  /features:
+    get:
+      tags: [features]
+      summary: Get all feature names
+      responses:
+        "200":
+          description: List of feature names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /features/{feature}/tests:
+    get:
+      tags: [features]
+      summary: Get all tests for a feature
+      parameters:
+        - name: feature
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tests belonging to the feature
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntityAbtest'
+
+  /features/{feature}/overrides:
+    get:
+      tags: [features]
+      summary: Get overrides for a feature
+      parameters:
+        - name: feature
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Override mappings (userId → groupName)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+
+  /internal/tests:
+    post:
+      tags: [internal]
+      summary: Create a new A/B test
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: auto
+          in: query
+          required: false
+          description: When `true`, automatically schedule the test after any conflicting tests
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbtestSpec'
+      responses:
+        "200":
+          description: Newly created test entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityAbtest'
+        "400":
+          description: Validation error
+        "409":
+          description: Conflicting test exists
+
+    put:
+      tags: [internal]
+      summary: Continue / update an existing A/B test
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbtestSpec'
+      responses:
+        "200":
+          description: Updated test entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityAbtest'
+        "400":
+          description: Validation error
+
+  /internal/tests/auto:
+    post:
+      tags: [internal]
+      summary: Create a new A/B test with auto-scheduling enabled
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbtestSpec'
+      responses:
+        "200":
+          description: Newly created test entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityAbtest'
+        "400":
+          description: Validation error
+
+  /internal/tests/{testId}:
+    delete:
+      tags: [internal]
+      summary: Terminate a test by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The terminated test entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityAbtest'
+        "404":
+          description: Test not found
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    UserGroupQuery:
+      type: object
+      description: Query payload for resolving user group assignments
+      properties:
+        userId:
+          type: string
+          nullable: true
+          description: Unique user identifier; null for anonymous users
+        at:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO-8601 datetime at which to evaluate the test; defaults to now
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags associated with the user request
+        meta:
+          type: object
+          additionalProperties:
+            type: string
+          description: Arbitrary metadata key/value pairs for eligibility evaluation
+        features:
+          type: array
+          items:
+            type: string
+          description: Restrict the query to these feature names; empty means all features
+        eligibilityControlFilter:
+          type: string
+          enum: [All, On, Off]
+          description: Filter by override eligibility control setting
+
+    UserGroupQueryResult:
+      type: object
+      description: The resolved group assignments for a user
+      properties:
+        at:
+          type: integer
+          format: int64
+          description: Epoch milliseconds at which the groups were resolved
+        groups:
+          type: object
+          additionalProperties:
+            type: string
+          description: Map of featureName → groupName
+        meta:
+          type: object
+          description: Aggregated group metadata
+
+    AbtestSpec:
+      type: object
+      required: [name, feature, author, start, groups]
+      description: Specification for creating or updating an A/B test
+      properties:
+        name:
+          type: string
+          description: Human-readable name for the test
+        feature:
+          type: string
+          description: Feature flag name this test targets
+        author:
+          type: string
+          description: Username / identifier of the person creating the test
+        start:
+          type: string
+          format: date-time
+          description: ISO-8601 datetime when the test starts
+        end:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO-8601 datetime when the test ends; null for open-ended tests
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/Group'
+          description: Treatment groups in this test
+        requiredTags:
+          type: array
+          items:
+            type: string
+          description: Only users with all these tags are eligible
+        alternativeIdName:
+          type: string
+          nullable: true
+          description: Use a metadata field as the bucketing ID instead of userId
+        userMetaCriteria:
+          type: object
+          nullable: true
+          description: JSON criteria object for user-metadata-based eligibility
+        reshuffle:
+          type: boolean
+          default: false
+          description: Re-randomise group assignments when continuing a test
+        segmentRanges:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupRange'
+          description: Hash-space ranges to include in the test (default full range 0–1)
+        specialization:
+          type: object
+          nullable: true
+          description: Optional specialization configuration (e.g. MultiArmBandit)
+        note:
+          type: string
+          nullable: true
+          description: Free-text note for this test
+
+    Group:
+      type: object
+      required: [name, size]
+      description: A single treatment group within an A/B test
+      properties:
+        name:
+          type: string
+          description: Group identifier (e.g. "control", "treatment")
+        size:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: Fraction of eligible traffic (0.0–1.0); all groups must sum to ≤ 1
+        meta:
+          type: object
+          description: Arbitrary metadata attached to this group
+        description:
+          type: string
+          nullable: true
+          description: Human-readable description of the group
+
+    GroupRange:
+      type: object
+      required: [start, end]
+      description: A contiguous range in the [0, 1) hash space
+      properties:
+        start:
+          type: number
+          format: double
+        end:
+          type: number
+          format: double
+
+    Abtest:
+      type: object
+      description: A fully-populated A/B test (as stored in the database)
+      properties:
+        name:
+          type: string
+        feature:
+          type: string
+        author:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+          nullable: true
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/Group'
+        requiredTags:
+          type: array
+          items:
+            type: string
+        alternativeIdName:
+          type: string
+          nullable: true
+        userMetaCriteria:
+          type: object
+          nullable: true
+        reshuffle:
+          type: boolean
+        segmentRanges:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupRange'
+        specialization:
+          type: object
+          nullable: true
+        note:
+          type: string
+          nullable: true
+        salt:
+          type: string
+          nullable: true
+          description: Random salt used for consistent hashing
+
+    EntityAbtest:
+      type: object
+      description: A database entity wrapping an Abtest document
+      properties:
+        _id:
+          type: string
+          description: MongoDB ObjectId
+        data:
+          $ref: '#/components/schemas/Abtest'

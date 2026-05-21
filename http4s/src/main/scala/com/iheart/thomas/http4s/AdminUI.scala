@@ -49,7 +49,9 @@ class AdminUI[F[_]: MonadThrow](
     extends AuthedEndpointsUtils[F, AuthImp]
     with Http4sDsl[F] {
 
-  def routes(builder: WebSocketBuilder2[F]) = authUI.publicEndpoints <+> liftService(
+  private val swaggerRoutes = new SwaggerUIRoutes[F].routes
+
+  def routes(builder: WebSocketBuilder2[F]) = swaggerRoutes <+> authUI.publicEndpoints <+> liftService(
     abtestManagementUI.routes <+> abtestManagementUI.websocketRoutes(builder) <+> authUI.authedService <+> analysisUI.routes <+> streamUI.routes <+> banditUI.routes
   )
   def gateway = abtestManagementUI.gateway
