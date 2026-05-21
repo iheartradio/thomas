@@ -29,7 +29,7 @@ lazy val libs =
     .addJVM(name = "henkan-convert",        version = "0.6.5",  org ="com.kailuowang")
     .addJVM(name = "log4cats",              version = "2.3.2",  org = org.typelevel.typeLevelOrg, "log4cats-slf4j", "log4cats-core")
     .addJava(name ="log4j-core",            version = "2.23.0", org = "org.apache.logging.log4j")
-    .addJava(name ="logback-classic",       version = "1.5.1",  org = "ch.qos.logback")
+    .addJava(name ="logback-classic",       version = "1.5.7",  org = "ch.qos.logback")
     .addJVM(name = "http4s", version = "0.23.25", org = "org.http4s", modules = "http4s-dsl", "http4s-circe", "http4s-core")
     .addJVM(name = "http4s", version = "0.23.13", org = "org.http4s", modules = "http4s-play-json")
     .addJVM(name = "mau",                   version = "0.3.1",  org = "com.kailuowang")
