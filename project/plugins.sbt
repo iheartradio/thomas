@@ -1,6 +1,6 @@
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.12.2")
 
-addSbtPlugin("io.gatling" %% "gatling-sbt" % "4.3.3")
+addSbtPlugin("io.gatling" %% "gatling-sbt" % "4.19.0")
 
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.1.5")
 
